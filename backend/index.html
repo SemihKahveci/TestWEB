@@ -24,7 +24,7 @@
     <script>
         async function fetchResults() {
             try {
-                const response = await fetch('http://localhost:5000/results'); // Backend'den veriyi al
+                const response = await fetch('https://immense-eyrie-31630-7b4841739874.herokuapp.com/results'); // Backend'den veriyi al
                 const data = await response.json();
 
                 const tableBody = document.getElementById('resultsTable');

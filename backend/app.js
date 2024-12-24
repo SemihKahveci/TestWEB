@@ -5,13 +5,13 @@ const app = express();
 const router = express.Router();
 const bodyParser = require('body-parser');
 const port = process.env.PORT || 5000;
-const cors = require('cors');
+
 //username hasansemihkahveci
 //password HHwoTrWoMuvHQeG2
 
 //Start the server
 app.listen(port, console.log(`Server is running on the port ${port}`))
-app.use(cors());
+
 let gameData = [];
 
 //Rabbitmq connection
