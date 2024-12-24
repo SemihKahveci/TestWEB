@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sonuçlar</title>
+</head>
+<body>
+    <h1>Oyuncu Skorları</h1>
+    <table border="1">
+        <thead>
+            <tr>
+                <th>Oyuncu Adı</th>
+                <th>Skor1</th>
+                <th>Skor2</th>
+                <th>Skor3</th>
+                <th>Skor4</th>
+                <th>Tarih</th>
+            </tr>
+        </thead>
+        <tbody id="resultsTable"></tbody>
+    </table>
+
+    <script>
+        async function fetchResults() {
+            try {
+                const response = await fetch('http://localhost:5000/results'); // Backend'den veriyi al
+                const data = await response.json();
+
+                const tableBody = document.getElementById('resultsTable');
+                tableBody.innerHTML = ''; // Tabloyu temizle
+
+                // Her bir sonucu tabloya ekle
+                data.forEach(result => {
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td>${result.playerName}</td>
+                        <td>${result.score1}</td>
+                        <td>${result.score2}</td>
+                        <td>${result.score3}</td>
+                        <td>${result.score4}</td>
+                        <td>${new Date(result.date).toLocaleString()}</td>
+                    `;
+                    tableBody.appendChild(row);
+                });
+            } catch (error) {
+                console.error('Sonuçları alırken hata oluştu:', error);
+            }
+        }
+
+        // Sayfa yüklendiğinde sonuçları getir
+        document.addEventListener('DOMContentLoaded', fetchResults);
+    </script>
+</body>
+</html>
