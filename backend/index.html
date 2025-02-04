@@ -114,7 +114,7 @@
 
                 // Sorular ve Cevaplar bölümünü düzenliyoruz
                 const questionsAndAnswers = result.answers.map(answer => {
-                    return `<strong>Soru ${answer.questionNumber}:</strong> ${answer.answerValue} (<em>${answer.answerType}</em>)`;
+                    return `<strong>Soru ${answer.questionNumber}:</strong> ${answer.answerValue1} (<em>${answer.answerValue2}</em>)`;
                 }).join('<br>');
 
                 row.innerHTML = `
