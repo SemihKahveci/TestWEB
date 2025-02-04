@@ -2,13 +2,13 @@
   "name": "backend",
   "version": "1.0.0",
   "main": "app.js",
-
   "keywords": [],
   "author": "",
   "license": "ISC",
   "description": "",
   "dependencies": {
     "express": "^4.21.2",
-    "mongoose": "^8.9.0"
+    "mongoose": "^8.9.0",
+    "ws": "^8.18.0"
   }
 }
