@@ -4,22 +4,90 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Sonuçlar</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            background-color: #f4f4f9;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+
+        .container {
+            width: 90%;
+            max-width: 1200px;
+            margin: 20px;
+            background-color: white;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            border-radius: 10px;
+            padding: 20px;
+        }
+
+        h1 {
+            text-align: center;
+            color: #333;
+        }
+
+        .results-table {
+            width: 100%;
+            margin-top: 20px;
+            border-collapse: collapse;
+        }
+
+        .results-table th, .results-table td {
+            padding: 12px;
+            text-align: left;
+            border: 1px solid #ddd;
+        }
+
+        .results-table th {
+            background-color: #4CAF50;
+            color: white;
+        }
+
+        .results-table tr:nth-child(even) {
+            background-color: #f2f2f2;
+        }
+
+        .results-table td {
+            word-wrap: break-word;
+        }
+
+        .question-column {
+            max-width: 250px;
+            white-space: normal;
+        }
+
+        .message {
+            text-align: center;
+            font-size: 1.2em;
+            margin-top: 20px;
+            color: #333;
+        }
+    </style>
 </head>
 <body>
-    <h1>Oyuncu Skorları</h1>
-    <table border="1">
-        <thead>
-            <tr>
-                <th>Oyuncu Adı</th>
-                <th>Skor1</th>
-                <th>Skor2</th>
-                <th>Skor3</th>
-                <th>Skor4</th>
-                <th>Tarih</th>
-            </tr>
-        </thead>
-        <tbody id="resultsTable"></tbody>
-    </table>
+    <div class="container">
+        <h1>Oyuncu Skorları ve Cevapları</h1>
+        <div id="message" class="message"></div>
+        <table class="results-table">
+            <thead>
+                <tr>
+                    <th>Oyuncu Adı</th>
+                    <th>Skor1</th>
+                    <th>Skor2</th>
+                    <th>Skor3</th>
+                    <th>Skor4</th>
+                    <th>Sorular ve Cevaplar</th>
+                    <th>Tarih</th>
+                </tr>
+            </thead>
+            <tbody id="resultsTable"></tbody>
+        </table>
+    </div>
 
     <script>
         async function fetchResults() {
@@ -30,21 +98,36 @@
                 const tableBody = document.getElementById('resultsTable');
                 tableBody.innerHTML = ''; // Tabloyu temizle
 
+                const messageDiv = document.getElementById('message');
+                if (data.length === 0) {
+                    messageDiv.innerHTML = 'Henüz sonuç bulunmamaktadır.';
+                } else {
+                    messageDiv.innerHTML = ''; // Herhangi bir hata mesajını temizle
+                }
+
                 // Her bir sonucu tabloya ekle
                 data.forEach(result => {
                     const row = document.createElement('tr');
+
+                    // Sorular ve Cevaplar bölümünü düzenliyoruz
+                    const questionsAndAnswers = result.answers.map(answer => {
+                        return `<strong>Soru ${answer.questionNumber}:</strong> ${answer.answerValue} (<em>${answer.answerType}</em>)`;
+                    }).join('<br>');
+
                     row.innerHTML = `
                         <td>${result.playerName}</td>
                         <td>${result.score1}</td>
                         <td>${result.score2}</td>
                         <td>${result.score3}</td>
                         <td>${result.score4}</td>
+                        <td class="question-column">${questionsAndAnswers}</td>
                         <td>${new Date(result.date).toLocaleString()}</td>
                     `;
                     tableBody.appendChild(row);
                 });
             } catch (error) {
                 console.error('Sonuçları alırken hata oluştu:', error);
+                document.getElementById('message').innerHTML = 'Sonuçlar alınırken bir hata oluştu.';
             }
         }
 
