@@ -50,16 +50,16 @@ wss.on("connection", (ws) => {
             date: entry.date
         }));
 
-        // Gönderilen veri ile mevcut veri arasındaki farkları kontrol et
-        const newData = filteredData.filter(data => {
-            return !lastSentData.some(sentData => sentData.date === data.date && sentData.playerName === data.playerName);
-        });
+        // // Gönderilen veri ile mevcut veri arasındaki farkları kontrol et
+        // const newData = filteredData.filter(data => {
+        //     return !lastSentData.some(sentData => sentData.date === data.date && sentData.playerName === data.playerName);
+        // });
 
-        // Eğer yeni veri varsa, frontend'e gönder
-        if (newData.length > 0) {
-            ws.send(JSON.stringify(newData));
-            lastSentData = lastSentData.concat(newData); // Son gönderilen veriyi güncelle
-        }
+        // // Eğer yeni veri varsa, frontend'e gönder
+        // if (newData.length > 0) {
+        //     ws.send(JSON.stringify(newData));
+        //     lastSentData = lastSentData.concat(newData); // Son gönderilen veriyi güncelle
+        // }
     });
 
     ws.on("close", () => {
