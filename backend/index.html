@@ -77,10 +77,6 @@
             <thead>
                 <tr>
                     <th>Oyuncu Adı</th>
-                    <th>Skor1</th>
-                    <th>Skor2</th>
-                    <th>Skor3</th>
-                    <th>Skor4</th>
                     <th>Sorular ve Cevaplar</th>
                     <th>Tarih</th>
                 </tr>
@@ -116,10 +112,6 @@
 
                     row.innerHTML = `
                         <td>${result.playerName}</td>
-                        <td>${result.score1}</td>
-                        <td>${result.score2}</td>
-                        <td>${result.score3}</td>
-                        <td>${result.score4}</td>
                         <td class="question-column">${questionsAndAnswers}</td>
                         <td>${new Date(result.date).toLocaleString()}</td>
                     `;
