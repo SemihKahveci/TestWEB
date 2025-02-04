@@ -118,9 +118,8 @@
                     return `
                         <strong>Soru ${answer.questionNumber}:</strong><br>
                         Cevap 1: ${answer.answerValue1} - Cevap 2: ${answer.answerValue2}<br>
-                        Puan: ${answer.total.toFixed(2)}
                     `;
-                }).join('<br><br>'); // Aralarına <br><br> ekleyerek her cevabı ayıralım
+                }).join('<br>'); // Soruları ayırarak birleştiriyoruz
 
                 row.innerHTML = `
                     <td>${result.playerName}</td>
