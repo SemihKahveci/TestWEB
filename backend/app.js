@@ -88,27 +88,27 @@ app.post("/register", async (req, res) => {
                 // İki farklı answerType'ı alıyoruz
                 const answerType1 = req.body[`question${questionNumber}_answerType1`];
                 const answerType2 = req.body[`question${questionNumber}_answerType2`];
-                const answerValue1 = parseFloat(req.body[`question${questionNumber}_answerValue1`]);
-                const answerValue2 = parseFloat(req.body[`question${questionNumber}_answerValue2`]);
+                const answerValue1 = req.body[`question${questionNumber}_answerValue1`];  // string olarak alıyoruz
+                const answerValue2 = req.body[`question${questionNumber}_answerValue2`];  // string olarak alıyoruz
 
                 // Her iki answerType'ı çarpanlarla hesaba katacağız
                 const multiplier1 = answerMultipliers[answerType1] || 0; // Varsayılan değer 0
                 const multiplier2 = answerMultipliers[answerType2] || 0; // Varsayılan değer 0
 
-                // Soruların puanlarını formüle göre hesapla
-                const questionScore = ((answerType1 * multiplier1) + (answerType2 * multiplier2)) / 3;
+                // Soruların puanlarını formüle göre hesapla (string değerler üzerinden işlem yapılacak)
+                const questionScore = ((multiplier1 + (multiplier2 / 2)) * 2) / 3;
 
                 // Verileri sakla
                 playerAnswers.push({
                     questionNumber: questionNumber,
                     answerType1: answerType1,
                     answerType2: answerType2,
-                    answerValue1: answerValue1,
-                    answerValue2: answerValue2,
+                    answerValue1: answerValue1, // String olarak sakla
+                    answerValue2: answerValue2, // String olarak sakla
                     total: questionScore // Hesaplanmış sorunun puanı
                 });
 
-                // Toplam puanı biriktir
+                // Toplam puarı biriktir
                 totalScore += questionScore;
             }
         }
@@ -132,8 +132,8 @@ app.post("/register", async (req, res) => {
         playerName: entry.playerName,
         answers: entry.answers.map(answer => ({
             questionNumber: answer.questionNumber,
-            answerValue1: answer.answerValue1,
-            answerValue2: answer.answerValue2,
+            answerValue1: answer.answerValue1, // String olarak gönder
+            answerValue2: answer.answerValue2, // String olarak gönder
             total: answer.total // Hesaplanmış sonucu ekledik
         })),
         date: entry.date,
