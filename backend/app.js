@@ -14,6 +14,14 @@ const port = process.env.PORT || 5000;
 // Oyun verilerini saklamak için dizi
 let gameData = [];
 
+// Cevap tiplerine göre çarpanlar
+const answerMultipliers = {
+    "AKY": 1,
+    "CY": 0.75,
+    "Y": 0.45,
+    "AY": 0
+};
+
 // Middleware'ler
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
@@ -31,7 +39,8 @@ wss.on("connection", (ws) => {
         answers: entry.answers.map(answer => ({
             questionNumber: answer.questionNumber,
             answerValue1: answer.answerValue1,
-            answerValue2: answer.answerValue2
+            answerValue2: answer.answerValue2,
+            total: answer.total // Hesaplanmış sonucu ekledik
         })),
         date: entry.date
     }));
@@ -51,7 +60,8 @@ app.get("/results", (req, res) => {
         answers: entry.answers.map(answer => ({
             questionNumber: answer.questionNumber,
             answerValue1: answer.answerValue1,
-            answerValue2: answer.answerValue2
+            answerValue2: answer.answerValue2,
+            total: answer.total // Hesaplanmış sonucu ekledik
         })),
         date: entry.date
     }));
@@ -68,6 +78,7 @@ app.get("/", (req, res) => {
 app.post("/register", async (req, res) => {
     const { playerName } = req.body;
     let playerAnswers = [];
+    let totalScore = 0; // Hesaplanan toplam puan
 
     // Tüm soru ve cevapları al
     for (let key in req.body) {
@@ -75,25 +86,36 @@ app.post("/register", async (req, res) => {
             const questionNumber = key.match(/\d+/)[0]; // Sorunun numarasını al
             if (key.endsWith("_answerType")) {
                 const answerType = req.body[key]; // Cevap tipi
-                const answerValue1 = req.body[`question${questionNumber}_answerValue1`];
-                const answerValue2 = req.body[`question${questionNumber}_answerValue2`];
+                const answerValue1 = parseFloat(req.body[`question${questionNumber}_answerValue1`]);
+                const answerValue2 = parseFloat(req.body[`question${questionNumber}_answerValue2`]);
+
+                // Soruların puanlarını formüle göre hesapla
+                const questionScore = ((answerValue1 + (answerValue2 / 2)) * 2) / 3;
 
                 // Verileri sakla
                 playerAnswers.push({
                     questionNumber: questionNumber,
                     answerType: answerType,
                     answerValue1: answerValue1,
-                    answerValue2: answerValue2
+                    answerValue2: answerValue2,
+                    total: questionScore // Hesaplanmış sorunun puanı
                 });
+
+                // Toplam puanı biriktir
+                totalScore += questionScore;
             }
         }
     }
+
+    // Tüm soruların aritmetik ortalamasını al
+    const averageScore = totalScore / playerAnswers.length;
 
     // Yeni veriyi ekle
     const newEntry = {
         playerName: playerName,
         answers: playerAnswers,
-        date: new Date()
+        date: new Date(),
+        totalScore: averageScore // Ortalama puan
     };
 
     gameData.push(newEntry);
@@ -104,9 +126,11 @@ app.post("/register", async (req, res) => {
         answers: entry.answers.map(answer => ({
             questionNumber: answer.questionNumber,
             answerValue1: answer.answerValue1,
-            answerValue2: answer.answerValue2
+            answerValue2: answer.answerValue2,
+            total: answer.total // Hesaplanmış sonucu ekledik
         })),
-        date: entry.date
+        date: entry.date,
+        totalScore: entry.totalScore // Toplam puanı ekledik
     }));
 
     wss.clients.forEach((client) => {
@@ -119,7 +143,8 @@ app.post("/register", async (req, res) => {
     res.status(200).json({
         msg: "Register operation completed successfully.",
         playerName: playerName,
-        answers: playerAnswers
+        answers: playerAnswers,
+        totalScore: averageScore // Ortalama puanı da geri gönder
     });
 
     console.log("Yeni veri alındı ve istemcilere gönderildi.");
