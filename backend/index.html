@@ -113,10 +113,14 @@
             data.forEach(result => {
                 const row = document.createElement('tr');
 
-                // Sorular ve sadece ilk iki cevap değerlerini al
+                // Sorular ve cevapları düzgün şekilde al
                 const questionsAndAnswers = result.answers.map(answer => {
-                    return `<strong>Soru ${answer.questionNumber}:</strong> ${answer.answerValue1}, ${answer.answerValue2}`;
-                }).join('<br>');
+                    return `
+                        <strong>Soru ${answer.questionNumber}:</strong><br>
+                        Cevap 1: ${answer.answerValue1} - Cevap 2: ${answer.answerValue2}<br>
+                        Puan: ${answer.total.toFixed(2)}
+                    `;
+                }).join('<br><br>'); // Aralarına <br><br> ekleyerek her cevabı ayıralım
 
                 row.innerHTML = `
                     <td>${result.playerName}</td>
