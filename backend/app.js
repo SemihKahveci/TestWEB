@@ -140,6 +140,7 @@ app.post("/register", async (req, res) => {
         totalScore: entry.totalScore // Toplam puanı ekledik
     }));
 
+    // WebSocket istemcilerine gönder
     wss.clients.forEach((client) => {
         if (client.readyState === WebSocket.OPEN) {
             client.send(JSON.stringify(filteredData));
