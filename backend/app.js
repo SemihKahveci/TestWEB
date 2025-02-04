@@ -84,18 +84,25 @@ app.post("/register", async (req, res) => {
     for (let key in req.body) {
         if (key.startsWith("question")) {
             const questionNumber = key.match(/\d+/)[0]; // Sorunun numarasını al
-            if (key.endsWith("_answerType")) {
-                const answerType = req.body[key]; // Cevap tipi
+            if (key.endsWith("_answerType1") || key.endsWith("_answerType2")) {
+                // İki farklı answerType'ı alıyoruz
+                const answerType1 = req.body[`question${questionNumber}_answerType1`];
+                const answerType2 = req.body[`question${questionNumber}_answerType2`];
                 const answerValue1 = parseFloat(req.body[`question${questionNumber}_answerValue1`]);
                 const answerValue2 = parseFloat(req.body[`question${questionNumber}_answerValue2`]);
 
+                // Her iki answerType'ı çarpanlarla hesaba katacağız
+                const multiplier1 = answerMultipliers[answerType1] || 0; // Varsayılan değer 0
+                const multiplier2 = answerMultipliers[answerType2] || 0; // Varsayılan değer 0
+
                 // Soruların puanlarını formüle göre hesapla
-                const questionScore = ((answerValue1 + (answerValue2 / 2)) * 2) / 3;
+                const questionScore = ((answerType1 * multiplier1) + (answerType2 * multiplier2)) / 3;
 
                 // Verileri sakla
                 playerAnswers.push({
                     questionNumber: questionNumber,
-                    answerType: answerType,
+                    answerType1: answerType1,
+                    answerType2: answerType2,
                     answerValue1: answerValue1,
                     answerValue2: answerValue2,
                     total: questionScore // Hesaplanmış sorunun puanı
