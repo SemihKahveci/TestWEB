@@ -54,13 +54,14 @@ app.post("/register", async (req, res) => {
             const questionNumber = key.match(/\d+/)[0]; // Sorunun numarasını almak
             if (key.endsWith("_answerType")) {
                 const answerType = req.body[key];
-                const answerValue = req.body[`question${questionNumber}_answerValue`];
+                const answerValue1 = req.body[`question${questionNumber}_answerValue1`];
+                const answerValue2 = req.body[`question${questionNumber}_answerValue2`];
 
                 // Her bir cevabı playerAnswers dizisine ekliyoruz
                 playerAnswers.push({
                     questionNumber: questionNumber,
-                    answerValue: answerValue,
-                    answerType: answerType
+                    answerValue1: answerValue1,
+                    answerValue2: answerValue2
                 });
             }
         }
