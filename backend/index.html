@@ -112,9 +112,9 @@
             data.forEach(result => {
                 const row = document.createElement('tr');
 
-                // Sorular ve Cevaplar bölümünü düzenliyoruz
+                // Sorular ve sadece ilk iki cevap değerlerini al
                 const questionsAndAnswers = result.answers.map(answer => {
-                    return `<strong>Soru ${answer.questionNumber}:</strong> ${answer.answerValue1} (<em>${answer.answerValue2}</em>)`;
+                    return `<strong>Soru ${answer.questionNumber}:</strong> ${answer.answerValue1}, ${answer.answerValue2}`;
                 }).join('<br>');
 
                 row.innerHTML = `
