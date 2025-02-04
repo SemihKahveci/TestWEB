@@ -87,8 +87,6 @@
     </div>
 
     <script>
-        let previousData = []; // Önceki verileri tutmak için bir değişken
-
         async function fetchResults() {
             try {
                 const response = await fetch('https://immense-eyrie-31630-7b4841739874.herokuapp.com/results'); // Backend'den veriyi al
@@ -111,38 +109,26 @@
                 messageDiv.innerHTML = ''; // Herhangi bir hata mesajını temizle
             }
 
-            // Verinin daha önceki veriyle aynı olup olmadığını kontrol et
-            const newData = data.filter(result => {
-                return !previousData.some(existingResult => existingResult.playerName === result.playerName && existingResult.date === result.date);
-            });
+            // Her bir sonucu tabloya ekle
+            data.forEach(result => {
+                const row = document.createElement('tr');
 
-            if (newData.length === 0) {
-                messageDiv.innerHTML = 'Yeni veri bulunmamaktadır.';
-            } else {
-                // Yeni verileri ekle
-                newData.forEach(result => {
-                    const row = document.createElement('tr');
-
-                    // Sorular ve cevapları düzgün şekilde al
-                    const questionsAndAnswers = result.answers.map(answer => {
-                        return `
-                            <strong>Soru ${answer.questionNumber}:</strong><br>
-                            Cevap 1: ${answer.answerValue1} - Cevap 2: ${answer.answerValue2}<br>
-                        `;
-                    }).join('<br>'); // Soruları ayırarak birleştiriyoruz
-
-                    row.innerHTML = `
-                        <td>${result.playerName}</td>
-                        <td class="question-column">${questionsAndAnswers}</td>
-                        <td>${result.totalScore.toFixed(2)}</td> <!-- Toplam Puan -->
-                        <td>${new Date(result.date).toLocaleString()}</td>
+                // Sorular ve cevapları düzgün şekilde al
+                const questionsAndAnswers = result.answers.map(answer => {
+                    return `
+                        <strong>Soru ${answer.questionNumber}:</strong><br>
+                        Cevap 1: ${answer.answerValue1} - Cevap 2: ${answer.answerValue2}<br>
                     `;
-                    tableBody.appendChild(row);
-                });
+                }).join('<br>'); // Soruları ayırarak birleştiriyoruz
 
-                // Yeni veriyi önceki verilere ekle
-                previousData = [...previousData, ...newData];
-            }
+                row.innerHTML = `
+                    <td>${result.playerName}</td>
+                    <td class="question-column">${questionsAndAnswers}</td>
+                    <td>${result.totalScore.toFixed(2)}</td> <!-- Toplam Puan -->
+                    <td>${new Date(result.date).toLocaleString()}</td>
+                `;
+                tableBody.appendChild(row);
+            });
         }
 
         // WebSocket ile gerçek zamanlı güncelleme

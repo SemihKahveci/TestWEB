@@ -33,19 +33,34 @@ app.use(express.static(path.join(__dirname, "backend")));
 wss.on("connection", (ws) => {
     console.log("Yeni istemci bağlandı!");
 
-    // Yeni istemci bağlandığında yalnızca gerekli verileri gönder
-    const filteredData = gameData.map(entry => ({
-        playerName: entry.playerName,
-        answers: entry.answers.map(answer => ({
-            questionNumber: answer.questionNumber,
-            answerValue1: answer.answerValue1,
-            answerValue2: answer.answerValue2,
-            total: answer.total // Hesaplanmış sonucu ekledik
-        })),
-        date: entry.date
-    }));
+    // Yeni istemciye yalnızca önceki verilere eklenen yeni veriyi gönder
+    let lastSentData = []; // Son gönderilen verileri saklamak için bir dizi
 
-    ws.send(JSON.stringify(filteredData));
+    // Yeni veriyi yalnızca önceki verilerle karşılaştırarak gönder
+    ws.on("message", (message) => {
+        // Gelen mesajı işleme kodu
+        const filteredData = gameData.map(entry => ({
+            playerName: entry.playerName,
+            answers: entry.answers.map(answer => ({
+                questionNumber: answer.questionNumber,
+                answerValue1: answer.answerValue1,
+                answerValue2: answer.answerValue2,
+                total: answer.total
+            })),
+            date: entry.date
+        }));
+
+        // Gönderilen veri ile mevcut veri arasındaki farkları kontrol et
+        const newData = filteredData.filter(data => {
+            return !lastSentData.some(sentData => sentData.date === data.date && sentData.playerName === data.playerName);
+        });
+
+        // Eğer yeni veri varsa, frontend'e gönder
+        if (newData.length > 0) {
+            ws.send(JSON.stringify(newData));
+            lastSentData = lastSentData.concat(newData); // Son gönderilen veriyi güncelle
+        }
+    });
 
     ws.on("close", () => {
         console.log("Bir istemci bağlantıyı kapattı.");
@@ -61,7 +76,7 @@ app.get("/results", (req, res) => {
             questionNumber: answer.questionNumber,
             answerValue1: answer.answerValue1,
             answerValue2: answer.answerValue2,
-            total: answer.total // Hesaplanmış sonucu ekledik
+            total: answer.total
         })),
         date: entry.date
     }));
