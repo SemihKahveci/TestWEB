@@ -33,34 +33,20 @@ app.use(express.static(path.join(__dirname, "backend")));
 wss.on("connection", (ws) => {
     console.log("Yeni istemci bağlandı!");
 
-    // Yeni istemciye yalnızca önceki verilere eklenen yeni veriyi gönder
-    let lastSentData = []; // Son gönderilen verileri saklamak için bir dizi
+    // Yeni istemci bağlandığında yalnızca gerekli verileri gönder
+    const filteredData = gameData.map(entry => ({
+        playerName: entry.playerName,
+        answers: entry.answers.map(answer => ({
+            questionNumber: answer.questionNumber,
+            answerValue1: answer.answerValue1,
+            answerValue2: answer.answerValue2,
+            total: answer.total
+        })),
+        date: entry.date,
+        totalScore: entry.totalScore
+    }));
 
-    // Yeni veriyi yalnızca önceki verilerle karşılaştırarak gönder
-    ws.on("message", (message) => {
-        // Gelen mesajı işleme kodu
-        const filteredData = gameData.map(entry => ({
-            playerName: entry.playerName,
-            answers: entry.answers.map(answer => ({
-                questionNumber: answer.questionNumber,
-                answerValue1: answer.answerValue1,
-                answerValue2: answer.answerValue2,
-                total: answer.total
-            })),
-            date: entry.date
-        }));
-
-        // // Gönderilen veri ile mevcut veri arasındaki farkları kontrol et
-        // const newData = filteredData.filter(data => {
-        //     return !lastSentData.some(sentData => sentData.date === data.date && sentData.playerName === data.playerName);
-        // });
-
-        // // Eğer yeni veri varsa, frontend'e gönder
-        // if (newData.length > 0) {
-        //     ws.send(JSON.stringify(newData));
-        //     lastSentData = lastSentData.concat(newData); // Son gönderilen veriyi güncelle
-        // }
-    });
+    ws.send(JSON.stringify(filteredData));
 
     ws.on("close", () => {
         console.log("Bir istemci bağlantıyı kapattı.");
@@ -78,7 +64,8 @@ app.get("/results", (req, res) => {
             answerValue2: answer.answerValue2,
             total: answer.total
         })),
-        date: entry.date
+        date: entry.date,
+        totalScore: entry.totalScore
     }));
 
     res.status(200).json(filteredData);
@@ -93,51 +80,48 @@ app.get("/", (req, res) => {
 app.post("/register", async (req, res) => {
     const { playerName } = req.body;
     let playerAnswers = [];
-    let totalScore = 0; // Hesaplanan toplam puan
+    let totalScore = 0;
 
-    // Tüm soru ve cevapları al
+    const questionsMap = {}; // Aynı soruların tekrar eklenmesini engellemek için
+
     for (let key in req.body) {
         if (key.startsWith("question")) {
-            const questionNumber = key.match(/\d+/)[0]; // Sorunun numarasını al
-            if (key.endsWith("_answerType1") || key.endsWith("_answerType2")) {
-                // İki farklı answerType'ı alıyoruz
+            const questionNumber = key.match(/\d+/)[0];
+
+            if (!questionsMap[questionNumber]) {
                 const answerType1 = req.body[`question${questionNumber}_answerType1`];
                 const answerType2 = req.body[`question${questionNumber}_answerType2`];
-                const answerValue1 = req.body[`question${questionNumber}_answerValue1`];  // string olarak alıyoruz
-                const answerValue2 = req.body[`question${questionNumber}_answerValue2`];  // string olarak alıyoruz
+                const answerValue1 = req.body[`question${questionNumber}_answerValue1`];
+                const answerValue2 = req.body[`question${questionNumber}_answerValue2`];
 
-                // Her iki answerType'ı çarpanlarla hesaba katacağız
-                const multiplier1 = answerMultipliers[answerType1] || 0; // Varsayılan değer 0
-                const multiplier2 = answerMultipliers[answerType2] || 0; // Varsayılan değer 0
+                const multiplier1 = answerMultipliers[answerType1] || 0;
+                const multiplier2 = answerMultipliers[answerType2] || 0;
 
-                // Soruların puanlarını formüle göre hesapla (string değerler üzerinden işlem yapılacak)
                 const questionScore = ((multiplier1 + (multiplier2 / 2)) * 2) / 3;
 
-                // Verileri sakla
                 playerAnswers.push({
-                    questionNumber: questionNumber,
-                    answerType1: answerType1,
-                    answerType2: answerType2,
-                    answerValue1: answerValue1, // String olarak sakla
-                    answerValue2: answerValue2, // String olarak sakla
-                    total: questionScore // Hesaplanmış sorunun puanı
+                    questionNumber,
+                    answerType1,
+                    answerType2,
+                    answerValue1,
+                    answerValue2,
+                    total: questionScore
                 });
 
-                // Toplam puarı biriktir
                 totalScore += questionScore;
+
+                questionsMap[questionNumber] = true; // Aynı sorunun tekrar eklenmesini engelle
             }
         }
     }
 
-    // Tüm soruların aritmetik ortalamasını al
     const averageScore = totalScore / playerAnswers.length;
 
-    // Yeni veriyi ekle
     const newEntry = {
         playerName: playerName,
         answers: playerAnswers,
         date: new Date(),
-        totalScore: averageScore // Ortalama puan
+        totalScore: averageScore
     };
 
     gameData.push(newEntry);
@@ -147,27 +131,25 @@ app.post("/register", async (req, res) => {
         playerName: entry.playerName,
         answers: entry.answers.map(answer => ({
             questionNumber: answer.questionNumber,
-            answerValue1: answer.answerValue1, // String olarak gönder
-            answerValue2: answer.answerValue2, // String olarak gönder
-            total: answer.total // Hesaplanmış sonucu ekledik
+            answerValue1: answer.answerValue1,
+            answerValue2: answer.answerValue2,
+            total: answer.total
         })),
         date: entry.date,
-        totalScore: entry.totalScore // Toplam puanı ekledik
+        totalScore: entry.totalScore
     }));
 
-    // WebSocket istemcilerine gönder
     wss.clients.forEach((client) => {
         if (client.readyState === WebSocket.OPEN) {
             client.send(JSON.stringify(filteredData));
         }
     });
 
-    // JSON cevabı dön
     res.status(200).json({
         msg: "Register operation completed successfully.",
         playerName: playerName,
         answers: playerAnswers,
-        totalScore: averageScore // Ortalama puanı da geri gönder
+        totalScore: averageScore
     });
 
     console.log("Yeni veri alındı ve istemcilere gönderildi.");
