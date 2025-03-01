@@ -1,9 +1,7 @@
-// .env konfigürasyonu en başta olmalı
 const path = require('path');
 require('dotenv').config({ path: path.join(__dirname, '..', '.env') });
 const AnswerType = require('./models/answerType');
 
-// Environment variables'ı kontrol et
 if (!process.env.MONGODB_URI) {
     console.error('MONGODB_URI is not defined in .env file');
     process.exit(1);
