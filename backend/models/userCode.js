@@ -12,8 +12,7 @@ const userCodeSchema = new mongoose.Schema({
     },
     createdAt: {
         type: Date,
-        default: Date.now,
-        expires: 24 * 60 * 60 // 24 saat sonra otomatik silinecek
+        default: Date.now
     }
 });
 

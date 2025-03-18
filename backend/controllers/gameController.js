@@ -68,7 +68,7 @@ class GameController {
                 }
 
                 return {
-                    playerName: entry.playerName,
+                    playerName: entry.playerName || '-',
                     ...answers,
                     date: entry.date,
                     totalScore: entry.totalScore
@@ -293,6 +293,193 @@ class GameController {
             res.status(500).json({
                 success: false,
                 message: 'Sonuçlar silinirken bir hata oluştu'
+            });
+        }
+    }
+
+    // Sunucu durumu kontrolü
+    async checkServerStatus(req, res) {
+        try {
+            // Burada sunucu durumunu kontrol edebiliriz
+            // Örneğin: bakım modu, veritabanı bağlantısı vs.
+            res.status(200).json({
+                status: "1", // 1: Aktif, -1: Bakımda
+                message: "Sunucu aktif"
+            });
+        } catch (error) {
+            console.error('Sunucu durumu kontrolünde hata:', error);
+            res.status(500).json({
+                status: "-1",
+                message: "Sunucu hatası"
+            });
+        }
+    }
+
+    // Kod doğrulama ve bölüm bilgisi
+    async verifyCodeAndGetSections(req, res) {
+        try {
+            console.log('Gelen istek body:', req.body);
+            console.log('Gelen form verisi:', req.form);
+            console.log('Content-Type:', req.headers['content-type']);
+            
+            const { code } = req.body;
+            console.log('Çıkarılan kod:', code);
+            
+            if (!code) {
+                console.log('Kod bulunamadı');
+                return res.status(400).json({
+                    success: false,
+                    message: "Kod gerekli"
+                });
+            }
+
+            // MongoDB'de kodu ara
+            const userCode = await UserCode.findOne({ code, isUsed: false });
+            console.log('MongoDB sorgusu sonucu:', userCode);
+            
+            if (!userCode) {
+                console.log('Geçersiz veya kullanılmış kod');
+                return res.status(400).json({
+                    success: false,
+                    sections: "-1",
+                    message: "Geçersiz veya kullanılmış kod"
+                });
+            }
+
+            console.log('Kod doğrulandı, bölüm bilgileri gönderiliyor');
+            res.status(200).json({
+                success: true,
+                sections: "1;2;3",
+                message: "Kod doğrulandı"
+            });
+        } catch (error) {
+            console.error('Kod doğrulama hatası:', error);
+            res.status(500).json({
+                success: false,
+                sections: "-1",
+                message: "Sunucu hatası"
+            });
+        }
+    }
+
+    // Oyun sonucu kaydetme
+    async registerGameResult(req, res) {
+        try {
+            const {
+                code,
+                section,
+                captain,
+                answers
+            } = req.body;
+
+            // Gerekli alanları kontrol et
+            if (!code || !section || !captain || !answers || !Array.isArray(answers)) {
+                return res.status(400).json({
+                    success: false,
+                    message: "Eksik veya hatalı veri"
+                });
+            }
+
+            // Kodu kontrol et
+            const userCode = await UserCode.findOne({ code, isUsed: false });
+            if (!userCode) {
+                return res.status(400).json({
+                    success: false,
+                    message: "Geçersiz veya kullanılmış kod"
+                });
+            }
+
+            // Cevapları işle
+            const processedAnswers = await Promise.all(answers.map(async answer => {
+                const answerType = await AnswerType.findOne({ type: answer.answerCategory });
+                return {
+                    questionNumber: answer.questionId,
+                    questionText: answer.questionText,
+                    selectedAnswer: answer.selectedAnswer,
+                    answerType1: answer.answerCategory,
+                    answerType2: answer.answerAbility,
+                    answerSubCategory: answer.answerSubCategory || '',
+                    reserved1: answer.reserved1 || '',
+                    reserved2: answer.reserved2 || '',
+                    reserved3: answer.reserved3 || ''
+                };
+            }));
+
+            // Yeni oyun kaydı oluştur
+            const newGame = new Game({
+                playerName: captain,
+                section: section,
+                answers: processedAnswers
+            });
+
+            await newGame.save();
+
+            // Kodu kullanılmış olarak işaretle
+            userCode.isUsed = true;
+            await userCode.save();
+
+            // WebSocket üzerinden güncelleme gönder
+            if (this.webSocketService) {
+                const allGames = await Game.find().sort({ date: -1 });
+                this.webSocketService.broadcastUpdate(allGames);
+            }
+
+            res.status(200).json({
+                success: true,
+                message: "Oyun sonucu kaydedildi"
+            });
+
+        } catch (error) {
+            console.error('Oyun sonucu kaydetme hatası:', error);
+            res.status(500).json({
+                success: false,
+                message: "Sunucu hatası"
+            });
+        }
+    }
+
+    // Kod üretme
+    async generateCode(req, res) {
+        try {
+            const code = Math.random().toString(36).substring(2, 15).toUpperCase();
+            const newCode = new UserCode({
+                code: code,
+                isUsed: false,
+                createdAt: new Date()
+            });
+
+            await newCode.save();
+
+            res.status(200).json({
+                success: true,
+                code: code,
+                message: 'Yeni kod oluşturuldu'
+            });
+        } catch (error) {
+            console.error('Kod oluşturma hatası:', error);
+            res.status(500).json({
+                success: false,
+                message: 'Kod oluşturulurken bir hata oluştu'
+            });
+        }
+    }
+
+    // Kodları listele
+    async listCodes(req, res) {
+        try {
+            const codes = await UserCode.find({ isUsed: false })
+                .sort({ createdAt: -1 });
+
+            res.status(200).json({
+                success: true,
+                codes: codes,
+                message: 'Kodlar başarıyla listelendi'
+            });
+        } catch (error) {
+            console.error('Kodları listeleme hatası:', error);
+            res.status(500).json({
+                success: false,
+                message: 'Kodlar listelenirken bir hata oluştu'
             });
         }
     }

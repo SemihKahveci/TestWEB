@@ -1,80 +1,116 @@
-const path = require('path');
-require('dotenv').config({ path: path.join(__dirname, '..', '.env') });
-const AnswerType = require('./models/answerType');
-
-if (!process.env.MONGODB_URI) {
-    console.error('MONGODB_URI is not defined in .env file');
-    process.exit(1);
-}
-
+require('dotenv').config();
 const express = require('express');
-const http = require('http');
-const bodyParser = require('body-parser');
-const { PORT } = require('./config/constants');
-const connectDB = require('./config/database');
-const WebSocketService = require('./services/websocket');
+const cors = require('cors');
+const mongoose = require('mongoose');
+const WebSocket = require('ws');
+const path = require('path');
 const GameController = require('./controllers/gameController');
-
-// Cevap tiplerinin varlığını kontrol et ve yoksa ekle
-async function ensureAnswerTypes() {
-    try {
-        const count = await AnswerType.countDocuments();
-        if (count === 0) {
-            const defaultTypes = [
-                {
-                    type: "AKY",
-                    description: "Belirsizlikle karşılaştığında enerjisi artar."
-                },
-                {
-                    type: "CY",
-                    description: "Belirsizlik halinde bile soğukkanlılığını korur ve ilerleme sağlar."
-                },
-                {
-                    type: "Y",
-                    description: "Belirsizlik durumunda yeni çözümler üretir."
-                }
-            ];
-
-            await AnswerType.insertMany(defaultTypes);
-            console.log('Varsayılan cevap tipleri eklendi.');
-        }
-    } catch (error) {
-        console.error('Cevap tipleri kontrol edilirken hata:', error);
-    }
-}
-
-// MongoDB bağlantısı
-connectDB().then(() => {
-    ensureAnswerTypes();
-});
+const WebSocketService = require('./services/websocket');
 
 const app = express();
-const server = http.createServer(app);
+const port = process.env.PORT || 5000;
 
-// WebSocket servisi başlatılıyor
-const webSocketService = new WebSocketService(server);
+// Middleware
+app.use(cors());
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+app.use(express.static(path.join(__dirname, 'public')));
 
-// Oyun kontrolcüsü oluşturuluyor
-const gameController = new GameController(webSocketService);
-
-// Middleware'ler
-app.use(bodyParser.json());
-app.use(bodyParser.urlencoded({ extended: true }));
-
-// Statik dosyalar (Frontend için)
-app.use(express.static(path.join(__dirname, '..')));
-
-// Route'lar
-const gameRoutes = require('./routes/gameRoutes')(gameController);
-const codeRoutes = require('./routes/codeRoutes');
-
-app.use('/', gameRoutes);
-app.use('/codes', codeRoutes);
-
-// Frontend'e ana sayfayı sun
-app.get('/', (req, res) => {
-    res.sendFile(path.join(__dirname, '..', 'index.html'));
+// Hata yakalama middleware'i
+app.use((err, req, res, next) => {
+    console.error('Hata:', err);
+    res.status(500).json({
+        success: false,
+        message: 'Sunucu hatası: ' + err.message
+    });
 });
 
+// MongoDB bağlantı ayarları
+const mongoOptions = {
+    useNewUrlParser: true,
+    useUnifiedTopology: true,
+    serverSelectionTimeoutMS: 5000,
+    socketTimeoutMS: 45000
+};
+
+// WebSocket servisi
+const wss = new WebSocket.Server({ port: process.env.WS_PORT || 5001 });
+const webSocketService = new WebSocketService(wss);
+
+// Game Controller
+const gameController = new GameController(webSocketService);
+
+// API Routes
+app.post('/api/codes/generate', async (req, res) => {
+    try {
+        // MongoDB bağlantı durumunu kontrol et
+        if (mongoose.connection.readyState !== 1) {
+            throw new Error('MongoDB bağlantısı aktif değil');
+        }
+        await gameController.generateCode(req, res);
+    } catch (error) {
+        console.error('Kod üretme hatası:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Kod üretilirken bir hata oluştu: ' + error.message
+        });
+    }
+});
+
+app.get('/api/codes/list', async (req, res) => {
+    try {
+        // MongoDB bağlantı durumunu kontrol et
+        if (mongoose.connection.readyState !== 1) {
+            throw new Error('MongoDB bağlantısı aktif değil');
+        }
+        await gameController.listCodes(req, res);
+    } catch (error) {
+        console.error('Kod listeleme hatası:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Kodlar listelenirken bir hata oluştu: ' + error.message
+        });
+    }
+});
+
+app.get('/api/results', gameController.getResults.bind(gameController));
+app.delete('/api/results', gameController.deleteAllResults.bind(gameController));
+
+// Yeni ICD endpoint'leri
+app.get('/api/status', gameController.checkServerStatus.bind(gameController));
+app.post('/api/verify-code', gameController.verifyCodeAndGetSections.bind(gameController));
+app.post('/api/register-result', gameController.registerGameResult.bind(gameController));
+
+// Ana sayfa
+app.get('/', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'index.html'));
+});
+
+// MongoDB bağlantısı ve sunucu başlatma
+const startServer = async () => {
+    try {
+        // MongoDB bağlantısı
+        await mongoose.connect(process.env.MONGODB_URI, mongoOptions);
+        console.log('MongoDB Atlas bağlantısı başarılı');
+
+        // Bağlantı durumunu dinle
+        mongoose.connection.on('error', err => {
+            console.error('MongoDB bağlantı hatası:', err);
+        });
+        mongoose.connection.on('disconnected', () => {
+            console.log('MongoDB bağlantısı kesildi');
+        });
+
+        // MongoDB bağlantısı başarılı olduktan sonra sunucuyu başlat
+        app.listen(port, () => {
+            console.log(`Sunucu ${port} portunda çalışıyor`);
+            console.log(`WebSocket sunucusu ${process.env.WS_PORT || 5001} portunda çalışıyor`);
+        });
+    } catch (err) {
+        console.error('MongoDB bağlantı hatası:', err);
+        process.exit(1);
+    }
+};
+
 // Sunucuyu başlat
-server.listen(PORT, () => console.log(`Server is running on port ${PORT}`));
+startServer();

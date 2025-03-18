@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Paneli - Sonuçlar</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+
+        .container {
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            margin-bottom: 20px;
+        }
+
+        .section-title {
+            color: #333;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #eee;
+        }
+
+        .nav-menu {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding: 10px;
+            background-color: #fff;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .nav-menu a {
+            text-decoration: none;
+            color: #333;
+            padding: 8px 16px;
+            border-radius: 4px;
+            transition: background-color 0.3s;
+        }
+
+        .nav-menu a:hover {
+            background-color: #f0f0f0;
+        }
+
+        .nav-menu a.active {
+            background-color: #4CAF50;
+            color: white;
+        }
+
+        /* Skor tablosu stilleri */
+        .scores-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+        }
+
+        .scores-table th, .scores-table td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+
+        .scores-table th {
+            background-color: #f8f8f8;
+            font-weight: bold;
+        }
+
+        .scores-table tr:hover {
+            background-color: #f5f5f5;
+        }
+
+        .scores-table td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+            max-width: 300px; /* Maximum genişlik */
+            white-space: normal; /* Metin birden fazla satıra bölünebilir */
+            word-wrap: break-word; /* Uzun kelimeler bölünebilir */
+        }
+
+        .delete-btn {
+            background-color: #ff4444;
+            color: white;
+            padding: 8px 16px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: background-color 0.3s;
+        }
+
+        .delete-btn:hover {
+            background-color: #cc0000;
+        }
+
+        .error {
+            color: #ff0000;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigasyon Menüsü -->
+    <div class="nav-menu">
+        <a href="index.html">Kod Üretme</a>
+        <a href="results.html" class="active">Sonuçlar</a>
+    </div>
+
+    <!-- Oyuncu Skorları Bölümü -->
+    <div class="container">
+        <h1 class="section-title">Oyuncu Sonuçları</h1>
+        <div style="text-align: right; margin-bottom: 10px;">
+            <button class="delete-btn" onclick="deleteAllResults()">Tüm Sonuçları Sil</button>
+        </div>
+        <table class="scores-table">
+            <thead>
+                <tr>
+                    <th>Oyuncu Adı</th>
+                    <th>Cevap 1</th>
+                    <th>Cevap 2</th>
+                    <th>Cevap 3</th>
+                    <th>Cevap 4</th>
+                    <th>Tarih</th>
+                </tr>
+            </thead>
+            <tbody id="resultsTable"></tbody>
+        </table>
+    </div>
+
+    <script>
+        // WebSocket bağlantısı
+        const ws = new WebSocket(`ws://${window.location.host}`);
+        
+        ws.onopen = () => {
+            console.log('WebSocket bağlantısı kuruldu');
+        };
+
+        ws.onmessage = (event) => {
+            console.log('Yeni veri alındı:', event.data);
+            // Yeni veri geldiğinde sonuçları güncelle
+            fetchResults();
+        };
+
+        ws.onerror = (error) => {
+            console.error('WebSocket hatası:', error);
+        };
+
+        ws.onclose = () => {
+            console.log('WebSocket bağlantısı kapandı');
+        };
+
+        // Sayfa yüklendiğinde sonuçları getir
+        document.addEventListener('DOMContentLoaded', () => {
+            fetchResults();
+        });
+
+        // Sonuçları getir
+        async function fetchResults() {
+            try {
+                const response = await fetch('/results');
+                const data = await response.json();
+
+                const tableBody = document.getElementById('resultsTable');
+                tableBody.innerHTML = '';
+
+                data.forEach(result => {
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td>${result.playerName}</td>
+                        <td>${result.answer1 || '-'}</td>
+                        <td>${result.answer2 || '-'}</td>
+                        <td>${result.answer3 || '-'}</td>
+                        <td>${result.answer4 || '-'}</td>
+                        <td>${new Date(result.date).toLocaleString('tr-TR')}</td>
+                    `;
+                    tableBody.appendChild(row);
+                });
+            } catch (error) {
+                console.error('Sonuçları alırken hata oluştu:', error);
+            }
+        }
+
+        // Tüm sonuçları sil
+        async function deleteAllResults() {
+            if (!confirm('Tüm sonuçları silmek istediğinizden emin misiniz?')) {
+                return;
+            }
+
+            try {
+                const response = await fetch('/results', {
+                    method: 'DELETE'
+                });
+                const data = await response.json();
+
+                if (data.success) {
+                    // Tabloyu temizle
+                    document.getElementById('resultsTable').innerHTML = '';
+                    alert('Tüm sonuçlar başarıyla silindi.');
+                } else {
+                    alert('Sonuçlar silinirken bir hata oluştu: ' + data.message);
+                }
+            } catch (error) {
+                console.error('Sonuçları silerken hata:', error);
+                alert('Sonuçlar silinirken bir hata oluştu.');
+            }
+        }
+
+        // Her 30 saniyede bir sonuçları güncelle
+        setInterval(() => {
+            fetchResults();
+        }, 30000);
+    </script>
+</body>
+</html> 
