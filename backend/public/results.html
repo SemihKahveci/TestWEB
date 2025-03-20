@@ -124,12 +124,16 @@
         <table class="scores-table">
             <thead>
                 <tr>
-                    <th>Oyuncu Adı</th>
-                    <th>Bölüm</th>
-                    <th>Soru 1</th>
-                    <th>Soru 2</th>
-                    <th>Soru 3</th>
-                    <th>Soru 4</th>
+                    <th>Doğrulama Kodu</th>
+                    <th>Gezegen</th>
+                    <th>Soru ID</th>
+                    <th>Soru Metni</th>
+                    <th>Seçilen Cevap 1</th>
+                    <th>Seçilen Cevap 2</th>
+                    <th>Cevap Tipi 1</th>
+                    <th>Cevap Tipi 2</th>
+                    <th>Alt Kategori</th>
+                    <th>Toplam Skor</th>
                     <th>Tarih</th>
                 </tr>
             </thead>
@@ -173,18 +177,32 @@
                 const tableBody = document.getElementById('resultsTable');
                 tableBody.innerHTML = '';
 
+                if (!Array.isArray(data) || data.length === 0) {
+                    console.log('Veri bulunamadı veya boş');
+                    return;
+                }
+
                 data.forEach(result => {
-                    const row = document.createElement('tr');
-                    row.innerHTML = `
-                        <td>${result.playerName}</td>
-                        <td>${result.section}</td>
-                        <td>${result.answers[0]?.selectedAnswer || '-'}</td>
-                        <td>${result.answers[1]?.selectedAnswer || '-'}</td>
-                        <td>${result.answers[2]?.selectedAnswer || '-'}</td>
-                        <td>${result.answers[3]?.selectedAnswer || '-'}</td>
-                        <td>${new Date(result.date).toLocaleString('tr-TR')}</td>
-                    `;
-                    tableBody.appendChild(row);
+                    console.log('İşlenen sonuç:', result);
+                    if (result.answers && Array.isArray(result.answers)) {
+                        result.answers.forEach(answer => {
+                            const row = document.createElement('tr');
+                            row.innerHTML = `
+                                <td>${result.playerCode || '-'}</td>
+                                <td>${answer.planetName || '-'}</td>
+                                <td>${answer.questionId || '-'}</td>
+                                <td>${answer.questionText || '-'}</td>
+                                <td>${answer.selectedAnswer1 || '-'}</td>
+                                <td>${answer.selectedAnswer2 || '-'}</td>
+                                <td>${answer.answerType1 || '-'}</td>
+                                <td>${answer.answerType2 || '-'}</td>
+                                <td>${answer.answerSubCategory || '-'}</td>
+                                <td>${result.totalScore ? result.totalScore.toFixed(2) : '-'}</td>
+                                <td>${new Date(result.date).toLocaleString('tr-TR')}</td>
+                            `;
+                            tableBody.appendChild(row);
+                        });
+                    }
                 });
             } catch (error) {
                 console.error('Sonuçları alırken hata oluştu:', error);

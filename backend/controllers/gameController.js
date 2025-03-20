@@ -47,34 +47,39 @@ class GameController {
 
     async getResults(req, res) {
         try {
+            console.log('Sonuçlar alınıyor...');
             const games = await Game.find().sort({ date: -1 });
-            const formattedData = await Promise.all(games.map(async entry => {
-                // Her oyun için cevap detaylarını düzenle
-                const answers = {
-                    answer1: '-',
-                    answer2: '-',
-                    answer3: '-',
-                    answer4: '-'
-                };
+            console.log('Veritabanından alınan oyunlar:', games);
 
-                // Cevapları yerleştir
-                for (let i = 0; i < entry.answers.length && i < 4; i++) {
-                    const answer = entry.answers[i];
-                    // Cevap tiplerinin açıklamalarını al
-                    const type1Description = await this.getAnswerDescription(answer.answerType1);
-                    const type2Description = await this.getAnswerDescription(answer.answerType2);
-                    
-                    answers[`answer${i + 1}`] = `${type1Description} - ${type2Description}`;
-                }
+            if (!games || games.length === 0) {
+                console.log('Veritabanında oyun bulunamadı');
+                return res.status(200).json([]);
+            }
 
+            const formattedData = games.map(game => {
+                console.log('İşlenen oyun:', game);
                 return {
-                    playerName: entry.playerName || '-',
-                    ...answers,
-                    date: entry.date,
-                    totalScore: entry.totalScore
+                    playerCode: game.playerCode || '-',
+                    section: game.section || '-',
+                    totalScore: game.totalScore || 0,
+                    answers: game.answers.map(answer => {
+                        console.log('İşlenen cevap:', answer);
+                        return {
+                            questionId: answer.questionId || '-',
+                            planetName: answer.planetName || '-',
+                            questionText: answer.questionText || '-',
+                            selectedAnswer1: answer.selectedAnswer1 || '-',
+                            selectedAnswer2: answer.selectedAnswer2 || '-',
+                            answerType1: answer.answerType1 || '-',
+                            answerType2: answer.answerType2 || '-',
+                            answerSubCategory: answer.answerSubCategory || '-'
+                        };
+                    }),
+                    date: game.date
                 };
-            }));
+            });
 
+            console.log('Formatlanmış veri:', formattedData);
             res.status(200).json(formattedData);
         } catch (error) {
             console.error('Sonuçlar alınırken hata oluştu:', error);
@@ -365,24 +370,52 @@ class GameController {
     // Oyun sonucu kaydetme
     async registerGameResult(req, res) {
         try {
-            const {
-                code,
-                section,
-                captain,
-                answers
-            } = req.body;
-
-            // Gerekli alanları kontrol et
-            if (!code || !section || !captain || !answers || !Array.isArray(answers)) {
+            console.log('Gelen ham veri:', req.body);
+            
+            // Gelen veriyi kontrol et
+            if (!req.body || typeof req.body !== 'object') {
+                console.log('Geçersiz veri formatı');
                 return res.status(400).json({
                     success: false,
-                    message: "Eksik veya hatalı veri"
+                    message: "Geçersiz veri formatı"
+                });
+            }
+
+            // data alanını kontrol et
+            if (!req.body.data) {
+                console.log('Data alanı bulunamadı');
+                return res.status(400).json({
+                    success: false,
+                    message: "Data alanı gerekli"
+                });
+            }
+
+            let gameResult;
+            try {
+                gameResult = typeof req.body.data === 'string' ? JSON.parse(req.body.data) : req.body.data;
+            } catch (error) {
+                console.error('JSON parse hatası:', error);
+                return res.status(400).json({
+                    success: false,
+                    message: "Geçersiz JSON formatı"
+                });
+            }
+
+            console.log('Parse edilmiş veri:', gameResult);
+
+            // Gerekli alanları kontrol et
+            if (!gameResult.playerCode || !gameResult.section || !gameResult.answers || !Array.isArray(gameResult.answers)) {
+                console.log('Eksik veya hatalı veri yapısı:', gameResult);
+                return res.status(400).json({
+                    success: false,
+                    message: "Eksik veya hatalı veri yapısı"
                 });
             }
 
             // Kodu kontrol et
-            const userCode = await UserCode.findOne({ code, isUsed: false });
+            const userCode = await UserCode.findOne({ code: gameResult.playerCode, isUsed: false });
             if (!userCode) {
+                console.log('Geçersiz veya kullanılmış kod:', gameResult.playerCode);
                 return res.status(400).json({
                     success: false,
                     message: "Geçersiz veya kullanılmış kod"
@@ -390,29 +423,44 @@ class GameController {
             }
 
             // Cevapları işle
-            const processedAnswers = await Promise.all(answers.map(async answer => {
-                const answerType = await AnswerType.findOne({ type: answer.answerCategory });
+            const processedAnswers = gameResult.answers.map(answer => {
+                // Eksik alanları kontrol et ve varsayılan değerler ata
                 return {
-                    questionNumber: answer.questionId,
-                    questionText: answer.questionText,
-                    selectedAnswer: answer.selectedAnswer,
-                    answerType1: answer.answerCategory,
-                    answerType2: answer.answerAbility,
-                    answerSubCategory: answer.answerSubCategory || '',
-                    reserved1: answer.reserved1 || '',
-                    reserved2: answer.reserved2 || '',
-                    reserved3: answer.reserved3 || ''
+                    questionId: answer.questionId || '-',
+                    planetName: answer.planetName || '-',
+                    questionText: answer.questionText || '-',
+                    selectedAnswer1: answer.selectedAnswer1 || '-',
+                    selectedAnswer2: answer.selectedAnswer2 || '-',
+                    answerType1: answer.answerType1 || '-',
+                    answerType2: answer.answerType2 || '-',
+                    answerSubCategory: answer.answerSubCategory || '-'
                 };
-            }));
+            });
+
+            // Toplam skoru hesapla
+            let totalScore = 0;
+            processedAnswers.forEach(answer => {
+                const multiplier1 = answerMultipliers[answer.answerType1] || 0;
+                const multiplier2 = answerMultipliers[answer.answerType2] || 0;
+                const questionScore = ((multiplier1 + (multiplier2 / 2)) * 2) / 3;
+                totalScore += questionScore;
+            });
+            totalScore = totalScore / processedAnswers.length;
+
+            console.log('İşlenmiş cevaplar:', processedAnswers);
+            console.log('Hesaplanan toplam skor:', totalScore);
 
             // Yeni oyun kaydı oluştur
             const newGame = new Game({
-                playerName: captain,
-                section: section,
-                answers: processedAnswers
+                playerCode: gameResult.playerCode,
+                section: gameResult.section,
+                answers: processedAnswers,
+                totalScore: totalScore,
+                date: new Date()
             });
 
             await newGame.save();
+            console.log('Yeni oyun kaydedildi:', newGame);
 
             // Kodu kullanılmış olarak işaretle
             userCode.isUsed = true;
@@ -433,7 +481,7 @@ class GameController {
             console.error('Oyun sonucu kaydetme hatası:', error);
             res.status(500).json({
                 success: false,
-                message: "Sunucu hatası"
+                message: error.message || "Sunucu hatası"
             });
         }
     }
