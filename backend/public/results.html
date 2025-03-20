@@ -143,7 +143,8 @@
 
     <script>
         // WebSocket bağlantısı
-        const ws = new WebSocket(`ws://${window.location.hostname}:5001`);
+        const wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+        const ws = new WebSocket(`${wsProtocol}//${window.location.host}`);
         
         ws.onopen = () => {
             console.log('WebSocket bağlantısı kuruldu');
