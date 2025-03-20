@@ -49,7 +49,7 @@ class GameController {
         try {
             console.log('Sonuçlar alınıyor...');
             const games = await Game.find().sort({ date: -1 });
-            console.log('Veritabanından alınan oyunlar:', JSON.stringify(games, null, 2));
+            console.log('Veritabanından alınan oyunlar:', games);
 
             if (!games || games.length === 0) {
                 console.log('Veritabanında oyun bulunamadı');
@@ -57,13 +57,13 @@ class GameController {
             }
 
             const formattedData = games.map(game => {
-                console.log('İşlenen oyun:', JSON.stringify(game, null, 2));
+                console.log('İşlenen oyun:', game);
                 return {
                     playerCode: game.playerCode || '-',
                     section: game.section || '-',
                     totalScore: game.totalScore || 0,
                     answers: game.answers.map(answer => {
-                        console.log('İşlenen cevap:', JSON.stringify(answer, null, 2));
+                        console.log('İşlenen cevap:', answer);
                         return {
                             questionId: answer.questionId || '-',
                             planetName: answer.planetName || '-',
@@ -79,7 +79,7 @@ class GameController {
                 };
             });
 
-            console.log('Formatlanmış veri:', JSON.stringify(formattedData, null, 2));
+            console.log('Formatlanmış veri:', formattedData);
             res.status(200).json(formattedData);
         } catch (error) {
             console.error('Sonuçlar alınırken hata oluştu:', error);
@@ -370,8 +370,7 @@ class GameController {
     // Oyun sonucu kaydetme
     async registerGameResult(req, res) {
         try {
-            console.log('Gelen ham veri:', JSON.stringify(req.body, null, 2));
-            console.log('Content-Type:', req.headers['content-type']);
+            console.log('Gelen ham veri:', req.body);
             
             // Gelen veriyi kontrol et
             if (!req.body || typeof req.body !== 'object') {
@@ -394,7 +393,6 @@ class GameController {
             let gameResult;
             try {
                 gameResult = typeof req.body.data === 'string' ? JSON.parse(req.body.data) : req.body.data;
-                console.log('Parse edilmiş veri:', JSON.stringify(gameResult, null, 2));
             } catch (error) {
                 console.error('JSON parse hatası:', error);
                 return res.status(400).json({
@@ -403,9 +401,11 @@ class GameController {
                 });
             }
 
+            console.log('Parse edilmiş veri:', gameResult);
+
             // Gerekli alanları kontrol et
             if (!gameResult.playerCode || !gameResult.section || !gameResult.answers || !Array.isArray(gameResult.answers)) {
-                console.log('Eksik veya hatalı veri yapısı:', JSON.stringify(gameResult, null, 2));
+                console.log('Eksik veya hatalı veri yapısı:', gameResult);
                 return res.status(400).json({
                     success: false,
                     message: "Eksik veya hatalı veri yapısı"
@@ -424,7 +424,6 @@ class GameController {
 
             // Cevapları işle
             const processedAnswers = gameResult.answers.map(answer => {
-                console.log('İşlenen cevap:', JSON.stringify(answer, null, 2));
                 // Eksik alanları kontrol et ve varsayılan değerler ata
                 return {
                     questionId: answer.questionId || '-',
@@ -445,11 +444,10 @@ class GameController {
                 const multiplier2 = answerMultipliers[answer.answerType2] || 0;
                 const questionScore = ((multiplier1 + (multiplier2 / 2)) * 2) / 3;
                 totalScore += questionScore;
-                console.log(`Soru skoru hesaplandı: ${answer.questionId} - ${questionScore}`);
             });
             totalScore = totalScore / processedAnswers.length;
 
-            console.log('İşlenmiş cevaplar:', JSON.stringify(processedAnswers, null, 2));
+            console.log('İşlenmiş cevaplar:', processedAnswers);
             console.log('Hesaplanan toplam skor:', totalScore);
 
             // Yeni oyun kaydı oluştur
@@ -462,7 +460,7 @@ class GameController {
             });
 
             await newGame.save();
-            console.log('Yeni oyun kaydedildi:', JSON.stringify(newGame, null, 2));
+            console.log('Yeni oyun kaydedildi:', newGame);
 
             // Kodu kullanılmış olarak işaretle
             userCode.isUsed = true;
@@ -472,7 +470,6 @@ class GameController {
             if (this.webSocketService) {
                 const allGames = await Game.find().sort({ date: -1 });
                 this.webSocketService.broadcastUpdate(allGames);
-                console.log('WebSocket güncellemesi gönderildi');
             }
 
             res.status(200).json({
