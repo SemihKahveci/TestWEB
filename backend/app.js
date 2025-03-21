@@ -41,15 +41,45 @@ const webSocketService = new WebSocketService(wss);
 const gameController = new GameController(webSocketService);
 
 // API Routes
-app.post('/api/generate-code', gameController.generateCode.bind(gameController));
-app.get('/api/active-codes', gameController.listActiveCodes.bind(gameController));
-app.post('/api/verify-code', gameController.verifyCode.bind(gameController));
-app.post('/api/register-result', gameController.registerGameResult.bind(gameController));
+app.post('/api/codes/generate', async (req, res) => {
+    try {
+        // MongoDB bağlantı durumunu kontrol et
+        if (mongoose.connection.readyState !== 1) {
+            throw new Error('MongoDB bağlantısı aktif değil');
+        }
+        await gameController.generateCode(req, res);
+    } catch (error) {
+        console.error('Kod üretme hatası:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Kod üretilirken bir hata oluştu: ' + error.message
+        });
+    }
+});
+
+app.get('/api/codes/list', async (req, res) => {
+    try {
+        // MongoDB bağlantı durumunu kontrol et
+        if (mongoose.connection.readyState !== 1) {
+            throw new Error('MongoDB bağlantısı aktif değil');
+        }
+        await gameController.listCodes(req, res);
+    } catch (error) {
+        console.error('Kod listeleme hatası:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Kodlar listelenirken bir hata oluştu: ' + error.message
+        });
+    }
+});
+
 app.get('/api/results', gameController.getResults.bind(gameController));
 app.delete('/api/results', gameController.deleteAllResults.bind(gameController));
 
 // Yeni ICD endpoint'leri
 app.get('/api/status', gameController.checkServerStatus.bind(gameController));
+app.post('/api/verify-code', gameController.verifyCodeAndGetSections.bind(gameController));
+app.post('/api/register-result', gameController.registerGameResult.bind(gameController));
 
 // Ana sayfa
 app.get('/', (req, res) => {
