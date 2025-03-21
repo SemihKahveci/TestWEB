@@ -21,44 +21,6 @@ class CodeController {
         }
     }
 
-    // Kodu doğrula
-    async verifyCode(req, res) {
-        try {
-            const { code } = req.body;
-
-            if (!code) {
-                return res.status(400).json({
-                    success: false,
-                    message: 'Kod gerekli'
-                });
-            }
-
-            const userCode = await UserCode.findOne({ code, isUsed: false });
-
-            if (!userCode) {
-                return res.status(400).json({
-                    success: false,
-                    message: 'Geçersiz veya kullanılmış kod'
-                });
-            }
-
-            // Kodu kullanılmış olarak işaretle
-            userCode.isUsed = true;
-            await userCode.save();
-
-            res.status(200).json({
-                success: true,
-                message: 'Kod doğrulandı'
-            });
-        } catch (error) {
-            console.error('Kod doğrulama hatası:', error);
-            res.status(500).json({
-                success: false,
-                message: 'Kod doğrulanırken bir hata oluştu'
-            });
-        }
-    }
-
     // Aktif kodları listele (admin için)
     async listActiveCodes(req, res) {
         try {
