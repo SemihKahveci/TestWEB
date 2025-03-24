@@ -2,45 +2,91 @@ const { answerMultipliers } = require('../config/constants');
 const Game = require('../models/game');
 const UserCode = require('../models/userCode');
 const AnswerType = require('../models/answerType');
+const Section = require('../models/section');
 
 class GameController {
     constructor(webSocketService) {
         this.webSocketService = webSocketService;
+        this.errorMessages = {
+            invalidCode: 'Geçersiz veya kullanılmış kod',
+            codeRequired: 'Kod gerekli',
+            invalidData: 'Geçersiz veri formatı',
+            serverError: 'Sunucu hatası',
+            gameNotFound: 'Oyun bulunamadı',
+            gameCompleted: 'Oyun zaten tamamlanmış',
+            gameExpired: 'Oyun süresi dolmuş',
+            noAnswers: 'Cevap verisi bulunamadı'
+        };
+    }
+
+    // Kod doğrulama yardımcı fonksiyonu
+    async verifyCode(code) {
+        if (!code) {
+            return {
+                success: false,
+                message: this.errorMessages.codeRequired
+            };
+        }
+
+        const userCode = await UserCode.findOne({ code, isUsed: false });
+        if (!userCode) {
+            return {
+                success: false,
+                message: this.errorMessages.invalidCode
+            };
+        }
+
+        return {
+            success: true,
+            userCode: userCode
+        };
     }
 
     // Kodu doğrula ve oyuna başlama izni ver
     async verifyGameCode(req, res) {
         try {
             const { code } = req.body;
+            console.log('Gelen kod:', code);
 
             if (!code) {
+                console.log('Kod boş geldi');
                 return res.status(400).json({
                     success: false,
-                    message: 'Kod gerekli'
+                    message: this.errorMessages.codeRequired
                 });
             }
 
             const userCode = await UserCode.findOne({ code, isUsed: false });
+            console.log('Veritabanında bulunan kod:', userCode);
 
             if (!userCode) {
+                console.log('Kod bulunamadı veya kullanılmış');
                 return res.status(400).json({
                     success: false,
-                    message: 'Geçersiz veya kullanılmış kod'
+                    message: this.errorMessages.invalidCode
                 });
             }
 
-            // Kodu henüz kullanılmış olarak işaretleme
-            // Oyun sonuçları geldiğinde işaretlenecek
-            
+            // Kodu kullanılmış olarak işaretle
+            userCode.isUsed = true;
+            await userCode.save();
+            console.log('Kod kullanılmış olarak işaretlendi');
+
+            // Sabit bölümleri döndür
             res.status(200).json({
                 success: true,
-                message: 'Kod doğrulandı, oyun başlayabilir'
+                message: 'Kod doğrulandı',
+                sections: [
+                    { name: 'Bölüm 1' },
+                    { name: 'Bölüm 2' },
+                    { name: 'Bölüm 3' }
+                ]
             });
         } catch (error) {
             console.error('Kod doğrulama hatası:', error);
             res.status(500).json({
                 success: false,
-                message: 'Kod doğrulanırken bir hata oluştu'
+                message: this.errorMessages.serverError
             });
         }
     }
@@ -90,19 +136,14 @@ class GameController {
     async registerGame(req, res) {
         try {
             const { playerName, code } = req.body;
+            const verificationResult = await this.verifyCode(code);
 
-            // Kodu bul ve kullanılmış olarak işaretle
-            const userCode = await UserCode.findOne({ code, isUsed: false });
-            if (!userCode) {
-                return res.status(400).json({
-                    success: false,
-                    message: 'Geçersiz veya kullanılmış kod'
-                });
+            if (!verificationResult.success) {
+                return res.status(400).json(verificationResult);
             }
 
             let playerAnswers = [];
             let totalScore = 0;
-
             const questionsMap = {};
 
             for (let key in req.body) {
@@ -146,8 +187,8 @@ class GameController {
             await newGame.save();
 
             // Kodu kullanılmış olarak işaretle
-            userCode.isUsed = true;
-            await userCode.save();
+            verificationResult.userCode.isUsed = true;
+            await verificationResult.userCode.save();
 
             // WebSocket üzerinden tüm oyunları gönder
             const allGames = await Game.find().sort({ date: -1 });
@@ -164,7 +205,10 @@ class GameController {
             console.log('Yeni veri kaydedildi ve istemcilere gönderildi.');
         } catch (error) {
             console.error('Oyun kaydedilirken hata oluştu:', error);
-            res.status(500).json({ error: 'Sunucu hatası' });
+            res.status(500).json({ 
+                success: false,
+                message: this.errorMessages.serverError 
+            });
         }
     }
 
@@ -317,113 +361,39 @@ class GameController {
                 status: "-1",
                 message: "Sunucu hatası"
             });
-        }
+        }1
     }
 
-    // Kod doğrulama ve bölüm bilgisi
+    // Kodu doğrula ve bölümleri getir (eski fonksiyon - artık kullanılmıyor)
     async verifyCodeAndGetSections(req, res) {
-        try {
-            console.log('Gelen istek body:', req.body);
-            console.log('Gelen form verisi:', req.form);
-            console.log('Content-Type:', req.headers['content-type']);
-            
-            const { code } = req.body;
-            console.log('Çıkarılan kod:', code);
-            
-            if (!code) {
-                console.log('Kod bulunamadı');
-                return res.status(400).json({
-                    success: false,
-                    message: "Kod gerekli"
-                });
-            }
-
-            // MongoDB'de kodu ara
-            const userCode = await UserCode.findOne({ code, isUsed: false });
-            console.log('MongoDB sorgusu sonucu:', userCode);
-            
-            if (!userCode) {
-                console.log('Geçersiz veya kullanılmış kod');
-                return res.status(400).json({
-                    success: false,
-                    sections: "-1",
-                    message: "Geçersiz veya kullanılmış kod"
-                });
-            }
-
-            console.log('Kod doğrulandı, bölüm bilgileri gönderiliyor');
-            res.status(200).json({
-                success: true,
-                sections: "1;2;3",
-                message: "Kod doğrulandı"
-            });
-        } catch (error) {
-            console.error('Kod doğrulama hatası:', error);
-            res.status(500).json({
-                success: false,
-                sections: "-1",
-                message: "Sunucu hatası"
-            });
-        }
+        return this.verifyGameCode(req, res);
     }
 
     // Oyun sonucu kaydetme
     async registerGameResult(req, res) {
         try {
-            console.log('Gelen ham veri:', req.body);
-            
-            // Gelen veriyi kontrol et
-            if (!req.body || typeof req.body !== 'object') {
+            const { data } = req.body;
+            console.log('Gelen veri:', data);
+
+            if (!data || !data.playerCode || !data.section || !data.answers || !Array.isArray(data.answers)) {
                 console.log('Geçersiz veri formatı');
                 return res.status(400).json({
                     success: false,
-                    message: "Geçersiz veri formatı"
+                    message: this.errorMessages.invalidData
                 });
             }
 
-            // data alanını kontrol et
-            if (!req.body.data) {
-                console.log('Data alanı bulunamadı');
-                return res.status(400).json({
-                    success: false,
-                    message: "Data alanı gerekli"
-                });
-            }
-
-            let gameResult;
-            try {
-                gameResult = typeof req.body.data === 'string' ? JSON.parse(req.body.data) : req.body.data;
-            } catch (error) {
-                console.error('JSON parse hatası:', error);
-                return res.status(400).json({
-                    success: false,
-                    message: "Geçersiz JSON formatı"
-                });
-            }
-
-            console.log('Parse edilmiş veri:', gameResult);
-
-            // Gerekli alanları kontrol et
-            if (!gameResult.playerCode || !gameResult.section || !gameResult.answers || !Array.isArray(gameResult.answers)) {
-                console.log('Eksik veya hatalı veri yapısı:', gameResult);
-                return res.status(400).json({
-                    success: false,
-                    message: "Eksik veya hatalı veri yapısı"
-                });
-            }
-
-            // Kodu kontrol et
-            const userCode = await UserCode.findOne({ code: gameResult.playerCode, isUsed: false });
+            const userCode = await UserCode.findOne({ code: data.playerCode });
             if (!userCode) {
-                console.log('Geçersiz veya kullanılmış kod:', gameResult.playerCode);
+                console.log('Kod bulunamadı');
                 return res.status(400).json({
                     success: false,
-                    message: "Geçersiz veya kullanılmış kod"
+                    message: this.errorMessages.invalidCode
                 });
             }
 
             // Cevapları işle
-            const processedAnswers = gameResult.answers.map(answer => {
+            const processedAnswers = data.answers.map(answer => {
                 // Eksik alanları kontrol et ve varsayılan değerler ata
                 return {
                     questionId: answer.questionId || '-',
@@ -452,8 +422,8 @@ class GameController {
 
             // Yeni oyun kaydı oluştur
             const newGame = new Game({
-                playerCode: gameResult.playerCode,
-                section: gameResult.section,
+                playerCode: data.playerCode,
+                section: data.section,
                 answers: processedAnswers,
                 totalScore: totalScore,
                 date: new Date()
@@ -478,10 +448,10 @@ class GameController {
             });
 
         } catch (error) {
-            console.error('Oyun sonucu kaydetme hatası:', error);
+            console.error('Sonuç kaydetme hatası:', error);
             res.status(500).json({
                 success: false,
-                message: error.message || "Sunucu hatası"
+                message: this.errorMessages.serverError
             });
         }
     }
