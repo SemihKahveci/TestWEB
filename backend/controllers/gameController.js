@@ -20,49 +20,7 @@ class GameController {
         };
     }
 
-    // Kod doğrulama ve bölümleri getir
-    async verifyGameCode(req, res) {
-        try {
-            const { code } = req.body;
-            console.log('Gelen kod:', code);
-
-            if (!code) {
-                return res.status(400).json({
-                    success: false,
-                    message: this.errorMessages.codeRequired
-                });
-            }
-
-            const userCode = await UserCode.findOne({ code, isUsed: false });
-            if (!userCode) {
-                return res.status(400).json({
-                    success: false,
-                    message: this.errorMessages.invalidCode
-                });
-            }
-
-            // Kodu kullanılmış olarak işaretle
-            userCode.isUsed = true;
-            await userCode.save();
-
-            res.status(200).json({
-                success: true,
-                message: 'Kod doğrulandı',
-                sections: [
-                    { name: 'Bölüm 1' },
-                    { name: 'Bölüm 2' },
-                    { name: 'Bölüm 3' }
-                ]
-            });
-        } catch (error) {
-            console.error('Kod doğrulama hatası:', error);
-            res.status(500).json({
-                success: false,
-                message: this.errorMessages.serverError
-            });
-        }
-    }
-
+   
     // Sonuçları getir
     async getResults(req, res) {
         try {
@@ -157,26 +115,6 @@ class GameController {
 
         } catch (error) {
             console.error('Sonuç kaydetme hatası:', error);
-            res.status(500).json({
-                success: false,
-                message: this.errorMessages.serverError
-            });
-        }
-    }
-
-    // Kodları listele
-    async listCodes(req, res) {
-        try {
-            const codes = await UserCode.find({ isUsed: false })
-                .sort({ createdAt: -1 });
-
-            res.status(200).json({
-                success: true,
-                codes,
-                message: 'Kodlar başarıyla listelendi'
-            });
-        } catch (error) {
-            console.error('Kodları listeleme hatası:', error);
             res.status(500).json({
                 success: false,
                 message: this.errorMessages.serverError
