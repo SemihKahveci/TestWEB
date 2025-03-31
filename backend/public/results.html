@@ -221,16 +221,18 @@
                     method: 'DELETE'
                 });
                 const data = await response.json();
+                console.log('Silme işlemi yanıtı:', data);
 
                 if (data.success) {
                     document.getElementById('resultsTable').innerHTML = '';
                     alert('Tüm sonuçlar başarıyla silindi.');
                 } else {
+                    console.error('Silme işlemi başarısız:', data.message);
                     alert('Sonuçlar silinirken bir hata oluştu: ' + data.message);
                 }
             } catch (error) {
                 console.error('Sonuçları silerken hata:', error);
-                alert('Sonuçlar silinirken bir hata oluştu.');
+                alert('Sunucu ile iletişim kurulurken bir hata oluştu. Lütfen tekrar deneyin.');
             }
         }
 
