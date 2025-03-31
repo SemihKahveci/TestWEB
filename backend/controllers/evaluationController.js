@@ -1,170 +1,150 @@
 const EvaluationResult = require('../models/evaluationResult');
-const PDFDocument = require('pdfkit');
+const puppeteer = require('puppeteer');
+const htmlPdf = require('html-pdf-node');
 const fs = require('fs');
 const path = require('path');
 
-class EvaluationController {
+const evaluationController = {
     async getEvaluationById(req, res) {
         try {
-            const evaluation = await EvaluationResult.findOne({ id: req.params.id });
+            const { id } = req.params;
+            console.log('Aranan ID:', id);
+
+            const evaluation = await EvaluationResult.findOne({ id: id });
+            console.log('Bulunan değerlendirme:', evaluation);
+
             if (!evaluation) {
-                return res.status(404).json({ message: 'Değerlendirme bulunamadı' });
+                return res.status(404).json({ error: 'Değerlendirme bulunamadı' });
             }
+
             res.json(evaluation);
         } catch (error) {
-            res.status(500).json({ message: 'Sunucu hatası', error: error.message });
+            console.error('Değerlendirme getirme hatası:', error);
+            res.status(500).json({ error: 'Değerlendirme yüklenirken bir hata oluştu' });
         }
-    }
+    },
 
-    async generatePDF(req, res) {
+    generatePDF: async (req, res) => {
         try {
-            const evaluation = await EvaluationResult.findOne({ id: req.params.id });
+            const { id } = req.params;
+            const selectedSections = req.body;
+            console.log('PDF oluşturulacak ID:', id);
+            console.log('Seçilen bölümler:', selectedSections);
+
+            const evaluation = await EvaluationResult.findOne({ id: id });
             if (!evaluation) {
                 return res.status(404).json({ message: 'Değerlendirme bulunamadı' });
             }
 
-            // PDF dosya adı
-            const fileName = `degerlendirme_${evaluation.id}_${Date.now()}.pdf`;
-            const filePath = path.join(__dirname, '..', fileName);
-            
-            // PDF oluştur
-            const doc = new PDFDocument({
-                size: 'A4',
-                margin: 50,
-                font: 'Helvetica'
-            });
-            
-            // PDF'i dosyaya yaz
-            doc.pipe(fs.createWriteStream(filePath));
-            
-            // Başlık
-            doc.fontSize(20)
-               .text('Değerlendirme Raporu', { align: 'center' })
-               .moveDown();
-            
-            // Değerlendirme bilgileri
-            doc.fontSize(14)
-               .text(`Değerlendirme ID: ${evaluation.id}`)
-               .text(`Tarih: ${new Date(evaluation.createdAt).toLocaleDateString('tr-TR')}`)
-               .moveDown();
-            
-            // Genel değerlendirme
-            if (evaluation.generalEvaluation) {
-                doc.fontSize(16)
-                   .text('Genel Değerlendirme')
-                   .moveDown(0.5)
-                   .fontSize(12)
-                   .text(evaluation.generalEvaluation)
-                   .moveDown();
-            }
-
-            // Güçlü yönler
-            if (evaluation.strengths && evaluation.strengths.length > 0) {
-                doc.fontSize(16)
-                   .text('Güçlü Yönler')
-                   .moveDown(0.5);
-                
-                evaluation.strengths.forEach((strength, index) => {
-                    doc.fontSize(14)
-                       .text(`${index + 1}. ${strength.title}`)
-                       .moveDown(0.5)
-                       .fontSize(12)
-                       .text(strength.description)
-                       .moveDown();
-                });
-            }
-
-            // Gelişim alanları
-            if (evaluation.development && evaluation.development.length > 0) {
-                doc.fontSize(16)
-                   .text('Gelişim Alanları')
-                   .moveDown(0.5);
-                
-                evaluation.development.forEach((dev, index) => {
-                    doc.fontSize(14)
-                       .text(`${index + 1}. ${dev.title}`)
-                       .moveDown(0.5)
-                       .fontSize(12)
-                       .text(dev.description)
-                       .moveDown();
-                });
-            }
-
-            // Mülakat soruları
-            if (evaluation.interviewQuestions && evaluation.interviewQuestions.length > 0) {
-                doc.fontSize(16)
-                   .text('Mülakat Soruları')
-                   .moveDown(0.5);
-                
-                evaluation.interviewQuestions.forEach((category, index) => {
-                    doc.fontSize(14)
-                       .text(`${index + 1}. ${category.category}`)
-                       .moveDown(0.5);
+            // HTML içeriğini oluştur
+            const htmlContent = `
+                <!DOCTYPE html>
+                <html>
+                <head>
+                    <meta charset="UTF-8">
+                    <style>
+                        body { font-family: Arial, sans-serif; padding: 20px; }
+                        h1 { text-align: center; }
+                        h2 { color: #333; }
+                        .section { margin-bottom: 20px; }
+                        ul { list-style-type: disc; }
+                    </style>
+                </head>
+                <body>
+                    <h1>Değerlendirme Raporu</h1>
                     
-                    category.questions.forEach((q, qIndex) => {
-                        doc.fontSize(12)
-                           .text(`${qIndex + 1}. ${q.mainQuestion}`);
-                        
-                        if (q.followUpQuestions && q.followUpQuestions.length > 0) {
-                            doc.fontSize(10)
-                               .text('Alt Sorular:')
-                               .moveDown(0.5);
-                            
-                            q.followUpQuestions.forEach((fq, fqIndex) => {
-                                doc.text(`• ${fq}`)
-                                   .moveDown(0.5);
-                            });
-                        }
-                        doc.moveDown();
-                    });
-                });
-            }
+                    ${selectedSections.generalEvaluation ? `
+                    <div class="section">
+                        <h2>Genel Değerlendirme</h2>
+                        <p>${evaluation.generalEvaluation || 'Genel değerlendirme bulunamadı.'}</p>
+                    </div>
+                    ` : ''}
 
-            // Gelişim önerileri
-            if (evaluation.developmentSuggestions && evaluation.developmentSuggestions.length > 0) {
-                doc.fontSize(16)
-                   .text('Gelişim Önerileri')
-                   .moveDown(0.5);
-                
-                evaluation.developmentSuggestions.forEach((suggestion, index) => {
-                    doc.fontSize(14)
-                       .text(`${index + 1}. ${suggestion.title}`)
-                       .moveDown(0.5)
-                       .fontSize(12)
-                       .text(`Alan: ${suggestion.area}`)
-                       .text(`Hedef: ${suggestion.target}`)
-                       .moveDown(0.5)
-                       .text('Öneriler:');
-                    
-                    suggestion.suggestions.forEach((s, sIndex) => {
-                        doc.text(`• ${s.title}: ${s.content}`)
-                           .moveDown(0.5);
-                    });
-                    doc.moveDown();
-                });
-            }
-            
-            // PDF'i sonlandır
-            doc.end();
-            
-            // PDF oluşturulduktan sonra gönder
-            res.download(filePath, fileName, (err) => {
-                if (err) {
-                    console.error('PDF gönderme hatası:', err);
+                    ${selectedSections.strengths ? `
+                    <div class="section">
+                        <h2>Güçlü Yönler</h2>
+                        <ul>
+                            ${(evaluation.strengths || []).map(strength => `<li>${strength.title}: ${strength.description}</li>`).join('')}
+                        </ul>
+                    </div>
+                    ` : ''}
+
+                    ${selectedSections.development ? `
+                    <div class="section">
+                        <h2>Gelişim Alanları</h2>
+                        <ul>
+                            ${(evaluation.development || []).map(area => `<li>${area.title}: ${area.description}</li>`).join('')}
+                        </ul>
+                    </div>
+                    ` : ''}
+
+                    ${selectedSections.interviewQuestions ? `
+                    <div class="section">
+                        <h2>Mülakat Soruları</h2>
+                        <ul>
+                            ${(evaluation.interviewQuestions || []).map(category => `
+                                <li>${category.category}
+                                    <ul>
+                                        ${category.questions.map(q => `
+                                            <li>${q.mainQuestion}
+                                                <ul>
+                                                    ${(q.followUpQuestions || []).map(fq => `<li>${fq}</li>`).join('')}
+                                                </ul>
+                                            </li>
+                                        `).join('')}
+                                    </ul>
+                                </li>
+                            `).join('')}
+                        </ul>
+                    </div>
+                    ` : ''}
+
+                    ${selectedSections.developmentSuggestions ? `
+                    <div class="section">
+                        <h2>Gelişim Önerileri</h2>
+                        <ul>
+                            ${(evaluation.developmentSuggestions || []).map(suggestion => `
+                                <li>${suggestion.title}
+                                    <ul>
+                                        <li>Alan: ${suggestion.area}</li>
+                                        <li>Hedef: ${suggestion.target}</li>
+                                        <li>Öneriler:
+                                            <ul>
+                                                ${suggestion.suggestions.map(s => `<li>${s.title}: ${s.content}</li>`).join('')}
+                                            </ul>
+                                        </li>
+                                    </ul>
+                                </li>
+                            `).join('')}
+                        </ul>
+                    </div>
+                    ` : ''}
+                </body>
+                </html>
+            `;
+
+            const options = {
+                format: 'A4',
+                margin: {
+                    top: '20px',
+                    right: '20px',
+                    bottom: '20px',
+                    left: '20px'
                 }
-                // Dosyayı sil
-                fs.unlink(filePath, (err) => {
-                    if (err) {
-                        console.error('Dosya silme hatası:', err);
-                    }
-                });
-            });
+            };
 
+            // PDF oluştur
+            const file = await htmlPdf.generatePdf({ content: htmlContent }, options);
+
+            // PDF'i indir
+            res.setHeader('Content-Type', 'application/pdf');
+            res.setHeader('Content-Disposition', `attachment; filename=evaluation_${evaluation.id}.pdf`);
+            res.send(file);
         } catch (error) {
             console.error('PDF oluşturma hatası:', error);
-            res.status(500).json({ error: 'PDF oluşturulurken bir hata oluştu' });
+            res.status(500).json({ message: 'PDF oluşturulurken bir hata oluştu' });
         }
     }
-}
+};
 
-module.exports = new EvaluationController();
+module.exports = evaluationController;
