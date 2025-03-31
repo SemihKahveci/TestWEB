@@ -3,7 +3,12 @@ const puppeteer = require('puppeteer');
 const htmlPdf = require('html-pdf-node');
 const fs = require('fs');
 const path = require('path');
+const puppeteer = require('puppeteer');
 
+// Puppeteer'ı başlat
+const browser = await puppeteer.launch({
+    args: ['--no-sandbox', '--disable-setuid-sandbox']
+});
 const evaluationController = {
     async getEvaluationById(req, res) {
         try {
