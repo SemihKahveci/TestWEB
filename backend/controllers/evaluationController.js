@@ -1,6 +1,7 @@
 const Evaluation = require('../models/evaluation');
-const pdf = require('html-pdf-node');
-const options = { format: 'A4' };
+const PDFDocument = require('pdfkit');
+const fs = require('fs');
+const path = require('path');
 
 class EvaluationController {
     async getEvaluationById(req, res) {
@@ -22,53 +23,58 @@ class EvaluationController {
                 return res.status(404).json({ message: 'Değerlendirme bulunamadı' });
             }
 
-            // HTML içeriği oluştur
-            const htmlContent = `
-                <!DOCTYPE html>
-                <html>
-                <head>
-                    <meta charset="UTF-8">
-                    <style>
-                        body {
-                            font-family: Arial, sans-serif;
-                            line-height: 1.6;
-                            padding: 20px;
-                        }
-                        h1 { text-align: center; font-size: 24px; margin-bottom: 30px; }
-                        h2 { font-size: 20px; margin-top: 20px; }
-                        h3 { font-size: 16px; margin-top: 15px; }
-                        p { margin-bottom: 10px; }
-                        ul { margin-left: 20px; }
-                        li { margin-bottom: 5px; }
-                        .section { margin-bottom: 20px; }
-                    </style>
-                </head>
-                <body>
-                    <h1>Değerlendirme Raporu</h1>
-                    
-                    <div class="section">
-                        <h2>Değerlendirme Bilgileri</h2>
-                        <p><strong>ID:</strong> ${evaluation._id}</p>
-                        <p><strong>Tarih:</strong> ${new Date(evaluation.createdAt).toLocaleDateString('tr-TR')}</p>
-                    </div>
-
-                    ${evaluation.results.map((result, index) => `
-                        <div class="section">
-                            <h2>${index + 1}. ${result.title}</h2>
-                            <p>${result.content}</p>
-                        </div>
-                    `).join('')}
-                </body>
-                </html>
-            `;
-
-            // PDF oluştur
-            const file = await pdf.generatePdf({ content: htmlContent }, options);
+            // PDF dosya adı
+            const fileName = `degerlendirme_${evaluation._id}_${Date.now()}.pdf`;
+            const filePath = path.join(__dirname, '..', fileName);
             
-            // PDF'i gönder
-            res.setHeader('Content-Type', 'application/pdf');
-            res.setHeader('Content-Disposition', `attachment; filename=evaluation-${evaluation._id}.pdf`);
-            res.send(file);
+            // PDF oluştur
+            const doc = new PDFDocument({
+                size: 'A4',
+                margin: 50,
+                font: 'Helvetica'
+            });
+            
+            // PDF'i dosyaya yaz
+            doc.pipe(fs.createWriteStream(filePath));
+            
+            // Başlık
+            doc.fontSize(20)
+               .text('Değerlendirme Raporu', { align: 'center' })
+               .moveDown();
+            
+            // Değerlendirme bilgileri
+            doc.fontSize(14)
+               .text(`Değerlendirme ID: ${evaluation._id}`)
+               .text(`Tarih: ${new Date(evaluation.createdAt).toLocaleDateString('tr-TR')}`)
+               .moveDown();
+            
+            // Seçili başlıkları ekle
+            evaluation.results.forEach((result, index) => {
+                if (result.isSelected) {
+                    doc.fontSize(16)
+                       .text(`${index + 1}. ${result.title}`)
+                       .moveDown(0.5)
+                       .fontSize(12)
+                       .text(result.content)
+                       .moveDown();
+                }
+            });
+            
+            // PDF'i sonlandır
+            doc.end();
+            
+            // PDF oluşturulduktan sonra gönder
+            res.download(filePath, fileName, (err) => {
+                if (err) {
+                    console.error('PDF gönderme hatası:', err);
+                }
+                // Dosyayı sil
+                fs.unlink(filePath, (err) => {
+                    if (err) {
+                        console.error('Dosya silme hatası:', err);
+                    }
+                });
+            });
 
         } catch (error) {
             console.error('PDF oluşturma hatası:', error);
