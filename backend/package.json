@@ -6,6 +6,9 @@
   "author": "",
   "license": "ISC",
   "description": "",
+  "engines": {
+    "node": "18.x"
+  },
   "dependencies": {
     "express": "^4.21.2",
     "html-pdf-node": "^1.0.8",
