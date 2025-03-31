@@ -1,40 +1,26 @@
-const EvaluationResult = require('../models/evaluationResult');
+const Evaluation = require('../models/evaluation');
 const pdf = require('html-pdf-node');
 const options = { format: 'A4' };
 
 class EvaluationController {
     async getEvaluationById(req, res) {
         try {
-            const { id } = req.params;
-            console.log('Aranan ID:', id);
-
-            const evaluation = await EvaluationResult.findOne({ id: id });
-            console.log('Bulunan değerlendirme:', evaluation);
-
+            const evaluation = await Evaluation.findById(req.params.id);
             if (!evaluation) {
-                return res.status(404).json({ error: 'Değerlendirme bulunamadı' });
+                return res.status(404).json({ message: 'Değerlendirme bulunamadı' });
             }
-
             res.json(evaluation);
         } catch (error) {
-            console.error('Değerlendirme getirme hatası:', error);
-            res.status(500).json({ error: 'Değerlendirme yüklenirken bir hata oluştu' });
+            res.status(500).json({ message: 'Sunucu hatası', error: error.message });
         }
     }
 
     async generatePDF(req, res) {
         try {
-            const { id } = req.params;
-            const selectedSections = req.body;
-            console.log('PDF oluşturulacak ID:', id);
-            console.log('Seçilen bölümler:', selectedSections);
-
-            const evaluation = await EvaluationResult.findOne({ id: id });
+            const evaluation = await Evaluation.findById(req.params.id);
             if (!evaluation) {
-                return res.status(404).json({ error: 'Değerlendirme bulunamadı' });
+                return res.status(404).json({ message: 'Değerlendirme bulunamadı' });
             }
-
-            console.log('Değerlendirme bulundu, PDF oluşturuluyor...');
 
             // HTML içeriği oluştur
             const htmlContent = `
@@ -60,96 +46,33 @@ class EvaluationController {
                 <body>
                     <h1>Değerlendirme Raporu</h1>
                     
-                    ${selectedSections.generalEvaluation ? `
                     <div class="section">
-                        <h2>Genel Değerlendirme</h2>
-                        <p>${evaluation.generalEvaluation}</p>
+                        <h2>Değerlendirme Bilgileri</h2>
+                        <p><strong>ID:</strong> ${evaluation._id}</p>
+                        <p><strong>Tarih:</strong> ${new Date(evaluation.createdAt).toLocaleDateString('tr-TR')}</p>
                     </div>
-                    ` : ''}
 
-                    ${selectedSections.strengths ? `
-                    <div class="section">
-                        <h2>Güçlü Yönler</h2>
-                        ${evaluation.strengths.map(strength => `
-                            <div>
-                                <h3>${strength.title}</h3>
-                                <p>${strength.description}</p>
-                            </div>
-                        `).join('')}
-                    </div>
-                    ` : ''}
-
-                    ${selectedSections.development ? `
-                    <div class="section">
-                        <h2>Gelişim Alanları</h2>
-                        ${evaluation.development.map(dev => `
-                            <div>
-                                <h3>${dev.title}</h3>
-                                <p>${dev.description}</p>
-                            </div>
-                        `).join('')}
-                    </div>
-                    ` : ''}
-
-                    ${selectedSections.interviewQuestions ? `
-                    <div class="section">
-                        <h2>Mülakat Soruları</h2>
-                        ${evaluation.interviewQuestions.map(category => `
-                            <div>
-                                <h3>${category.category}</h3>
-                                ${category.questions.map(q => `
-                                    <div>
-                                        <p><strong>${q.mainQuestion}</strong></p>
-                                        ${q.followUpQuestions ? `
-                                            <ul>
-                                                ${q.followUpQuestions.map(fq => `<li>${fq}</li>`).join('')}
-                                            </ul>
-                                        ` : ''}
-                                    </div>
-                                `).join('')}
-                            </div>
-                        `).join('')}
-                    </div>
-                    ` : ''}
-
-                    ${selectedSections.developmentSuggestions ? `
-                    <div class="section">
-                        <h2>Gelişim Önerileri</h2>
-                        ${evaluation.developmentSuggestions.map(suggestion => `
-                            <div>
-                                <h3>${suggestion.title}</h3>
-                                <p><strong>Alan:</strong> ${suggestion.area}</p>
-                                <p><strong>Hedef:</strong> ${suggestion.target}</p>
-                                <h4>Öneriler:</h4>
-                                <ul>
-                                    ${suggestion.suggestions.map(s => `
-                                        <li>
-                                            <strong>${s.title}:</strong> ${s.content}
-                                        </li>
-                                    `).join('')}
-                                </ul>
-                            </div>
-                        `).join('')}
-                    </div>
-                    ` : ''}
+                    ${evaluation.results.map((result, index) => `
+                        <div class="section">
+                            <h2>${index + 1}. ${result.title}</h2>
+                            <p>${result.content}</p>
+                        </div>
+                    `).join('')}
                 </body>
                 </html>
             `;
 
-            console.log('HTML içeriği oluşturuldu, PDF oluşturuluyor...');
+            // PDF oluştur
             const file = await pdf.generatePdf({ content: htmlContent }, options);
             
-            console.log('PDF oluşturuldu, gönderiliyor...');
+            // PDF'i gönder
             res.setHeader('Content-Type', 'application/pdf');
-            res.setHeader('Content-Disposition', `attachment; filename=evaluation-${id}.pdf`);
+            res.setHeader('Content-Disposition', `attachment; filename=evaluation-${evaluation._id}.pdf`);
             res.send(file);
 
         } catch (error) {
             console.error('PDF oluşturma hatası:', error);
-            res.status(500).json({ 
-                error: 'PDF oluşturulurken bir hata oluştu',
-                details: error.message 
-            });
+            res.status(500).json({ error: 'PDF oluşturulurken bir hata oluştu' });
         }
     }
 }
