@@ -18,17 +18,12 @@ const userCodeSchema = new mongoose.Schema({
 
 // Kod oluşturma fonksiyonu
 userCodeSchema.statics.generateUniqueCode = async function() {
-    const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-    const codeLength = 6;
     let isUnique = false;
     let code;
 
     while (!isUnique) {
-        code = '';
-        for (let i = 0; i < codeLength; i++) {
-            code += characters.charAt(Math.floor(Math.random() * characters.length));
-        }
-
+        code = Math.random().toString(36).substring(2, 15).toUpperCase();
+        
         // Kodun benzersiz olup olmadığını kontrol et
         const existingCode = await this.findOne({ code });
         if (!existingCode) {

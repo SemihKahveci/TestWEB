@@ -152,10 +152,10 @@
             </table>
         </div>
     </div>
-
     <script>
         // WebSocket bağlantısı
-        const ws = new WebSocket(`ws://${window.location.hostname}:5001`);
+        const wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+        const ws = new WebSocket(`${wsProtocol}//${window.location.host}`);
         
         ws.onopen = () => {
             console.log('WebSocket bağlantısı kuruldu');
@@ -182,7 +182,7 @@
         // Yeni kod oluştur
         async function generateCode() {
             try {
-                const response = await fetch('/api/codes/generate', {
+                const response = await fetch('/api/generate-code', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'
@@ -207,7 +207,7 @@
         // Aktif kodları getir
         async function loadCodes() {
             try {
-                const response = await fetch('/api/codes/list');
+                const response = await fetch('/api/active-codes');
                 const data = await response.json();
 
                 if (data.success) {

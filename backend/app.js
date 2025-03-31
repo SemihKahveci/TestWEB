@@ -6,6 +6,7 @@ const path = require('path');
 const WebSocket = require('ws');
 const GameController = require('./controllers/gameController');
 const CodeController = require('./controllers/codeController');
+const UserCode = require('./models/userCode');
 
 const app = express();
 const port = process.env.PORT || 5000;
@@ -28,9 +29,14 @@ const server = app.listen(port, () => {
 const wss = new WebSocket.Server({ server });
 const gameController = new GameController(wss);
 const codeController = new CodeController();
+
 // WebSocket bağlantı yönetimi
 wss.on('connection', (ws) => {
     console.log('Yeni WebSocket bağlantısı');
+    
+    ws.on('message', (message) => {
+        console.log('WebSocket mesajı alındı:', message);
+    });
     
     ws.on('close', () => {
         console.log('WebSocket bağlantısı kapandı');

@@ -1,7 +1,8 @@
 const UserCode = require('../models/userCode');
 
 class CodeController {
-    constructor() {
+    constructor(wss) {
+        this.wss = wss;
         this.errorMessages = {
             serverError: 'Sunucu hatası',
             invalidCode: 'Geçersiz kod',
@@ -12,27 +13,14 @@ class CodeController {
     // Kod üretme
     async generateCode(req, res) {
         try {
-            const code = Math.random().toString(36).substring(2, 15).toUpperCase();
-            const newCode = new UserCode({
-                code,
-                isUsed: false,
-                createdAt: new Date()
-            });
-
+            const code = await UserCode.generateUniqueCode();
+            const newCode = new UserCode({ code });
             await newCode.save();
-            console.log('Yeni kod oluşturuldu:', code);
-
-            res.status(200).json({
-                success: true,
-                code,
-                message: 'Yeni kod başarıyla oluşturuldu'
-            });
+            
+            res.json({ success: true, code });
         } catch (error) {
             console.error('Kod oluşturma hatası:', error);
-            res.status(500).json({
-                success: false,
-                message: 'Kod oluşturulurken bir hata oluştu: ' + error.message
-            });
+            res.status(500).json({ success: false, error: 'Kod oluşturulurken bir hata oluştu' });
         }
     }
 
