@@ -7,8 +7,8 @@
   "license": "ISC",
   "description": "",
   "engines": {
-    "node": "18.19.0",
-    "npm": "9.8.1"
+    "node": "18.x",
+    "npm": "9.x"
   },
   
   "dependencies": {
