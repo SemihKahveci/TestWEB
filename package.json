@@ -3,7 +3,14 @@
     "cors": "^2.8.5",
     "dotenv": "^16.4.7",
     "mongoose": "^8.11.0",
-    "path": "^0.12.7"
+    "path": "^0.12.7",
+    "pdfkit": "^0.16.0",
+    "ws": "^8.18.1",
+    "html-pdf-node": "^1.0.7"    
+  },
+  "engines": {
+    "node": "18.x",
+    "npm": "9.x"
   },
   "scripts": {
     "start": "node ./backend/app.js"

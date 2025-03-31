@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Paneli</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .form-group {
+            margin-bottom: 1rem;
+        }
+        label {
+            display: block;
+            margin-bottom: 0.5rem;
+            color: #666;
+        }
+        input, select {
+            width: 100%;
+            padding: 0.5rem;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+        button {
+            padding: 0.75rem 1.5rem;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 1rem;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        button.danger {
+            background-color: #dc3545;
+        }
+        button.danger:hover {
+            background-color: #c82333;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        th, td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+        th {
+            background-color: #f8f9fa;
+            font-weight: bold;
+        }
+        tr:hover {
+            background-color: #f5f5f5;
+        }
+        .error {
+            color: #dc3545;
+            text-align: center;
+            margin-top: 1rem;
+            display: none;
+        }
+        .success {
+            color: #28a745;
+            text-align: center;
+            margin-top: 1rem;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Admin Paneli</h1>
+        
+        <form id="gameForm">
+            <div class="form-group">
+                <label for="playerName">Oyuncu Adı:</label>
+                <input type="text" id="playerName" required>
+            </div>
+            
+            <div id="answers">
+                <h3>Cevap 1</h3>
+                <div class="form-group">
+                    <label for="questionNumber1">Soru Numarası:</label>
+                    <input type="text" id="questionNumber1" required>
+                </div>
+                <div class="form-group">
+                    <label for="answerType11">Cevap Tipi 1:</label>
+                    <select id="answerType11" required>
+                        <option value="AKY">AKY</option>
+                        <option value="CY">CY</option>
+                        <option value="Y">Y</option>
+                        <option value="AY">AY</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="answerValue11">Cevap Değeri 1:</label>
+                    <input type="text" id="answerValue11" required>
+                </div>
+                <div class="form-group">
+                    <label for="answerType12">Cevap Tipi 2:</label>
+                    <select id="answerType12" required>
+                        <option value="AKY">AKY</option>
+                        <option value="CY">CY</option>
+                        <option value="Y">Y</option>
+                        <option value="AY">AY</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="answerValue12">Cevap Değeri 2:</label>
+                    <input type="text" id="answerValue12" required>
+                </div>
+                <div class="form-group">
+                    <label for="total1">Toplam:</label>
+                    <input type="number" id="total1" step="0.1" required>
+                </div>
+            </div>
+
+            <button type="button" onclick="addAnswer()">Yeni Cevap Ekle</button>
+            <button type="submit">Kaydet</button>
+        </form>
+
+        <div id="message" class="error"></div>
+        <div id="success" class="success"></div>
+
+        <h2>Mevcut Sonuçlar</h2>
+        <button onclick="deleteAllResults()" class="danger">Tüm Sonuçları Sil</button>
+        <div id="resultsTable"></div>
+    </div>
+
+    <script>
+        let answerCount = 1;
+
+        function addAnswer() {
+            answerCount++;
+            const answersDiv = document.getElementById('answers');
+            
+            const newAnswer = document.createElement('div');
+            newAnswer.innerHTML = `
+                <h3>Cevap ${answerCount}</h3>
+                <div class="form-group">
+                    <label for="questionNumber${answerCount}">Soru Numarası:</label>
+                    <input type="text" id="questionNumber${answerCount}" required>
+                </div>
+                <div class="form-group">
+                    <label for="answerType1${answerCount}">Cevap Tipi 1:</label>
+                    <select id="answerType1${answerCount}" required>
+                        <option value="AKY">AKY</option>
+                        <option value="CY">CY</option>
+                        <option value="Y">Y</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="answerValue1${answerCount}">Cevap Değeri 1:</label>
+                    <input type="text" id="answerValue1${answerCount}" required>
+                </div>
+                <div class="form-group">
+                    <label for="answerType2${answerCount}">Cevap Tipi 2:</label>
+                    <select id="answerType2${answerCount}" required>
+                        <option value="AKY">AKY</option>
+                        <option value="CY">CY</option>
+                        <option value="Y">Y</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="answerValue2${answerCount}">Cevap Değeri 2:</label>
+                    <input type="text" id="answerValue2${answerCount}" required>
+                </div>
+                <div class="form-group">
+                    <label for="total${answerCount}">Toplam:</label>
+                    <input type="number" id="total${answerCount}" step="0.1" required>
+                </div>
+            `;
+            
+            answersDiv.appendChild(newAnswer);
+        }
+
+        document.getElementById('gameForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const answers = [];
+            let totalScore = 0;
+            
+            for (let i = 1; i <= answerCount; i++) {
+                const answer = {
+                    questionNumber: document.getElementById(`questionNumber${i}`).value,
+                    answerType1: document.getElementById(`answerType1${i}`).value,
+                    answerType2: document.getElementById(`answerType2${i}`).value,
+                    answerValue1: document.getElementById(`answerValue1${i}`).value,
+                    answerValue2: document.getElementById(`answerValue2${i}`).value,
+                    total: parseFloat(document.getElementById(`total${i}`).value)
+                };
+                answers.push(answer);
+                totalScore += answer.total;
+            }
+            
+            const gameData = {
+                playerName: document.getElementById('playerName').value,
+                answers: answers,
+                totalScore: totalScore / answerCount
+            };
+
+            try {
+                const response = await fetch('/api/game', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(gameData)
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    showMessage('success', 'Oyun sonucu başarıyla eklendi');
+                    document.getElementById('gameForm').reset();
+                    fetchResults();
+                } else {
+                    showMessage('error', data.message);
+                }
+            } catch (error) {
+                showMessage('error', 'Oyun sonucu eklenirken bir hata oluştu');
+            }
+        });
+
+        async function fetchResults() {
+            try {
+                const response = await fetch('/api/games');
+                const games = await response.json();
+                
+                const table = document.createElement('table');
+                table.innerHTML = `
+                    <thead>
+                        <tr>
+                            <th>Oyuncu Adı</th>
+                            <th>Toplam Skor</th>
+                            <th>Tarih</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${games.map(game => `
+                            <tr>
+                                <td>${game.playerName}</td>
+                                <td>${game.totalScore.toFixed(2)}</td>
+                                <td>${new Date(game.date).toLocaleString('tr-TR')}</td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                `;
+
+                document.getElementById('resultsTable').innerHTML = '';
+                document.getElementById('resultsTable').appendChild(table);
+            } catch (error) {
+                showMessage('error', 'Sonuçlar alınırken bir hata oluştu');
+            }
+        }
+
+        async function deleteAllResults() {
+            if (!confirm('Tüm sonuçları silmek istediğinizden emin misiniz?')) {
+                return;
+            }
+
+            try {
+                const response = await fetch('/api/games', {
+                    method: 'DELETE'
+                });
+                const data = await response.json();
+
+                if (data.success) {
+                    showMessage('success', 'Tüm sonuçlar başarıyla silindi');
+                    document.getElementById('resultsTable').innerHTML = '';
+                } else {
+                    showMessage('error', data.message);
+                }
+            } catch (error) {
+                showMessage('error', 'Sonuçlar silinirken bir hata oluştu');
+            }
+        }
+
+        function showMessage(type, message) {
+            const messageDiv = document.getElementById(type);
+            messageDiv.textContent = message;
+            messageDiv.style.display = 'block';
+            
+            setTimeout(() => {
+                messageDiv.style.display = 'none';
+            }, 3000);
+        }
+
+        // Sayfa yüklendiğinde sonuçları getir
+        fetchResults();
+    </script>
+</body>
+</html> 
