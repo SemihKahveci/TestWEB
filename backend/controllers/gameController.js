@@ -10,13 +10,8 @@ class GameController {
         this.clients = new Set();
         this.errorMessages = {
             invalidCode: 'Geçersiz veya kullanılmış kod',
-            codeRequired: 'Kod gerekli',
             invalidData: 'Geçersiz veri formatı',
             serverError: 'Sunucu hatası',
-            gameNotFound: 'Oyun bulunamadı',
-            gameCompleted: 'Oyun zaten tamamlanmış',
-            gameExpired: 'Oyun süresi dolmuş',
-            noAnswers: 'Cevap verisi bulunamadı'
         };
     }
 

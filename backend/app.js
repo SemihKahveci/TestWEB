@@ -7,6 +7,7 @@ const WebSocket = require('ws');
 const GameController = require('./controllers/gameController');
 const CodeController = require('./controllers/codeController');
 const UserCode = require('./models/userCode');
+const evaluationController = require('./controllers/evaluationController');
 
 const app = express();
 const port = process.env.PORT || 5000;
@@ -17,9 +18,14 @@ app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
 
 // MongoDB bağlantısı
-mongoose.connect(process.env.MONGODB_URI)
-    .then(() => console.log('MongoDB bağlantısı başarılı'))
-    .catch(err => console.error('MongoDB bağlantı hatası:', err));
+mongoose.connect(process.env.MONGODB_URI + '/adminPanel', {
+    useNewUrlParser: true,
+    useUnifiedTopology: true
+}).then(() => {
+    console.log('MongoDB bağlantısı başarılı');
+}).catch((err) => {
+    console.error('MongoDB bağlantı hatası:', err);
+});
 
 // WebSocket sunucusu
 const server = app.listen(port, () => {
@@ -51,6 +57,10 @@ app.post('/api/register-result', gameController.registerGameResult.bind(gameCont
 app.get('/api/results', gameController.getResults.bind(gameController));
 app.delete('/api/results', gameController.deleteAllResults.bind(gameController));
 app.get('/api/check-status', gameController.checkServerStatus.bind(gameController));
+
+// Değerlendirme route'ları
+app.get('/api/evaluation/:id', evaluationController.getEvaluationById);
+app.post('/api/evaluation/:id/pdf', evaluationController.generatePDF);
 
 // Ana sayfa
 app.get('/', (req, res) => {

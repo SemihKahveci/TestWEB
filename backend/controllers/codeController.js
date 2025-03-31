@@ -6,7 +6,9 @@ class CodeController {
         this.errorMessages = {
             serverError: 'Sunucu hatası',
             invalidCode: 'Geçersiz kod',
-            codeRequired: 'Kod gerekli'
+            codeRequired: 'Kod gerekli',
+            gameCompleted: 'Oyun zaten tamamlanmış',
+            gameExpired: 'Oyun süresi dolmuş'
         };
     }
 
@@ -44,49 +46,65 @@ class CodeController {
         }
     }
 
-  // Kod doğrulama ve bölümleri getir
-  async verifyGameCode(req, res) {
-    try {
-        const { code } = req.body;
-        console.log('Gelen kod:', code);
+    // Kod doğrulama ve bölümleri getir
+    async verifyGameCode(req, res) {
+        try {
+            console.log('Gelen istek body:', req.body);
+            
+            // JSON verilerini kontrol et
+            if (!req.body || typeof req.body !== 'object') {
+                return res.status(400).json({
+                    success: false,
+                    message: 'Geçersiz veri formatı. JSON verisi bekleniyor.'
+                });
+            }
 
-        if (!code) {
-            return res.status(400).json({
+            const { code } = req.body;
+            console.log('Gelen kod:', code);
+
+            if (!code || typeof code !== 'string') {
+                return res.status(400).json({
+                    success: false,
+                    message: this.errorMessages.codeRequired
+                });
+            }
+
+            const userCode = await UserCode.findOne({ code });
+            if (!userCode) {
+                return res.status(400).json({
+                    success: false,
+                    message: this.errorMessages.invalidCode
+                });
+            }
+
+            if (userCode.isUsed) {
+                return res.status(400).json({
+                    success: false,
+                    message: this.errorMessages.gameCompleted
+                });
+            }
+
+            // Kodu kullanılmış olarak işaretle
+            userCode.isUsed = true;
+            await userCode.save();
+
+            res.status(200).json({
+                success: true,
+                message: 'Kod doğrulandı',
+                sections: [
+                    { name: '1' },
+                    { name: '2' },
+                    { name: '3' }
+                ]
+            });
+        } catch (error) {
+            console.error('Kod doğrulama hatası:', error);
+            res.status(500).json({
                 success: false,
-                message: this.errorMessages.codeRequired
+                message: this.errorMessages.serverError
             });
         }
-
-        const userCode = await UserCode.findOne({ code, isUsed: false });
-        if (!userCode) {
-            return res.status(400).json({
-                success: false,
-                message: this.errorMessages.invalidCode
-            });
-        }
-
-        // Kodu kullanılmış olarak işaretle
-        userCode.isUsed = true;
-        await userCode.save();
-
-        res.status(200).json({
-            success: true,
-            message: 'Kod doğrulandı',
-            sections: [
-                { name: 'Bölüm 1' },
-                { name: 'Bölüm 2' },
-                { name: 'Bölüm 3' }
-            ]
-        });
-    } catch (error) {
-        console.error('Kod doğrulama hatası:', error);
-        res.status(500).json({
-            success: false,
-            message: this.errorMessages.serverError
-        });
     }
-}
-
 }
 
 module.exports = CodeController; 
