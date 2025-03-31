@@ -37,9 +37,9 @@ wss.on('connection', (ws) => {
 });
 
 // API Routes
-app.post('/api/generate-code', gameController.generateCode.bind(gameController));
-app.get('/api/active-codes', gameController.listCodes.bind(gameController));
-app.post('/api/verify-code', gameController.verifyGameCode.bind(gameController));
+app.post('/api/generate-code', codeController.generateCode.bind(codeController));
+app.get('/api/active-codes', codeController.listCodes.bind(codeController));
+app.post('/api/verify-code', codeController.verifyCode.bind(codeController));
 app.post('/api/register-result', gameController.registerGameResult.bind(gameController));
 app.get('/api/results', gameController.getResults.bind(gameController));
 app.delete('/api/results', gameController.deleteAllResults.bind(gameController));

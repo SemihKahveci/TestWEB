@@ -164,32 +164,6 @@ class GameController {
         }
     }
 
-    // Kod üretme
-    async generateCode(req, res) {
-        try {
-            const code = Math.random().toString(36).substring(2, 15).toUpperCase();
-            const newCode = new UserCode({
-                code,
-                isUsed: false,
-                createdAt: new Date()
-            });
-
-            await newCode.save();
-
-            res.status(200).json({
-                success: true,
-                code,
-                message: 'Yeni kod oluşturuldu'
-            });
-        } catch (error) {
-            console.error('Kod oluşturma hatası:', error);
-            res.status(500).json({
-                success: false,
-                message: this.errorMessages.serverError
-            });
-        }
-    }
-
     // Kodları listele
     async listCodes(req, res) {
         try {
@@ -212,18 +186,7 @@ class GameController {
 
     // Sunucu durumu kontrolü
     async checkServerStatus(req, res) {
-        try {
-            res.status(200).json({
-                status: "1",
-                message: "Sunucu aktif"
-            });
-        } catch (error) {
-            console.error('Sunucu durumu kontrolünde hata:', error);
-            res.status(500).json({
-                status: "-1",
-                message: this.errorMessages.serverError
-            });
-        }
+        res.json({ status: 'online' });
     }
 
     // Cevap tiplerini ekle
@@ -259,76 +222,6 @@ class GameController {
             res.status(500).json({
                 success: false,
                 message: 'Cevap tipleri eklenirken hata oluştu'
-            });
-        }
-    }
-
-    // Test verilerini ekle
-    async addTestData(req, res) {
-        try {
-            // Önce mevcut test verilerini temizle
-            await Game.deleteMany({});
-
-            const testData = [
-                {
-                    playerName: "Test Oyuncu 1",
-                    answers: [
-                        {
-                            questionNumber: "1",
-                            answerType1: "AKY",
-                            answerType2: "CY",
-                            answerValue1: "Belirsizlikle karşılaştığında enerjisi artar.",
-                            answerValue2: "Belirsizlik halinde bile soğukkanlılığını korur ve ilerleme sağlar.",
-                            total: 8.5
-                        },
-                        {
-                            questionNumber: "2",
-                            answerType1: "CY",
-                            answerType2: "Y",
-                            answerValue1: "Belirsizlik halinde bile soğukkanlılığını korur ve ilerleme sağlar.",
-                            answerValue2: "Belirsizlik durumunda yeni çözümler üretir.",
-                            total: 7.2
-                        }
-                    ],
-                    totalScore: 7.85
-                },
-                {
-                    playerName: "Test Oyuncu 2",
-                    answers: [
-                        {
-                            questionNumber: "1",
-                            answerType1: "Y",
-                            answerType2: "AKY",
-                            answerValue1: "Belirsizlik durumunda yeni çözümler üretir.",
-                            answerValue2: "Belirsizlikle karşılaştığında enerjisi artar.",
-                            total: 6.8
-                        }
-                    ],
-                    totalScore: 6.8
-                }
-            ];
-
-            // Verileri veritabanına kaydet
-            for (const data of testData) {
-                const newGame = new Game(data);
-                await newGame.save();
-            }
-
-            // WebSocket üzerinden güncel verileri gönder
-            const allGames = await Game.find().sort({ date: -1 });
-            this.broadcastUpdate(allGames);
-
-            res.status(200).json({
-                success: true,
-                message: 'Test verileri başarıyla eklendi',
-                count: testData.length
-            });
-
-        } catch (error) {
-            console.error('Test verileri eklenirken hata:', error);
-            res.status(500).json({
-                success: false,
-                message: 'Test verileri eklenirken hata oluştu'
             });
         }
     }
