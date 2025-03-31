@@ -3,12 +3,7 @@ const puppeteer = require('puppeteer');
 const htmlPdf = require('html-pdf-node');
 const fs = require('fs');
 const path = require('path');
-const puppeteer = require('puppeteer');
 
-// Puppeteer'ı başlat
-const browser = await puppeteer.launch({
-    args: ['--no-sandbox', '--disable-setuid-sandbox']
-});
 const evaluationController = {
     async getEvaluationById(req, res) {
         try {
@@ -40,6 +35,11 @@ const evaluationController = {
             if (!evaluation) {
                 return res.status(404).json({ message: 'Değerlendirme bulunamadı' });
             }
+
+            // Puppeteer'ı başlat
+            const browser = await puppeteer.launch({
+                args: ['--no-sandbox', '--disable-setuid-sandbox']
+            });
 
             // HTML içeriğini oluştur
             const htmlContent = `
@@ -145,6 +145,9 @@ const evaluationController = {
             res.setHeader('Content-Type', 'application/pdf');
             res.setHeader('Content-Disposition', `attachment; filename=evaluation_${evaluation.id}.pdf`);
             res.send(file);
+
+            // Tarayıcıyı kapat
+            await browser.close();
         } catch (error) {
             console.error('PDF oluşturma hatası:', error);
             res.status(500).json({ message: 'PDF oluşturulurken bir hata oluştu' });
