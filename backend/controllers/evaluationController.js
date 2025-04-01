@@ -1,6 +1,5 @@
 const EvaluationResult = require('../models/evaluationResult');
 const puppeteer = require('puppeteer');
-const htmlPdf = require('html-pdf-node');
 const fs = require('fs');
 const path = require('path');
 
@@ -38,8 +37,11 @@ const evaluationController = {
 
             // Puppeteer'ı başlat
             const browser = await puppeteer.launch({
-                args: ['--no-sandbox', '--disable-setuid-sandbox']
+                args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage']
             });
+
+            // Yeni sayfa oluştur
+            const page = await browser.newPage();
 
             // HTML içeriğini oluştur
             const htmlContent = `
@@ -128,7 +130,11 @@ const evaluationController = {
                 </html>
             `;
 
-            const options = {
+            // HTML içeriğini sayfaya yükle
+            await page.setContent(htmlContent);
+
+            // PDF oluştur
+            const pdf = await page.pdf({
                 format: 'A4',
                 margin: {
                     top: '20px',
@@ -136,15 +142,12 @@ const evaluationController = {
                     bottom: '20px',
                     left: '20px'
                 }
-            };
-
-            // PDF oluştur
-            const file = await htmlPdf.generatePdf({ content: htmlContent }, options);
+            });
 
             // PDF'i indir
             res.setHeader('Content-Type', 'application/pdf');
             res.setHeader('Content-Disposition', `attachment; filename=evaluation_${evaluation.id}.pdf`);
-            res.send(file);
+            res.send(pdf);
 
             // Tarayıcıyı kapat
             await browser.close();
