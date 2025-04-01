@@ -2,11 +2,12 @@
   "dependencies": {
     "cors": "^2.8.5",
     "dotenv": "^16.4.7",
+    "express": "^4.21.2",
+    "html-pdf-node": "^1.0.7",
     "mongoose": "^8.11.0",
     "path": "^0.12.7",
     "pdfkit": "^0.16.0",
-    "ws": "^8.18.1",
-    "html-pdf-node": "^1.0.7"    
+    "ws": "^8.18.1"
   },
   "engines": {
     "node": "18.x",

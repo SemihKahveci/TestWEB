@@ -1,5 +1,5 @@
 const EvaluationResult = require('../models/evaluationResult');
-const puppeteer = require('puppeteer-core');
+const puppeteer = require('puppeteer');
 const htmlPdf = require('html-pdf-node');
 const fs = require('fs');
 const path = require('path');
