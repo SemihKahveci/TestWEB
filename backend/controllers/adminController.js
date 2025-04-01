@@ -5,11 +5,11 @@ const adminController = {
     login: async (req, res) => {
         const { username, password } = req.body;
         
-        // Basit bir admin kontrolü - gerçek uygulamada bu bilgiler .env dosyasında saklanmalı
-        if (username === 'andron' && password === 'andron2025') {
+        // Email ve şifre kontrolü
+        if (username === 'andron@andron' && password === 'andron2025') {
             res.json({ message: 'Giriş başarılı' });
         } else {
-            res.status(401).json({ message: 'Geçersiz kullanıcı adı veya şifre' });
+            res.status(401).json({ message: 'Geçersiz email veya şifre' });
         }
     },
 

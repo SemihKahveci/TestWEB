@@ -1,0 +1,406 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Paneli - Değerlendirme Verisi Yönetimi</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: #f8f9fa;
+        }
+        .admin-container {
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+            background-color: white;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        .alert {
+            display: none;
+            margin-top: 10px;
+        }
+        .section {
+            margin-bottom: 30px;
+            padding: 20px;
+            border: 1px solid #dee2e6;
+            border-radius: 5px;
+        }
+        .section-title {
+            margin-bottom: 20px;
+            color: #2c3e50;
+        }
+        .array-item {
+            background-color: #f8f9fa;
+            padding: 15px;
+            margin-bottom: 10px;
+            border-radius: 5px;
+        }
+        .btn-remove {
+            color: #dc3545;
+            cursor: pointer;
+            float: right;
+        }
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+        }
+        .header h2 {
+            margin: 0;
+            color: #333;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="admin-container">
+            <div class="header">
+                <h2>Admin Paneli</h2>
+                <div>
+                    <a href="/" class="btn btn-primary me-2">Ana Sayfaya Dön</a>
+                    <button id="logoutBtn" class="btn btn-danger">Çıkış Yap</button>
+                </div>
+            </div>
+
+            <!-- Veri Silme Bölümü -->
+            <div class="section">
+                <h3 class="section-title">Veri Silme</h3>
+                <div class="form-group">
+                    <label for="deleteId">Silinecek Değerlendirme ID</label>
+                    <div class="input-group">
+                        <input type="text" class="form-control" id="deleteId" placeholder="Örn: 1024">
+                        <button class="btn btn-danger" onclick="deleteEvaluation()">Sil</button>
+                    </div>
+                </div>
+                <div id="deleteAlert" class="alert"></div>
+            </div>
+
+            <!-- Yeni Veri Ekleme Bölümü -->
+            <div class="section">
+                <h3 class="section-title">Yeni Değerlendirme Ekle</h3>
+                <form id="evaluationForm">
+                    <div class="form-group">
+                        <label for="id">Değerlendirme ID</label>
+                        <input type="text" class="form-control" id="id" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="generalEvaluation">Genel Değerlendirme</label>
+                        <textarea class="form-control" id="generalEvaluation" rows="3" required></textarea>
+                    </div>
+
+                    <!-- Güçlü Yönler -->
+                    <div class="form-group">
+                        <label>Güçlü Yönler</label>
+                        <div id="strengthsContainer">
+                            <div class="array-item">
+                                <div class="form-group">
+                                    <input type="text" class="form-control" placeholder="Başlık" required>
+                                </div>
+                                <div class="form-group">
+                                    <textarea class="form-control" placeholder="Açıklama" rows="2" required></textarea>
+                                </div>
+                            </div>
+                        </div>
+                        <button type="button" class="btn btn-secondary" onclick="addArrayItem('strengthsContainer', 'strength')">+ Güçlü Yön Ekle</button>
+                    </div>
+
+                    <!-- Gelişim Alanları -->
+                    <div class="form-group">
+                        <label>Gelişim Alanları</label>
+                        <div id="developmentContainer">
+                            <div class="array-item">
+                                <div class="form-group">
+                                    <input type="text" class="form-control" placeholder="Başlık" required>
+                                </div>
+                                <div class="form-group">
+                                    <textarea class="form-control" placeholder="Açıklama" rows="2" required></textarea>
+                                </div>
+                            </div>
+                        </div>
+                        <button type="button" class="btn btn-secondary" onclick="addArrayItem('developmentContainer', 'development')">+ Gelişim Alanı Ekle</button>
+                    </div>
+
+                    <!-- Mülakat Soruları -->
+                    <div class="form-group">
+                        <label>Mülakat Soruları</label>
+                        <div id="interviewQuestionsContainer">
+                            <div class="array-item">
+                                <div class="form-group">
+                                    <input type="text" class="form-control" placeholder="Kategori" required>
+                                </div>
+                                <div class="form-group">
+                                    <input type="text" class="form-control" placeholder="Ana Soru" required>
+                                </div>
+                                <div class="form-group">
+                                    <label>Alt Sorular</label>
+                                    <div class="sub-questions">
+                                        <input type="text" class="form-control mb-2" placeholder="Alt Soru" required>
+                                    </div>
+                                    <button type="button" class="btn btn-sm btn-secondary" onclick="addSubQuestion(this)">+ Alt Soru Ekle</button>
+                                </div>
+                            </div>
+                        </div>
+                        <button type="button" class="btn btn-secondary" onclick="addArrayItem('interviewQuestionsContainer', 'interview')">+ Soru Kategorisi Ekle</button>
+                    </div>
+
+                    <!-- Gelişim Önerileri -->
+                    <div class="form-group">
+                        <label>Gelişim Önerileri</label>
+                        <div id="developmentSuggestionsContainer">
+                            <div class="array-item">
+                                <div class="form-group">
+                                    <input type="text" class="form-control" placeholder="Başlık" required>
+                                </div>
+                                <div class="form-group">
+                                    <input type="text" class="form-control" placeholder="Alan" required>
+                                </div>
+                                <div class="form-group">
+                                    <input type="text" class="form-control" placeholder="Hedef" required>
+                                </div>
+                                <div class="form-group">
+                                    <label>Öneriler</label>
+                                    <div class="suggestions">
+                                        <div class="form-group">
+                                            <input type="text" class="form-control" placeholder="Öneri Başlığı" required>
+                                            <textarea class="form-control mt-2" placeholder="Öneri İçeriği" rows="2" required></textarea>
+                                        </div>
+                                    </div>
+                                    <button type="button" class="btn btn-sm btn-secondary" onclick="addSuggestion(this)">+ Öneri Ekle</button>
+                                </div>
+                            </div>
+                        </div>
+                        <button type="button" class="btn btn-secondary" onclick="addArrayItem('developmentSuggestionsContainer', 'suggestion')">+ Gelişim Önerisi Ekle</button>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary">Değerlendirmeyi Kaydet</button>
+                </form>
+                <div id="formAlert" class="alert"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Çıkış işlemi
+        document.getElementById('logoutBtn').addEventListener('click', () => {
+            window.location.href = '/admin.html';
+        });
+
+        // Veri silme işlemi
+        async function deleteEvaluation() {
+            const id = document.getElementById('deleteId').value;
+            if (!id) {
+                showAlert('deleteAlert', 'Lütfen bir ID girin', 'danger');
+                return;
+            }
+
+            try {
+                const response = await fetch(`/api/admin/evaluation/${id}`, {
+                    method: 'DELETE'
+                });
+
+                const data = await response.json();
+                showAlert('deleteAlert', data.message, response.ok ? 'success' : 'danger');
+                if (response.ok) {
+                    document.getElementById('deleteId').value = '';
+                }
+            } catch (error) {
+                console.error('Silme hatası:', error);
+                showAlert('deleteAlert', 'Bir hata oluştu', 'danger');
+            }
+        }
+
+        // Yeni veri ekleme işlemi
+        document.getElementById('evaluationForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const formData = collectFormData();
+            
+            try {
+                const response = await fetch('/api/admin/evaluation', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(formData)
+                });
+
+                const data = await response.json();
+                showAlert('formAlert', data.message, response.ok ? 'success' : 'danger');
+                if (response.ok) {
+                    document.getElementById('evaluationForm').reset();
+                }
+            } catch (error) {
+                console.error('Kaydetme hatası:', error);
+                showAlert('formAlert', 'Bir hata oluştu', 'danger');
+            }
+        });
+
+        // Yardımcı fonksiyonlar
+        function showAlert(id, message, type) {
+            const alert = document.getElementById(id);
+            alert.className = `alert alert-${type}`;
+            alert.textContent = message;
+            alert.style.display = 'block';
+        }
+
+        function addArrayItem(containerId, type) {
+            const container = document.getElementById(containerId);
+            const item = document.createElement('div');
+            item.className = 'array-item';
+            
+            let html = '';
+            switch(type) {
+                case 'strength':
+                case 'development':
+                    html = `
+                        <div class="form-group">
+                            <input type="text" class="form-control" placeholder="Başlık" required>
+                        </div>
+                        <div class="form-group">
+                            <textarea class="form-control" placeholder="Açıklama" rows="2" required></textarea>
+                        </div>
+                    `;
+                    break;
+                case 'interview':
+                    html = `
+                        <div class="form-group">
+                            <input type="text" class="form-control" placeholder="Kategori" required>
+                        </div>
+                        <div class="form-group">
+                            <input type="text" class="form-control" placeholder="Ana Soru" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Alt Sorular</label>
+                            <div class="sub-questions">
+                                <input type="text" class="form-control mb-2" placeholder="Alt Soru" required>
+                            </div>
+                            <button type="button" class="btn btn-sm btn-secondary" onclick="addSubQuestion(this)">+ Alt Soru Ekle</button>
+                        </div>
+                    `;
+                    break;
+                case 'suggestion':
+                    html = `
+                        <div class="form-group">
+                            <input type="text" class="form-control" placeholder="Başlık" required>
+                        </div>
+                        <div class="form-group">
+                            <input type="text" class="form-control" placeholder="Alan" required>
+                        </div>
+                        <div class="form-group">
+                            <input type="text" class="form-control" placeholder="Hedef" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Öneriler</label>
+                            <div class="suggestions">
+                                <div class="form-group">
+                                    <input type="text" class="form-control" placeholder="Öneri Başlığı" required>
+                                    <textarea class="form-control mt-2" placeholder="Öneri İçeriği" rows="2" required></textarea>
+                                </div>
+                            </div>
+                            <button type="button" class="btn btn-sm btn-secondary" onclick="addSuggestion(this)">+ Öneri Ekle</button>
+                        </div>
+                    `;
+                    break;
+            }
+            
+            html += '<span class="btn-remove" onclick="removeItem(this)">×</span>';
+            item.innerHTML = html;
+            container.appendChild(item);
+        }
+
+        function addSubQuestion(button) {
+            const container = button.previousElementSibling;
+            const input = document.createElement('input');
+            input.type = 'text';
+            input.className = 'form-control mb-2';
+            input.placeholder = 'Alt Soru';
+            input.required = true;
+            container.appendChild(input);
+        }
+
+        function addSuggestion(button) {
+            const container = button.previousElementSibling;
+            const div = document.createElement('div');
+            div.className = 'form-group';
+            div.innerHTML = `
+                <input type="text" class="form-control" placeholder="Öneri Başlığı" required>
+                <textarea class="form-control mt-2" placeholder="Öneri İçeriği" rows="2" required></textarea>
+            `;
+            container.appendChild(div);
+        }
+
+        function removeItem(element) {
+            element.parentElement.remove();
+        }
+
+        function collectFormData() {
+            const data = {
+                id: document.getElementById('id').value,
+                generalEvaluation: document.getElementById('generalEvaluation').value,
+                strengths: [],
+                development: [],
+                interviewQuestions: [],
+                developmentSuggestions: []
+            };
+
+            // Güçlü Yönler
+            document.querySelectorAll('#strengthsContainer .array-item').forEach(item => {
+                const inputs = item.querySelectorAll('input, textarea');
+                data.strengths.push({
+                    title: inputs[0].value,
+                    description: inputs[1].value
+                });
+            });
+
+            // Gelişim Alanları
+            document.querySelectorAll('#developmentContainer .array-item').forEach(item => {
+                const inputs = item.querySelectorAll('input, textarea');
+                data.development.push({
+                    title: inputs[0].value,
+                    description: inputs[1].value
+                });
+            });
+
+            // Mülakat Soruları
+            document.querySelectorAll('#interviewQuestionsContainer .array-item').forEach(item => {
+                const category = item.querySelector('input[placeholder="Kategori"]').value;
+                const mainQuestion = item.querySelector('input[placeholder="Ana Soru"]').value;
+                const followUpQuestions = Array.from(item.querySelectorAll('.sub-questions input')).map(input => input.value);
+                
+                data.interviewQuestions.push({
+                    category,
+                    questions: [{
+                        mainQuestion,
+                        followUpQuestions
+                    }]
+                });
+            });
+
+            // Gelişim Önerileri
+            document.querySelectorAll('#developmentSuggestionsContainer .array-item').forEach(item => {
+                const title = item.querySelector('input[placeholder="Başlık"]').value;
+                const area = item.querySelector('input[placeholder="Alan"]').value;
+                const target = item.querySelector('input[placeholder="Hedef"]').value;
+                const suggestions = Array.from(item.querySelectorAll('.suggestions .form-group')).map(suggestion => ({
+                    title: suggestion.querySelector('input').value,
+                    content: suggestion.querySelector('textarea').value
+                }));
+
+                data.developmentSuggestions.push({
+                    title,
+                    area,
+                    target,
+                    suggestions
+                });
+            });
+
+            return data;
+        }
+    </script>
+</body>
+</html> 
