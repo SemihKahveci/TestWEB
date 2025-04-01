@@ -3,10 +3,7 @@ const express = require('express');
 const cors = require('cors');
 const mongoose = require('mongoose');
 const path = require('path');
-const WebSocket = require('ws');
-const GameController = require('./controllers/gameController');
-const CodeController = require('./controllers/codeController');
-const UserCode = require('./models/userCode');
+const WebSocketService = require('./services/websocketService');
 const evaluationController = require('./controllers/evaluationController');
 const adminRoutes = require('./routes/adminRoutes');
 
@@ -26,47 +23,61 @@ mongoose.connect(process.env.MONGODB_URI + '/adminPanel', {
     console.log('MongoDB bağlantısı başarılı');
 }).catch((err) => {
     console.error('MongoDB bağlantı hatası:', err);
+    process.exit(1); // Bağlantı başarısız olursa uygulamayı sonlandır
 });
 
-// WebSocket sunucusu
+// HTTP sunucusu
 const server = app.listen(port, () => {
     console.log(`Server ${port} portunda çalışıyor`);
 });
 
-const wss = new WebSocket.Server({ server });
-const gameController = new GameController(wss);
-const codeController = new CodeController();
+// WebSocket servisi
+const wsService = new WebSocketService(server);
 
-// WebSocket bağlantı yönetimi
-wss.on('connection', (ws) => {
-    console.log('Yeni WebSocket bağlantısı');
-    
-    ws.on('message', (message) => {
-        console.log('WebSocket mesajı alındı:', message);
-    });
-    
-    ws.on('close', () => {
-        console.log('WebSocket bağlantısı kapandı');
+// API Routes
+const apiRouter = express.Router();
+
+// WebSocket durumu
+apiRouter.get('/ws-status', (req, res) => {
+    res.json({
+        isConnected: wsService.isConnected(),
+        connectionCount: wsService.getConnectionCount()
     });
 });
 
-// API Routes
-app.post('/api/generate-code', codeController.generateCode.bind(codeController));
-app.get('/api/active-codes', codeController.listCodes.bind(codeController));
-app.post('/api/verify-code', codeController.verifyGameCode.bind(codeController));
-app.post('/api/register-result', gameController.registerGameResult.bind(gameController));
-app.get('/api/results', gameController.getResults.bind(gameController));
-app.delete('/api/results', gameController.deleteAllResults.bind(gameController));
-app.get('/api/check-status', gameController.checkServerStatus.bind(gameController));
+// Kod işlemleri
+apiRouter.post('/generate-code', wsService.getCodeController().generateCode.bind(wsService.getCodeController()));
+apiRouter.get('/active-codes', wsService.getCodeController().listCodes.bind(wsService.getCodeController()));
+apiRouter.post('/verify-code', wsService.getCodeController().verifyGameCode.bind(wsService.getCodeController()));
 
-// Değerlendirme route'ları
-app.get('/api/evaluation/:id', evaluationController.getEvaluationById);
-app.post('/api/evaluation/:id/pdf', evaluationController.generatePDF);
+// Oyun sonuçları
+apiRouter.post('/register-result', wsService.getGameController().registerGameResult.bind(wsService.getGameController()));
+apiRouter.get('/results', wsService.getGameController().getResults.bind(wsService.getGameController()));
+apiRouter.delete('/results', wsService.getGameController().deleteAllResults.bind(wsService.getGameController()));
+apiRouter.get('/check-status', wsService.getGameController().checkServerStatus.bind(wsService.getGameController()));
 
-// Admin route'ları
-app.use('/api/admin', adminRoutes);
+// Değerlendirme işlemleri
+apiRouter.get('/evaluation/:id', evaluationController.getEvaluationById);
+apiRouter.post('/evaluation/:id/pdf', evaluationController.generatePDF);
+
+// Admin işlemleri
+apiRouter.use('/admin', adminRoutes);
+
+// API route'larını uygula
+app.use('/api', apiRouter);
 
 // Ana sayfa
 app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'index.html'));
+});
+
+// 404 handler
+app.use((req, res) => {
+    res.status(404).json({ message: 'Sayfa bulunamadı' });
+});
+
+// Hata yönetimi
+app.use((err, req, res, next) => {
+    console.error(err.stack);
+    res.status(500).json({ message: 'Bir hata oluştu' });
 });

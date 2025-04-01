@@ -118,6 +118,64 @@
             color: #ff0000;
             margin-top: 10px;
         }
+
+        /* E-posta gönderme formu stilleri */
+        .email-form {
+            display: none;
+            margin-top: 20px;
+            padding: 20px;
+            background-color: #f9f9f9;
+            border-radius: 8px;
+            border: 1px solid #ddd;
+        }
+
+        .email-form.show {
+            display: block;
+        }
+
+        .email-form input {
+            width: 100%;
+            padding: 8px;
+            margin: 8px 0;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+
+        .email-form button {
+            background-color: #4CAF50;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+
+        .email-form button:hover {
+            background-color: #45a049;
+        }
+
+        .email-form button.cancel {
+            background-color: #f44336;
+            margin-left: 10px;
+        }
+
+        .email-form button.cancel:hover {
+            background-color: #da190b;
+        }
+
+        .success-message {
+            color: #4CAF50;
+            margin-top: 10px;
+            display: none;
+        }
+
+        .error-message {
+            color: #f44336;
+            margin-top: 10px;
+            display: none;
+        }
     </style>
 </head>
 <body>
@@ -132,8 +190,18 @@
     <div class="container">
         <h1 class="section-title">Kod Oluşturma Paneli</h1>
         <div class="code-section">
-            <button class="generate-btn" onclick="generateCode()">Yeni Kod Oluştur</button>
-            <div class="code-display" id="lastGeneratedCode"></div>
+            <button class="generate-btn" onclick="generateCode()">Kod Oluştur</button>
+            <div class="code-display" id="codeDisplay"></div>
+            
+            <!-- E-posta gönderme formu -->
+            <div class="email-form" id="emailForm">
+                <h3>Kodu E-posta ile Gönder</h3>
+                <input type="email" id="emailInput" placeholder="E-posta adresi" required>
+                <button onclick="sendCodeByEmail()">Gönder</button>
+                <button class="cancel" onclick="hideEmailForm()">İptal</button>
+                <div id="emailSuccess" class="success-message">Kod başarıyla gönderildi!</div>
+                <div id="emailError" class="error-message"></div>
+            </div>
         </div>
 
         <div class="code-list">
@@ -180,28 +248,74 @@
             loadCodes();
         });
 
-        // Yeni kod oluştur
+        let currentCode = '';
+
         async function generateCode() {
             try {
                 const response = await fetch('/api/generate-code', {
+                    method: 'POST'
+                });
+                const data = await response.json();
+                
+                if (data.success) {
+                    currentCode = data.code;
+                    document.getElementById('codeDisplay').textContent = currentCode;
+                    showEmailForm(); // Kod oluşturulduğunda e-posta formunu göster
+                } else {
+                    alert('Kod oluşturulurken bir hata oluştu');
+                }
+            } catch (error) {
+                console.error('Kod oluşturma hatası:', error);
+                alert('Kod oluşturulurken bir hata oluştu');
+            }
+        }
+
+        function showEmailForm() {
+            document.getElementById('emailForm').classList.add('show');
+            document.getElementById('emailSuccess').style.display = 'none';
+            document.getElementById('emailError').style.display = 'none';
+        }
+
+        function hideEmailForm() {
+            document.getElementById('emailForm').classList.remove('show');
+            document.getElementById('emailInput').value = '';
+        }
+
+        async function sendCodeByEmail() {
+            const email = document.getElementById('emailInput').value;
+            if (!email) {
+                document.getElementById('emailError').textContent = 'Lütfen bir e-posta adresi girin';
+                document.getElementById('emailError').style.display = 'block';
+                return;
+            }
+
+            try {
+                const response = await fetch('/api/admin/send-code', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'
-                    }
+                    },
+                    body: JSON.stringify({
+                        code: currentCode,
+                        email: email
+                    })
                 });
 
                 const data = await response.json();
                 
                 if (data.success) {
-                    document.getElementById('lastGeneratedCode').textContent = data.code;
-                    loadCodes();
+                    document.getElementById('emailSuccess').style.display = 'block';
+                    setTimeout(() => {
+                        hideEmailForm();
+                    }, 2000);
                 } else {
-                    throw new Error(data.message);
+                    document.getElementById('emailError').textContent = data.message || 'E-posta gönderilirken bir hata oluştu';
+                    document.getElementById('emailError').style.display = 'block';
                 }
             } catch (error) {
-                console.error('Kod oluşturma hatası:', error);
-                document.getElementById('lastGeneratedCode').innerHTML = 
-                    `<span class="error">Kod oluşturulurken hata oluştu</span>`;
+                console.error('E-posta gönderme hatası:', error);
+                document.getElementById('emailError').textContent = 'E-posta gönderilirken bir hata oluştu';
+                document.getElementById('emailError').style.display = 'block';
             }
         }
 
