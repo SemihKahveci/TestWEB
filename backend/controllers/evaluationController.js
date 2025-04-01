@@ -24,6 +24,7 @@ const evaluationController = {
     },
 
     generatePDF: async (req, res) => {
+        let tempFile = null;
         try {
             const { id } = req.params;
             const selectedSections = req.body;
@@ -42,11 +43,35 @@ const evaluationController = {
                 <head>
                     <meta charset="UTF-8">
                     <style>
-                        body { font-family: Arial, sans-serif; padding: 20px; }
-                        h1 { text-align: center; }
-                        h2 { color: #333; }
-                        .section { margin-bottom: 20px; }
-                        ul { list-style-type: disc; }
+                        body { 
+                            font-family: Arial, sans-serif; 
+                            padding: 20px;
+                            line-height: 1.6;
+                        }
+                        h1 { 
+                            text-align: center;
+                            color: #333;
+                            margin-bottom: 30px;
+                        }
+                        h2 { 
+                            color: #444;
+                            margin-top: 20px;
+                            border-bottom: 2px solid #eee;
+                            padding-bottom: 10px;
+                        }
+                        .section { 
+                            margin-bottom: 30px;
+                            padding: 15px;
+                            background-color: #f9f9f9;
+                            border-radius: 5px;
+                        }
+                        ul { 
+                            list-style-type: disc;
+                            margin-left: 20px;
+                        }
+                        li {
+                            margin-bottom: 8px;
+                        }
                     </style>
                 </head>
                 <body>
@@ -132,19 +157,43 @@ const evaluationController = {
                 }
             };
 
+            // Geçici dosya oluştur
+            tempFile = path.join(__dirname, `../temp/evaluation_${evaluation.id}_${Date.now()}.pdf`);
+            
             // PDF oluştur
             const file = await htmlPdf.generatePdf({ content: htmlContent }, options);
+            
+            // PDF'i geçici dosyaya kaydet
+            fs.writeFileSync(tempFile, file);
 
             // PDF'i indir
             res.setHeader('Content-Type', 'application/pdf');
             res.setHeader('Content-Disposition', `attachment; filename=evaluation_${evaluation.id}.pdf`);
-            res.send(file);
+            res.sendFile(tempFile, (err) => {
+                if (err) {
+                    console.error('PDF gönderme hatası:', err);
+                }
+                // Geçici dosyayı sil
+                if (tempFile && fs.existsSync(tempFile)) {
+                    fs.unlinkSync(tempFile);
+                }
+            });
 
-            // Tarayıcıyı kapat
-            await browser.close();
         } catch (error) {
             console.error('PDF oluşturma hatası:', error);
-            res.status(500).json({ message: 'PDF oluşturulurken bir hata oluştu' });
+            res.status(500).json({ 
+                message: 'PDF oluşturulurken bir hata oluştu',
+                error: error.message 
+            });
+        } finally {
+            // Geçici dosyayı temizle
+            if (tempFile && fs.existsSync(tempFile)) {
+                try {
+                    fs.unlinkSync(tempFile);
+                } catch (err) {
+                    console.error('Geçici dosya silme hatası:', err);
+                }
+            }
         }
     }
 };
