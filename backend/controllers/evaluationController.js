@@ -1,5 +1,5 @@
 const EvaluationResult = require('../models/evaluationResult');
-const htmlPdf = require('html-pdf-node');
+const puppeteer = require('puppeteer');
 const fs = require('fs');
 const path = require('path');
 
@@ -24,7 +24,7 @@ const evaluationController = {
     },
 
     generatePDF: async (req, res) => {
-        let tempFile = null;
+        let browser = null;
         try {
             const { id } = req.params;
             const selectedSections = req.body;
@@ -35,6 +35,15 @@ const evaluationController = {
             if (!evaluation) {
                 return res.status(404).json({ message: 'Değerlendirme bulunamadı' });
             }
+
+            // Puppeteer'ı başlat
+            browser = await puppeteer.launch({
+                args: ['--no-sandbox', '--disable-setuid-sandbox'],
+                headless: 'new'
+            });
+
+            const page = await browser.newPage();
+            await page.setViewport({ width: 1200, height: 800 });
 
             // HTML içeriğini oluştur
             const htmlContent = `
@@ -55,15 +64,13 @@ const evaluationController = {
                         }
                         h2 { 
                             color: #444;
-                            margin-top: 20px;
+                            margin-top: 25px;
                             border-bottom: 2px solid #eee;
                             padding-bottom: 10px;
                         }
                         .section { 
                             margin-bottom: 30px;
-                            padding: 15px;
-                            background-color: #f9f9f9;
-                            border-radius: 5px;
+                            page-break-inside: avoid;
                         }
                         ul { 
                             list-style-type: disc;
@@ -71,6 +78,18 @@ const evaluationController = {
                         }
                         li {
                             margin-bottom: 8px;
+                        }
+                        .sub-list {
+                            margin-left: 20px;
+                            margin-top: 5px;
+                        }
+                        @media print {
+                            body {
+                                padding: 0;
+                            }
+                            .section {
+                                page-break-inside: avoid;
+                            }
                         }
                     </style>
                 </head>
@@ -108,10 +127,10 @@ const evaluationController = {
                         <ul>
                             ${(evaluation.interviewQuestions || []).map(category => `
                                 <li>${category.category}
-                                    <ul>
+                                    <ul class="sub-list">
                                         ${category.questions.map(q => `
                                             <li>${q.mainQuestion}
-                                                <ul>
+                                                <ul class="sub-list">
                                                     ${(q.followUpQuestions || []).map(fq => `<li>${fq}</li>`).join('')}
                                                 </ul>
                                             </li>
@@ -129,11 +148,11 @@ const evaluationController = {
                         <ul>
                             ${(evaluation.developmentSuggestions || []).map(suggestion => `
                                 <li>${suggestion.title}
-                                    <ul>
+                                    <ul class="sub-list">
                                         <li>Alan: ${suggestion.area}</li>
                                         <li>Hedef: ${suggestion.target}</li>
                                         <li>Öneriler:
-                                            <ul>
+                                            <ul class="sub-list">
                                                 ${suggestion.suggestions.map(s => `<li>${s.title}: ${s.content}</li>`).join('')}
                                             </ul>
                                         </li>
@@ -147,52 +166,38 @@ const evaluationController = {
                 </html>
             `;
 
-            const options = {
+            // HTML içeriğini sayfaya yükle
+            await page.setContent(htmlContent, {
+                waitUntil: 'networkidle0'
+            });
+
+            // PDF oluştur
+            const pdf = await page.pdf({
                 format: 'A4',
                 margin: {
                     top: '20px',
                     right: '20px',
                     bottom: '20px',
                     left: '20px'
-                }
-            };
+                },
+                printBackground: true
+            });
 
-            // Geçici dosya oluştur
-            tempFile = path.join(__dirname, `../temp/evaluation_${evaluation.id}_${Date.now()}.pdf`);
-            
-            // PDF oluştur
-            const file = await htmlPdf.generatePdf({ content: htmlContent }, options);
-            
-            // PDF'i geçici dosyaya kaydet
-            fs.writeFileSync(tempFile, file);
+            // Sayfayı kapat
+            await page.close();
 
-            // PDF'i indir
+            // PDF'i gönder
             res.setHeader('Content-Type', 'application/pdf');
             res.setHeader('Content-Disposition', `attachment; filename=evaluation_${evaluation.id}.pdf`);
-            res.sendFile(tempFile, (err) => {
-                if (err) {
-                    console.error('PDF gönderme hatası:', err);
-                }
-                // Geçici dosyayı sil
-                if (tempFile && fs.existsSync(tempFile)) {
-                    fs.unlinkSync(tempFile);
-                }
-            });
+            res.send(pdf);
 
         } catch (error) {
             console.error('PDF oluşturma hatası:', error);
-            res.status(500).json({ 
-                message: 'PDF oluşturulurken bir hata oluştu',
-                error: error.message 
-            });
+            res.status(500).json({ message: 'PDF oluşturulurken bir hata oluştu' });
         } finally {
-            // Geçici dosyayı temizle
-            if (tempFile && fs.existsSync(tempFile)) {
-                try {
-                    fs.unlinkSync(tempFile);
-                } catch (err) {
-                    console.error('Geçici dosya silme hatası:', err);
-                }
+            // Tarayıcıyı kapat
+            if (browser) {
+                await browser.close();
             }
         }
     }
