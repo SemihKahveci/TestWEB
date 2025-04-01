@@ -110,7 +110,13 @@ async function seedData() {
         console.log('MongoDB bağlantısı kapatıldı');
     } catch (error) {
         console.error('Veri ekleme hatası:', error);
+        throw error;
     }
 }
 
-seedData(); 
+// Eğer dosya doğrudan çalıştırılıyorsa
+if (require.main === module) {
+    seedData();
+}
+
+module.exports = seedData; 

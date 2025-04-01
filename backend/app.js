@@ -8,6 +8,7 @@ const GameController = require('./controllers/gameController');
 const CodeController = require('./controllers/codeController');
 const UserCode = require('./models/userCode');
 const evaluationController = require('./controllers/evaluationController');
+const adminRoutes = require('./routes/adminRoutes');
 
 const app = express();
 const port = process.env.PORT || 5000;
@@ -61,6 +62,9 @@ app.get('/api/check-status', gameController.checkServerStatus.bind(gameControlle
 // Değerlendirme route'ları
 app.get('/api/evaluation/:id', evaluationController.getEvaluationById);
 app.post('/api/evaluation/:id/pdf', evaluationController.generatePDF);
+
+// Admin route'ları
+app.use('/api/admin', adminRoutes);
 
 // Ana sayfa
 app.get('/', (req, res) => {
