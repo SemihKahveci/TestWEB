@@ -1,5 +1,5 @@
 const EvaluationResult = require('../models/evaluationResult');
-const puppeteer = require('puppeteer');
+const htmlPdf = require('html-pdf-node');
 const fs = require('fs');
 const path = require('path');
 
@@ -24,7 +24,6 @@ const evaluationController = {
     },
 
     generatePDF: async (req, res) => {
-        let browser = null;
         try {
             const { id } = req.params;
             const selectedSections = req.body;
@@ -35,15 +34,6 @@ const evaluationController = {
             if (!evaluation) {
                 return res.status(404).json({ message: 'Değerlendirme bulunamadı' });
             }
-
-            // Puppeteer'ı başlat
-            browser = await puppeteer.launch({
-                args: ['--no-sandbox', '--disable-setuid-sandbox'],
-                headless: 'new'
-            });
-
-            const page = await browser.newPage();
-            await page.setViewport({ width: 1200, height: 800 });
 
             // HTML içeriğini oluştur
             const htmlContent = `
@@ -59,18 +49,20 @@ const evaluationController = {
                         }
                         h1 { 
                             text-align: center;
-                            color: #333;
+                            color: #2c3e50;
                             margin-bottom: 30px;
                         }
                         h2 { 
-                            color: #444;
-                            margin-top: 25px;
+                            color: #34495e;
                             border-bottom: 2px solid #eee;
                             padding-bottom: 10px;
+                            margin-top: 25px;
                         }
                         .section { 
-                            margin-bottom: 30px;
-                            page-break-inside: avoid;
+                            margin-bottom: 25px;
+                            padding: 15px;
+                            background-color: #f9f9f9;
+                            border-radius: 5px;
                         }
                         ul { 
                             list-style-type: disc;
@@ -79,22 +71,21 @@ const evaluationController = {
                         li {
                             margin-bottom: 8px;
                         }
-                        .sub-list {
-                            margin-left: 20px;
-                            margin-top: 5px;
+                        .header {
+                            text-align: center;
+                            margin-bottom: 30px;
                         }
-                        @media print {
-                            body {
-                                padding: 0;
-                            }
-                            .section {
-                                page-break-inside: avoid;
-                            }
+                        .date {
+                            color: #7f8c8d;
+                            font-size: 0.9em;
                         }
                     </style>
                 </head>
                 <body>
-                    <h1>Değerlendirme Raporu</h1>
+                    <div class="header">
+                        <h1>Değerlendirme Raporu</h1>
+                        <div class="date">Oluşturulma Tarihi: ${new Date().toLocaleDateString('tr-TR')}</div>
+                    </div>
                     
                     ${selectedSections.generalEvaluation ? `
                     <div class="section">
@@ -127,10 +118,10 @@ const evaluationController = {
                         <ul>
                             ${(evaluation.interviewQuestions || []).map(category => `
                                 <li>${category.category}
-                                    <ul class="sub-list">
+                                    <ul>
                                         ${category.questions.map(q => `
                                             <li>${q.mainQuestion}
-                                                <ul class="sub-list">
+                                                <ul>
                                                     ${(q.followUpQuestions || []).map(fq => `<li>${fq}</li>`).join('')}
                                                 </ul>
                                             </li>
@@ -148,11 +139,11 @@ const evaluationController = {
                         <ul>
                             ${(evaluation.developmentSuggestions || []).map(suggestion => `
                                 <li>${suggestion.title}
-                                    <ul class="sub-list">
+                                    <ul>
                                         <li>Alan: ${suggestion.area}</li>
                                         <li>Hedef: ${suggestion.target}</li>
                                         <li>Öneriler:
-                                            <ul class="sub-list">
+                                            <ul>
                                                 ${suggestion.suggestions.map(s => `<li>${s.title}: ${s.content}</li>`).join('')}
                                             </ul>
                                         </li>
@@ -166,39 +157,27 @@ const evaluationController = {
                 </html>
             `;
 
-            // HTML içeriğini sayfaya yükle
-            await page.setContent(htmlContent, {
-                waitUntil: 'networkidle0'
-            });
-
-            // PDF oluştur
-            const pdf = await page.pdf({
+            const options = {
                 format: 'A4',
                 margin: {
                     top: '20px',
                     right: '20px',
                     bottom: '20px',
                     left: '20px'
-                },
-                printBackground: true
-            });
+                }
+            };
 
-            // Sayfayı kapat
-            await page.close();
+            // PDF oluştur
+            const file = await htmlPdf.generatePdf({ content: htmlContent }, options);
 
-            // PDF'i gönder
+            // PDF'i indir
             res.setHeader('Content-Type', 'application/pdf');
             res.setHeader('Content-Disposition', `attachment; filename=evaluation_${evaluation.id}.pdf`);
-            res.send(pdf);
+            res.send(file);
 
         } catch (error) {
             console.error('PDF oluşturma hatası:', error);
             res.status(500).json({ message: 'PDF oluşturulurken bir hata oluştu' });
-        } finally {
-            // Tarayıcıyı kapat
-            if (browser) {
-                await browser.close();
-            }
         }
     }
 };
