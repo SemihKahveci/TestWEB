@@ -54,147 +54,171 @@
             cursor: pointer;
             float: right;
         }
+        .admin-panel {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+        }
+
+        .header h2 {
+            margin: 0;
+            color: #333;
+        }
     </style>
 </head>
 <body>
     <div class="container">
-        <!-- Giriş Formu -->
-        <div id="loginForm" class="login-container">
-            <h2 class="text-center mb-4">Admin Girişi</h2>
-            <form id="adminLoginForm">
-                <div class="form-group">
-                    <label for="username">Kullanıcı Adı</label>
-                    <input type="text" class="form-control" id="username" required>
-                </div>
-                <div class="form-group">
-                    <label for="password">Şifre</label>
-                    <input type="password" class="form-control" id="password" required>
-                </div>
-                <button type="submit" class="btn btn-primary w-100">Giriş Yap</button>
-            </form>
-            <div id="loginAlert" class="alert alert-danger"></div>
-        </div>
-
-        <!-- Admin Paneli -->
-        <div id="adminPanel" class="admin-container">
-            <h2 class="text-center mb-4">Değerlendirme Verisi Yönetimi</h2>
-            <div class="mb-4">
-                <button id="logoutBtn" class="btn btn-danger float-end">Çıkış Yap</button>
+        <div class="admin-panel">
+            <div class="header">
+                <h2>Admin Paneli</h2>
+                <a href="/" class="btn btn-primary">Ana Sayfaya Dön</a>
             </div>
 
-            <!-- Veri Silme Bölümü -->
-            <div class="section">
-                <h3 class="section-title">Veri Silme</h3>
-                <div class="form-group">
-                    <label for="deleteId">Silinecek Değerlendirme ID</label>
-                    <div class="input-group">
-                        <input type="text" class="form-control" id="deleteId" placeholder="Örn: 1024">
-                        <button class="btn btn-danger" onclick="deleteEvaluation()">Sil</button>
-                    </div>
-                </div>
-                <div id="deleteAlert" class="alert"></div>
-            </div>
-
-            <!-- Yeni Veri Ekleme Bölümü -->
-            <div class="section">
-                <h3 class="section-title">Yeni Değerlendirme Ekle</h3>
-                <form id="evaluationForm">
+            <!-- Giriş Formu -->
+            <div id="loginForm" class="login-container">
+                <h2 class="text-center mb-4">Admin Girişi</h2>
+                <form id="adminLoginForm">
                     <div class="form-group">
-                        <label for="id">Değerlendirme ID</label>
-                        <input type="text" class="form-control" id="id" required>
+                        <label for="username">Kullanıcı Adı</label>
+                        <input type="text" class="form-control" id="username" required>
                     </div>
                     <div class="form-group">
-                        <label for="generalEvaluation">Genel Değerlendirme</label>
-                        <textarea class="form-control" id="generalEvaluation" rows="3" required></textarea>
+                        <label for="password">Şifre</label>
+                        <input type="password" class="form-control" id="password" required>
                     </div>
-
-                    <!-- Güçlü Yönler -->
-                    <div class="form-group">
-                        <label>Güçlü Yönler</label>
-                        <div id="strengthsContainer">
-                            <div class="array-item">
-                                <div class="form-group">
-                                    <input type="text" class="form-control" placeholder="Başlık" required>
-                                </div>
-                                <div class="form-group">
-                                    <textarea class="form-control" placeholder="Açıklama" rows="2" required></textarea>
-                                </div>
-                            </div>
-                        </div>
-                        <button type="button" class="btn btn-secondary" onclick="addArrayItem('strengthsContainer', 'strength')">+ Güçlü Yön Ekle</button>
-                    </div>
-
-                    <!-- Gelişim Alanları -->
-                    <div class="form-group">
-                        <label>Gelişim Alanları</label>
-                        <div id="developmentContainer">
-                            <div class="array-item">
-                                <div class="form-group">
-                                    <input type="text" class="form-control" placeholder="Başlık" required>
-                                </div>
-                                <div class="form-group">
-                                    <textarea class="form-control" placeholder="Açıklama" rows="2" required></textarea>
-                                </div>
-                            </div>
-                        </div>
-                        <button type="button" class="btn btn-secondary" onclick="addArrayItem('developmentContainer', 'development')">+ Gelişim Alanı Ekle</button>
-                    </div>
-
-                    <!-- Mülakat Soruları -->
-                    <div class="form-group">
-                        <label>Mülakat Soruları</label>
-                        <div id="interviewQuestionsContainer">
-                            <div class="array-item">
-                                <div class="form-group">
-                                    <input type="text" class="form-control" placeholder="Kategori" required>
-                                </div>
-                                <div class="form-group">
-                                    <input type="text" class="form-control" placeholder="Ana Soru" required>
-                                </div>
-                                <div class="form-group">
-                                    <label>Alt Sorular</label>
-                                    <div class="sub-questions">
-                                        <input type="text" class="form-control mb-2" placeholder="Alt Soru" required>
-                                    </div>
-                                    <button type="button" class="btn btn-sm btn-secondary" onclick="addSubQuestion(this)">+ Alt Soru Ekle</button>
-                                </div>
-                            </div>
-                        </div>
-                        <button type="button" class="btn btn-secondary" onclick="addArrayItem('interviewQuestionsContainer', 'interview')">+ Soru Kategorisi Ekle</button>
-                    </div>
-
-                    <!-- Gelişim Önerileri -->
-                    <div class="form-group">
-                        <label>Gelişim Önerileri</label>
-                        <div id="developmentSuggestionsContainer">
-                            <div class="array-item">
-                                <div class="form-group">
-                                    <input type="text" class="form-control" placeholder="Başlık" required>
-                                </div>
-                                <div class="form-group">
-                                    <input type="text" class="form-control" placeholder="Alan" required>
-                                </div>
-                                <div class="form-group">
-                                    <input type="text" class="form-control" placeholder="Hedef" required>
-                                </div>
-                                <div class="form-group">
-                                    <label>Öneriler</label>
-                                    <div class="suggestions">
-                                        <div class="form-group">
-                                            <input type="text" class="form-control" placeholder="Öneri Başlığı" required>
-                                            <textarea class="form-control mt-2" placeholder="Öneri İçeriği" rows="2" required></textarea>
-                                        </div>
-                                    </div>
-                                    <button type="button" class="btn btn-sm btn-secondary" onclick="addSuggestion(this)">+ Öneri Ekle</button>
-                                </div>
-                            </div>
-                        </div>
-                        <button type="button" class="btn btn-secondary" onclick="addArrayItem('developmentSuggestionsContainer', 'suggestion')">+ Gelişim Önerisi Ekle</button>
-                    </div>
-
-                    <button type="submit" class="btn btn-primary">Değerlendirmeyi Kaydet</button>
+                    <button type="submit" class="btn btn-primary w-100">Giriş Yap</button>
                 </form>
-                <div id="formAlert" class="alert"></div>
+                <div id="loginAlert" class="alert alert-danger"></div>
+            </div>
+
+            <!-- Admin Paneli -->
+            <div id="adminPanel" class="admin-container">
+                <h2 class="text-center mb-4">Değerlendirme Verisi Yönetimi</h2>
+                <div class="mb-4">
+                    <button id="logoutBtn" class="btn btn-danger float-end">Çıkış Yap</button>
+                </div>
+
+                <!-- Veri Silme Bölümü -->
+                <div class="section">
+                    <h3 class="section-title">Veri Silme</h3>
+                    <div class="form-group">
+                        <label for="deleteId">Silinecek Değerlendirme ID</label>
+                        <div class="input-group">
+                            <input type="text" class="form-control" id="deleteId" placeholder="Örn: 1024">
+                            <button class="btn btn-danger" onclick="deleteEvaluation()">Sil</button>
+                        </div>
+                    </div>
+                    <div id="deleteAlert" class="alert"></div>
+                </div>
+
+                <!-- Yeni Veri Ekleme Bölümü -->
+                <div class="section">
+                    <h3 class="section-title">Yeni Değerlendirme Ekle</h3>
+                    <form id="evaluationForm">
+                        <div class="form-group">
+                            <label for="id">Değerlendirme ID</label>
+                            <input type="text" class="form-control" id="id" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="generalEvaluation">Genel Değerlendirme</label>
+                            <textarea class="form-control" id="generalEvaluation" rows="3" required></textarea>
+                        </div>
+
+                        <!-- Güçlü Yönler -->
+                        <div class="form-group">
+                            <label>Güçlü Yönler</label>
+                            <div id="strengthsContainer">
+                                <div class="array-item">
+                                    <div class="form-group">
+                                        <input type="text" class="form-control" placeholder="Başlık" required>
+                                    </div>
+                                    <div class="form-group">
+                                        <textarea class="form-control" placeholder="Açıklama" rows="2" required></textarea>
+                                    </div>
+                                </div>
+                            </div>
+                            <button type="button" class="btn btn-secondary" onclick="addArrayItem('strengthsContainer', 'strength')">+ Güçlü Yön Ekle</button>
+                        </div>
+
+                        <!-- Gelişim Alanları -->
+                        <div class="form-group">
+                            <label>Gelişim Alanları</label>
+                            <div id="developmentContainer">
+                                <div class="array-item">
+                                    <div class="form-group">
+                                        <input type="text" class="form-control" placeholder="Başlık" required>
+                                    </div>
+                                    <div class="form-group">
+                                        <textarea class="form-control" placeholder="Açıklama" rows="2" required></textarea>
+                                    </div>
+                                </div>
+                            </div>
+                            <button type="button" class="btn btn-secondary" onclick="addArrayItem('developmentContainer', 'development')">+ Gelişim Alanı Ekle</button>
+                        </div>
+
+                        <!-- Mülakat Soruları -->
+                        <div class="form-group">
+                            <label>Mülakat Soruları</label>
+                            <div id="interviewQuestionsContainer">
+                                <div class="array-item">
+                                    <div class="form-group">
+                                        <input type="text" class="form-control" placeholder="Kategori" required>
+                                    </div>
+                                    <div class="form-group">
+                                        <input type="text" class="form-control" placeholder="Ana Soru" required>
+                                    </div>
+                                    <div class="form-group">
+                                        <label>Alt Sorular</label>
+                                        <div class="sub-questions">
+                                            <input type="text" class="form-control mb-2" placeholder="Alt Soru" required>
+                                        </div>
+                                        <button type="button" class="btn btn-sm btn-secondary" onclick="addSubQuestion(this)">+ Alt Soru Ekle</button>
+                                    </div>
+                                </div>
+                            </div>
+                            <button type="button" class="btn btn-secondary" onclick="addArrayItem('interviewQuestionsContainer', 'interview')">+ Soru Kategorisi Ekle</button>
+                        </div>
+
+                        <!-- Gelişim Önerileri -->
+                        <div class="form-group">
+                            <label>Gelişim Önerileri</label>
+                            <div id="developmentSuggestionsContainer">
+                                <div class="array-item">
+                                    <div class="form-group">
+                                        <input type="text" class="form-control" placeholder="Başlık" required>
+                                    </div>
+                                    <div class="form-group">
+                                        <input type="text" class="form-control" placeholder="Alan" required>
+                                    </div>
+                                    <div class="form-group">
+                                        <input type="text" class="form-control" placeholder="Hedef" required>
+                                    </div>
+                                    <div class="form-group">
+                                        <label>Öneriler</label>
+                                        <div class="suggestions">
+                                            <div class="form-group">
+                                                <input type="text" class="form-control" placeholder="Öneri Başlığı" required>
+                                                <textarea class="form-control mt-2" placeholder="Öneri İçeriği" rows="2" required></textarea>
+                                            </div>
+                                        </div>
+                                        <button type="button" class="btn btn-sm btn-secondary" onclick="addSuggestion(this)">+ Öneri Ekle</button>
+                                    </div>
+                                </div>
+                            </div>
+                            <button type="button" class="btn btn-secondary" onclick="addArrayItem('developmentSuggestionsContainer', 'suggestion')">+ Gelişim Önerisi Ekle</button>
+                        </div>
+
+                        <button type="submit" class="btn btn-primary">Değerlendirmeyi Kaydet</button>
+                    </form>
+                    <div id="formAlert" class="alert"></div>
+                </div>
             </div>
         </div>
     </div>

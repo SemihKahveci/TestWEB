@@ -6,7 +6,7 @@ const adminController = {
         const { username, password } = req.body;
         
         // Basit bir admin kontrolü - gerçek uygulamada bu bilgiler .env dosyasında saklanmalı
-        if (username === 'admin' && password === 'admin123') {
+        if (username === 'andron' && password === 'andron2025') {
             res.json({ message: 'Giriş başarılı' });
         } else {
             res.status(401).json({ message: 'Geçersiz kullanıcı adı veya şifre' });
