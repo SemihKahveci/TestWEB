@@ -506,7 +506,9 @@
                 });
 
                 if (!response.ok) {
-                    throw new Error('PDF oluşturulurken bir hata oluştu');
+                    const errorData = await response.json();
+                    console.error('Sunucu hatası:', errorData);
+                    throw new Error(errorData.message || 'PDF oluşturulurken bir hata oluştu');
                 }
 
                 const blob = await response.blob();
@@ -520,7 +522,7 @@
                 a.remove();
             } catch (error) {
                 console.error('PDF indirme hatası:', error);
-                alert('PDF indirilirken bir hata oluştu');
+                alert('PDF indirilirken bir hata oluştu: ' + error.message);
             }
         }
     </script>
