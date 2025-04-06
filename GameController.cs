@@ -4,6 +4,7 @@ using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.Networking;
 using System;
+using System.Linq;
 
 
 public class GameController : MonoBehaviour
@@ -114,10 +115,11 @@ public class GameController : MonoBehaviour
             return null;
         }
 
-        // Kodu temizle
-        gameCode = code.Trim();
+        // Kodu temizle - tüm boşlukları ve özel karakterleri kaldır
+        gameCode = code.Trim().Replace(" ", "").Replace("\n", "").Replace("\r", "");
         Debug.Log($"Gonderilen kod (temizlenmiş): '{gameCode}'");
         Debug.Log($"Kod uzunluğu: {gameCode.Length}");
+        Debug.Log($"Kod karakterleri: {string.Join(", ", gameCode.Select(c => (int)c))}");
 
         var requestData = new CodeRequest { code = gameCode };
         string jsonData = JsonUtility.ToJson(requestData, true);

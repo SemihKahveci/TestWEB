@@ -59,10 +59,15 @@ class CodeController {
                 });
             }
 
-            const { code } = req.body;
-            console.log('Gelen kod:', code);
+            // Kodu al ve temizle
+            let { code } = req.body;
+            if (code && typeof code === 'string') {
+                code = code.trimEnd(); // Sondaki boşluğu temizle
+            }
+            
+            console.log('Gelen kod (temizlenmiş):', code);
 
-            if (!code || typeof code !== 'string') {
+            if (!code) {
                 return res.status(400).json({
                     success: false,
                     message: this.errorMessages.codeRequired
