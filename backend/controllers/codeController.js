@@ -84,9 +84,8 @@ class CodeController {
                 });
             }
 
-            // Kodu kullanılmış olarak işaretle
-            userCode.isUsed = true;
-            await userCode.save();
+            // Kodu kullanılmış olarak işaretleme işlemini kaldırdık
+            // Bu işlem oyun sonuçları gönderildiğinde yapılacak
 
             res.status(200).json({
                 success: true,

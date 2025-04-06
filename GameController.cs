@@ -60,19 +60,22 @@ public class GameController : MonoBehaviour
     private string gameCode = "";
     private bool isCodeVerified = false;
     private const string SERVER_URL_ = "http://localhost:5000";
-    private const string SERVER_URL = "https://immense-eyrie-31630-7b4841739874.herokuapp.com";
+    private const string SERVER_URL = "https://adminpaneli-e8ec7b2d1ed5.herokuapp.com";
 
     void Start()
     {
         playerAnswers = new List<AnswerData>();
         InitializeAnswers();
-
+        string[] asd = null;
+        string asdd = null;
         if (verifyCodeButton != null)
-            verifyCodeButton.onClick.AddListener(() => StartCoroutine(VerifyCode(codeInputField.text)));
 
+            verifyCodeButton.onClick.AddListener(() => { asd = VerifyCode(codeInputField.text); Debug.Log("Bolumler " + asd); });
+        Debug.Log(asd);
         if (sendResultButton != null)
         {
-            sendResultButton.onClick.AddListener(() => StartCoroutine(SendDataToServer(playerAnswers)));
+            sendResultButton.onClick.AddListener(() => { asdd = SendDataToServer(playerAnswers); Debug.Log("Mesaj " + asdd); });
+            Debug.Log(asdd);
             sendResultButton.interactable = false;
         }
     }
@@ -111,22 +114,28 @@ public class GameController : MonoBehaviour
             return null;
         }
 
+        // Kodu temizle
         gameCode = code.Trim();
-        Debug.Log($"Gonderilen kod: {gameCode}");
+        Debug.Log($"Gonderilen kod (temizlenmiş): '{gameCode}'");
+        Debug.Log($"Kod uzunluğu: {gameCode.Length}");
 
         var requestData = new CodeRequest { code = gameCode };
         string jsonData = JsonUtility.ToJson(requestData, true);
         Debug.Log($"Gonderilen JSON: {jsonData}");
 
         byte[] bodyRaw = System.Text.Encoding.UTF8.GetBytes(jsonData);
+        Debug.Log($"Request body uzunluğu: {bodyRaw.Length}");
 
         using (UnityWebRequest request = UnityWebRequest.PostWwwForm($"{SERVER_URL}/api/verify-code", ""))
         {
             request.SetRequestHeader("Content-Type", "application/json");
             request.uploadHandler = new UploadHandlerRaw(bodyRaw);
 
+            Debug.Log($"Request URL: {request.url}");
+            Debug.Log($"Request Headers: {request.GetRequestHeader("Content-Type")}");
+
             var operation = request.SendWebRequest();
-            
+
             // İşlemin tamamlanmasını bekle
             while (!operation.isDone)
             {
@@ -134,52 +143,67 @@ public class GameController : MonoBehaviour
             }
 
             Debug.Log($"Sunucu yaniti: {request.downloadHandler.text}");
+            Debug.Log($"Response code: {request.responseCode}");
 
             if (request.result == UnityWebRequest.Result.Success)
             {
-                CodeResponse response = JsonUtility.FromJson<CodeResponse>(request.downloadHandler.text);
-                if (response.success)
+                try
                 {
-                    isCodeVerified = true;
-                    sendResultButton.interactable = true;
+                    CodeResponse response = JsonUtility.FromJson<CodeResponse>(request.downloadHandler.text);
+                    Debug.Log($"Response success: {response.success}");
+                    Debug.Log($"Response message: {response.message}");
 
-                    // Section array'ini string array'e çevir
-                    string[] sectionNames = new string[response.sections.Length];
-                    for (int i = 0; i < response.sections.Length; i++)
+                    if (response.success)
                     {
-                        sectionNames[i] = response.sections[i].name;
-                    }
+                        isCodeVerified = true;
+                        sendResultButton.interactable = true;
 
-                    UpdateStatus($"Kod dogrulandi! Açılan bölümler: {string.Join(", ", sectionNames)}");
-                    return sectionNames;
+                        // Section array'ini string array'e çevir
+                        string[] sectionNames = new string[response.sections.Length];
+                        for (int i = 0; i < response.sections.Length; i++)
+                        {
+                            sectionNames[i] = response.sections[i].name;
+                        }
+
+                        UpdateStatus($"Kod dogrulandi! Açılan bölümler: {string.Join(", ", sectionNames)}");
+                        return sectionNames;
+                    }
+                    else
+                    {
+                        UpdateStatus($"Gecersiz kod: {response.message}");
+                        return null;
+                    }
                 }
-                else
+                catch (Exception e)
                 {
-                    UpdateStatus($"Gecersiz kod: {response.message}");
+                    Debug.LogError($"JSON parse hatası: {e.Message}");
+                    UpdateStatus($"Sunucu yanıtı işlenirken hata oluştu: {e.Message}");
                     return null;
                 }
             }
             else
             {
-                UpdateStatus($"Dogrulama hatasi: {request.error}\nYanit: {request.downloadHandler.text}");
+                string errorMessage = $"Dogrulama hatasi: {request.error}\nYanit: {request.downloadHandler.text}\nResponse Code: {request.responseCode}";
+                UpdateStatus(errorMessage);
+                Debug.LogError(errorMessage);
                 return null;
             }
         }
     }
 
 
-    public IEnumerator SendDataToServer(List<AnswerData> data)
+    public string SendDataToServer(List<AnswerData> data)
     {
         if (!isCodeVerified)
         {
             UpdateStatus("Once kodu dogrulamanız gerekiyor!");
-            yield break;
+            return "Once kodu dogrulamanız gerekiyor!";
         }
 
         if (data.Count == 0)
         {
             UpdateStatus("Gonderilecek cevap bulunamadi!");
-            yield break;
+            return "Gonderilecek cevap bulunamadi!";
         }
 
         GameResult gameResult = new GameResult
@@ -199,7 +223,7 @@ public class GameController : MonoBehaviour
         {
             // Content-Type header'ını ayarla
             request.SetRequestHeader("Content-Type", "application/json");
-            
+
             // JSON verisini request body'sine ekle
             request.uploadHandler = new UploadHandlerRaw(bodyRaw);
 
@@ -207,18 +231,27 @@ public class GameController : MonoBehaviour
             Debug.Log($"Request Headers: {request.GetRequestHeader("Content-Type")}");
             Debug.Log($"Request Body Length: {bodyRaw.Length}");
 
-            yield return request.SendWebRequest();
+            var operation = request.SendWebRequest();
+
+            // İşlemin tamamlanmasını bekle
+            while (!operation.isDone)
+            {
+                System.Threading.Thread.Sleep(100);
+            }
 
             if (request.result == UnityWebRequest.Result.Success)
             {
                 UpdateStatus("Sonuclar basariyla gonderildi!");
                 Debug.Log("Sunucu yaniti: " + request.downloadHandler.text);
                 ResetUI();
+                return "Sonuclar basariyla gonderildi!";
             }
             else
             {
-                UpdateStatus($"Gonderim hatasi: {request.error}\nYanit: {request.downloadHandler.text}");
+                string errorMessage = $"Gonderim hatasi: {request.error}\nYanit: {request.downloadHandler.text}";
+                UpdateStatus(errorMessage);
                 Debug.LogError($"Sunucu hatasi: {request.error}\nYanit: {request.downloadHandler.text}");
+                return errorMessage;
             }
         }
     }
@@ -240,12 +273,6 @@ public class GameController : MonoBehaviour
         if (statusText != null)
             statusText.text = message;
         Debug.Log(message);
-    }
-
-    private void OnError(string errorMessage)
-    {
-        UpdateStatus("Hata: " + errorMessage);
-        ResetUI();
     }
 }
 
