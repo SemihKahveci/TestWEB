@@ -3,206 +3,165 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin Paneli - Sonuçlar</title>
+    <title>Andron Games - Sonuçlar</title>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
     <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Roboto', sans-serif;
+        }
+
         body {
-            font-family: Arial, sans-serif;
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 20px;
-            background-color: #f5f5f5;
+            background: #f5f5f5;
+            min-height: 100vh;
         }
 
         .container {
-            background-color: white;
+            max-width: 1200px;
+            margin: 0 auto;
             padding: 20px;
-            border-radius: 8px;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-            margin-bottom: 20px;
         }
 
-        .section-title {
-            color: #333;
+        .header {
+            background: #fff;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
             margin-bottom: 20px;
-            padding-bottom: 10px;
-            border-bottom: 2px solid #eee;
-        }
-
-        .nav-menu {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 20px;
-            padding: 10px;
-            background-color: #fff;
-            border-radius: 8px;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
         }
 
-        .nav-menu a {
-            text-decoration: none;
+        .header h1 {
             color: #333;
-            padding: 8px 16px;
-            border-radius: 4px;
-            transition: background-color 0.3s;
+            font-size: 24px;
+            font-weight: 500;
         }
 
-        .nav-menu a:hover {
-            background-color: #f0f0f0;
+        .header .user-info {
+            display: flex;
+            align-items: center;
+            gap: 15px;
         }
 
-        .nav-menu a.active {
-            background-color: #4CAF50;
+        .header .user-info span {
+            color: #666;
+        }
+
+        .header .logout-btn {
+            background: #dc3545;
             color: white;
-        }
-
-        /* Skor tablosu stilleri */
-        .scores-table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 10px;
-        }
-
-        .scores-table th, .scores-table td {
-            padding: 12px;
-            text-align: left;
-            border-bottom: 1px solid #ddd;
-        }
-
-        .scores-table th {
-            background-color: #f8f8f8;
-            font-weight: bold;
-        }
-
-        .scores-table tr:hover {
-            background-color: #f5f5f5;
-        }
-
-        .scores-table td {
-            padding: 12px;
-            text-align: left;
-            border-bottom: 1px solid #ddd;
-            max-width: 300px;
-            white-space: normal;
-            word-wrap: break-word;
-        }
-
-        .delete-btn {
-            background-color: #ff4444;
-            color: white;
-            padding: 8px 16px;
             border: none;
-            border-radius: 4px;
+            padding: 8px 16px;
+            border-radius: 5px;
             cursor: pointer;
             font-size: 14px;
-            transition: background-color 0.3s;
+            transition: background 0.3s;
         }
 
-        .delete-btn:hover {
-            background-color: #cc0000;
+        .header .logout-btn:hover {
+            background: #c82333;
         }
 
-        .error {
-            color: #ff0000;
-            margin-top: 10px;
-        }
-
-        /* Değerlendirme arama stilleri */
-        .search-section {
+        .nav-links {
+            display: flex;
+            gap: 15px;
             margin-bottom: 20px;
         }
 
-        .search-input {
-            width: 100%;
-            padding: 10px;
-            margin-bottom: 10px;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-        }
-
-        .search-btn {
-            background-color: #4CAF50;
-            color: white;
-            padding: 10px 20px;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-        }
-
-        .search-btn:hover {
-            background-color: #45a049;
-        }
-
-        .evaluation-section {
-            margin-top: 20px;
-            padding: 20px;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-            background-color: #fff;
-        }
-
-        .evaluation-section h3 {
-            color: #333;
-            margin-bottom: 15px;
-        }
-
-        .evaluation-section p {
-            margin-bottom: 10px;
-            line-height: 1.6;
-        }
-
-        .strength-item, .development-item {
-            margin-bottom: 15px;
-            padding: 15px;
-            background-color: #f8f9fa;
-            border-radius: 4px;
-        }
-
-        .interview-questions {
-            margin-top: 20px;
-        }
-
-        .question-item {
-            margin-bottom: 15px;
-            padding: 15px;
-            background-color: #f8f9fa;
-            border-radius: 4px;
-        }
-
-        .development-suggestions {
-            margin-top: 20px;
-        }
-
-        .suggestion-item {
-            margin-bottom: 15px;
-            padding: 15px;
-            background-color: #f8f9fa;
-            border-radius: 4px;
-        }
-
-        .download-btn {
-            background-color: #2196F3;
-            color: white;
-            padding: 12px 24px;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
+        .nav-links a {
+            color: #007bff;
             text-decoration: none;
-            display: inline-block;
+            font-size: 14px;
+            transition: color 0.3s;
+        }
+
+        .nav-links a:hover {
+            color: #0056b3;
+        }
+
+        .card {
+            background: #fff;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
             margin-bottom: 20px;
-            font-weight: bold;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
-            transition: all 0.3s ease;
         }
 
-        .download-btn:hover {
-            background-color: #1976D2;
-            transform: translateY(-2px);
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        .card h2 {
+            color: #333;
+            font-size: 18px;
+            margin-bottom: 15px;
+            font-weight: 500;
         }
 
-        .download-btn i {
-            margin-right: 8px;
+        .search-form {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .search-form input {
+            flex: 1;
+            padding: 8px 12px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 14px;
+        }
+
+        .search-form button {
+            padding: 8px 16px;
+            background: #007bff;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: background 0.3s;
+        }
+
+        .search-form button:hover {
+            background: #0056b3;
+        }
+
+        .btn {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: background 0.3s;
+        }
+
+        .btn:hover {
+            background: #0056b3;
+        }
+
+        .btn-danger {
+            background: #dc3545;
+        }
+
+        .btn-danger:hover {
+            background: #c82333;
+        }
+
+        .btn-success {
+            background: #28a745;
+        }
+        
+        .btn-success:hover {
+            background: #218838;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 20px;
+            color: #666;
         }
 
         .checkbox-container {
@@ -222,80 +181,77 @@
             font-weight: bold;
             cursor: pointer;
         }
+
+        .error {
+            color: #ff0000;
+            margin-top: 10px;
+        }
+
+        .section {
+            margin-bottom: 20px;
+            padding: 15px;
+            background-color: #f8f9fa;
+            border-radius: 5px;
+        }
+
+        .section h2 {
+            color: #333;
+            margin-bottom: 15px;
+            font-size: 18px;
+        }
+
+        .section h3 {
+            color: #444;
+            margin-bottom: 10px;
+            font-size: 16px;
+        }
+
+        .section p {
+            margin-bottom: 10px;
+            line-height: 1.6;
+            color: #666;
+        }
+
+        .section ul {
+            list-style-type: disc;
+            margin-left: 20px;
+        }
+
+        .section li {
+            margin-bottom: 8px;
+            color: #666;
+        }
     </style>
 </head>
 <body>
-    <!-- Navigasyon Menüsü -->
-    <div class="nav-menu">
-        <a href="index.html">Kod Üretme</a>
-        <a href="results.html" class="active">Sonuçlar</a>
-    </div>
-
-    <!-- Değerlendirme Arama Bölümü -->
     <div class="container">
-        <h1 class="section-title">Değerlendirme Sonuçları</h1>
-        <div class="search-section">
-            <input type="text" id="evaluationId" class="search-input">
-            <button class="search-btn" onclick="searchEvaluation()">Ara</button>
+        <div class="header">
+            <h1>Sonuçlar</h1>
+            <div class="user-info">
+                <span id="userEmail"></span>
+                <a href="admin-panel.html" class="btn">Ana Sayfa</a>
+                <button class="logout-btn" onclick="logout()">Çıkış Yap</button>
+            </div>
         </div>
-        <div id="evaluationResult"></div>
-    </div>
 
-    <!-- Oyuncu Skorları Bölümü -->
-    <div class="container">
-        <h1 class="section-title">Oyuncu Sonuçları</h1>
-        <div style="text-align: right; margin-bottom: 10px;">
-            <button class="delete-btn" onclick="deleteAllResults()">Tüm Sonuçları Sil</button>
+        <div class="nav-links">
+            <a href="index.html">Kod Üretme</a>
         </div>
-        <table class="scores-table">
-            <thead>
-                <tr>
-                    <th>Doğrulama Kodu</th>
-                    <th>Gezegen</th>
-                    <th>Soru ID</th>
-                    <th>Soru Metni</th>
-                    <th>Seçilen Cevap 1</th>
-                    <th>Seçilen Cevap 2</th>
-                    <th>Cevap Tipi 1</th>
-                    <th>Cevap Tipi 2</th>
-                    <th>Alt Kategori</th>
-                    <th>Toplam Skor</th>
-                    <th>Tarih</th>
-                </tr>
-            </thead>
-            <tbody id="resultsTable"></tbody>
-        </table>
+
+        <div class="card">
+            <h2>Değerlendirme Sonuçları</h2>
+            <form class="search-form" onsubmit="searchEvaluation(event)">
+                <input type="text" id="evaluationId" placeholder="ID ile ara..." required>
+                <button type="submit">Ara</button>
+            </form>
+            <div id="evaluationResult"></div>
+        </div>
     </div>
 
     <script>
-        // WebSocket bağlantısı
-        const wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-        const ws = new WebSocket(`${wsProtocol}//${window.location.host}`);
-        
-        ws.onopen = () => {
-            console.log('WebSocket bağlantısı kuruldu');
-        };
-
-        ws.onmessage = (event) => {
-            console.log('Yeni veri alındı:', event.data);
-            fetchResults();
-        };
-
-        ws.onerror = (error) => {
-            console.error('WebSocket hatası:', error);
-        };
-
-        ws.onclose = () => {
-            console.log('WebSocket bağlantısı kapandı');
-        };
-
-        // Sayfa yüklendiğinde sonuçları getir
-        document.addEventListener('DOMContentLoaded', () => {
-            fetchResults();
-        });
-
         // Değerlendirme arama fonksiyonu
-        async function searchEvaluation() {
+        async function searchEvaluation(event) {
+            event.preventDefault();
             const id = document.getElementById('evaluationId').value;
             if (!id) {
                 document.getElementById('evaluationResult').innerHTML = 
@@ -314,94 +270,92 @@
                 }
 
                 resultDiv.innerHTML = `
-                    <div class="evaluation-section">
-                        <div style="text-align: right; margin-bottom: 20px;">
-                            <button onclick="downloadPDF('${id}')" class="download-btn">
-                                <i class="fas fa-download"></i> PDF İndir
-                            </button>
+                    <div style="text-align: right; margin-bottom: 20px;">
+                        <button onclick="downloadPDF('${id}')" class="btn btn-success">
+                            PDF İndir
+                        </button>
+                    </div>
+                    <div class="section">
+                        <h2>Genel Değerlendirme</h2>
+                        <div class="checkbox-container">
+                            <input type="checkbox" id="generalEvaluation" checked>
+                            <label for="generalEvaluation">Genel Değerlendirme</label>
                         </div>
-                        <div class="section">
-                            <h2>Genel Değerlendirme</h2>
-                            <div class="checkbox-container">
-                                <input type="checkbox" id="generalEvaluation" checked>
-                                <label for="generalEvaluation">Genel Değerlendirme</label>
-                            </div>
-                            <p>${data.generalEvaluation}</p>
-                        </div>
+                        <p>${data.generalEvaluation}</p>
+                    </div>
 
-                        <div class="section">
-                            <h2>Güçlü Yönler</h2>
-                            <div class="checkbox-container">
-                                <input type="checkbox" id="strengths" checked>
-                                <label for="strengths">Güçlü Yönler</label>
-                            </div>
-                            ${data.strengths.map(strength => `
-                                <div>
-                                    <h3>${strength.title}</h3>
-                                    <p>${strength.description}</p>
-                                </div>
-                            `).join('')}
+                    <div class="section">
+                        <h2>Güçlü Yönler</h2>
+                        <div class="checkbox-container">
+                            <input type="checkbox" id="strengths" checked>
+                            <label for="strengths">Güçlü Yönler</label>
                         </div>
-
-                        <div class="section">
-                            <h2>Gelişim Alanları</h2>
-                            <div class="checkbox-container">
-                                <input type="checkbox" id="development" checked>
-                                <label for="development">Gelişim Alanları</label>
+                        ${data.strengths.map(strength => `
+                            <div>
+                                <h3>${strength.title}</h3>
+                                <p>${strength.description}</p>
                             </div>
-                            ${data.development.map(dev => `
-                                <div>
-                                    <h3>${dev.title}</h3>
-                                    <p>${dev.description}</p>
-                                </div>
-                            `).join('')}
+                        `).join('')}
+                    </div>
+
+                    <div class="section">
+                        <h2>Gelişim Alanları</h2>
+                        <div class="checkbox-container">
+                            <input type="checkbox" id="development" checked>
+                            <label for="development">Gelişim Alanları</label>
                         </div>
-
-                        <div class="section">
-                            <h2>Mülakat Soruları</h2>
-                            <div class="checkbox-container">
-                                <input type="checkbox" id="interviewQuestions" checked>
-                                <label for="interviewQuestions">Mülakat Soruları</label>
+                        ${data.development.map(dev => `
+                            <div>
+                                <h3>${dev.title}</h3>
+                                <p>${dev.description}</p>
                             </div>
-                            ${data.interviewQuestions.map(category => `
-                                <div>
-                                    <h3>${category.category}</h3>
-                                    ${category.questions.map(q => `
-                                        <div>
-                                            <p><strong>${q.mainQuestion}</strong></p>
-                                            ${q.followUpQuestions ? `
-                                                <ul>
-                                                    ${q.followUpQuestions.map(fq => `<li>${fq}</li>`).join('')}
-                                                </ul>
-                                            ` : ''}
-                                        </div>
+                        `).join('')}
+                    </div>
+
+                    <div class="section">
+                        <h2>Mülakat Soruları</h2>
+                        <div class="checkbox-container">
+                            <input type="checkbox" id="interviewQuestions" checked>
+                            <label for="interviewQuestions">Mülakat Soruları</label>
+                        </div>
+                        ${data.interviewQuestions.map(category => `
+                            <div>
+                                <h3>${category.category}</h3>
+                                ${category.questions.map(q => `
+                                    <div>
+                                        <p><strong>${q.mainQuestion}</strong></p>
+                                        ${q.followUpQuestions ? `
+                                            <ul>
+                                                ${q.followUpQuestions.map(fq => `<li>${fq}</li>`).join('')}
+                                            </ul>
+                                        ` : ''}
+                                    </div>
+                                `).join('')}
+                            </div>
+                        `).join('')}
+                    </div>
+
+                    <div class="section">
+                        <h2>Gelişim Önerileri</h2>
+                        <div class="checkbox-container">
+                            <input type="checkbox" id="developmentSuggestions" checked>
+                            <label for="developmentSuggestions">Gelişim Önerileri</label>
+                        </div>
+                        ${data.developmentSuggestions.map(suggestion => `
+                            <div>
+                                <h3>${suggestion.title}</h3>
+                                <p><strong>Alan:</strong> ${suggestion.area}</p>
+                                <p><strong>Hedef:</strong> ${suggestion.target}</p>
+                                <h4>Öneriler:</h4>
+                                <ul>
+                                    ${suggestion.suggestions.map(s => `
+                                        <li>
+                                            <strong>${s.title}:</strong> ${s.content}
+                                        </li>
                                     `).join('')}
-                                </div>
-                            `).join('')}
-                        </div>
-
-                        <div class="section">
-                            <h2>Gelişim Önerileri</h2>
-                            <div class="checkbox-container">
-                                <input type="checkbox" id="developmentSuggestions" checked>
-                                <label for="developmentSuggestions">Gelişim Önerileri</label>
+                                </ul>
                             </div>
-                            ${data.developmentSuggestions.map(suggestion => `
-                                <div>
-                                    <h3>${suggestion.title}</h3>
-                                    <p><strong>Alan:</strong> ${suggestion.area}</p>
-                                    <p><strong>Hedef:</strong> ${suggestion.target}</p>
-                                    <h4>Öneriler:</h4>
-                                    <ul>
-                                        ${suggestion.suggestions.map(s => `
-                                            <li>
-                                                <strong>${s.title}:</strong> ${s.content}
-                                            </li>
-                                        `).join('')}
-                                    </ul>
-                                </div>
-                            `).join('')}
-                        </div>
+                        `).join('')}
                     </div>
                 `;
             } catch (error) {
@@ -410,79 +364,6 @@
                     '<div class="error">Değerlendirme yüklenirken bir hata oluştu</div>';
             }
         }
-
-        // Sonuçları getir
-        async function fetchResults() {
-            try {
-                const response = await fetch('/api/results');
-                const data = await response.json();
-                console.log('Gelen veri:', data);
-
-                const tableBody = document.getElementById('resultsTable');
-                tableBody.innerHTML = '';
-
-                if (!Array.isArray(data) || data.length === 0) {
-                    console.log('Veri bulunamadı veya boş');
-                    return;
-                }
-
-                data.forEach(result => {
-                    console.log('İşlenen sonuç:', result);
-                    if (result.answers && Array.isArray(result.answers)) {
-                        result.answers.forEach(answer => {
-                            const row = document.createElement('tr');
-                            row.innerHTML = `
-                                <td>${result.playerCode || '-'}</td>
-                                <td>${answer.planetName || '-'}</td>
-                                <td>${answer.questionId || '-'}</td>
-                                <td>${answer.questionText || '-'}</td>
-                                <td>${answer.selectedAnswer1 || '-'}</td>
-                                <td>${answer.selectedAnswer2 || '-'}</td>
-                                <td>${answer.answerType1 || '-'}</td>
-                                <td>${answer.answerType2 || '-'}</td>
-                                <td>${answer.answerSubCategory || '-'}</td>
-                                <td>${result.totalScore ? result.totalScore.toFixed(2) : '-'}</td>
-                                <td>${new Date(result.date).toLocaleString('tr-TR')}</td>
-                            `;
-                            tableBody.appendChild(row);
-                        });
-                    }
-                });
-            } catch (error) {
-                console.error('Sonuçları alırken hata oluştu:', error);
-            }
-        }
-
-        // Tüm sonuçları sil
-        async function deleteAllResults() {
-            if (!confirm('Tüm sonuçları silmek istediğinizden emin misiniz?')) {
-                return;
-            }
-
-            try {
-                const response = await fetch('/api/results', {
-                    method: 'DELETE'
-                });
-                const data = await response.json();
-                console.log('Silme işlemi yanıtı:', data);
-
-                if (data.success) {
-                    document.getElementById('resultsTable').innerHTML = '';
-                    alert('Tüm sonuçlar başarıyla silindi.');
-                } else {
-                    console.error('Silme işlemi başarısız:', data.message);
-                    alert('Sonuçlar silinirken bir hata oluştu: ' + data.message);
-                }
-            } catch (error) {
-                console.error('Sonuçları silerken hata:', error);
-                alert('Sunucu ile iletişim kurulurken bir hata oluştu. Lütfen tekrar deneyin.');
-            }
-        }
-
-        // Her 30 saniyede bir sonuçları güncelle
-        setInterval(() => {
-            fetchResults();
-        }, 30000);
 
         // PDF indirme fonksiyonu
         async function downloadPDF(id) {
@@ -524,6 +405,12 @@
                 console.error('PDF indirme hatası:', error);
                 alert('PDF indirilirken bir hata oluştu: ' + error.message);
             }
+        }
+
+        // Çıkış yap
+        function logout() {
+            localStorage.removeItem('token');
+            window.location.href = 'index.html';
         }
     </script>
 </body>

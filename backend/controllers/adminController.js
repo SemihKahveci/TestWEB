@@ -149,19 +149,47 @@ const adminController = {
         try {
             const { code, email } = req.body;
 
+            // 72 saat sonrasını hesapla
+            const expiryDate = new Date();
+            expiryDate.setHours(expiryDate.getHours() + 72);
+            const formattedExpiryDate = expiryDate.toLocaleDateString('tr-TR');
+
             // E-posta içeriği
             const emailHtml = `
-                <h2>Değerlendirme Kodu</h2>
-                <p>Merhaba,</p>
-                <p>Değerlendirme kodunuz: <strong>${code}</strong></p>
-                <p>Bu kodu değerlendirme sayfasında kullanabilirsiniz.</p>
-                <p>İyi çalışmalar dileriz.</p>
+                <div style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
+                    <p>Sevgili Katılımcı,</p>
+
+                    <p>Andron Yetkinlik Değerlendirme Oyununu oynamaya davetlisin.</p>
+
+                    <p>Oyunu, dikkatinin dağılmayacağı sessiz bir ortamda yapmanızı öneriyoruz. Oyuna masaüstü bilgisayarından, tabletinden veya akıllı telefonundan erişebilirsin.</p>
+
+                    <p>Oyunla ilgili aşağıda dikkat etmen gereken bazı önemli noktalar bulunmaktadır.</p>
+
+                    <ul style="list-style-type: none; padding-left: 0;">
+                        <li style="margin-bottom: 10px;">► Oyunun başında gelen oyun oynama talimatlarını dikkatlice incelemen ve oyun için istenen izinleri vermen gereklidir.</li>
+                        <li style="margin-bottom: 10px;">► Her bir soru için belirli bir süren olacaktır. Ekranın bilerek veya yanlışlıkla kapanması geri sayımı durdurmayacaktır.</li>
+                        <li style="margin-bottom: 10px;">► Her soru için belirlenen süre içinde seçim yapmadığın durumda en üstte bulunan seçenek senin seçimin olarak kabul edilir.</li>
+                        <li style="margin-bottom: 10px;">► Oyunu oynarken parlaklığı en üst seviyede tutmanı ve telefonunun sesinin açık olmasını öneriyoruz.</li>
+                    </ul>
+
+                    <p>Oyunu en geç ${formattedExpiryDate} tarihine kadar tamamlamanızı önemle rica ediyoruz.</p>
+
+                    <p>Oyunu başlatmak için lütfen aşağıdaki linkden oyunu indirip size gönderilen kod ile oyuna giriş yapınız.</p>
+
+                    <p>IOS linki<br>
+                    ANDROID linki<br>
+                    <strong>Kod: ${code}</strong></p>
+
+                    <p>Herhangi bir sorunuz olduğunda info@androngame.com üzerinden Andron ekibi ile iletişime geçebilirsiniz.</p>
+
+                    <p>Saygılarımızla,</p>
+                </div>
             `;
 
             // E-posta gönder
             const emailResult = await sendEmail(
                 email,
-                'Değerlendirme Kodu',
+                'Yetkinlik Değerlendirme Oyunu Daveti',
                 emailHtml
             );
 

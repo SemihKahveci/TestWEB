@@ -144,14 +144,15 @@ public class GameController : MonoBehaviour
                 System.Threading.Thread.Sleep(100);
             }
 
-            Debug.Log($"Sunucu yaniti: {request.downloadHandler.text}");
+            string responseText = request.downloadHandler.text;
+            Debug.Log($"Sunucu yaniti: {responseText}");
             Debug.Log($"Response code: {request.responseCode}");
 
             if (request.result == UnityWebRequest.Result.Success)
             {
                 try
                 {
-                    CodeResponse response = JsonUtility.FromJson<CodeResponse>(request.downloadHandler.text);
+                    CodeResponse response = JsonUtility.FromJson<CodeResponse>(responseText);
                     Debug.Log($"Response success: {response.success}");
                     Debug.Log($"Response message: {response.message}");
 
@@ -159,6 +160,14 @@ public class GameController : MonoBehaviour
                     {
                         isCodeVerified = true;
                         sendResultButton.interactable = true;
+
+                        // Sections array'i null kontrolü
+                        if (response.sections == null || response.sections.Length == 0)
+                        {
+                            Debug.LogWarning("Sections array'i boş veya null!");
+                            UpdateStatus("Kod doğrulandı fakat bölüm bilgisi bulunamadı!");
+                            return new string[] { "1" }; // Varsayılan olarak tek bölüm döndür
+                        }
 
                         // Section array'ini string array'e çevir
                         string[] sectionNames = new string[response.sections.Length];
@@ -179,6 +188,8 @@ public class GameController : MonoBehaviour
                 catch (Exception e)
                 {
                     Debug.LogError($"JSON parse hatası: {e.Message}");
+                    Debug.LogError($"Hata detayı: {e.StackTrace}");
+                    Debug.LogError($"JSON yanıtı: {responseText}");
                     UpdateStatus($"Sunucu yanıtı işlenirken hata oluştu: {e.Message}");
                     return null;
                 }

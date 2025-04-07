@@ -52,9 +52,25 @@
             align-items: center;
             margin-bottom: 30px;
         }
-        .header h2 {
+        .header h1 {
             margin: 0;
             color: #333;
+        }
+        .user-info {
+            display: flex;
+            align-items: center;
+        }
+        .logout-btn {
+            margin-left: 10px;
+            padding: 5px 10px;
+            background-color: #dc3545;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        .nav-links {
+            margin-top: 20px;
         }
     </style>
 </head>
@@ -64,11 +80,11 @@
             <div class="header">
                 <h2>Admin Paneli</h2>
                 <div>
-                    <a href="/" class="btn btn-primary me-2">Ana Sayfaya Dön</a>
+                    <a href="index.html" class="btn btn-primary me-2">Kod Üretme</a>
+                    <a href="results.html" class="btn btn-primary me-2">Sonuçlar</a>
                     <button id="logoutBtn" class="btn btn-danger">Çıkış Yap</button>
                 </div>
             </div>
-
             <!-- Veri Silme Bölümü -->
             <div class="section">
                 <h3 class="section-title">Veri Silme</h3>

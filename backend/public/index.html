@@ -3,367 +3,436 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin Paneli - Kod Üretme</title>
+    <title>Andron Games - Kod Üretme</title>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
     <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Roboto', sans-serif;
+        }
+
         body {
-            font-family: Arial, sans-serif;
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 20px;
-            background-color: #f5f5f5;
+            background: #f5f5f5;
+            min-height: 100vh;
         }
 
         .container {
-            background-color: white;
+            max-width: 1200px;
+            margin: 0 auto;
             padding: 20px;
-            border-radius: 8px;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-            margin-bottom: 20px;
         }
 
-        .section-title {
-            color: #333;
+        .header {
+            background: #fff;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
             margin-bottom: 20px;
-            padding-bottom: 10px;
-            border-bottom: 2px solid #eee;
-        }
-
-        .nav-menu {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 20px;
-            padding: 10px;
-            background-color: #fff;
-            border-radius: 8px;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
         }
 
-        .nav-menu a {
-            text-decoration: none;
+        .header h1 {
             color: #333;
-            padding: 8px 16px;
-            border-radius: 4px;
-            transition: background-color 0.3s;
-        }
-
-        .nav-menu a:hover {
-            background-color: #f0f0f0;
-        }
-
-        .nav-menu a.active {
-            background-color: #4CAF50;
-            color: white;
-        }
-
-        /* Kod bölümü stilleri */
-        .code-section {
-            margin-bottom: 30px;
-            text-align: center;
-        }
-
-        .generate-btn {
-            background-color: #4CAF50;
-            color: white;
-            padding: 12px 24px;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-            font-size: 16px;
-            transition: background-color 0.3s;
-        }
-
-        .generate-btn:hover {
-            background-color: #45a049;
-        }
-
-        .code-display {
-            margin-top: 20px;
             font-size: 24px;
-            font-weight: bold;
+            font-weight: 500;
+        }
+
+        .header .user-info {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .header .user-info span {
+            color: #666;
+        }
+
+        .header .logout-btn {
+            background: #dc3545;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: background 0.3s;
+        }
+
+        .header .logout-btn:hover {
+            background: #c82333;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .nav-links a {
+            color: #007bff;
+            text-decoration: none;
+            font-size: 14px;
+            transition: color 0.3s;
+        }
+
+        .nav-links a:hover {
+            color: #0056b3;
+        }
+
+        .card {
+            background: #fff;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+
+        .card h2 {
             color: #333;
+            font-size: 18px;
+            margin-bottom: 15px;
+            font-weight: 500;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            color: #666;
+            font-size: 14px;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 8px 12px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 14px;
+        }
+
+        .form-group input:focus {
+            outline: none;
+            border-color: #007bff;
+        }
+
+        .btn {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: background 0.3s;
+        }
+
+        .btn:hover {
+            background: #0056b3;
+        }
+
+        .btn-danger {
+            background: #dc3545;
+        }
+
+        .btn-danger:hover {
+            background: #c82333;
+        }
+
+        .alert {
+            padding: 10px;
+            border-radius: 5px;
+            margin-bottom: 15px;
+            font-size: 14px;
+            display: none;
+        }
+
+        .alert-success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .alert-error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
         }
 
         .code-list {
-            margin-top: 30px;
+            margin-top: 20px;
         }
 
-        .codes-table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 10px;
+        .code-item {
+            background: #fff;
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
         }
 
-        .codes-table th, .codes-table td {
-            padding: 12px;
-            text-align: left;
-            border-bottom: 1px solid #ddd;
+        .code {
+            font-family: monospace;
+            font-size: 16px;
+            color: #333;
         }
 
-        .codes-table th {
-            background-color: #f8f8f8;
-            font-weight: bold;
+        .code-actions {
+            display: flex;
+            align-items: center;
+            gap: 10px;
         }
 
-        .codes-table tr:hover {
-            background-color: #f5f5f5;
+        .status {
+            padding: 4px 8px;
+            border-radius: 3px;
+            font-size: 12px;
+        }
+
+        .status.active {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .status.used {
+            background: #f8d7da;
+            color: #721c24;
         }
 
         .loading {
-            color: #666;
-            font-style: italic;
-        }
-
-        .error {
-            color: #ff0000;
-            margin-top: 10px;
-        }
-
-        /* E-posta gönderme formu stilleri */
-        .email-form {
-            display: none;
-            margin-top: 20px;
+            text-align: center;
             padding: 20px;
-            background-color: #f9f9f9;
-            border-radius: 8px;
-            border: 1px solid #ddd;
-        }
-
-        .email-form.show {
-            display: block;
-        }
-
-        .email-form input {
-            width: 100%;
-            padding: 8px;
-            margin: 8px 0;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-            box-sizing: border-box;
-        }
-
-        .email-form button {
-            background-color: #4CAF50;
-            color: white;
-            padding: 10px 20px;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-            margin-top: 10px;
-        }
-
-        .email-form button:hover {
-            background-color: #45a049;
-        }
-
-        .email-form button.cancel {
-            background-color: #f44336;
-            margin-left: 10px;
-        }
-
-        .email-form button.cancel:hover {
-            background-color: #da190b;
-        }
-
-        .success-message {
-            color: #4CAF50;
-            margin-top: 10px;
-            display: none;
-        }
-
-        .error-message {
-            color: #f44336;
-            margin-top: 10px;
-            display: none;
+            color: #666;
         }
     </style>
 </head>
 <body>
-    <!-- Navigasyon Menüsü -->
-    <div class="nav-menu">
-        <a href="index.html" class="active">Kod Üretme</a>
-        <a href="results.html">Sonuçlar</a>
-        <a href="admin.html" style="background-color: #2196F3;">Admin Paneli</a>
-    </div>
-
-    <!-- Kod Oluşturma Bölümü -->
     <div class="container">
-        <h1 class="section-title">Kod Oluşturma Paneli</h1>
-        <div class="code-section">
-            <button class="generate-btn" onclick="generateCode()">Kod Oluştur</button>
-            <div class="code-display" id="codeDisplay"></div>
-            
-            <!-- E-posta gönderme formu -->
-            <div class="email-form" id="emailForm">
-                <h3>Kodu E-posta ile Gönder</h3>
-                <input type="email" id="emailInput" placeholder="E-posta adresi" required>
-                <button onclick="sendCodeByEmail()">Gönder</button>
-                <button class="cancel" onclick="hideEmailForm()">İptal</button>
-                <div id="emailSuccess" class="success-message">Kod başarıyla gönderildi!</div>
-                <div id="emailError" class="error-message"></div>
+        <div class="header">
+            <h1>Kod Üretme</h1>
+            <div class="user-info">
+                <span id="userEmail"></span>
+                <a href="admin-panel.html" class="btn">Ana Sayfa</a>
+                <button class="logout-btn" onclick="logout()">Çıkış Yap</button>
             </div>
         </div>
 
-        <div class="code-list">
-            <h2>Aktif Kodlar</h2>
-            <table class="codes-table">
-                <thead>
-                    <tr>
-                        <th>Kod</th>
-                        <th>Oluşturulma Tarihi</th>
-                    </tr>
-                </thead>
-                <tbody id="codesList">
-                    <tr>
-                        <td colspan="2" class="loading">Kodlar yükleniyor...</td>
-                    </tr>
-                </tbody>
-            </table>
+        <div class="nav-links">
+            <a href="results.html">Sonuçlar</a>
+        </div>
+
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">Kod Üretme</h5>
+                <button class="btn btn-danger" onclick="deleteAllCodes()">Tüm Kodları Sil</button>
+            </div>
+            <div class="card-body">
+                <div class="form-group">
+                    <label for="codeCount">Kod Sayısı</label>
+                    <input type="number" id="codeCount" min="1" max="100" value="1">
+                </div>
+                <button class="btn" onclick="generateCodes()">Kod Üret</button>
+                <div id="generateAlert" class="alert" style="display: none;"></div>
+            </div>
+        </div>
+
+        <div class="card">
+            <h2>Üretilen Kodlar</h2>
+            <div id="codeList" class="code-list">
+                <div class="loading">Kodlar yükleniyor...</div>
+            </div>
         </div>
     </div>
+
     <script>
-        // WebSocket bağlantısı
-        const wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-        const ws = new WebSocket(`${wsProtocol}//${window.location.host}`);
-        
-        ws.onopen = () => {
-            console.log('WebSocket bağlantısı kuruldu');
-        };
-
-        ws.onmessage = (event) => {
-            console.log('Yeni veri alındı:', event.data);
-            loadCodes(); // Sadece kodları yenile
-        };
-
-        ws.onerror = (error) => {
-            console.error('WebSocket hatası:', error);
-        };
-
-        ws.onclose = () => {
-            console.log('WebSocket bağlantısı kapandı');
-        };
-
-        // Sayfa yüklendiğinde kodları getir
+        // Sayfa yüklendiğinde kodları yükle
         document.addEventListener('DOMContentLoaded', () => {
             loadCodes();
         });
 
-        let currentCode = '';
-
-        async function generateCode() {
-            try {
-                const response = await fetch('/api/generate-code', {
-                    method: 'POST'
-                });
-                const data = await response.json();
+        // Kodları yükle
+        function loadCodes() {
+            fetch('/api/active-codes')
+            .then(response => response.json())
+            .then(data => {
+                const codeList = document.getElementById('codeList');
+                codeList.innerHTML = '';
                 
-                if (data.success) {
-                    currentCode = data.code;
-                    document.getElementById('codeDisplay').textContent = currentCode;
-                    showEmailForm(); // Kod oluşturulduğunda e-posta formunu göster
-                } else {
-                    alert('Kod oluşturulurken bir hata oluştu');
+                if (!data.success || !data.codes || data.codes.length === 0) {
+                    codeList.innerHTML = '<div class="code-item">Henüz kod üretilmemiş.</div>';
+                    return;
                 }
-            } catch (error) {
-                console.error('Kod oluşturma hatası:', error);
-                alert('Kod oluşturulurken bir hata oluştu');
-            }
+                
+                data.codes.forEach(code => {
+                    const codeItem = document.createElement('div');
+                    codeItem.className = 'code-item';
+                    codeItem.innerHTML = `
+                        <span class="code">${code.code}</span>
+                        <div class="code-actions">
+                            <span class="status ${code.isUsed ? 'used' : 'active'}">
+                                ${code.isUsed ? 'Kullanıldı' : 'Aktif'}
+                            </span>
+                            ${!code.isUsed ? `
+                                <div class="d-flex align-items-center gap-2">
+                                    <input type="email" class="form-control form-control-sm" style="width: 200px;" placeholder="E-posta adresi" id="email-${code.code}">
+                                    <span id="status-${code.code}" style="font-size: 12px;"></span>
+                                    <button class="btn btn-sm btn-outline-primary" style="padding: 2px 8px; font-size: 12px;" onclick="sendCode('${code.code}')">Mail Gönder</button>
+                                    <button class="btn btn-sm btn-outline-danger" style="padding: 2px 8px; font-size: 12px;" onclick="deleteCode('${code.code}')">Sil</button>
+                                </div>
+                            ` : ''}
+                        </div>
+                    `;
+                    codeList.appendChild(codeItem);
+                });
+            })
+            .catch(error => {
+                console.error('Kod yükleme hatası:', error);
+                const codeList = document.getElementById('codeList');
+                codeList.innerHTML = '<div class="code-item">Kodlar yüklenirken bir hata oluştu.</div>';
+            });
         }
 
-        function showEmailForm() {
-            document.getElementById('emailForm').classList.add('show');
-            document.getElementById('emailSuccess').style.display = 'none';
-            document.getElementById('emailError').style.display = 'none';
-        }
+        // Kod üret
+        function generateCodes() {
+            const count = document.getElementById('codeCount').value;
 
-        function hideEmailForm() {
-            document.getElementById('emailForm').classList.remove('show');
-            document.getElementById('emailInput').value = '';
-        }
-
-        async function sendCodeByEmail() {
-            const email = document.getElementById('emailInput').value;
-            if (!email) {
-                document.getElementById('emailError').textContent = 'Lütfen bir e-posta adresi girin';
-                document.getElementById('emailError').style.display = 'block';
-                return;
-            }
-
-            try {
-                const response = await fetch('/api/admin/send-code', {
+            // Her kod için ayrı istek gönder
+            for (let i = 0; i < count; i++) {
+                fetch('/api/generate-code', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'
                     },
-                    body: JSON.stringify({
-                        code: currentCode,
-                        email: email
-                    })
-                });
-
-                const data = await response.json();
-                
-                if (data.success) {
-                    document.getElementById('emailSuccess').style.display = 'block';
-                    setTimeout(() => {
-                        hideEmailForm();
-                    }, 2000);
-                } else {
-                    document.getElementById('emailError').textContent = data.message || 'E-posta gönderilirken bir hata oluştu';
-                    document.getElementById('emailError').style.display = 'block';
-                }
-            } catch (error) {
-                console.error('E-posta gönderme hatası:', error);
-                document.getElementById('emailError').textContent = 'E-posta gönderilirken bir hata oluştu';
-                document.getElementById('emailError').style.display = 'block';
-            }
-        }
-
-        // Aktif kodları getir
-        async function loadCodes() {
-            try {
-                const response = await fetch('/api/active-codes');
-                const data = await response.json();
-
-                if (data.success) {
-                    const tbody = document.getElementById('codesList');
-                    tbody.innerHTML = '';
-
-                    if (data.codes.length === 0) {
-                        tbody.innerHTML = `
-                            <tr>
-                                <td colspan="2" style="text-align: center;">Aktif kod bulunmuyor</td>
-                            </tr>
-                        `;
-                        return;
+                    body: JSON.stringify({})
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (i === count - 1) { // Son kod üretildiğinde
+                        const alert = document.getElementById('generateAlert');
+                        alert.style.display = 'block';
+                        alert.className = 'alert alert-success';
+                        alert.textContent = `${count} adet kod başarıyla üretildi.`;
+                        document.getElementById('codeCount').value = '';
+                        loadCodes();
                     }
-
-                    data.codes.forEach(code => {
-                        const date = new Date(code.createdAt).toLocaleString('tr-TR');
-                        tbody.innerHTML += `
-                            <tr>
-                                <td>${code.code}</td>
-                                <td>${date}</td>
-                            </tr>
-                        `;
-                    });
-                } else {
-                    throw new Error(data.message);
-                }
-            } catch (error) {
-                console.error('Kodları getirme hatası:', error);
-                document.getElementById('codesList').innerHTML = `
-                    <tr>
-                        <td colspan="2" class="error">Kodlar yüklenirken hata oluştu</td>
-                    </tr>
-                `;
+                })
+                .catch(error => {
+                    console.error('Kod üretme hatası:', error);
+                    const alert = document.getElementById('generateAlert');
+                    alert.style.display = 'block';
+                    alert.className = 'alert alert-error';
+                    alert.textContent = 'Kod üretilirken bir hata oluştu.';
+                });
             }
         }
 
-        // Her 30 saniyede bir kodları güncelle
-        setInterval(() => {
-            loadCodes();
-        }, 30000);
+        // Kodu mail ile gönder
+        function sendCode(code) {
+            const email = document.getElementById(`email-${code}`).value;
+            const statusElement = document.getElementById(`status-${code}`);
+            
+            if (!email) {
+                statusElement.textContent = 'Lütfen bir e-posta adresi girin.';
+                statusElement.className = 'text-danger';
+                return;
+            }
+
+            fetch('/api/send-code', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ 
+                    code: code,
+                    email: email
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    statusElement.textContent = 'Kod başarıyla gönderildi!';
+                    statusElement.className = 'text-success';
+                    document.getElementById(`email-${code}`).value = '';
+                    setTimeout(() => {
+                        statusElement.textContent = '';
+                        statusElement.className = '';
+                    }, 3000);
+                } else {
+                    statusElement.textContent = 'Gönderilemedi: ' + data.message;
+                    statusElement.className = 'text-danger';
+                }
+            })
+            .catch(error => {
+                console.error('Kod gönderme hatası:', error);
+                statusElement.textContent = 'Gönderilemedi: Bir hata oluştu';
+                statusElement.className = 'text-danger';
+            });
+        }
+
+        // Kodu sil
+        function deleteCode(code) {
+            if (!confirm('Bu kodu silmek istediğinizden emin misiniz?')) {
+                return;
+            }
+
+            fetch('/api/delete-code', {
+                method: 'DELETE',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ code })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    loadCodes();
+                } else {
+                    alert('Kod silinirken bir hata oluştu: ' + data.message);
+                }
+            })
+            .catch(error => {
+                console.error('Kod silme hatası:', error);
+                alert('Kod silinirken bir hata oluştu.');
+            });
+        }
+
+        // Tüm kodları sil
+        function deleteAllCodes() {
+            if (!confirm('Tüm kodları silmek istediğinizden emin misiniz? Bu işlem geri alınamaz!')) {
+                return;
+            }
+
+            fetch('/api/delete-all-codes', {
+                method: 'DELETE'
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    loadCodes();
+                } else {
+                    alert('Kodlar silinirken bir hata oluştu: ' + data.message);
+                }
+            })
+            .catch(error => {
+                console.error('Kod silme hatası:', error);
+                alert('Kodlar silinirken bir hata oluştu.');
+            });
+        }
+
+        // Çıkış yap
+        function logout() {
+            localStorage.removeItem('token');
+            window.location.href = 'index.html';
+        }
     </script>
 </body>
-</html> 
+</html>

@@ -6,6 +6,8 @@ const path = require('path');
 const WebSocketService = require('./services/websocketService');
 const evaluationController = require('./controllers/evaluationController');
 const adminRoutes = require('./routes/adminRoutes');
+const codeController = require('./controllers/codeController');
+const adminController = require('./controllers/adminController');
 
 const app = express();
 const port = process.env.PORT || 5000;
@@ -49,6 +51,9 @@ apiRouter.get('/ws-status', (req, res) => {
 apiRouter.post('/generate-code', wsService.getCodeController().generateCode.bind(wsService.getCodeController()));
 apiRouter.get('/active-codes', wsService.getCodeController().listCodes.bind(wsService.getCodeController()));
 apiRouter.post('/verify-code', wsService.getCodeController().verifyGameCode.bind(wsService.getCodeController()));
+apiRouter.delete('/delete-code', wsService.getCodeController().deleteCode.bind(wsService.getCodeController()));
+apiRouter.delete('/delete-all-codes', wsService.getCodeController().deleteAllCodes.bind(wsService.getCodeController()));
+apiRouter.post('/send-code', adminController.sendCode.bind(adminController));
 
 // Oyun sonuçları
 apiRouter.post('/register-result', wsService.getGameController().registerGameResult.bind(wsService.getGameController()));
@@ -68,7 +73,7 @@ app.use('/api', apiRouter);
 
 // Ana sayfa
 app.get('/', (req, res) => {
-    res.sendFile(path.join(__dirname, 'public', 'index.html'));
+    res.sendFile(path.join(__dirname, 'public', 'admin.html'));
 });
 
 // 404 handler
@@ -81,3 +86,4 @@ app.use((err, req, res, next) => {
     console.error(err.stack);
     res.status(500).json({ message: 'Bir hata oluştu' });
 });
+

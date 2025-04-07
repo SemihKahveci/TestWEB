@@ -109,6 +109,57 @@ class CodeController {
             });
         }
     }
+
+    // Tüm kodları sil
+    async deleteAllCodes(req, res) {
+        try {
+            await UserCode.deleteMany({});
+            res.status(200).json({
+                success: true,
+                message: 'Tüm kodlar başarıyla silindi'
+            });
+        } catch (error) {
+            console.error('Kodları silme hatası:', error);
+            res.status(500).json({
+                success: false,
+                message: this.errorMessages.serverError
+            });
+        }
+    }
+
+    // Tekli kod silme
+    async deleteCode(req, res) {
+        try {
+            const { code } = req.body;
+            
+            if (!code) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'Kod gerekli'
+                });
+            }
+
+            const result = await UserCode.deleteOne({ code });
+            
+            if (result.deletedCount === 0) {
+                return res.status(404).json({
+                    success: false,
+                    message: 'Kod bulunamadı'
+                });
+            }
+
+            res.status(200).json({
+                success: true,
+                message: 'Kod başarıyla silindi'
+            });
+        } catch (error) {
+            console.error('Kod silme hatası:', error);
+            res.status(500).json({
+                success: false,
+                message: this.errorMessages.serverError
+            });
+        }
+    }
 }
 
 module.exports = CodeController; 
