@@ -205,11 +205,13 @@
     <script src="/js/sidebar.js"></script>
     <script>
         // Sayfa yüklendiğinde oturum kontrolü
-        window.addEventListener('load', function() {
+        document.addEventListener('DOMContentLoaded', () => {
             const token = localStorage.getItem('token');
             if (!token) {
                 window.location.href = 'admin.html';
+                return;
             }
+            loadUserInfo();
         });
 
         // Bağlantı koptuğunda kontrol
@@ -218,10 +220,14 @@
             window.location.href = 'admin.html';
         });
 
-        // Sayfa yüklendiğinde kullanıcı bilgilerini yükle
-        document.addEventListener('DOMContentLoaded', () => {
-            loadUserInfo();
-        });
+        // Kullanıcı bilgilerini yükleme fonksiyonu
+        function loadUserInfo() {
+            const token = localStorage.getItem('token');
+            if (token) {
+                const payload = JSON.parse(atob(token.split('.')[1]));
+                document.getElementById('userEmail').textContent = payload.email;
+            }
+        }
 
         // Çıkış işlemi
         document.getElementById('logoutBtn').addEventListener('click', () => {

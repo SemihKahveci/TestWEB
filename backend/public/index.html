@@ -255,11 +255,14 @@
 
     <script>
         // Sayfa yüklendiğinde oturum kontrolü
-        window.addEventListener('load', function() {
+        document.addEventListener('DOMContentLoaded', () => {
             const token = localStorage.getItem('token');
             if (!token) {
                 window.location.href = 'admin.html';
+                return;
             }
+            loadUserInfo();
+            loadCodes();
         });
 
         // Bağlantı koptuğunda kontrol
@@ -267,6 +270,15 @@
             localStorage.removeItem('token');
             window.location.href = 'admin.html';
         });
+
+        // Kullanıcı bilgilerini yükleme fonksiyonu
+        function loadUserInfo() {
+            const token = localStorage.getItem('token');
+            if (token) {
+                const payload = JSON.parse(atob(token.split('.')[1]));
+                document.getElementById('userEmail').textContent = payload.email;
+            }
+        }
 
         // Sayfa görünürlüğü değiştiğinde kontrol
         document.addEventListener('visibilitychange', function() {
@@ -285,11 +297,6 @@
         }, 60000); // Her dakika kontrol et
 
         // Sayfa yüklendiğinde kodları yükle
-        document.addEventListener('DOMContentLoaded', () => {
-            loadCodes();
-        });
-
-        // Kodları yükle
         function loadCodes() {
             fetch('/api/active-codes')
             .then(response => response.json())

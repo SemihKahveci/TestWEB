@@ -250,11 +250,14 @@
 
     <script>
         // Sayfa yüklendiğinde oturum kontrolü
-        window.addEventListener('load', function() {
+        document.addEventListener('DOMContentLoaded', () => {
             const token = localStorage.getItem('token');
             if (!token) {
                 window.location.href = 'admin.html';
+                return;
             }
+            loadUserInfo();
+            loadResults();
         });
 
         // Bağlantı koptuğunda kontrol
@@ -263,21 +266,14 @@
             window.location.href = 'admin.html';
         });
 
-        // Sayfa görünürlüğü değiştiğinde kontrol
-        document.addEventListener('visibilitychange', function() {
-            if (document.hidden) {
-                localStorage.removeItem('token');
-                window.location.href = 'admin-panel.html';
-            }
-        });
-
-        // Oturum kontrolü için periyodik kontrol
-        setInterval(function() {
+        // Kullanıcı bilgilerini yükleme fonksiyonu
+        function loadUserInfo() {
             const token = localStorage.getItem('token');
-            if (!token) {
-                window.location.href = 'admin-panel.html';
+            if (token) {
+                const payload = JSON.parse(atob(token.split('.')[1]));
+                document.getElementById('userEmail').textContent = payload.email;
             }
-        }, 60000); // Her dakika kontrol et
+        }
 
         // Değerlendirme arama fonksiyonu
         async function searchEvaluation(event) {

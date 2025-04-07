@@ -323,6 +323,7 @@
                 const data = await response.json();
 
                 if (response.ok) {
+                    localStorage.setItem('token', data.token);
                     window.location.href = '/admin-panel.html';
                 } else {
                     const alert = document.getElementById('loginAlert');
