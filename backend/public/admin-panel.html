@@ -204,6 +204,25 @@
 
     <script src="/js/sidebar.js"></script>
     <script>
+        // Sayfa yüklendiğinde oturum kontrolü
+        window.addEventListener('load', function() {
+            const token = localStorage.getItem('token');
+            if (!token) {
+                window.location.href = 'admin.html';
+            }
+        });
+
+        // Bağlantı koptuğunda kontrol
+        window.addEventListener('offline', function() {
+            localStorage.removeItem('token');
+            window.location.href = 'admin.html';
+        });
+
+        // Sayfa yüklendiğinde kullanıcı bilgilerini yükle
+        document.addEventListener('DOMContentLoaded', () => {
+            loadUserInfo();
+        });
+
         // Çıkış işlemi
         document.getElementById('logoutBtn').addEventListener('click', () => {
             window.location.href = '/admin.html';
