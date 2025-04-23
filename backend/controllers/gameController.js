@@ -129,31 +129,42 @@ class GameController {
 
     async getReportsByAnswerType(answers) {
         try {
-            // answers array'indeki answerType1 değerlerini sırasıyla al
-            const answerTypes = answers.map(answer => answer.answerType1);
-            console.log('Bulunan answerType1 değerleri:', answerTypes);
+            // BY ve MO olanları ayrı gruplandır
+            const byAnswers = answers.filter(answer => answer.answerSubCategory === 'BY');
+            const moAnswers = answers.filter(answer => answer.answerSubCategory === 'MO');
 
-            // Boş olmayan cevapları filtrele
-            const validAnswerTypes = answerTypes.filter(type => type && type !== '-');
-            console.log('Geçerli answerType1 değerleri:', validAnswerTypes);
+            console.log('BY cevapları:', byAnswers);
+            console.log('MO cevapları:', moAnswers);
 
-            // Cevapları string formatına çevir
-            const answerString = validAnswerTypes.join(', ');
-            console.log('Cevaplar string formatı:', answerString);
+            // BY cevaplarından answerType1 değerlerini al
+            const byAnswerTypes = byAnswers.map(answer => answer.answerType1);
+            console.log('BY answerType1 değerleri:', byAnswerTypes);
 
-            // evaluationanswers koleksiyonunda arama yap
+            // Boş olmayan BY cevaplarını filtrele
+            const validByAnswerTypes = byAnswerTypes.filter(type => type && type !== '-');
+            console.log('Geçerli BY answerType1 değerleri:', validByAnswerTypes);
+
+            // BY cevaplarını string formatına çevir
+            const byAnswerString = validByAnswerTypes.join(', ');
+            console.log('BY cevapları string formatı:', byAnswerString);
+
+            // Koleksiyon isimlerini kontrol et
+            const collections = await mongoose.connection.db.listCollections().toArray();
+            console.log('Mevcut koleksiyonlar:', collections.map(c => c.name));
+
+            // evaluationanswers koleksiyonunda BY cevaplarıyla arama yap
             const matched = await mongoose.connection.collection('evaluationanswers').findOne({
-                Cevaplar: { $regex: new RegExp(answerString, 'i') }
+                Cevaplar: { $regex: new RegExp(byAnswerString, 'i') }
             });
 
             if (matched) {
-                console.log('Eşleşen cevaplar bulundu:', matched);
+                console.log('Eşleşen BY cevapları bulundu:', matched);
                 // ID ile evaluationresults koleksiyonunda arama yap
                 const evaluationResult = await mongoose.connection.collection('evaluationresults').findOne({ ID: matched.ID });
                 console.log('Bulunan değerlendirme sonucu:', evaluationResult);
                 return evaluationResult;
             } else {
-                console.log('Eşleşen cevaplar bulunamadı');
+                console.log('Eşleşen BY cevapları bulunamadı');
                 return null;
             }
         } catch (error) {
