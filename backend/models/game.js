@@ -32,7 +32,8 @@ const gameSchema = new mongoose.Schema({
         reserved3: { type: String }
     }],
     totalScore: { type: Number, default: 0 },
-    date: { type: Date, default: Date.now }
+    date: { type: Date, default: Date.now },
+    evaluationId: { type: String }
 });
 
 module.exports = mongoose.model('Game', gameSchema); 

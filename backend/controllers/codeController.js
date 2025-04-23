@@ -1,4 +1,8 @@
 const UserCode = require('../models/userCode');
+const Game = require('../models/game');
+const EvaluationResult = require('../models/evaluationResult');
+const mongoose = require('mongoose');
+
 
 class CodeController {
     constructor(wss) {
@@ -89,16 +93,11 @@ class CodeController {
                 });
             }
 
-            // Kodu kullanılmış olarak işaretleme işlemini kaldırdık
-            // Bu işlem oyun sonuçları gönderildiğinde yapılacak
-
             res.status(200).json({
                 success: true,
                 message: 'Kod doğrulandı',
                 sections: [
-                    { name: '1' },
-                    { name: '2' },
-                    { name: '3' }
+                    { name: '0' },
                 ]
             });
         } catch (error) {
@@ -160,6 +159,9 @@ class CodeController {
             });
         }
     }
+
+    // answerType1 değerlerine göre raporları getir ve değerlendirme sonuçlarını döndür
+   
 }
 
 module.exports = CodeController; 

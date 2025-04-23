@@ -2,69 +2,66 @@ const mongoose = require('mongoose');
 const EvaluationResult = require('../models/evaluationResult');
 const { generatePDF } = require('../services/pdfService');
 const { sendEmail } = require('../services/emailService');
+const jwt = require('jsonwebtoken');
+const Admin = require('../models/Admin');
+const bcrypt = require('bcryptjs');
 
 const adminController = {
     login: async (req, res) => {
-        const { username, password } = req.body;
-        
-        // Email ve şifre kontrolü
-        if (username === 'info@androngame.com' && password === 'andron2025') {
-            res.json({ message: 'Giriş başarılı' });
-        } else {
-            res.status(401).json({ message: 'Geçersiz email veya şifre' });
-        }
-    },
-
-    seedData: async (req, res) => {
         try {
-            // Örnek veri
-            const sampleData = {
-                id: "1024",
-                generalEvaluation: "Genel değerlendirme örneği",
-                strengths: [
-                    {
-                        title: "Güçlü Yön 1",
-                        description: "Güçlü yön açıklaması"
-                    }
-                ],
-                development: [
-                    {
-                        title: "Gelişim Alanı 1",
-                        description: "Gelişim alanı açıklaması"
-                    }
-                ],
-                interviewQuestions: [
-                    {
-                        category: "Kategori 1",
-                        questions: [
-                            {
-                                mainQuestion: "Ana soru",
-                                followUpQuestions: ["Alt soru 1", "Alt soru 2"]
-                            }
-                        ]
-                    }
-                ],
-                developmentSuggestions: [
-                    {
-                        title: "Öneri Başlığı",
-                        area: "Alan",
-                        target: "Hedef",
-                        suggestions: [
-                            {
-                                title: "Öneri 1",
-                                content: "Öneri içeriği"
-                            }
-                        ]
-                    }
-                ]
-            };
+            console.log('Login isteği alındı:', req.body);
+            const { email, password } = req.body;
 
-            // Veriyi kaydet
-            const evaluation = await EvaluationResult.create(sampleData);
-            res.status(201).json({ message: 'Örnek veri başarıyla eklendi', evaluation });
+            if (!email || !password) {
+                return res.status(400).json({ message: 'Email ve şifre gereklidir' });
+            }
+
+            // Admin'i bul
+            const admin = await Admin.findOne({ email });
+            if (!admin) {
+                console.log('Admin bulunamadı:', email);
+                return res.status(401).json({ message: 'Geçersiz email veya şifre' });
+            }
+
+            // Şifreyi kontrol et
+            const isMatch = await admin.comparePassword(password);
+            if (!isMatch) {
+                console.log('Şifre eşleşmedi:', email);
+                return res.status(401).json({ message: 'Geçersiz email veya şifre' });
+            }
+
+            // Admin aktif değilse
+            if (!admin.isActive) {
+                console.log('Admin aktif değil:', email);
+                return res.status(401).json({ message: 'Hesabınız aktif değil' });
+            }
+
+            // Token oluştur
+            const token = jwt.sign(
+                { 
+                    id: admin._id, 
+                    email: admin.email,
+                    role: admin.role,
+                    name: admin.name
+                },
+                process.env.JWT_SECRET || 'andron2025secretkey',
+                { expiresIn: '1d' }
+            );
+
+            console.log('Giriş başarılı:', email);
+            res.json({
+                success: true,
+                token,
+                admin: {
+                    id: admin._id,
+                    email: admin.email,
+                    name: admin.name,
+                    role: admin.role
+                }
+            });
         } catch (error) {
-            console.error('Örnek veri ekleme hatası:', error);
-            res.status(500).json({ message: 'Örnek veri eklenirken bir hata oluştu' });
+            console.error('Login hatası:', error);
+            res.status(500).json({ message: 'Sunucu hatası', error: error.message });
         }
     },
 
@@ -201,6 +198,87 @@ const adminController = {
         } catch (error) {
             console.error('Kod gönderme hatası:', error);
             res.status(500).json({ success: false, message: 'Kod gönderilirken bir hata oluştu' });
+        }
+    },
+
+    // Yeni admin oluşturma
+    createAdmin: async (req, res) => {
+        try {
+            const { email, password, name, role } = req.body;
+
+            // Email kontrolü
+            const existingAdmin = await Admin.findOne({ email });
+            if (existingAdmin) {
+                return res.status(400).json({ message: 'Bu email adresi zaten kullanımda' });
+            }
+
+            // Yeni admin oluştur
+            const admin = new Admin({
+                email,
+                password,
+                name,
+                role: role || 'admin'
+            });
+
+            await admin.save();
+
+            res.status(201).json({
+                message: 'Admin başarıyla oluşturuldu',
+                admin: {
+                    id: admin._id,
+                    email: admin.email,
+                    name: admin.name,
+                    role: admin.role
+                }
+            });
+        } catch (error) {
+            res.status(500).json({ message: 'Sunucu hatası' });
+        }
+    },
+
+    // Admin güncelleme
+    updateAdmin: async (req, res) => {
+        try {
+            const { id } = req.params;
+            const { email, password, name, role, isActive } = req.body;
+
+            // Admin'i bul
+            const admin = await Admin.findById(id);
+            if (!admin) {
+                return res.status(404).json({ message: 'Admin bulunamadı' });
+            }
+
+            // Güncelleme
+            if (email) admin.email = email;
+            if (password) admin.password = password;
+            if (name) admin.name = name;
+            if (role) admin.role = role;
+            if (typeof isActive === 'boolean') admin.isActive = isActive;
+
+            await admin.save();
+
+            res.json({
+                message: 'Admin başarıyla güncellendi',
+                admin: {
+                    id: admin._id,
+                    email: admin.email,
+                    name: admin.name,
+                    role: admin.role,
+                    isActive: admin.isActive
+                }
+            });
+        } catch (error) {
+            res.status(500).json({ message: 'Sunucu hatası' });
+        }
+    },
+
+    // Admin listesi
+    getAdmins: async (req, res) => {
+        try {
+            const admins = await Admin.find().select('-password');
+            res.json(admins);
+        } catch (error) {
+            res.status(500).json({ message: 'Sunucu hatası' });
         }
     }
 };

@@ -12,21 +12,18 @@ const adminController = require('./controllers/adminController');
 const app = express();
 const port = process.env.PORT || 5000;
 
+// MongoDB bağlantısı
+mongoose.connect(process.env.MONGODB_URI, {
+    useNewUrlParser: true,
+    useUnifiedTopology: true
+})
+.then(() => console.log('MongoDB bağlantısı başarılı'))
+.catch(err => console.error('MongoDB bağlantı hatası:', err));
+
 // Middleware
 app.use(cors());
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
-
-// MongoDB bağlantısı
-mongoose.connect(process.env.MONGODB_URI + '/adminPanel', {
-    useNewUrlParser: true,
-    useUnifiedTopology: true
-}).then(() => {
-    console.log('MongoDB bağlantısı başarılı');
-}).catch((err) => {
-    console.error('MongoDB bağlantı hatası:', err);
-    process.exit(1); // Bağlantı başarısız olursa uygulamayı sonlandır
-});
 
 // HTTP sunucusu
 const server = app.listen(port, () => {
@@ -55,6 +52,7 @@ apiRouter.delete('/delete-code', wsService.getCodeController().deleteCode.bind(w
 apiRouter.delete('/delete-all-codes', wsService.getCodeController().deleteAllCodes.bind(wsService.getCodeController()));
 apiRouter.post('/send-code', adminController.sendCode.bind(adminController));
 
+
 // Oyun sonuçları
 apiRouter.post('/register-result', wsService.getGameController().registerGameResult.bind(wsService.getGameController()));
 apiRouter.get('/results', wsService.getGameController().getResults.bind(wsService.getGameController()));
@@ -62,6 +60,7 @@ apiRouter.delete('/results', wsService.getGameController().deleteAllResults.bind
 apiRouter.get('/check-status', wsService.getGameController().checkServerStatus.bind(wsService.getGameController()));
 
 // Değerlendirme işlemleri
+apiRouter.get('/evaluation/results', evaluationController.getAllEvaluations);
 apiRouter.get('/evaluation/:id', evaluationController.getEvaluationById);
 apiRouter.post('/evaluation/:id/pdf', evaluationController.generatePDF);
 

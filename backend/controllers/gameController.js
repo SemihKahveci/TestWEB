@@ -3,6 +3,8 @@ const Game = require('../models/game');
 const UserCode = require('../models/userCode');
 const AnswerType = require('../models/answerType');
 const Section = require('../models/section');
+const EvaluationController = require('./evaluationController');
+const mongoose = require('mongoose');
 
 class GameController {
     constructor(wss) {
@@ -29,6 +31,7 @@ class GameController {
                 playerCode: game.playerCode || '-',
                 section: game.section || '-',
                 totalScore: game.totalScore || 0,
+                evaluationId: game.evaluationId || null,
                 answers: game.answers.map(answer => ({
                     questionId: answer.questionId || '-',
                     planetName: answer.planetName || '-',
@@ -88,12 +91,17 @@ class GameController {
                 return acc + ((multiplier1 + (multiplier2 / 2)) * 2) / 3;
             }, 0) / processedAnswers.length;
 
+            // Değerlendirme sonuçlarını getir
+            const evaluationResult = await this.getReportsByAnswerType(processedAnswers);
+            console.log('Değerlendirme sonucu:', evaluationResult);
+
             const newGame = new Game({
                 playerCode: data.playerCode,
                 section: data.section,
                 answers: processedAnswers,
                 totalScore,
-                date: new Date()
+                date: new Date(),
+                evaluationId: evaluationResult ? evaluationResult.ID : null
             });
 
             await newGame.save();
@@ -105,7 +113,9 @@ class GameController {
 
             res.status(200).json({
                 success: true,
-                message: "Oyun sonucu kaydedildi"
+                message: "Oyun sonucu kaydedildi",
+                evaluationResult,
+                evaluationId: evaluationResult ? evaluationResult.ID : null
             });
 
         } catch (error) {
@@ -117,46 +127,44 @@ class GameController {
         }
     }
 
+    async getReportsByAnswerType(answers) {
+        try {
+            // answers array'indeki answerType1 değerlerini sırasıyla al
+            const answerTypes = answers.map(answer => answer.answerType1);
+            console.log('Bulunan answerType1 değerleri:', answerTypes);
+
+            // Boş olmayan cevapları filtrele
+            const validAnswerTypes = answerTypes.filter(type => type && type !== '-');
+            console.log('Geçerli answerType1 değerleri:', validAnswerTypes);
+
+            // Cevapları string formatına çevir
+            const answerString = validAnswerTypes.join(', ');
+            console.log('Cevaplar string formatı:', answerString);
+
+            // evaluationanswers koleksiyonunda arama yap
+            const matched = await mongoose.connection.collection('evaluationanswers').findOne({
+                Cevaplar: { $regex: new RegExp(answerString, 'i') }
+            });
+
+            if (matched) {
+                console.log('Eşleşen cevaplar bulundu:', matched);
+                // ID ile evaluationresults koleksiyonunda arama yap
+                const evaluationResult = await mongoose.connection.collection('evaluationresults').findOne({ ID: matched.ID });
+                console.log('Bulunan değerlendirme sonucu:', evaluationResult);
+                return evaluationResult;
+            } else {
+                console.log('Eşleşen cevaplar bulunamadı');
+                return null;
+            }
+        } catch (error) {
+            console.error('Sonuçlar alınırken hata:', error);
+            return null;
+        }
+    }
+
     // Sunucu durumu kontrolü
     async checkServerStatus(req, res) {
         res.json({ status: 'online' });
-    }
-
-    // Cevap tiplerini ekle
-    async addAnswerTypes(req, res) {
-        try {
-            // Önce mevcut tipleri temizle
-            await AnswerType.deleteMany({});
-
-            const answerTypes = [
-                {
-                    type: 'AKY',
-                    description: 'Belirsizlikle karşılaştığında enerjisi artar.'
-                },
-                {
-                    type: 'CY',
-                    description: 'Belirsizlik halinde bile soğukkanlılığını korur ve ilerleme sağlar.'
-                },
-                {
-                    type: 'Y',
-                    description: 'Belirsizlik durumunda yeni çözümler üretir.'
-                }
-            ];
-
-            await AnswerType.insertMany(answerTypes);
-
-            res.status(200).json({
-                success: true,
-                message: 'Cevap tipleri eklendi',
-                types: answerTypes
-            });
-        } catch (error) {
-            console.error('Cevap tipleri eklenirken hata:', error);
-            res.status(500).json({
-                success: false,
-                message: 'Cevap tipleri eklenirken hata oluştu'
-            });
-        }
     }
 
     // Cevap tipine göre açıklamayı getir

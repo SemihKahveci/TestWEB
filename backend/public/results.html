@@ -221,6 +221,32 @@
             margin-bottom: 8px;
             color: #666;
         }
+
+        #resultsList {
+            margin-top: 20px;
+        }
+
+        .result-item {
+            background: #fff;
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 10px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+
+        .result-item h3 {
+            color: #333;
+            margin-bottom: 10px;
+        }
+
+        .result-item p {
+            color: #666;
+            margin-bottom: 5px;
+        }
+
+        .result-item button {
+            margin-top: 10px;
+        }
     </style>
 </head>
 <body>
@@ -245,198 +271,298 @@
                 <button type="submit">Ara</button>
             </form>
             <div id="evaluationResult"></div>
+            <div id="resultsList"></div>
         </div>
     </div>
 
     <script>
-        // Sayfa yüklendiğinde oturum kontrolü
-        document.addEventListener('DOMContentLoaded', () => {
+        // Kullanıcı oturumunu kontrol et
+        function checkAuth() {
             const token = localStorage.getItem('token');
             if (!token) {
                 window.location.href = 'admin.html';
                 return;
             }
-            loadUserInfo();
-            loadResults();
-        });
-
-        // Bağlantı koptuğunda kontrol
-        window.addEventListener('offline', function() {
-            localStorage.removeItem('token');
-            window.location.href = 'admin.html';
-        });
-
-        // Kullanıcı bilgilerini yükleme fonksiyonu
-        function loadUserInfo() {
-            const token = localStorage.getItem('token');
-            if (token) {
-                const payload = JSON.parse(atob(token.split('.')[1]));
-                document.getElementById('userEmail').textContent = payload.email;
-            }
+            const userEmail = localStorage.getItem('userEmail');
+            document.getElementById('userEmail').textContent = userEmail;
         }
 
-        // Değerlendirme arama fonksiyonu
+        // Sayfa yüklendiğinde oturumu kontrol et
+        document.addEventListener('DOMContentLoaded', () => {
+            checkAuth();
+            loadAllResults(); // Tüm sonuçları yükle
+        });
+
+        // Çıkış yap
+        function logout() {
+            localStorage.removeItem('token');
+            localStorage.removeItem('userEmail');
+            window.location.href = 'admin.html';
+        }
+
+        // ID ile arama yap
         async function searchEvaluation(event) {
             event.preventDefault();
             const id = document.getElementById('evaluationId').value;
-            if (!id) {
-                document.getElementById('evaluationResult').innerHTML = 
-                    '<div class="error">Lütfen bir ID girin</div>';
-                return;
-            }
-
             try {
-                const response = await fetch(`/api/evaluation/${id}`);
-                const data = await response.json();
+                const response = await fetch(`/api/evaluation/${id}`, {
+                    headers: {
+                        'Authorization': `Bearer ${localStorage.getItem('token')}`
+                    }
+                });
                 
-                const resultDiv = document.getElementById('evaluationResult');
-                if (data.error) {
-                    resultDiv.innerHTML = `<div class="error">${data.error}</div>`;
-                    return;
+                if (!response.ok) {
+                    throw new Error('Değerlendirme bulunamadı');
                 }
-
-                resultDiv.innerHTML = `
-                    <div style="text-align: right; margin-bottom: 20px;">
-                        <button onclick="downloadPDF('${id}')" class="btn btn-success">
-                            PDF İndir
-                        </button>
-                    </div>
-                    <div class="section">
-                        <h2>Genel Değerlendirme</h2>
-                        <div class="checkbox-container">
-                            <input type="checkbox" id="generalEvaluation" checked>
-                            <label for="generalEvaluation">Genel Değerlendirme</label>
-                        </div>
-                        <p>${data.generalEvaluation}</p>
-                    </div>
-
-                    <div class="section">
-                        <h2>Güçlü Yönler</h2>
-                        <div class="checkbox-container">
-                            <input type="checkbox" id="strengths" checked>
-                            <label for="strengths">Güçlü Yönler</label>
-                        </div>
-                        ${data.strengths.map(strength => `
-                            <div>
-                                <h3>${strength.title}</h3>
-                                <p>${strength.description}</p>
-                            </div>
-                        `).join('')}
-                    </div>
-
-                    <div class="section">
-                        <h2>Gelişim Alanları</h2>
-                        <div class="checkbox-container">
-                            <input type="checkbox" id="development" checked>
-                            <label for="development">Gelişim Alanları</label>
-                        </div>
-                        ${data.development.map(dev => `
-                            <div>
-                                <h3>${dev.title}</h3>
-                                <p>${dev.description}</p>
-                            </div>
-                        `).join('')}
-                    </div>
-
-                    <div class="section">
-                        <h2>Mülakat Soruları</h2>
-                        <div class="checkbox-container">
-                            <input type="checkbox" id="interviewQuestions" checked>
-                            <label for="interviewQuestions">Mülakat Soruları</label>
-                        </div>
-                        ${data.interviewQuestions.map(category => `
-                            <div>
-                                <h3>${category.category}</h3>
-                                ${category.questions.map(q => `
-                                    <div>
-                                        <p><strong>${q.mainQuestion}</strong></p>
-                                        ${q.followUpQuestions ? `
-                                            <ul>
-                                                ${q.followUpQuestions.map(fq => `<li>${fq}</li>`).join('')}
-                                            </ul>
-                                        ` : ''}
-                                    </div>
-                                `).join('')}
-                            </div>
-                        `).join('')}
-                    </div>
-
-                    <div class="section">
-                        <h2>Gelişim Önerileri</h2>
-                        <div class="checkbox-container">
-                            <input type="checkbox" id="developmentSuggestions" checked>
-                            <label for="developmentSuggestions">Gelişim Önerileri</label>
-                        </div>
-                        ${data.developmentSuggestions.map(suggestion => `
-                            <div>
-                                <h3>${suggestion.title}</h3>
-                                <p><strong>Alan:</strong> ${suggestion.area}</p>
-                                <p><strong>Hedef:</strong> ${suggestion.target}</p>
-                                <h4>Öneriler:</h4>
-                                <ul>
-                                    ${suggestion.suggestions.map(s => `
-                                        <li>
-                                            <strong>${s.title}:</strong> ${s.content}
-                                        </li>
-                                    `).join('')}
-                                </ul>
-                            </div>
-                        `).join('')}
-                    </div>
-                `;
+                
+                const evaluation = await response.json();
+                displayEvaluation(evaluation);
             } catch (error) {
-                console.error('Değerlendirme arama hatası:', error);
-                document.getElementById('evaluationResult').innerHTML = 
-                    '<div class="error">Değerlendirme yüklenirken bir hata oluştu</div>';
+                document.getElementById('evaluationResult').innerHTML = `
+                    <div class="error">${error.message}</div>
+                `;
             }
         }
 
-        // PDF indirme fonksiyonu
-        async function downloadPDF(id) {
+        // Tüm sonuçları yükle
+        async function loadAllResults() {
             try {
-                const selectedSections = {
-                    generalEvaluation: document.getElementById('generalEvaluation').checked,
-                    strengths: document.getElementById('strengths').checked,
-                    development: document.getElementById('development').checked,
-                    interviewQuestions: document.getElementById('interviewQuestions').checked,
-                    developmentSuggestions: document.getElementById('developmentSuggestions').checked
-                };
+                console.log('Sonuçlar yükleniyor...');
+                const response = await fetch('/api/results', {
+                    headers: {
+                        'Authorization': `Bearer ${localStorage.getItem('token')}`
+                    }
+                });
+                
+                if (!response.ok) {
+                    throw new Error('Sonuçlar bulunamadı');
+                }
+                
+                const results = await response.json();
+                console.log('Yüklenen sonuçlar:', results);
+                
+                if (results && results.length > 0) {
+                    displayAllResults(results);
+                } else {
+                    document.getElementById('resultsList').innerHTML = '<p>Gösterilecek sonuç bulunamadı.</p>';
+                }
+            } catch (error) {
+                console.error('Sonuçlar yüklenirken hata:', error);
+                document.getElementById('resultsList').innerHTML = `
+                    <div class="error">${error.message}</div>
+                `;
+            }
+        }
 
-                console.log('Seçilen bölümler:', selectedSections);
+        // Tüm sonuçları göster
+        function displayAllResults(results) {
+            const resultsListDiv = document.getElementById('resultsList');
+            resultsListDiv.innerHTML = '';
+            
+            // Sadece değerlendirme sonucu olan oyunları filtrele
+            const resultsWithEvaluation = results.filter(result => result.evaluationId);
+            
+            if (!resultsWithEvaluation || resultsWithEvaluation.length === 0) {
+                resultsListDiv.innerHTML = '<p>Gösterilecek değerlendirme sonucu bulunamadı.</p>';
+                return;
+            }
+            
+            resultsWithEvaluation.forEach(result => {
+                const resultItem = document.createElement('div');
+                resultItem.className = 'result-item';
+                
+                resultItem.innerHTML = `
+                    <h3>Oyuncu Kodu: ${result.playerCode}</h3>
+                    <p>Bölüm: ${result.section}</p>
+                    <p>Toplam Puan: ${result.totalScore}</p>
+                    <p>Tarih: ${new Date(result.date).toLocaleString('tr-TR')}</p>
+                    <button onclick="searchEvaluationById('${result.evaluationId}')" class="btn">Değerlendirme Sonucu</button>
+                `;
+                resultsListDiv.appendChild(resultItem);
+            });
+        }
 
+        // ID ile değerlendirme ara
+        async function searchEvaluationById(id) {
+            try {
+                console.log('Değerlendirme aranıyor, ID:', id);
+                const response = await fetch(`/api/evaluation/${id}`, {
+                    headers: {
+                        'Authorization': `Bearer ${localStorage.getItem('token')}`
+                    }
+                });
+                
+                if (!response.ok) {
+                    throw new Error('Değerlendirme bulunamadı');
+                }
+                
+                const evaluation = await response.json();
+                console.log('Bulunan değerlendirme:', evaluation);
+                
+                if (evaluation) {
+                    displayEvaluation(evaluation);
+                    // Değerlendirme sonucunu göster
+                    document.getElementById('evaluationResult').scrollIntoView({ behavior: 'smooth' });
+                } else {
+                    document.getElementById('evaluationResult').innerHTML = `
+                        <div class="error">Değerlendirme bulunamadı.</div>
+                    `;
+                }
+            } catch (error) {
+                console.error('Değerlendirme aranırken hata:', error);
+                document.getElementById('evaluationResult').innerHTML = `
+                    <div class="error">${error.message}</div>
+                `;
+            }
+        }
+
+        // Değerlendirmeleri göster
+        function displayEvaluations(evaluations) {
+            const resultsListDiv = document.getElementById('resultsList');
+            resultsListDiv.innerHTML = '';
+            
+            if (evaluations.length === 0) {
+                resultsListDiv.innerHTML = '<p>Gösterilecek değerlendirme bulunamadı.</p>';
+                return;
+            }
+            
+            evaluations.forEach(evaluation => {
+                const resultItem = document.createElement('div');
+                resultItem.className = 'result-item';
+                resultItem.innerHTML = `
+                    <h3>Değerlendirme ID: ${evaluation.ID}</h3>
+                    <p>Genel Değerlendirme: ${evaluation['Genel Değerlendirme'] || 'Bulunamadı'}</p>
+                    <button onclick="displayEvaluation(${JSON.stringify(evaluation)})" class="btn">Detayları Göster</button>
+                `;
+                resultsListDiv.appendChild(resultItem);
+            });
+        }
+
+        // Değerlendirme sonucunu göster
+        function displayEvaluation(evaluation) {
+            console.log('Değerlendirme gösteriliyor:', evaluation);
+            const resultDiv = document.getElementById('evaluationResult');
+            
+            if (!evaluation) {
+                resultDiv.innerHTML = '<div class="error">Değerlendirme verisi bulunamadı.</div>';
+                return;
+            }
+            
+            // Gelişim önerilerini ayrı başlıklar altında oluştur
+            let gelisimOnerileriHTML = '';
+            const gelisimOnerileriKeys = ['Gelişim Önerileri -1', 'Gelişim Önerileri -2', 'Gelişim Önerileri - 3'];
+            
+            gelisimOnerileriKeys.forEach((key, index) => {
+                if (evaluation[key]) {
+                    gelisimOnerileriHTML += `
+                        <div class="subsection">
+                            <h3>Gelişim Önerisi ${index + 1}</h3>
+                            <p>${evaluation[key]}</p>
+                        </div>
+                    `;
+                }
+            });
+
+            resultDiv.innerHTML = `
+                <div style="text-align: right; margin-bottom: 20px;">
+                    <button onclick="showPDFOptions('${evaluation.ID}')" class="btn btn-success">
+                        PDF İndir
+                    </button>
+                </div>
+                <div class="section">
+                    <h2>Genel Değerlendirme</h2>
+                    <div class="checkbox-container">
+                        <input type="checkbox" id="generalEvaluation" checked>
+                        <label for="generalEvaluation">Genel Değerlendirme</label>
+                    </div>
+                    <p>${evaluation['Genel Değerlendirme'] || 'Bulunamadı'}</p>
+                </div>
+                <div class="section">
+                    <h2>Güçlü Yönler</h2>
+                    <div class="checkbox-container">
+                        <input type="checkbox" id="strengths" checked>
+                        <label for="strengths">Güçlü Yönler</label>
+                    </div>
+                    <p>${evaluation['Güçlü Yönler'] || 'Bulunamadı'}</p>
+                </div>
+                <div class="section">
+                    <h2>Gelişim Alanları</h2>
+                    <div class="checkbox-container">
+                        <input type="checkbox" id="development" checked>
+                        <label for="development">Gelişim Alanları</label>
+                    </div>
+                    <p>${evaluation['Gelişim Alanları'] || 'Bulunamadı'}</p>
+                </div>
+                <div class="section">
+                    <h2>Mülakat Soruları</h2>
+                    <div class="checkbox-container">
+                        <input type="checkbox" id="interviewQuestions" checked>
+                        <label for="interviewQuestions">Mülakat Soruları</label>
+                    </div>
+                    <p>${evaluation['Mülakat Soruları'] || 'Bulunamadı'}</p>
+                </div>
+                <div class="section">
+                    <h2>Neden Bu Sorular?</h2>
+                    <div class="checkbox-container">
+                        <input type="checkbox" id="whyTheseQuestions" checked>
+                        <label for="whyTheseQuestions">Neden Bu Sorular?</label>
+                    </div>
+                    <p>${evaluation['Neden Bu Sorular?'] || 'Bulunamadı'}</p>
+                </div>
+                <div class="section">
+                    <h2>Gelişim Önerileri</h2>
+                    <div class="checkbox-container">
+                        <input type="checkbox" id="developmentSuggestions" checked>
+                        <label for="developmentSuggestions">Gelişim Önerileri</label>
+                    </div>
+                    ${gelisimOnerileriHTML || '<p>Gelişim önerisi bulunamadı.</p>'}
+                </div>
+            `;
+        }
+
+        // PDF seçeneklerini göster
+        function showPDFOptions(id) {
+            const selectedSections = {
+                generalEvaluation: document.getElementById('generalEvaluation').checked,
+                strengths: document.getElementById('strengths').checked,
+                development: document.getElementById('development').checked,
+                interviewQuestions: document.getElementById('interviewQuestions').checked,
+                whyTheseQuestions: document.getElementById('whyTheseQuestions').checked,
+                developmentSuggestions: document.getElementById('developmentSuggestions').checked
+            };
+
+            generatePDF(id, selectedSections);
+        }
+
+        // PDF oluştur
+        async function generatePDF(id, selectedSections) {
+            try {
                 const response = await fetch(`/api/evaluation/${id}/pdf`, {
                     method: 'POST',
                     headers: {
+                        'Authorization': `Bearer ${localStorage.getItem('token')}`,
                         'Content-Type': 'application/json'
                     },
                     body: JSON.stringify(selectedSections)
                 });
 
                 if (!response.ok) {
-                    const errorData = await response.json();
-                    console.error('Sunucu hatası:', errorData);
-                    throw new Error(errorData.message || 'PDF oluşturulurken bir hata oluştu');
+                    throw new Error('PDF oluşturulurken bir hata oluştu');
                 }
 
                 const blob = await response.blob();
                 const url = window.URL.createObjectURL(blob);
                 const a = document.createElement('a');
                 a.href = url;
-                a.download = `evaluation-${id}.pdf`;
+                a.download = `evaluation_${id}.pdf`;
                 document.body.appendChild(a);
                 a.click();
                 window.URL.revokeObjectURL(url);
-                a.remove();
+                document.body.removeChild(a);
             } catch (error) {
-                console.error('PDF indirme hatası:', error);
-                alert('PDF indirilirken bir hata oluştu: ' + error.message);
+                console.error('PDF oluşturma hatası:', error);
+                alert('PDF oluşturulurken bir hata oluştu: ' + error.message);
             }
-        }
-
-        // Çıkış yap
-        function logout() {
-            localStorage.removeItem('token');
-            window.location.href = 'index.html';
         }
     </script>
 </body>

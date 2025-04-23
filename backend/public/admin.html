@@ -308,7 +308,7 @@
         // Giriş işlemleri
         document.getElementById('adminLoginForm').addEventListener('submit', async (e) => {
             e.preventDefault();
-            const username = document.getElementById('username').value;
+            const email = document.getElementById('username').value;
             const password = document.getElementById('password').value;
 
             try {
@@ -317,14 +317,14 @@
                     headers: {
                         'Content-Type': 'application/json'
                     },
-                    body: JSON.stringify({ username, password })
+                    body: JSON.stringify({ email, password })
                 });
 
                 const data = await response.json();
 
-                if (response.ok) {
+                if (response.ok && data.token) {
                     localStorage.setItem('token', data.token);
-                    window.location.href = '/admin-panel.html';
+                    window.location.href = 'admin-panel.html';
                 } else {
                     const alert = document.getElementById('loginAlert');
                     alert.textContent = data.message || 'Giriş başarısız';

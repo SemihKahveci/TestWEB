@@ -11,4 +11,5 @@ router.post('/verify', codeController.verifyCode);
 // Aktif kodları listele
 router.get('/list', codeController.listActiveCodes);
 
+
 module.exports = router; 

@@ -9,8 +9,8 @@ const evaluationController = {
             const { id } = req.params;
             console.log('Aranan ID:', id);
 
-            const evaluation = await EvaluationResult.findOne({ id: id });
-            console.log('Bulunan değerlendirme:', evaluation);
+            const evaluation = await EvaluationResult.findOne({ ID: id });
+            console.log('Bulunan değerlendirme:', JSON.stringify(evaluation, null, 2));
 
             if (!evaluation) {
                 return res.status(404).json({ error: 'Değerlendirme bulunamadı' });
@@ -30,10 +30,39 @@ const evaluationController = {
             console.log('PDF oluşturulacak ID:', id);
             console.log('Seçilen bölümler:', selectedSections);
 
-            const evaluation = await EvaluationResult.findOne({ id: id });
+            const evaluation = await EvaluationResult.findOne({ ID: id });
             if (!evaluation) {
                 return res.status(404).json({ message: 'Değerlendirme bulunamadı' });
             }
+
+            // Verileri al
+            const genelDegerlendirme = evaluation['Genel Değerlendirme'];
+            const gucluYonler = evaluation['Güçlü Yönler'];
+            const gelisimAlanlari = evaluation['Gelişim Alanları'];
+            const mulakatSorulari = evaluation['Mülakat Soruları'];
+            const nedenBuSorular = evaluation['Neden Bu Sorular?'];
+            const gelisimOnerileri1 = evaluation['Gelişim Önerileri -1'];
+            const gelisimOnerileri2 = evaluation['Gelişim Önerileri -2'];
+            const gelisimOnerileri3 = evaluation['Gelişim Önerileri - 3'];
+
+            // Gelişim önerilerini ayrı başlıklar altında oluştur
+            let gelisimOnerileriHTML = '';
+            const gelisimOnerileriKeys = [
+                { key: 'Gelişim Önerileri -1', title: 'Gelişim Önerisi 1' },
+                { key: 'Gelişim Önerileri -2', title: 'Gelişim Önerisi 2' },
+                { key: 'Gelişim Önerileri - 3', title: 'Gelişim Önerisi 3' }
+            ];
+            
+            gelisimOnerileriKeys.forEach(item => {
+                if (evaluation[item.key]) {
+                    gelisimOnerileriHTML += `
+                        <div class="subsection">
+                            <h3>${item.title}</h3>
+                            <p>${evaluation[item.key]}</p>
+                        </div>
+                    `;
+                }
+            });
 
             // HTML içeriğini oluştur
             const htmlContent = `
@@ -58,11 +87,22 @@ const evaluationController = {
                             padding-bottom: 10px;
                             margin-top: 25px;
                         }
+                        h3 {
+                            color: #2c3e50;
+                            margin-top: 15px;
+                            margin-bottom: 10px;
+                        }
                         .section { 
                             margin-bottom: 25px;
                             padding: 15px;
                             background-color: #f9f9f9;
                             border-radius: 5px;
+                        }
+                        .subsection {
+                            margin-top: 15px;
+                            margin-bottom: 15px;
+                            padding-left: 10px;
+                            border-left: 3px solid #3498db;
                         }
                         ul { 
                             list-style-type: disc;
@@ -87,70 +127,45 @@ const evaluationController = {
                         <div class="date">Oluşturulma Tarihi: ${new Date().toLocaleDateString('tr-TR')}</div>
                     </div>
                     
-                    ${selectedSections.generalEvaluation ? `
+                    ${selectedSections.generalEvaluation === true ? `
                     <div class="section">
                         <h2>Genel Değerlendirme</h2>
-                        <p>${evaluation.generalEvaluation || 'Genel değerlendirme bulunamadı.'}</p>
+                        <p>${genelDegerlendirme || 'Genel değerlendirme bulunamadı.'}</p>
                     </div>
                     ` : ''}
 
-                    ${selectedSections.strengths ? `
+                    ${selectedSections.strengths === true ? `
                     <div class="section">
                         <h2>Güçlü Yönler</h2>
-                        <ul>
-                            ${(evaluation.strengths || []).map(strength => `<li>${strength.title}: ${strength.description}</li>`).join('')}
-                        </ul>
+                        <p>${gucluYonler || 'Güçlü yönler bulunamadı.'}</p>
                     </div>
                     ` : ''}
 
-                    ${selectedSections.development ? `
+                    ${selectedSections.development === true ? `
                     <div class="section">
                         <h2>Gelişim Alanları</h2>
-                        <ul>
-                            ${(evaluation.development || []).map(area => `<li>${area.title}: ${area.description}</li>`).join('')}
-                        </ul>
+                        <p>${gelisimAlanlari || 'Gelişim alanları bulunamadı.'}</p>
                     </div>
                     ` : ''}
 
-                    ${selectedSections.interviewQuestions ? `
+                    ${selectedSections.interviewQuestions === true ? `
                     <div class="section">
                         <h2>Mülakat Soruları</h2>
-                        <ul>
-                            ${(evaluation.interviewQuestions || []).map(category => `
-                                <li>${category.category}
-                                    <ul>
-                                        ${category.questions.map(q => `
-                                            <li>${q.mainQuestion}
-                                                <ul>
-                                                    ${(q.followUpQuestions || []).map(fq => `<li>${fq}</li>`).join('')}
-                                                </ul>
-                                            </li>
-                                        `).join('')}
-                                    </ul>
-                                </li>
-                            `).join('')}
-                        </ul>
+                        <p>${mulakatSorulari || 'Mülakat soruları bulunamadı.'}</p>
                     </div>
                     ` : ''}
 
-                    ${selectedSections.developmentSuggestions ? `
+                    ${selectedSections.whyTheseQuestions === true ? `
+                    <div class="section">
+                        <h2>Neden Bu Sorular?</h2>
+                        <p>${nedenBuSorular || 'Neden bu sorular bilgisi bulunamadı.'}</p>
+                    </div>
+                    ` : ''}
+
+                    ${selectedSections.developmentSuggestions === true ? `
                     <div class="section">
                         <h2>Gelişim Önerileri</h2>
-                        <ul>
-                            ${(evaluation.developmentSuggestions || []).map(suggestion => `
-                                <li>${suggestion.title}
-                                    <ul>
-                                        <li>Alan: ${suggestion.area}</li>
-                                        <li>Hedef: ${suggestion.target}</li>
-                                        <li>Öneriler:
-                                            <ul>
-                                                ${suggestion.suggestions.map(s => `<li>${s.title}: ${s.content}</li>`).join('')}
-                                            </ul>
-                                        </li>
-                                    </ul>
-                                </li>
-                            `).join('')}
-                        </ul>
+                        ${gelisimOnerileriHTML || '<p>Gelişim önerisi bulunamadı.</p>'}
                     </div>
                     ` : ''}
                 </body>
@@ -172,12 +187,23 @@ const evaluationController = {
 
             // PDF'i indir
             res.setHeader('Content-Type', 'application/pdf');
-            res.setHeader('Content-Disposition', `attachment; filename=evaluation_${evaluation.id}.pdf`);
+            res.setHeader('Content-Disposition', `attachment; filename=evaluation_${evaluation.ID}.pdf`);
             res.send(file);
 
         } catch (error) {
             console.error('PDF oluşturma hatası:', error);
             res.status(500).json({ message: 'PDF oluşturulurken bir hata oluştu' });
+        }
+    },
+
+    // Tüm değerlendirmeleri getir
+    getAllEvaluations: async (req, res) => {
+        try {
+            const evaluations = await EvaluationResult.find().sort({ createdAt: -1 });
+            res.json(evaluations);
+        } catch (error) {
+            console.error('Değerlendirmeleri getirme hatası:', error);
+            res.status(500).json({ error: 'Değerlendirmeler yüklenirken bir hata oluştu' });
         }
     }
 };
