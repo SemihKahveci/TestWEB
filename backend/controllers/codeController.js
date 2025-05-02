@@ -19,8 +19,29 @@ class CodeController {
     // Kod üretme
     async generateCode(req, res) {
         try {
+            const { name, email, planet } = req.body;
+            
+            if (!name || !email || !planet) {
+                return res.status(400).json({ 
+                    success: false, 
+                    message: 'Ad, e-posta ve gezegen bilgileri gereklidir' 
+                });
+            }
+
             const code = await UserCode.generateUniqueCode();
-            const newCode = new UserCode({ code });
+            const expiryDate = new Date();
+            expiryDate.setHours(expiryDate.getHours() + 72);
+
+            const newCode = new UserCode({ 
+                code,
+                name,
+                email,
+                planet,
+                status: 'beklemede',
+                sentDate: new Date(),
+                expiryDate
+            });
+            
             await newCode.save();
             
             res.json({ success: true, code });

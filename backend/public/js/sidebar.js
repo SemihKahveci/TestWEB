@@ -2,58 +2,101 @@
 function createSidebar() {
     const sidebar = document.createElement('div');
     sidebar.className = 'sidebar';
+    
+    // Mevcut sayfanın yolunu al
+    const currentPath = window.location.pathname;
+    
+    // Sayfa yolu ile menü öğesi eşleştirmesi
+    const pageToMenuItem = {
+        '/admin-panel.html': 'Ana Sayfa',
+        '/results.html': 'Raporlar',
+        '/index.html': 'Mülakat Gönder',
+        '/admin-management.html': 'Firma Tanımlama'
+    };
+    
+    // Aktif menü öğesini belirle
+    const activeMenuItem = pageToMenuItem[currentPath] || 'Ana Sayfa';
+    
     sidebar.innerHTML = `
         <div class="sidebar-header">
             <img src="/images/logo.png" alt="Logo" class="logo">
         </div>
         <div class="sidebar-menu">
             <div class="menu-section">
-                <div class="menu-title">Lorem</div>
+                <div class="menu-title">Ana Menü</div>
                 <div class="menu-items">
-                    <div class="menu-item active">
+                    <div class="menu-item ${activeMenuItem === 'Ana Sayfa' ? 'active' : ''}">
                         <i class="fas fa-home"></i>
                         <span>Ana Sayfa</span>
                     </div>
-                    <div class="menu-item">
+                    <div class="menu-item ${activeMenuItem === 'Profil' ? 'active' : ''}">
                         <i class="fas fa-user"></i>
                         <span>Profil</span>
-                    </div>
-                    <div class="menu-item">
-                        <i class="fas fa-cog"></i>
-                        <span>Ayarlar</span>
                     </div>
                 </div>
             </div>
             <div class="menu-section">
-                <div class="menu-title">Pages</div>
+                <div class="menu-title">Sayfalar</div>
                 <div class="menu-items">
-                    <div class="menu-item">
-                        <i class="fas fa-file-alt"></i>
-                        <span>Değerlendirmeler</span>
+                    <div class="menu-item ${activeMenuItem === 'Pozisyon' ? 'active' : ''}">
+                        <i class="fas fa-briefcase"></i>
+                        <span>Pozisyon</span>
                         <i class="fas fa-chevron-right"></i>
                     </div>
-                    <div class="menu-item">
+                    <div class="menu-item ${activeMenuItem === 'Şirket Çalışanları' ? 'active' : ''}">
+                        <i class="fas fa-building"></i>
+                        <span>Şirket Çalışanları</span>
+                        <i class="fas fa-chevron-right"></i>
+                    </div>
+                    <div class="menu-item ${activeMenuItem === 'Adaylar' ? 'active' : ''}">
                         <i class="fas fa-users"></i>
-                        <span>Kullanıcılar</span>
+                        <span>Adaylar</span>
                         <i class="fas fa-chevron-right"></i>
                     </div>
-                    <div class="menu-item">
+                    <div class="menu-item ${activeMenuItem === 'MT / Stajyer' ? 'active' : ''}">
+                        <i class="fas fa-graduation-cap"></i>
+                        <span>MT / Stajyer</span>
+                        <i class="fas fa-chevron-right"></i>
+                    </div>
+                    <div class="menu-item ${activeMenuItem === 'Raporlar' ? 'active' : ''}">
                         <i class="fas fa-chart-bar"></i>
                         <span>Raporlar</span>
                         <i class="fas fa-chevron-right"></i>
                     </div>
+                    <div class="menu-item ${activeMenuItem === 'Mülakat Gönder' ? 'active' : ''}">
+                        <i class="fas fa-comments"></i>
+                        <span>Mülakat Gönder</span>
+                        <i class="fas fa-chevron-right"></i>
+                    </div>
+                    <div class="menu-item ${activeMenuItem === 'Yetkilendirme' ? 'active' : ''}">
+                        <i class="fas fa-user-shield"></i>
+                        <span>Yetkilendirme</span>
+                        <i class="fas fa-chevron-right"></i>
+                    </div>
                 </div>
             </div>
             <div class="menu-section">
-                <div class="menu-title">Lorem Ipsum</div>
+                <div class="menu-title">Ayarlar</div>
                 <div class="menu-items">
-                    <div class="menu-item">
-                        <i class="fas fa-info-circle"></i>
-                        <span>Hakkında</span>
+                    <div class="menu-item ${activeMenuItem === 'Firma Tanımlama' ? 'active' : ''}">
+                        <i class="fas fa-building"></i>
+                        <span>Firma Tanımlama</span>
+                        <i class="fas fa-chevron-right"></i>
                     </div>
-                    <div class="menu-item">
-                        <i class="fas fa-question-circle"></i>
-                        <span>Yardım</span>
+                    <div class="menu-item ${activeMenuItem === 'Kişi Tanımlama' ? 'active' : ''}">
+                        <i class="fas fa-user-plus"></i>
+                        <span>Kişi Tanımlama</span>
+                        <i class="fas fa-chevron-right"></i>
+                    </div>
+                    <div class="menu-item ${activeMenuItem === 'Sistem Ayarları' ? 'active' : ''}">
+                        <i class="fas fa-cog"></i>
+                        <span>Sistem Ayarları</span>
+                        <i class="fas fa-chevron-right"></i>
+                    </div>
+                    <div class="menu-item ${activeMenuItem === 'Bildirimler' ? 'active' : ''}">
+                        <i class="fas fa-bell"></i>
+                        <span>Bildirimler</span>
+                        <i class="fas fa-chevron-right"></i>
                     </div>
                 </div>
             </div>
@@ -196,14 +239,64 @@ function createSidebar() {
     const menuItems = sidebar.querySelectorAll('.menu-item');
     menuItems.forEach(item => {
         item.addEventListener('click', () => {
+            // Önce tüm active sınıflarını kaldır
             menuItems.forEach(i => i.classList.remove('active'));
+            // Tıklanan öğeye active sınıfını ekle
             item.classList.add('active');
+            
+            // Menü öğesinin metnini al
+            const menuText = item.querySelector('span').textContent;
+            
+            // Menü öğesine göre yönlendirme yap
+            switch(menuText) {
+                case 'Ana Sayfa':
+                    window.location.href = '/admin-panel.html';
+                    break;
+                case 'Profil':
+                    //window.location.href = '/profile.html';
+                    break;
+                case 'Pozisyon':
+                    //window.location.href = '/positions.html';
+                    break;
+                case 'Şirket Çalışanları':
+                    //window.location.href = '/employees.html';
+                    break;
+                case 'Adaylar':
+                    //window.location.href = '/candidates.html';
+                    break;
+                case 'MT / Stajyer':
+                    //window.location.href = '/interns.html';
+                    break;
+                case 'Raporlar':
+                    window.location.href = '/results.html';
+                    break;
+                case 'Mülakat Gönder':
+                    window.location.href = '/index.html';
+                    break;
+                case 'Yetkilendirme':
+                    //window.location.href = '/authorization.html';
+                    break;
+                case 'Firma Tanımlama':
+                    window.location.href = '/admin-management.html';
+                    break;
+                case 'Kişi Tanımlama':
+                    //window.location.href = '/person-settings.html';
+                    break;
+                case 'Sistem Ayarları':
+                    //window.location.href = '/system-settings.html';
+                    break;
+                case 'Bildirimler':
+                    //window.location.href = '/notifications.html';
+                    break;
+            }
         });
     });
 }
 
 // Çıkış işlemi
 function logout() {
+    localStorage.removeItem('token');
+    localStorage.removeItem('userEmail');
     window.location.href = '/admin.html';
 }
 

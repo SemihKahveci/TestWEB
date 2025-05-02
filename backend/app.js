@@ -51,7 +51,10 @@ apiRouter.post('/verify-code', wsService.getCodeController().verifyGameCode.bind
 apiRouter.delete('/delete-code', wsService.getCodeController().deleteCode.bind(wsService.getCodeController()));
 apiRouter.delete('/delete-all-codes', wsService.getCodeController().deleteAllCodes.bind(wsService.getCodeController()));
 apiRouter.post('/send-code', adminController.sendCode.bind(adminController));
-
+apiRouter.post('/update-code-status', adminController.updateCodeStatus.bind(adminController));
+apiRouter.get('/user-results', adminController.getUserResults.bind(adminController));
+apiRouter.post('/update-result-status', adminController.updateResultStatus.bind(adminController));
+apiRouter.delete('/delete-result', adminController.deleteResult.bind(adminController));
 
 // Oyun sonuçları
 apiRouter.post('/register-result', wsService.getGameController().registerGameResult.bind(wsService.getGameController()));
@@ -63,6 +66,10 @@ apiRouter.get('/check-status', wsService.getGameController().checkServerStatus.b
 apiRouter.get('/evaluation/results', evaluationController.getAllEvaluations);
 apiRouter.get('/evaluation/:id', evaluationController.getEvaluationById);
 apiRouter.post('/evaluation/:id/pdf', evaluationController.generatePDF);
+
+// PDF işlemleri
+apiRouter.post('/generate-pdf', evaluationController.generatePDF);
+apiRouter.get('/preview-pdf', evaluationController.previewPDF);
 
 // Admin işlemleri
 apiRouter.use('/admin', adminRoutes);

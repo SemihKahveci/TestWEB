@@ -5,6 +5,8 @@ const { sendEmail } = require('../services/emailService');
 const jwt = require('jsonwebtoken');
 const Admin = require('../models/Admin');
 const bcrypt = require('bcryptjs');
+const UserCode = require('../models/userCode');
+const Game = require('../models/game');
 
 const adminController = {
     login: async (req, res) => {
@@ -104,67 +106,134 @@ const adminController = {
 
     generateAndSendPDF: async (req, res) => {
         try {
-            const { id, email } = req.body;
-            const evaluation = await Evaluation.findById(id);
+            const { code, email, options } = req.body;
+            console.log('PDF oluşturma isteği alındı:', { code, email, options });
             
-            if (!evaluation) {
-                return res.status(404).json({ message: 'Değerlendirme bulunamadı' });
+            // Kullanıcı kodunu bul
+            const userCode = await UserCode.findOne({ code });
+            if (!userCode) {
+                console.log('Kullanıcı kodu bulunamadı:', code);
+                return res.status(404).json({ message: 'Kod bulunamadı' });
+            }
+            console.log('Kullanıcı kodu bulundu:', userCode);
+
+            // Oyun sonuçlarını bul
+            const game = await Game.findOne({ playerCode: code });
+            if (!game) {
+                console.log('Oyun sonuçları bulunamadı:', code);
+                return res.status(404).json({ message: 'Oyun sonuçları bulunamadı' });
+            }
+            console.log('Oyun sonuçları bulundu:', game);
+
+            // PDF oluştur
+            console.log('PDF oluşturma başlıyor...');
+            const pdfBuffer = await generatePDF({
+                userCode,
+                game,
+                options
+            });
+            console.log('PDF başarıyla oluşturuldu');
+
+            // PDF'i indir
+            res.setHeader('Content-Type', 'application/pdf');
+            res.setHeader('Content-Disposition', `attachment; filename=degerlendirme_${code}.pdf`);
+            res.send(pdfBuffer);
+
+        } catch (error) {
+            console.error('PDF oluşturma hatası:', error);
+            console.error('Hata detayı:', {
+                message: error.message,
+                stack: error.stack,
+                name: error.name
+            });
+            res.status(500).json({ 
+                message: 'PDF oluşturulurken bir hata oluştu', 
+                error: error.message,
+                details: error.stack
+            });
+        }
+    },
+
+    previewPDF: async (req, res) => {
+        try {
+            const { code, email, options } = req.body;
+            
+            // Kullanıcı kodunu bul
+            const userCode = await UserCode.findOne({ code });
+            if (!userCode) {
+                return res.status(404).json({ message: 'Kod bulunamadı' });
+            }
+
+            // Oyun sonuçlarını bul
+            const game = await Game.findOne({ playerCode: code });
+            if (!game) {
+                return res.status(404).json({ message: 'Oyun sonuçları bulunamadı' });
             }
 
             // PDF oluştur
-            const pdfBuffer = await generatePDF(evaluation);
+            const pdfBuffer = await generatePDF({
+                userCode,
+                game,
+                options
+            });
 
-            // E-posta içeriği
-            const emailHtml = `
-                <h2>Değerlendirme Raporu</h2>
-                <p>Sayın ${evaluation.candidateName},</p>
-                <p>Değerlendirme raporunuz ekte yer almaktadır.</p>
-                <p>İyi çalışmalar dileriz.</p>
-            `;
+            // PDF'i önizle
+            res.setHeader('Content-Type', 'application/pdf');
+            res.setHeader('Content-Disposition', `inline; filename=degerlendirme_${code}.pdf`);
+            res.send(pdfBuffer);
 
-            // E-posta gönder
-            const emailResult = await sendEmail(
-                email,
-                'Değerlendirme Raporu',
-                emailHtml,
-                pdfBuffer
-            );
-
-            if (emailResult.success) {
-                res.json({ message: 'PDF başarıyla oluşturuldu ve e-posta ile gönderildi' });
-            } else {
-                res.status(500).json({ message: 'E-posta gönderilirken bir hata oluştu' });
-            }
         } catch (error) {
-            console.error('PDF oluşturma ve gönderme hatası:', error);
-            res.status(500).json({ message: 'PDF oluşturulurken bir hata oluştu' });
+            console.error('PDF önizleme hatası:', error);
+            res.status(500).json({ message: 'PDF önizlenirken bir hata oluştu', error: error.message });
         }
     },
 
     // Kod gönderme
     sendCode: async (req, res) => {
         try {
-            const { code, email } = req.body;
+            const { code, email, name, planet } = req.body;
+
+            if (!code) {
+                return res.status(400).json({ success: false, message: 'Kod bulunamadı' });
+            }
 
             // 72 saat sonrasını hesapla
             const expiryDate = new Date();
             expiryDate.setHours(expiryDate.getHours() + 72);
             const formattedExpiryDate = expiryDate.toLocaleDateString('tr-TR');
 
+            // Kodu veritabanına kaydet
+            const userCode = await UserCode.findOneAndUpdate(
+                { code },
+                {
+                    name,
+                    email,
+                    planet,
+                    status: 'beklemede',
+                    sentDate: new Date(),
+                    expiryDate
+                },
+                { new: true }
+            );
+
+            if (!userCode) {
+                return res.status(400).json({ success: false, message: 'Kod bulunamadı' });
+            }
+
             // E-posta içeriği
             const emailHtml = `
                 <div style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
-                    <p>Sevgili Katılımcı,</p>
+                    <p>Sevgili ${name},</p>
 
                     <p>Andron Yetkinlik Değerlendirme Oyununu oynamaya davetlisin.</p>
 
-                    <p>Oyunu, dikkatinin dağılmayacağı sessiz bir ortamda yapmanızı öneriyoruz. Oyuna masaüstü bilgisayarından, tabletinden veya akıllı telefonundan erişebilirsin.</p>
+                    <p>Oyunu, dikkatinin dağılmayacağı sessiz bir ortamda yapmanızı öneriyoruz. Oyuna tabletinden veya akıllı telefonundan erişebilirsin.</p>
 
                     <p>Oyunla ilgili aşağıda dikkat etmen gereken bazı önemli noktalar bulunmaktadır.</p>
 
                     <ul style="list-style-type: none; padding-left: 0;">
                         <li style="margin-bottom: 10px;">► Oyunun başında gelen oyun oynama talimatlarını dikkatlice incelemen ve oyun için istenen izinleri vermen gereklidir.</li>
-                        <li style="margin-bottom: 10px;">► Her bir soru için belirli bir süren olacaktır. Ekranın bilerek veya yanlışlıkla kapanması geri sayımı durdurmayacaktır.</li>
+                        <li style="margin-bottom: 10px;">► Her bir soru için belirli bir süren olacaktır.</li>
                         <li style="margin-bottom: 10px;">► Her soru için belirlenen süre içinde seçim yapmadığın durumda en üstte bulunan seçenek senin seçimin olarak kabul edilir.</li>
                         <li style="margin-bottom: 10px;">► Oyunu oynarken parlaklığı en üst seviyede tutmanı ve telefonunun sesinin açık olmasını öneriyoruz.</li>
                     </ul>
@@ -173,8 +242,8 @@ const adminController = {
 
                     <p>Oyunu başlatmak için lütfen aşağıdaki linkden oyunu indirip size gönderilen kod ile oyuna giriş yapınız.</p>
 
-                    <p>IOS linki<br>
-                    ANDROID linki<br>
+                    <p>IOS linki : https://apps.apple.com/us/app/andron-mission-venus/id6739467164 <br>
+                    ANDROID linki : https://play.google.com/store/apps/details?id=com.Fugi.Andron <br>
                     <strong>Kod: ${code}</strong></p>
 
                     <p>Herhangi bir sorunuz olduğunda info@androngame.com üzerinden Andron ekibi ile iletişime geçebilirsiniz.</p>
@@ -191,6 +260,16 @@ const adminController = {
             );
 
             if (emailResult.success) {
+                // 72 saat sonra kodu sil
+                setTimeout(async () => {
+                    try {
+                        await UserCode.findOneAndDelete({ code });
+                        console.log(`Kod ${code} 72 saat sonra silindi`);
+                    } catch (error) {
+                        console.error('Kod silme hatası:', error);
+                    }
+                }, 72 * 60 * 60 * 1000); // 72 saat
+
                 res.json({ success: true, message: 'Kod başarıyla gönderildi' });
             } else {
                 res.status(500).json({ success: false, message: 'E-posta gönderilirken bir hata oluştu' });
@@ -198,6 +277,105 @@ const adminController = {
         } catch (error) {
             console.error('Kod gönderme hatası:', error);
             res.status(500).json({ success: false, message: 'Kod gönderilirken bir hata oluştu' });
+        }
+    },
+
+    // Sonuçlar geldiğinde durumu güncelle
+    updateCodeStatus: async (req, res) => {
+        try {
+            const { code } = req.body;
+
+            if (!code) {
+                return res.status(400).json({ success: false, message: 'Kod gerekli' });
+            }
+
+            const userCode = await UserCode.findOneAndUpdate(
+                { code },
+                {
+                    status: 'tamamlandı',
+                    completionDate: new Date()
+                },
+                { new: true }
+            );
+
+            if (!userCode) {
+                return res.status(404).json({ success: false, message: 'Kod bulunamadı' });
+            }
+
+            res.json({ success: true, message: 'Durum başarıyla güncellendi' });
+        } catch (error) {
+            console.error('Durum güncelleme hatası:', error);
+            res.status(500).json({ success: false, message: 'Durum güncellenirken bir hata oluştu' });
+        }
+    },
+
+    // Kullanıcı sonuçlarını getir
+    getUserResults: async (req, res) => {
+        try {
+            const results = await UserCode.find()
+                .sort({ sentDate: -1 });
+
+            res.json({
+                success: true,
+                results: results.map(result => ({
+                    code: result.code,
+                    name: result.name,
+                    status: result.status,
+                    sentDate: result.sentDate,
+                    completionDate: result.completionDate,
+                    expiryDate: result.expiryDate,
+                    customerFocusScore: result.customerFocusScore,
+                    uncertaintyScore: result.uncertaintyScore
+                }))
+            });
+        } catch (error) {
+            console.error('Sonuçları getirme hatası:', error);
+            res.status(500).json({
+                success: false,
+                message: 'Sonuçlar alınırken bir hata oluştu'
+            });
+        }
+    },
+
+    updateResultStatus: async (req, res) => {
+        try {
+            const { code, status } = req.body;
+            console.log('Durum güncelleniyor:', { code, status });
+
+            if (!code || !status) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'Kod ve durum bilgisi gereklidir'
+                });
+            }
+
+            const result = await UserCode.findOneAndUpdate(
+                { code },
+                { 
+                    status,
+                    completionDate: status === 'tamamlandı' ? new Date() : null
+                },
+                { new: true }
+            );
+
+            if (!result) {
+                return res.status(404).json({
+                    success: false,
+                    message: 'Sonuç bulunamadı'
+                });
+            }
+
+            res.json({
+                success: true,
+                message: 'Durum başarıyla güncellendi',
+                result
+            });
+        } catch (error) {
+            console.error('Durum güncelleme hatası:', error);
+            res.status(500).json({
+                success: false,
+                message: 'Durum güncellenirken bir hata oluştu'
+            });
         }
     },
 
@@ -279,6 +457,28 @@ const adminController = {
             res.json(admins);
         } catch (error) {
             res.status(500).json({ message: 'Sunucu hatası' });
+        }
+    },
+
+    // Sonuç silme
+    async deleteResult(req, res) {
+        try {
+            const { code } = req.body;
+            
+            if (!code) {
+                return res.status(400).json({ message: 'Kod gereklidir' });
+            }
+
+            // Game modelinden sil
+            await mongoose.model('Game').deleteMany({ playerCode: code });
+            
+            // UserCode modelinden tamamen sil
+            await mongoose.model('UserCode').findOneAndDelete({ code });
+
+            res.json({ message: 'Sonuç başarıyla silindi' });
+        } catch (error) {
+            console.error('Sonuç silme hatası:', error);
+            res.status(500).json({ message: 'Sonuç silinirken bir hata oluştu' });
         }
     }
 };

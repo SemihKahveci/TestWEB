@@ -6,9 +6,49 @@ const userCodeSchema = new mongoose.Schema({
         required: true,
         unique: true
     },
+    name: {
+        type: String,
+        required: true
+    },
+    email: {
+        type: String,
+        required: true
+    },
+    planet: {
+        type: String,
+        required: true
+    },
+    status: {
+        type: String,
+        enum: ['beklemede', 'tamamlandı'],
+        default: 'beklemede'
+    },
     isUsed: {
         type: Boolean,
         default: false
+    },
+    sentDate: {
+        type: Date,
+        default: Date.now
+    },
+    expiryDate: {
+        type: Date,
+        required: true
+    },
+    completionDate: {
+        type: Date
+    },
+    evaluationResult: {
+        type: mongoose.Schema.Types.Mixed,
+        default: null
+    },
+    customerFocusScore: {
+        type: String,
+        default: '-'
+    },
+    uncertaintyScore: {
+        type: String,
+        default: '-'
     },
     createdAt: {
         type: Date,

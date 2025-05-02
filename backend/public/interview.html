@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mülakat Gönderme</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: #f5f5f5;
+            font-family: 'Inter', sans-serif;
+        }
+
+        .sidebar {
+            width: 257px;
+            height: 100vh;
+            background: white;
+            position: fixed;
+            left: 0;
+            top: 0;
+            box-shadow: 0px 10px 30px rgba(17, 38, 146, 0.05);
+            padding: 17px;
+            overflow-y: auto;
+        }
+
+        .logo {
+            width: 200px;
+            height: 41px;
+            margin-bottom: 16px;
+        }
+
+        .divider {
+            width: 100%;
+            height: 1px;
+            background: #E9ECEF;
+            margin: 16px 0;
+        }
+
+        .nav-item {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            padding: 8px 16px;
+            color: #8A92A6;
+            text-decoration: none;
+            font-size: 16px;
+            font-family: 'Poppins', sans-serif;
+            border-radius: 4px;
+            margin-bottom: 8px;
+        }
+
+        .nav-item.active {
+            background: #3A57E8;
+            color: white;
+        }
+
+        .nav-item:hover {
+            background: #f8f9fa;
+        }
+
+        .main-content {
+            margin-left: 257px;
+            padding: 20px;
+        }
+
+        .header {
+            background: white;
+            padding: 16px 32px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .search-bar {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 4px 16px;
+            background: white;
+            border-radius: 4px;
+            border: 1px solid #E9ECEF;
+        }
+
+        .search-bar input {
+            border: none;
+            outline: none;
+            width: 240px;
+            color: #ADB5BD;
+            font-size: 16px;
+        }
+
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .user-avatar {
+            width: 45px;
+            height: 45px;
+            border-radius: 30px;
+        }
+
+        .page-title {
+            background: radial-gradient(ellipse 150.93% 36.28% at 50.00% 50.00%, #3B8AFF 0%, #0048B2 100%);
+            color: white;
+            padding: 20px;
+            text-align: center;
+            font-size: 30px;
+            font-weight: 700;
+            border-bottom-left-radius: 16px;
+            border-bottom-right-radius: 16px;
+            margin-bottom: 20px;
+        }
+
+        .interview-form {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            color: #8A92A6;
+            font-size: 16px;
+            margin-bottom: 8px;
+        }
+
+        .form-group input,
+        .form-group select {
+            width: 100%;
+            padding: 8px 16px;
+            border: 1px solid #3A57E8;
+            border-radius: 4px;
+            font-size: 16px;
+            font-family: 'Poppins', sans-serif;
+            font-style: italic;
+            color: #8A92A6;
+        }
+
+        .submit-btn {
+            background: #0286F7;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 700;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .alert {
+            padding: 10px;
+            border-radius: 4px;
+            margin-bottom: 15px;
+            display: none;
+        }
+
+        .alert-success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .alert-error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+    </style>
+</head>
+<body>
+    <div class="sidebar">
+        <img src="https://placehold.co/200x41" alt="Logo" class="logo">
+        <div class="divider"></div>
+        
+        <div class="nav-section">
+            <a href="#" class="nav-item">
+                <span>Lorem Ipsum</span>
+            </a>
+            <a href="#" class="nav-item">
+                <span>Lorem Ipsum</span>
+            </a>
+        </div>
+
+        <div class="nav-section">
+            <div class="nav-item">
+                <span>Pages</span>
+            </div>
+            <a href="#" class="nav-item">
+                <span>Pozisyon</span>
+            </a>
+            <a href="#" class="nav-item">
+                <span>Şirket Çalışanları</span>
+            </a>
+            <a href="#" class="nav-item">
+                <span>Adaylar</span>
+            </a>
+            <a href="#" class="nav-item">
+                <span>MT / Stajyer</span>
+            </a>
+            <a href="#" class="nav-item">
+                <span>Raporlar</span>
+            </a>
+            <a href="#" class="nav-item active">
+                <span>Mülakat Gönder</span>
+            </a>
+            <a href="#" class="nav-item">
+                <span>Yetkilendirme</span>
+            </a>
+        </div>
+
+        <div class="nav-section">
+            <div class="nav-item">
+                <span>Lorem Ipsum</span>
+            </div>
+            <a href="#" class="nav-item">
+                <span>Firma Tanımlama</span>
+            </a>
+            <a href="#" class="nav-item">
+                <span>Kişi Tanımlama</span>
+            </a>
+            <a href="#" class="nav-item">
+                <span>Lorem Ipsum</span>
+            </a>
+            <a href="#" class="nav-item">
+                <span>Lorem Ipsum</span>
+            </a>
+        </div>
+
+        <div class="nav-item" style="color: #E02D3C;">
+            <span>Çıkış Yap</span>
+        </div>
+    </div>
+
+    <div class="main-content">
+        <div class="header">
+            <div class="search-bar">
+                <input type="text" placeholder="Search...">
+            </div>
+            <div class="user-info">
+                <img src="https://placehold.co/45x45" alt="User" class="user-avatar">
+                <div>
+                    <div style="color: #232D42; font-size: 16px;">Austin Robertson</div>
+                    <div style="color: #8A92A6; font-size: 13px;">Marketing Administrator</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="page-title">
+            Mülakat Gönderme
+        </div>
+
+        <div class="interview-form">
+            <div class="form-group">
+                <label>Email</label>
+                <input type="email" placeholder="Lütfen Mail Adresi Giriniz">
+            </div>
+            <div class="form-group">
+                <label>Gezegen Seçimi</label>
+                <select>
+                    <option value="">Lütfen Gezegen Seçiniz</option>
+                </select>
+            </div>
+            <button class="submit-btn" onclick="sendInterview()">
+                Gönder
+            </button>
+            <div id="alert" class="alert" style="display: none;"></div>
+        </div>
+    </div>
+
+    <script>
+        // Sayfa yüklendiğinde oturum kontrolü
+        document.addEventListener('DOMContentLoaded', () => {
+            const token = localStorage.getItem('token');
+            if (!token) {
+                window.location.href = 'admin.html';
+                return;
+            }
+        });
+
+        // Mülakat gönderme fonksiyonu
+        function sendInterview() {
+            const email = document.querySelector('input[type="email"]').value;
+            const planet = document.querySelector('select').value;
+            const alert = document.getElementById('alert');
+
+            if (!email || !planet) {
+                alert.style.display = 'block';
+                alert.className = 'alert alert-error';
+                alert.textContent = 'Lütfen tüm alanları doldurun.';
+                return;
+            }
+
+            fetch('/api/send-interview', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ 
+                    email: email,
+                    planet: planet
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert.style.display = 'block';
+                    alert.className = 'alert alert-success';
+                    alert.textContent = 'Mülakat başarıyla gönderildi!';
+                    setTimeout(() => {
+                        alert.style.display = 'none';
+                    }, 3000);
+                } else {
+                    alert.style.display = 'block';
+                    alert.className = 'alert alert-error';
+                    alert.textContent = 'Gönderilemedi: ' + data.message;
+                }
+            })
+            .catch(error => {
+                console.error('Mülakat gönderme hatası:', error);
+                alert.style.display = 'block';
+                alert.className = 'alert alert-error';
+                alert.textContent = 'Gönderilemedi: Bir hata oluştu';
+            });
+        }
+    </script>
+</body>
+</html> 

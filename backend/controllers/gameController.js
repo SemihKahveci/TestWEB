@@ -27,23 +27,24 @@ class GameController {
                 return res.status(200).json([]);
             }
 
-            const formattedData = games.map(game => ({
-                playerCode: game.playerCode || '-',
-                section: game.section || '-',
-                totalScore: game.totalScore || 0,
-                evaluationId: game.evaluationId || null,
-                answers: game.answers.map(answer => ({
-                    questionId: answer.questionId || '-',
-                    planetName: answer.planetName || '-',
-                    questionText: answer.questionText || '-',
-                    selectedAnswer1: answer.selectedAnswer1 || '-',
-                    selectedAnswer2: answer.selectedAnswer2 || '-',
-                    answerType1: answer.answerType1 || '-',
-                    answerType2: answer.answerType2 || '-',
-                    answerSubCategory: answer.answerSubCategory || '-'
-                })),
-                date: game.date
-            }));
+            const formattedData = games.map(game => {
+                return {
+                    playerCode: game.playerCode || '-',
+                    section: game.section || '-',
+                    date: game.date,
+                    dummyData: game.dummyData,
+                    evaluationResult: game.evaluationResult,
+                    // Results.html için gerekli alanlar
+                    code: game.playerCode,
+                    name: game.dummyData?.name || '-',
+                    sentDate: game.sentDate,
+                    completionDate: game.completionDate,
+                    expiryDate: game.expiryDate,
+                    status: game.status,
+                    customerFocusScore: game.customerFocusScore || '-',
+                    uncertaintyScore: game.uncertaintyScore || '-'
+                };
+            });
 
             res.status(200).json(formattedData);
         } catch (error) {
@@ -74,52 +75,89 @@ class GameController {
                 });
             }
 
-            const processedAnswers = data.answers.map(answer => ({
-                questionId: answer.questionId || '-',
-                planetName: answer.planetName || '-',
-                questionText: answer.questionText || '-',
-                selectedAnswer1: answer.selectedAnswer1 || '-',
-                selectedAnswer2: answer.selectedAnswer2 || '-',
-                answerType1: answer.answerType1 || '-',
-                answerType2: answer.answerType2 || '-',
-                answerSubCategory: answer.answerSubCategory || '-'
-            }));
+            // Skorları hesapla
+            const customerFocusAnswers = data.answers.filter(answer => 
+                answer.answerSubCategory === 'MO'
+            );
+            const uncertaintyAnswers = data.answers.filter(answer => 
+                answer.answerSubCategory === 'BY'
+            );
 
-            const totalScore = processedAnswers.reduce((acc, answer) => {
-                const multiplier1 = answerMultipliers[answer.answerType1] || 0;
-                const multiplier2 = answerMultipliers[answer.answerType2] || 0;
-                return acc + ((multiplier1 + (multiplier2 / 2)) * 2) / 3;
-            }, 0) / processedAnswers.length;
+            // MO skorunu hesapla
+            let customerFocusScore = 0;
+            if (customerFocusAnswers.length > 0) {
+                customerFocusScore = customerFocusAnswers.reduce((acc, answer) => {
+                    const multiplier1 = answerMultipliers[answer.answerType1] || 0;
+                    const multiplier2 = answerMultipliers[answer.answerType2] || 0;
+                    return acc + ((multiplier1 + (multiplier2 / 2)) * 2) / 3;
+                }, 0) / customerFocusAnswers.length;
+            }
+
+            // BY skorunu hesapla
+            let uncertaintyScore = 0;
+            if (uncertaintyAnswers.length > 0) {
+                uncertaintyScore = uncertaintyAnswers.reduce((acc, answer) => {
+                    const multiplier1 = answerMultipliers[answer.answerType1] || 0;
+                    const multiplier2 = answerMultipliers[answer.answerType2] || 0;
+                    return acc + ((multiplier1 + (multiplier2 / 2)) * 2) / 3;
+                }, 0) / uncertaintyAnswers.length;
+            }
 
             // Değerlendirme sonuçlarını getir
-            const evaluationResult = await this.getReportsByAnswerType(processedAnswers);
+            const evaluationResult = await this.getReportsByAnswerType(data.answers);
             console.log('Değerlendirme sonucu:', evaluationResult);
 
+            // UserCode durumunu güncelle
+            await UserCode.findOneAndUpdate(
+                { code: data.playerCode },
+                { 
+                    status: 'tamamlandı',
+                    completionDate: new Date(),
+                    evaluationResult: evaluationResult,
+                    customerFocusScore: customerFocusScore.toFixed(2),
+                    uncertaintyScore: uncertaintyScore.toFixed(2)
+                }
+            );
+
+            // Dummy data oluştur
+            const dummyData = {
+                id: data.playerCode,
+                name: userCode.name,
+                status: 'tamamlandı',
+                submissionDate: userCode.sentDate,
+                completionDate: new Date(),
+                validityDate: userCode.expiryDate,
+                evaluationResult: evaluationResult,
+                customerFocusScore: customerFocusScore.toFixed(2),
+                uncertaintyScore: uncertaintyScore.toFixed(2)
+            };
+
+            // Dummy datayı Game modeline ekle
             const newGame = new Game({
                 playerCode: data.playerCode,
                 section: data.section,
-                answers: processedAnswers,
-                totalScore,
-                date: new Date(),
-                evaluationId: evaluationResult ? evaluationResult.ID : null
+                dummyData: dummyData,
+                evaluationResult: evaluationResult,
+                customerFocusScore: customerFocusScore.toFixed(2),
+                uncertaintyScore: uncertaintyScore.toFixed(2)
             });
 
             await newGame.save();
-            userCode.isUsed = true;
-            await userCode.save();
 
-            // WebSocket üzerinden güncelleme gönder
-            this.broadcastUpdate(await Game.find().sort({ date: -1 }));
+            // WebSocket üzerinden güncellemeyi yayınla
+            this.broadcastUpdate({
+                type: 'newResult',
+                data: dummyData
+            });
 
             res.status(200).json({
                 success: true,
-                message: "Oyun sonucu kaydedildi",
-                evaluationResult,
-                evaluationId: evaluationResult ? evaluationResult.ID : null
+                message: 'Oyun sonucu başarıyla kaydedildi',
+                game: newGame
             });
 
         } catch (error) {
-            console.error('Sonuç kaydetme hatası:', error);
+            console.error('Oyun sonucu kaydetme hatası:', error);
             res.status(500).json({
                 success: false,
                 message: this.errorMessages.serverError
@@ -162,14 +200,26 @@ class GameController {
                 // ID ile evaluationresults koleksiyonunda arama yap
                 const evaluationResult = await mongoose.connection.collection('evaluationresults').findOne({ ID: matched.ID });
                 console.log('Bulunan değerlendirme sonucu:', evaluationResult);
-                return evaluationResult;
-            } else {
-                console.log('Eşleşen BY cevapları bulunamadı');
-                return null;
+                
+                if (evaluationResult) {
+                    return {
+                        MüşteriOdaklılık: evaluationResult.MüşteriOdaklılık || '-',
+                        BelirsizlikYönetimi: evaluationResult.BelirsizlikYönetimi || '-'
+                    };
+                }
             }
+            
+            console.log('Eşleşen BY cevapları bulunamadı');
+            return {
+                MüşteriOdaklılık: '-',
+                BelirsizlikYönetimi: '-'
+            };
         } catch (error) {
             console.error('Sonuçlar alınırken hata:', error);
-            return null;
+            return {
+                MüşteriOdaklılık: '-',
+                BelirsizlikYönetimi: '-'
+            };
         }
     }
 

@@ -9,9 +9,10 @@
     <style>
         body {
             background-color: #f8f9fa;
+            margin-left: 257px; /* Sidebar genişliği */
         }
         .admin-container {
-            max-width: 800px;
+            max-width: 1200px;
             margin: 50px auto;
             padding: 20px;
             background-color: white;
@@ -45,81 +46,21 @@
             margin: 0;
             color: #333;
         }
-        .user-info {
-            display: flex;
-            align-items: center;
-        }
-        .logout-btn {
-            margin-left: 10px;
-            padding: 5px 10px;
-            background-color: #dc3545;
-            color: white;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-        }
-        .nav-links {
-            margin-top: 20px;
-        }
-        .admin-list {
-            margin-top: 20px;
-        }
-        .admin-item {
-            background-color: #f8f9fa;
-            padding: 15px;
-            margin-bottom: 10px;
-            border-radius: 5px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-        .admin-info {
-            flex-grow: 1;
-        }
-        .admin-actions {
-            display: flex;
-            gap: 10px;
-        }
-        .modal {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background-color: rgba(0,0,0,0.5);
-            z-index: 1000;
-        }
-        .modal-content {
-            background-color: white;
-            margin: 10% auto;
-            padding: 20px;
-            border-radius: 5px;
-            width: 80%;
-            max-width: 500px;
-        }
-        .modal-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 20px;
-        }
-        .close {
-            font-size: 24px;
-            cursor: pointer;
-        }
     </style>
 </head>
 <body>
+    <!-- Sidebar.js tarafından oluşturulacak -->
+    <script src="/js/sidebar.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            createSidebar();
+        });
+    </script>
+
     <div class="container">
         <div class="admin-container">
             <div class="header">
                 <h2>Admin Yönetimi</h2>
-                <div>
-                    <a href="admin-panel.html" class="btn btn-primary me-2">Ana Sayfa</a>
-                    <a href="results.html" class="btn btn-primary me-2">Sonuçlar</a>
-                    <button id="logoutBtn" class="btn btn-danger">Çıkış Yap</button>
-                </div>
             </div>
 
             <!-- Yeni Admin Ekleme Bölümü -->
@@ -149,51 +90,6 @@
                 </form>
                 <div id="formAlert" class="alert"></div>
             </div>
-
-            <!-- Admin Listesi -->
-            <div class="section">
-                <h3 class="section-title">Admin Listesi</h3>
-                <div id="adminList" class="admin-list">
-                    <div class="loading">Adminler yükleniyor...</div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Admin Düzenleme Modalı -->
-    <div id="editModal" class="modal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h3>Admin Düzenle</h3>
-                <span class="close" onclick="closeModal()">&times;</span>
-            </div>
-            <form id="editForm">
-                <input type="hidden" id="editId">
-                <div class="form-group">
-                    <label for="editEmail">E-posta</label>
-                    <input type="email" class="form-control" id="editEmail" required>
-                </div>
-                <div class="form-group">
-                    <label for="editName">Ad Soyad</label>
-                    <input type="text" class="form-control" id="editName" required>
-                </div>
-                <div class="form-group">
-                    <label for="editRole">Rol</label>
-                    <select class="form-control" id="editRole" required>
-                        <option value="admin">Admin</option>
-                        <option value="superadmin">Süper Admin</option>
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label for="editStatus">Durum</label>
-                    <select class="form-control" id="editStatus" required>
-                        <option value="active">Aktif</option>
-                        <option value="inactive">Pasif</option>
-                    </select>
-                </div>
-                <button type="submit" class="btn btn-primary">Kaydet</button>
-            </form>
-            <div id="editAlert" class="alert"></div>
         </div>
     </div>
 
@@ -206,7 +102,6 @@
                 return;
             }
             loadUserInfo();
-            loadAdmins();
         });
 
         // Bağlantı koptuğunda kontrol
@@ -224,193 +119,45 @@
             }
         }
 
-        // Çıkış işlemi
-        document.getElementById('logoutBtn').addEventListener('click', () => {
-            localStorage.removeItem('token');
-            window.location.href = 'admin.html';
-        });
-
-        // Admin listesini yükle
-        function loadAdmins() {
-            fetch('/api/admin/list', {
-                headers: {
-                    'Authorization': `Bearer ${localStorage.getItem('token')}`,
-                    'Content-Type': 'application/json'
-                }
-            })
-            .then(response => response.json())
-            .then(data => {
-                const adminList = document.getElementById('adminList');
-                adminList.innerHTML = '';
-                
-                if (!data.success || !data.admins || data.admins.length === 0) {
-                    adminList.innerHTML = '<div class="admin-item">Henüz admin eklenmemiş.</div>';
-                    return;
-                }
-                
-                data.admins.forEach(admin => {
-                    const adminItem = document.createElement('div');
-                    adminItem.className = 'admin-item';
-                    adminItem.innerHTML = `
-                        <div class="admin-info">
-                            <div><strong>${admin.name}</strong> (${admin.email})</div>
-                            <div>Rol: ${admin.role === 'superadmin' ? 'Süper Admin' : 'Admin'}</div>
-                            <div>Durum: ${admin.status === 'active' ? 'Aktif' : 'Pasif'}</div>
-                        </div>
-                        <div class="admin-actions">
-                            <button class="btn btn-sm btn-primary" onclick="editAdmin('${admin._id}')">Düzenle</button>
-                            <button class="btn btn-sm btn-danger" onclick="deleteAdmin('${admin._id}')">Sil</button>
-                        </div>
-                    `;
-                    adminList.appendChild(adminItem);
-                });
-            })
-            .catch(error => {
-                console.error('Admin listesi yükleme hatası:', error);
-                const adminList = document.getElementById('adminList');
-                adminList.innerHTML = '<div class="admin-item">Adminler yüklenirken bir hata oluştu.</div>';
-            });
-        }
-
-        // Yeni admin ekleme
-        document.getElementById('adminForm').addEventListener('submit', async (e) => {
+        // Admin ekleme formu
+        document.getElementById('adminForm').addEventListener('submit', function(e) {
             e.preventDefault();
             
-            const formData = {
+            const adminData = {
                 email: document.getElementById('email').value,
                 password: document.getElementById('password').value,
                 name: document.getElementById('name').value,
                 role: document.getElementById('role').value
             };
-            
-            try {
-                const response = await fetch('/api/admin/create', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${localStorage.getItem('token')}`
-                    },
-                    body: JSON.stringify(formData)
-                });
 
-                const data = await response.json();
-                showAlert('formAlert', data.message, response.ok ? 'success' : 'danger');
-                
-                if (response.ok) {
+            fetch('/api/admin/create', {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${localStorage.getItem('token')}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(adminData)
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    document.getElementById('formAlert').className = 'alert alert-success';
+                    document.getElementById('formAlert').textContent = 'Admin başarıyla eklendi.';
+                    document.getElementById('formAlert').style.display = 'block';
                     document.getElementById('adminForm').reset();
-                    loadAdmins();
                 } else {
-                    showAlert('formAlert', 'Geçersiz token veya yetki hatası', 'danger');
-                }
-            } catch (error) {
-                console.error('Admin ekleme hatası:', error);
-                showAlert('formAlert', 'Bir hata oluştu', 'danger');
-            }
-        });
-
-        // Admin düzenleme modalını aç
-        function editAdmin(id) {
-            fetch(`/api/admin/${id}`, {
-                headers: {
-                    'Authorization': `Bearer ${localStorage.getItem('token')}`
-                }
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    const admin = data.admin;
-                    document.getElementById('editId').value = admin._id;
-                    document.getElementById('editEmail').value = admin.email;
-                    document.getElementById('editName').value = admin.name;
-                    document.getElementById('editRole').value = admin.role;
-                    document.getElementById('editStatus').value = admin.status;
-                    
-                    document.getElementById('editModal').style.display = 'block';
-                } else {
-                    alert('Admin bilgileri alınamadı: ' + data.message);
+                    document.getElementById('formAlert').className = 'alert alert-danger';
+                    document.getElementById('formAlert').textContent = data.message || 'Admin eklenirken bir hata oluştu.';
+                    document.getElementById('formAlert').style.display = 'block';
                 }
             })
             .catch(error => {
-                console.error('Admin bilgileri alma hatası:', error);
-                alert('Admin bilgileri alınırken bir hata oluştu.');
+                console.error('Admin eklenirken hata oluştu:', error);
+                document.getElementById('formAlert').className = 'alert alert-danger';
+                document.getElementById('formAlert').textContent = 'Admin eklenirken bir hata oluştu.';
+                document.getElementById('formAlert').style.display = 'block';
             });
-        }
-
-        // Modalı kapat
-        function closeModal() {
-            document.getElementById('editModal').style.display = 'none';
-        }
-
-        // Admin düzenleme
-        document.getElementById('editForm').addEventListener('submit', async (e) => {
-            e.preventDefault();
-            
-            const id = document.getElementById('editId').value;
-            const formData = {
-                email: document.getElementById('editEmail').value,
-                name: document.getElementById('editName').value,
-                role: document.getElementById('editRole').value,
-                status: document.getElementById('editStatus').value
-            };
-            
-            try {
-                const response = await fetch(`/api/admin/${id}`, {
-                    method: 'PUT',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${localStorage.getItem('token')}`
-                    },
-                    body: JSON.stringify(formData)
-                });
-
-                const data = await response.json();
-                showAlert('editAlert', data.message, response.ok ? 'success' : 'danger');
-                
-                if (response.ok) {
-                    setTimeout(() => {
-                        closeModal();
-                        loadAdmins();
-                    }, 1000);
-                }
-            } catch (error) {
-                console.error('Admin düzenleme hatası:', error);
-                showAlert('editAlert', 'Bir hata oluştu', 'danger');
-            }
         });
-
-        // Admin silme
-        function deleteAdmin(id) {
-            if (!confirm('Bu admini silmek istediğinizden emin misiniz?')) {
-                return;
-            }
-
-            fetch(`/api/admin/${id}`, {
-                method: 'DELETE',
-                headers: {
-                    'Authorization': `Bearer ${localStorage.getItem('token')}`
-                }
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    loadAdmins();
-                } else {
-                    alert('Admin silinirken bir hata oluştu: ' + data.message);
-                }
-            })
-            .catch(error => {
-                console.error('Admin silme hatası:', error);
-                alert('Admin silinirken bir hata oluştu.');
-            });
-        }
-
-        // Alert gösterme
-        function showAlert(id, message, type) {
-            const alert = document.getElementById(id);
-            alert.className = `alert alert-${type}`;
-            alert.textContent = message;
-            alert.style.display = 'block';
-        }
     </script>
 </body>
 </html> 

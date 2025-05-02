@@ -33,7 +33,30 @@ const gameSchema = new mongoose.Schema({
     }],
     totalScore: { type: Number, default: 0 },
     date: { type: Date, default: Date.now },
-    evaluationId: { type: String }
+    evaluationId: { type: String },
+    dummyData: {
+        id: { type: String },
+        name: { type: String },
+        status: { type: String },
+        submissionDate: { type: Date },
+        completionDate: { type: Date },
+        validityDate: { type: Date },
+        score: { type: Number },
+        section: { type: String },
+        playerCode: { type: String }
+    },
+    evaluationResult: {
+        type: Object,
+        default: null
+    },
+    customerFocusScore: {
+        type: String,
+        default: '-'
+    },
+    uncertaintyScore: {
+        type: String,
+        default: '-'
+    }
 });
 
 module.exports = mongoose.model('Game', gameSchema); 

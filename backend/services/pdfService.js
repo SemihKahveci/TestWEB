@@ -1,9 +1,17 @@
 const htmlPdf = require('html-pdf-node');
 const options = { format: 'A4' };
 
-const generatePDF = async (evaluation) => {
+const generatePDF = async (data) => {
     try {
+        console.log('PDF oluşturma için veri alındı:', data);
+        const { userCode, game, options } = data;
+        
+        if (!userCode || !game) {
+            throw new Error('Kullanıcı kodu veya oyun verisi eksik');
+        }
+
         // HTML şablonu oluştur
+        console.log('HTML şablonu oluşturuluyor...');
         const html = `
             <!DOCTYPE html>
             <html>
@@ -22,19 +30,21 @@ const generatePDF = async (evaluation) => {
                     .section {
                         margin-bottom: 20px;
                     }
-                    .strength, .development {
+                    .info {
                         margin-bottom: 10px;
+                    }
+                    .score {
+                        font-size: 1.2em;
+                        font-weight: bold;
+                        color: #2c3e50;
+                    }
+                    .answers {
+                        margin-top: 20px;
+                    }
+                    .answer {
+                        margin-bottom: 15px;
                         padding: 10px;
                         background-color: #f9f9f9;
-                        border-radius: 5px;
-                    }
-                    .interview-question {
-                        margin-bottom: 15px;
-                    }
-                    .suggestion {
-                        margin-bottom: 10px;
-                        padding: 10px;
-                        background-color: #f0f8ff;
                         border-radius: 5px;
                     }
                 </style>
@@ -43,70 +53,57 @@ const generatePDF = async (evaluation) => {
                 <h1>Değerlendirme Raporu</h1>
                 
                 <div class="section">
-                    <h2>Genel Değerlendirme</h2>
-                    <p>${evaluation.generalEvaluation}</p>
+                    <h2>Kullanıcı Bilgileri</h2>
+                    <div class="info">
+                        <p><strong>Ad Soyad:</strong> ${userCode.name || '-'}</p>
+                        <p><strong>E-posta:</strong> ${userCode.email || '-'}</p>
+                        <p><strong>Planet:</strong> ${userCode.planet || '-'}</p>
+                        <p><strong>Kod:</strong> ${userCode.code || '-'}</p>
+                        <p><strong>Gönderim Tarihi:</strong> ${userCode.sentDate ? new Date(userCode.sentDate).toLocaleString('tr-TR') : '-'}</p>
+                        <p><strong>Tamamlanma Tarihi:</strong> ${userCode.completionDate ? new Date(userCode.completionDate).toLocaleString('tr-TR') : '-'}</p>
+                    </div>
                 </div>
 
                 <div class="section">
-                    <h2>Güçlü Yönler</h2>
-                    ${evaluation.strengths.map(strength => `
-                        <div class="strength">
-                            <h3>${strength.title}</h3>
-                            <p>${strength.description}</p>
-                        </div>
-                    `).join('')}
-                </div>
+                    <h2>Oyun Sonuçları</h2>
+                    <div class="info">
+                        <p><strong>Bölüm:</strong> ${game.section || '-'}</p>
+                        <p class="score">Toplam Puan: ${game.totalScore ? game.totalScore.toFixed(2) : '0.00'}</p>
+                    </div>
 
-                <div class="section">
-                    <h2>Gelişim Alanları</h2>
-                    ${evaluation.development.map(dev => `
-                        <div class="development">
-                            <h3>${dev.title}</h3>
-                            <p>${dev.description}</p>
-                        </div>
-                    `).join('')}
-                </div>
-
-                <div class="section">
-                    <h2>Mülakat Soruları</h2>
-                    ${evaluation.interviewQuestions.map(category => `
-                        <div class="interview-question">
-                            <h3>${category.category}</h3>
-                            <p><strong>Ana Soru:</strong> ${category.questions[0].mainQuestion}</p>
-                            <p><strong>Alt Sorular:</strong></p>
-                            <ul>
-                                ${category.questions[0].followUpQuestions.map(q => `<li>${q}</li>`).join('')}
-                            </ul>
-                        </div>
-                    `).join('')}
-                </div>
-
-                <div class="section">
-                    <h2>Gelişim Önerileri</h2>
-                    ${evaluation.developmentSuggestions.map(suggestion => `
-                        <div class="suggestion">
-                            <h3>${suggestion.title}</h3>
-                            <p><strong>Alan:</strong> ${suggestion.area}</p>
-                            <p><strong>Hedef:</strong> ${suggestion.target}</p>
-                            <h4>Öneriler:</h4>
-                            ${suggestion.suggestions.map(s => `
-                                <div>
-                                    <h5>${s.title}</h5>
-                                    <p>${s.content}</p>
-                                </div>
-                            `).join('')}
-                        </div>
-                    `).join('')}
+                    <div class="answers">
+                        <h3>Cevaplar</h3>
+                        ${game.answers && game.answers.length > 0 ? game.answers.map(answer => `
+                            <div class="answer">
+                                <p><strong>Soru ID:</strong> ${answer.questionId || '-'}</p>
+                                <p><strong>Gezegen:</strong> ${answer.planetName || '-'}</p>
+                                <p><strong>Soru:</strong> ${answer.questionText || '-'}</p>
+                                <p><strong>Seçilen Cevap 1:</strong> ${answer.selectedAnswer1 || '-'}</p>
+                                <p><strong>Seçilen Cevap 2:</strong> ${answer.selectedAnswer2 || '-'}</p>
+                                <p><strong>Cevap Tipi 1:</strong> ${answer.answerType1 || '-'}</p>
+                                <p><strong>Cevap Tipi 2:</strong> ${answer.answerType2 || '-'}</p>
+                                <p><strong>Alt Kategori:</strong> ${answer.answerSubCategory || '-'}</p>
+                            </div>
+                        `).join('') : '<p>Henüz cevap bulunmamaktadır.</p>'}
+                    </div>
                 </div>
             </body>
             </html>
         `;
+        console.log('HTML şablonu oluşturuldu');
 
         // PDF oluştur
+        console.log('PDF oluşturuluyor...');
         const file = await htmlPdf.generatePdf({ content: html }, options);
+        console.log('PDF başarıyla oluşturuldu');
         return file;
     } catch (error) {
         console.error('PDF oluşturma hatası:', error);
+        console.error('Hata detayı:', {
+            message: error.message,
+            stack: error.stack,
+            name: error.name
+        });
         throw error;
     }
 };

@@ -3,567 +3,648 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Andron Games - Sonuçlar</title>
-    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <title>Admin Panel</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Montserrat:wght@400;500;700&family=Poppins:wght@400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
     <style>
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
-            font-family: 'Roboto', sans-serif;
         }
 
         body {
-            background: #f5f5f5;
+            font-family: 'Inter', sans-serif;
+            background: #F8F9FA;
             min-height: 100vh;
+            overflow-x: hidden;
         }
 
         .container {
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 20px;
+            width: 100%;
+            min-height: 100vh;
+            position: relative;
+            background: white;
+            display: flex;
+        }
+
+        .main-content {
+            flex: 1;
+            margin-left: 0;
+            width: 100%;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
         }
 
         .header {
-            background: #fff;
-            padding: 20px;
-            border-radius: 10px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-            margin-bottom: 20px;
+            width: 100%;
+            height: 76px;
+            padding: 16px 32px;
+            background: white;
+            backdrop-filter: blur(32px);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+        }
+
+        .header-content {
+            width: 100%;
             display: flex;
             justify-content: space-between;
             align-items: center;
         }
 
-        .header h1 {
-            color: #333;
-            font-size: 24px;
-            font-weight: 500;
-        }
-
-        .header .user-info {
+        .search-box {
+            padding: 4px 16px;
+            background: white;
+            border-radius: 4px;
+            outline: 1px #E9ECEF solid;
             display: flex;
-            align-items: center;
-            gap: 15px;
-        }
-
-        .header .user-info span {
-            color: #666;
-        }
-
-        .header .logout-btn {
-            background: #dc3545;
-            color: white;
-            border: none;
-            padding: 8px 16px;
-            border-radius: 5px;
-            cursor: pointer;
-            font-size: 14px;
-            transition: background 0.3s;
-        }
-
-        .header .logout-btn:hover {
-            background: #c82333;
-        }
-
-        .nav-links {
-            display: flex;
-            gap: 15px;
-            margin-bottom: 20px;
-        }
-
-        .nav-links a {
-            color: #007bff;
-            text-decoration: none;
-            font-size: 14px;
-            transition: color 0.3s;
-        }
-
-        .nav-links a:hover {
-            color: #0056b3;
-        }
-
-        .card {
-            background: #fff;
-            padding: 20px;
-            border-radius: 10px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-            margin-bottom: 20px;
-        }
-
-        .card h2 {
-            color: #333;
-            font-size: 18px;
-            margin-bottom: 15px;
-            font-weight: 500;
-        }
-
-        .search-form {
-            display: flex;
-            gap: 10px;
-            margin-bottom: 20px;
-        }
-
-        .search-form input {
-            flex: 1;
-            padding: 8px 12px;
-            border: 1px solid #ddd;
-            border-radius: 5px;
-            font-size: 14px;
-        }
-
-        .search-form button {
-            padding: 8px 16px;
-            background: #007bff;
-            color: white;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-            font-size: 14px;
-            transition: background 0.3s;
-        }
-
-        .search-form button:hover {
-            background: #0056b3;
-        }
-
-        .btn {
-            background: #007bff;
-            color: white;
-            border: none;
-            padding: 8px 16px;
-            border-radius: 5px;
-            cursor: pointer;
-            font-size: 14px;
-            transition: background 0.3s;
-        }
-
-        .btn:hover {
-            background: #0056b3;
-        }
-
-        .btn-danger {
-            background: #dc3545;
-        }
-
-        .btn-danger:hover {
-            background: #c82333;
-        }
-
-        .btn-success {
-            background: #28a745;
-        }
-        
-        .btn-success:hover {
-            background: #218838;
-        }
-
-        .loading {
-            text-align: center;
-            padding: 20px;
-            color: #666;
-        }
-
-        .checkbox-container {
-            margin-bottom: 10px;
-            display: flex;
+            justify-content: flex-start;
             align-items: center;
             gap: 8px;
         }
-        
-        .checkbox-container input[type="checkbox"] {
-            width: 18px;
-            height: 18px;
+
+        .search-icon {
+            width: 24px;
+            height: 24px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .search-text {
+            width: 240px;
+            color: #ADB5BD;
+            font-size: 16px;
+            font-family: Inter;
+            font-weight: 400;
+            line-height: 28px;
+        }
+
+        .header-right {
+            display: flex;
+            justify-content: flex-end;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .notification-icon {
+            width: 24px;
+            height: 24px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
             cursor: pointer;
         }
-        
-        .checkbox-container label {
-            font-weight: bold;
+
+        .user-info {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 16px;
             cursor: pointer;
         }
 
-        .error {
-            color: #ff0000;
-            margin-top: 10px;
+        .user-details {
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-start;
+            align-items: flex-start;
         }
 
-        .section {
-            margin-bottom: 20px;
-            padding: 15px;
-            background-color: #f8f9fa;
-            border-radius: 5px;
+        .user-name {
+            color: #232D42;
+            font-size: 16px;
+            font-family: Inter;
+            font-weight: 400;
+            line-height: 28px;
         }
 
-        .section h2 {
-            color: #333;
-            margin-bottom: 15px;
-            font-size: 18px;
+        .user-role {
+            color: #8A92A6;
+            font-size: 13px;
+            font-family: Inter;
+            font-weight: 400;
+            line-height: 16.90px;
         }
 
-        .section h3 {
-            color: #444;
-            margin-bottom: 10px;
+        .page-title {
+            width: 100%;
+            height: 75px;
+            background: radial-gradient(ellipse 150.93% 36.28% at 50.00% 50.00%, #3B8AFF 0%, #0048B2 100%);
+            border-bottom-right-radius: 16px;
+            border-bottom-left-radius: 16px;
+            display: flex;
+            justify-content: flex-start;
+            align-items: center;
+            padding: 0 32px;
+            margin-left: 10px;
+        }
+
+        .title-content {
+            width: 100%;
+            display: flex;
+            justify-content: flex-start;
+            align-items: center;
+        }
+
+        .title-text {
+            color: white;
+            font-size: 30px;
+            font-family: Inter;
+            font-weight: 700;
+        }
+
+        .content {
+            flex: 1;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .results-table {
+            width: 100%;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+            border-collapse: collapse;
+        }
+
+        .results-table th,
+        .results-table td {
+            padding: 16px;
+            text-align: left;
+            border-bottom: 1px solid #E9ECEF;
+        }
+
+        .results-table th {
+            background: #F8F9FA;
+            color: #232D42;
+            font-size: 14px;
+            font-family: Montserrat;
+            font-weight: 700;
+        }
+
+        .results-table td {
+            color: #232D42;
+            font-size: 14px;
+            font-family: Montserrat;
+            font-weight: 500;
+        }
+
+        .results-table tr:hover {
+            background: rgba(2, 134, 247, 0.10);
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+        }
+
+        .action-button {
+            cursor: pointer;
+        }
+
+        /* Sayfalama Stilleri */
+        .page-nav {
+            padding: 8px 16px;
+            background: #F8F9FA;
+            border: 1px solid #E9ECEF;
+            border-radius: 4px;
+            cursor: pointer;
+            color: #232D42;
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        .page-nav:hover {
+            background: #E9ECEF;
+        }
+
+        .page-button {
+            padding: 8px 16px;
+            background: #F8F9FA;
+            border: 1px solid #E9ECEF;
+            border-radius: 4px;
+            cursor: pointer;
+            color: #232D42;
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        .page-button:hover {
+            background: #E9ECEF;
+        }
+
+        .page-button.active {
+            background: #0286F7;
+            color: white;
+            border-color: #0286F7;
+        }
+
+        .page-button.active:hover {
+            background: #0275D8;
+        }
+
+        /* PDF İndirme Popup Stilleri */
+        .pdf-popup {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+
+        .pdf-popup-content {
+            width: 500px;
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+        }
+
+        .pdf-popup-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #0286F7;
+        }
+
+        .pdf-popup-title {
+            color: #0286F7;
+            font-size: 25px;
+            font-weight: 700;
+        }
+
+        .pdf-popup-close {
+            cursor: pointer;
+            font-size: 24px;
+        }
+
+        .pdf-popup-body {
+            padding: 20px 0;
+        }
+
+        .pdf-option {
+            display: flex;
+            align-items: center;
+            padding: 10px 0;
+        }
+
+        .pdf-option input[type="checkbox"] {
+            margin-right: 10px;
+        }
+
+        .pdf-popup-footer {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            padding-top: 20px;
+        }
+
+        .btn-preview {
+            background: #01A94D;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 8px;
+            cursor: pointer;
+        }
+
+        .btn-download {
+            background: #0286F7;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 8px;
+            cursor: pointer;
+        }
+
+        /* Silme Popup Stilleri */
+        .delete-popup {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+
+        .delete-popup-content {
+            width: 400px;
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .delete-popup-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #0286F7;
+        }
+
+        .delete-popup-title {
+            color: #0286F7;
+            font-size: 20px;
+            font-weight: 700;
+        }
+
+        .delete-popup-close {
+            cursor: pointer;
+            font-size: 24px;
+            color: #666;
+        }
+
+        .delete-popup-body {
+            padding: 20px 0;
+            text-align: center;
+        }
+
+        .delete-popup-body p {
+            margin: 10px 0;
+            color: #232D42;
             font-size: 16px;
         }
 
-        .section p {
-            margin-bottom: 10px;
-            line-height: 1.6;
-            color: #666;
+        .delete-warning {
+            color: #0286F7 !important;
+            font-weight: 500;
         }
 
-        .section ul {
-            list-style-type: disc;
-            margin-left: 20px;
+        .delete-popup-footer {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            padding-top: 20px;
         }
 
-        .section li {
-            margin-bottom: 8px;
-            color: #666;
+        .btn-cancel {
+            background: #6C757D;
+            color: white;
+            border: none;
+            padding: 8px 24px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 500;
         }
 
-        #resultsList {
-            margin-top: 20px;
+        .btn-confirm {
+            background: #0286F7;
+            color: white;
+            border: none;
+            padding: 8px 24px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 500;
         }
 
-        .result-item {
-            background: #fff;
-            padding: 15px;
-            border-radius: 5px;
-            margin-bottom: 10px;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        .btn-cancel:hover {
+            background: #5A6268;
         }
 
-        .result-item h3 {
-            color: #333;
-            margin-bottom: 10px;
+        .btn-confirm:hover {
+            background: #0275D8;
         }
 
-        .result-item p {
-            color: #666;
-            margin-bottom: 5px;
+        .btn-refresh {
+            background: #0286F7;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: background-color 0.3s;
         }
 
-        .result-item button {
-            margin-top: 10px;
+        .btn-refresh:hover {
+            background: #0275D8;
+        }
+
+        .btn-refresh i {
+            font-size: 14px;
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <div class="header">
-            <h1>Sonuçlar</h1>
-            <div class="user-info">
-                <span id="userEmail"></span>
-                <a href="admin-panel.html" class="btn">Ana Sayfa</a>
-                <button class="logout-btn" onclick="logout()">Çıkış Yap</button>
+        <div class="main-content">
+            <div class="header">
+                <div class="header-content">
+                    <div class="search-box">
+                        <div class="search-icon">
+                            <i class="fas fa-search" style="color: #ADB5BD;"></i>
+                        </div>
+                        <div class="search-text">Arama yapın...</div>
+                    </div>
+                    <div class="header-right">
+                        <div class="notification-icon">
+                            <i class="fas fa-bell" style="color: #8A92A6;"></i>
+                        </div>
+                        <div class="user-info">
+                            <div class="user-details">
+                                <div class="user-name">Andron Games</div>
+                                <div class="user-role">Founder</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
-        </div>
 
-        <div class="nav-links">
-            <a href="index.html">Kod Üretme</a>
-        </div>
+            <div class="page-title">
+                <div class="title-content">
+                    <div class="title-text">Kişi Sonuçları Sayfası</div>
+                </div>
+            </div>
 
-        <div class="card">
-            <h2>Değerlendirme Sonuçları</h2>
-            <form class="search-form" onsubmit="searchEvaluation(event)">
-                <input type="text" id="evaluationId" placeholder="ID ile ara..." required>
-                <button type="submit">Ara</button>
-            </form>
-            <div id="evaluationResult"></div>
-            <div id="resultsList"></div>
+            <div class="content">
+                <div style="display: flex; justify-content: flex-end; margin-bottom: 16px;">
+                    <button class="btn-refresh" onclick="loadEvaluationData()">
+                        <i class="fas fa-sync-alt"></i> Yenile
+                    </button>
+                </div>
+                <table class="results-table">
+                    <thead>
+                        <tr>
+                            <th>Ad Soyad</th>
+                            <th>Müşteri Odaklılık Skoru</th>
+                            <th>Belirsizlik Yönetimi Skoru</th>
+                            <th>İşlemler</th>
+                        </tr>
+                    </thead>
+                    <tbody id="resultsBody">
+                        <!-- Sonuçlar JavaScript ile doldurulacak -->
+                    </tbody>
+                </table>
+                <div class="pagination-content" style="margin-top: 20px; display: flex; justify-content: center; gap: 10px;">
+                    <!-- Sayfalama içeriği JavaScript ile doldurulacak -->
+                </div>
+            </div>
+
+            <!-- PDF İndirme Popup -->
+            <div id="pdfPopup" class="pdf-popup" style="display: none;">
+                <div class="pdf-popup-content">
+                    <div class="pdf-popup-header">
+                        <div class="pdf-popup-title">PDF İndir</div>
+                        <div class="pdf-popup-close" onclick="closePDFPopup()">×</div>
+                    </div>
+                    <div class="pdf-popup-body">
+                        <div class="pdf-option">
+                            <input type="checkbox" id="generalEvaluation" checked>
+                            <label for="generalEvaluation">Tanım ve Genel Değerlendirme</label>
+                        </div>
+                        <div class="pdf-option">
+                            <input type="checkbox" id="strengths" checked>
+                            <label for="strengths">Güçlü Yönler ve Gelişim Alanları</label>
+                        </div>
+                        <div class="pdf-option">
+                            <input type="checkbox" id="interviewQuestions" checked>
+                            <label for="interviewQuestions">Mülakat Soruları</label>
+                        </div>
+                        <div class="pdf-option">
+                            <input type="checkbox" id="developmentSuggestions" checked>
+                            <label for="developmentSuggestions">Gelişim Planı</label>
+                        </div>
+                    </div>
+                    <div class="pdf-popup-footer">
+                        <button class="btn-preview" onclick="previewPDF()">Önizleme</button>
+                        <button class="btn-download" onclick="downloadPDF()">PDF İndir</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Silme Onay Popup -->
+            <div id="deletePopup" class="delete-popup" style="display: none;">
+                <div class="delete-popup-content">
+                    <div class="delete-popup-header">
+                        <div class="delete-popup-title">Sonucu Sil</div>
+                        <div class="delete-popup-close" onclick="closeDeletePopup()">×</div>
+                    </div>
+                    <div class="delete-popup-body">
+                        <p>Bu sonucu silmek istediğinizden emin misiniz?</p>
+                        <p class="delete-warning">Bu işlem geri alınamaz ve sonuç kalıcı olarak silinecektir.</p>
+                    </div>
+                    <div class="delete-popup-footer">
+                        <button class="btn-cancel" onclick="closeDeletePopup()">Hayır</button>
+                        <button class="btn-confirm" onclick="confirmDelete()">Evet, Sil</button>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 
+    <script src="/js/sidebar.js"></script>
+    <script src="/js/evaluationResults.js"></script>
+    <script src="js/pdfPopup.js"></script>
     <script>
-        // Kullanıcı oturumunu kontrol et
-        function checkAuth() {
-            const token = localStorage.getItem('token');
-            if (!token) {
-                window.location.href = 'admin.html';
-                return;
-            }
-            const userEmail = localStorage.getItem('userEmail');
-            document.getElementById('userEmail').textContent = userEmail;
-        }
+        let currentPage = 1;
+        const itemsPerPage = 5;
 
-        // Sayfa yüklendiğinde oturumu kontrol et
         document.addEventListener('DOMContentLoaded', () => {
-            checkAuth();
-            loadAllResults(); // Tüm sonuçları yükle
+            loadEvaluationData();
         });
 
-        // Çıkış yap
-        function logout() {
-            localStorage.removeItem('token');
-            localStorage.removeItem('userEmail');
-            window.location.href = 'admin.html';
-        }
+        function loadEvaluationData() {
+            const refreshButton = document.querySelector('.btn-refresh');
+            refreshButton.disabled = true;
+            refreshButton.innerHTML = '<i class="fas fa-sync-alt fa-spin"></i> Yenileniyor...';
 
-        // ID ile arama yap
-        async function searchEvaluation(event) {
-            event.preventDefault();
-            const id = document.getElementById('evaluationId').value;
-            try {
-                const response = await fetch(`/api/evaluation/${id}`, {
-                    headers: {
-                        'Authorization': `Bearer ${localStorage.getItem('token')}`
+            fetch('/api/user-results')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        const tbody = document.getElementById('resultsBody');
+                        tbody.innerHTML = '';
+
+                        if (data.results && data.results.length > 0) {
+                            const startIndex = (currentPage - 1) * itemsPerPage;
+                            const endIndex = startIndex + itemsPerPage;
+                            const pageData = data.results.slice(startIndex, endIndex);
+
+                            pageData.forEach(result => {
+                                const row = document.createElement('tr');
+                                row.innerHTML = `
+                                    <td>${result.name}</td>
+                                    <td>${result.customerFocusScore || '-'}</td>
+                                    <td>${result.uncertaintyScore || '-'}</td>
+                                    <td class="action-buttons">
+                                        <div class="action-button" onclick="showPDFPopup('${result.code}')">
+                                            <i class="fas fa-file-pdf" style="color: #0286F7;"></i>
+                                        </div>
+                                        <div class="action-button" onclick="deleteResult('${result.code}')">
+                                            <i class="fas fa-trash" style="color: #FF0000;"></i>
+                                        </div>
+                                    </td>
+                                `;
+                                tbody.appendChild(row);
+                            });
+
+                            // Sayfalama kontrollerini güncelle
+                            updatePagination(data.results.length);
+                        }
                     }
+                })
+                .catch(error => {
+                    console.error('Sonuçları yükleme hatası:', error);
+                })
+                .finally(() => {
+                    refreshButton.disabled = false;
+                    refreshButton.innerHTML = '<i class="fas fa-sync-alt"></i> Yenile';
                 });
-                
-                if (!response.ok) {
-                    throw new Error('Değerlendirme bulunamadı');
-                }
-                
-                const evaluation = await response.json();
-                displayEvaluation(evaluation);
-            } catch (error) {
-                document.getElementById('evaluationResult').innerHTML = `
-                    <div class="error">${error.message}</div>
-                `;
-            }
         }
 
-        // Tüm sonuçları yükle
-        async function loadAllResults() {
-            try {
-                console.log('Sonuçlar yükleniyor...');
-                const response = await fetch('/api/results', {
-                    headers: {
-                        'Authorization': `Bearer ${localStorage.getItem('token')}`
-                    }
-                });
-                
-                if (!response.ok) {
-                    throw new Error('Sonuçlar bulunamadı');
-                }
-                
-                const results = await response.json();
-                console.log('Yüklenen sonuçlar:', results);
-                
-                if (results && results.length > 0) {
-                    displayAllResults(results);
-                } else {
-                    document.getElementById('resultsList').innerHTML = '<p>Gösterilecek sonuç bulunamadı.</p>';
-                }
-            } catch (error) {
-                console.error('Sonuçlar yüklenirken hata:', error);
-                document.getElementById('resultsList').innerHTML = `
-                    <div class="error">${error.message}</div>
-                `;
-            }
-        }
+        function updatePagination(totalItems) {
+            const paginationContent = document.querySelector('.pagination-content');
+            if (!paginationContent) return;
 
-        // Tüm sonuçları göster
-        function displayAllResults(results) {
-            const resultsListDiv = document.getElementById('resultsList');
-            resultsListDiv.innerHTML = '';
+            const totalPages = Math.ceil(totalItems / itemsPerPage);
             
-            // Sadece değerlendirme sonucu olan oyunları filtrele
-            const resultsWithEvaluation = results.filter(result => result.evaluationId);
-            
-            if (!resultsWithEvaluation || resultsWithEvaluation.length === 0) {
-                resultsListDiv.innerHTML = '<p>Gösterilecek değerlendirme sonucu bulunamadı.</p>';
-                return;
-            }
-            
-            resultsWithEvaluation.forEach(result => {
-                const resultItem = document.createElement('div');
-                resultItem.className = 'result-item';
-                
-                resultItem.innerHTML = `
-                    <h3>Oyuncu Kodu: ${result.playerCode}</h3>
-                    <p>Bölüm: ${result.section}</p>
-                    <p>Toplam Puan: ${result.totalScore}</p>
-                    <p>Tarih: ${new Date(result.date).toLocaleString('tr-TR')}</p>
-                    <button onclick="searchEvaluationById('${result.evaluationId}')" class="btn">Değerlendirme Sonucu</button>
-                `;
-                resultsListDiv.appendChild(resultItem);
-            });
-        }
-
-        // ID ile değerlendirme ara
-        async function searchEvaluationById(id) {
-            try {
-                console.log('Değerlendirme aranıyor, ID:', id);
-                const response = await fetch(`/api/evaluation/${id}`, {
-                    headers: {
-                        'Authorization': `Bearer ${localStorage.getItem('token')}`
-                    }
-                });
-                
-                if (!response.ok) {
-                    throw new Error('Değerlendirme bulunamadı');
-                }
-                
-                const evaluation = await response.json();
-                console.log('Bulunan değerlendirme:', evaluation);
-                
-                if (evaluation) {
-                    displayEvaluation(evaluation);
-                    // Değerlendirme sonucunu göster
-                    document.getElementById('evaluationResult').scrollIntoView({ behavior: 'smooth' });
-                } else {
-                    document.getElementById('evaluationResult').innerHTML = `
-                        <div class="error">Değerlendirme bulunamadı.</div>
-                    `;
-                }
-            } catch (error) {
-                console.error('Değerlendirme aranırken hata:', error);
-                document.getElementById('evaluationResult').innerHTML = `
-                    <div class="error">${error.message}</div>
-                `;
-            }
-        }
-
-        // Değerlendirmeleri göster
-        function displayEvaluations(evaluations) {
-            const resultsListDiv = document.getElementById('resultsList');
-            resultsListDiv.innerHTML = '';
-            
-            if (evaluations.length === 0) {
-                resultsListDiv.innerHTML = '<p>Gösterilecek değerlendirme bulunamadı.</p>';
-                return;
-            }
-            
-            evaluations.forEach(evaluation => {
-                const resultItem = document.createElement('div');
-                resultItem.className = 'result-item';
-                resultItem.innerHTML = `
-                    <h3>Değerlendirme ID: ${evaluation.ID}</h3>
-                    <p>Genel Değerlendirme: ${evaluation['Genel Değerlendirme'] || 'Bulunamadı'}</p>
-                    <button onclick="displayEvaluation(${JSON.stringify(evaluation)})" class="btn">Detayları Göster</button>
-                `;
-                resultsListDiv.appendChild(resultItem);
-            });
-        }
-
-        // Değerlendirme sonucunu göster
-        function displayEvaluation(evaluation) {
-            console.log('Değerlendirme gösteriliyor:', evaluation);
-            const resultDiv = document.getElementById('evaluationResult');
-            
-            if (!evaluation) {
-                resultDiv.innerHTML = '<div class="error">Değerlendirme verisi bulunamadı.</div>';
-                return;
-            }
-            
-            // Gelişim önerilerini ayrı başlıklar altında oluştur
-            let gelisimOnerileriHTML = '';
-            const gelisimOnerileriKeys = ['Gelişim Önerileri -1', 'Gelişim Önerileri -2', 'Gelişim Önerileri - 3'];
-            
-            gelisimOnerileriKeys.forEach((key, index) => {
-                if (evaluation[key]) {
-                    gelisimOnerileriHTML += `
-                        <div class="subsection">
-                            <h3>Gelişim Önerisi ${index + 1}</h3>
-                            <p>${evaluation[key]}</p>
-                        </div>
-                    `;
-                }
-            });
-
-            resultDiv.innerHTML = `
-                <div style="text-align: right; margin-bottom: 20px;">
-                    <button onclick="showPDFOptions('${evaluation.ID}')" class="btn btn-success">
-                        PDF İndir
-                    </button>
-                </div>
-                <div class="section">
-                    <h2>Genel Değerlendirme</h2>
-                    <div class="checkbox-container">
-                        <input type="checkbox" id="generalEvaluation" checked>
-                        <label for="generalEvaluation">Genel Değerlendirme</label>
-                    </div>
-                    <p>${evaluation['Genel Değerlendirme'] || 'Bulunamadı'}</p>
-                </div>
-                <div class="section">
-                    <h2>Güçlü Yönler</h2>
-                    <div class="checkbox-container">
-                        <input type="checkbox" id="strengths" checked>
-                        <label for="strengths">Güçlü Yönler</label>
-                    </div>
-                    <p>${evaluation['Güçlü Yönler'] || 'Bulunamadı'}</p>
-                </div>
-                <div class="section">
-                    <h2>Gelişim Alanları</h2>
-                    <div class="checkbox-container">
-                        <input type="checkbox" id="development" checked>
-                        <label for="development">Gelişim Alanları</label>
-                    </div>
-                    <p>${evaluation['Gelişim Alanları'] || 'Bulunamadı'}</p>
-                </div>
-                <div class="section">
-                    <h2>Mülakat Soruları</h2>
-                    <div class="checkbox-container">
-                        <input type="checkbox" id="interviewQuestions" checked>
-                        <label for="interviewQuestions">Mülakat Soruları</label>
-                    </div>
-                    <p>${evaluation['Mülakat Soruları'] || 'Bulunamadı'}</p>
-                </div>
-                <div class="section">
-                    <h2>Neden Bu Sorular?</h2>
-                    <div class="checkbox-container">
-                        <input type="checkbox" id="whyTheseQuestions" checked>
-                        <label for="whyTheseQuestions">Neden Bu Sorular?</label>
-                    </div>
-                    <p>${evaluation['Neden Bu Sorular?'] || 'Bulunamadı'}</p>
-                </div>
-                <div class="section">
-                    <h2>Gelişim Önerileri</h2>
-                    <div class="checkbox-container">
-                        <input type="checkbox" id="developmentSuggestions" checked>
-                        <label for="developmentSuggestions">Gelişim Önerileri</label>
-                    </div>
-                    ${gelisimOnerileriHTML || '<p>Gelişim önerisi bulunamadı.</p>'}
-                </div>
+            let paginationHTML = `
+                <div class="page-nav" ${currentPage === 1 ? 'style="opacity: 0.5; pointer-events: none;"' : ''} onclick="changePage(${currentPage - 1})">Önceki Sayfa</div>
             `;
-        }
 
-        // PDF seçeneklerini göster
-        function showPDFOptions(id) {
-            const selectedSections = {
-                generalEvaluation: document.getElementById('generalEvaluation').checked,
-                strengths: document.getElementById('strengths').checked,
-                development: document.getElementById('development').checked,
-                interviewQuestions: document.getElementById('interviewQuestions').checked,
-                whyTheseQuestions: document.getElementById('whyTheseQuestions').checked,
-                developmentSuggestions: document.getElementById('developmentSuggestions').checked
-            };
-
-            generatePDF(id, selectedSections);
-        }
-
-        // PDF oluştur
-        async function generatePDF(id, selectedSections) {
-            try {
-                const response = await fetch(`/api/evaluation/${id}/pdf`, {
-                    method: 'POST',
-                    headers: {
-                        'Authorization': `Bearer ${localStorage.getItem('token')}`,
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify(selectedSections)
-                });
-
-                if (!response.ok) {
-                    throw new Error('PDF oluşturulurken bir hata oluştu');
-                }
-
-                const blob = await response.blob();
-                const url = window.URL.createObjectURL(blob);
-                const a = document.createElement('a');
-                a.href = url;
-                a.download = `evaluation_${id}.pdf`;
-                document.body.appendChild(a);
-                a.click();
-                window.URL.revokeObjectURL(url);
-                document.body.removeChild(a);
-            } catch (error) {
-                console.error('PDF oluşturma hatası:', error);
-                alert('PDF oluşturulurken bir hata oluştu: ' + error.message);
+            for (let i = 1; i <= totalPages; i++) {
+                paginationHTML += `
+                    <div class="page-button ${currentPage === i ? 'active' : ''}" onclick="changePage(${i})">
+                        <div class="page-text">${i}</div>
+                    </div>
+                `;
             }
+
+            paginationHTML += `
+                <div class="page-nav" ${currentPage === totalPages ? 'style="opacity: 0.5; pointer-events: none;"' : ''} onclick="changePage(${currentPage + 1})">Sonraki Sayfa</div>
+            `;
+
+            paginationContent.innerHTML = paginationHTML;
+        }
+
+        function changePage(page) {
+            if (page < 1 || page > Math.ceil(totalItems / itemsPerPage)) {
+                return;
+            }
+            currentPage = page;
+            loadEvaluationData();
         }
     </script>
 </body>
-</html>
+</html> 
