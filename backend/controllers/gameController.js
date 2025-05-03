@@ -200,26 +200,14 @@ class GameController {
                 // ID ile evaluationresults koleksiyonunda arama yap
                 const evaluationResult = await mongoose.connection.collection('evaluationresults').findOne({ ID: matched.ID });
                 console.log('Bulunan değerlendirme sonucu:', evaluationResult);
-                
-                if (evaluationResult) {
-                    return {
-                        MüşteriOdaklılık: evaluationResult.MüşteriOdaklılık || '-',
-                        BelirsizlikYönetimi: evaluationResult.BelirsizlikYönetimi || '-'
-                    };
-                }
+                return evaluationResult;
+            } else {
+                console.log('Eşleşen BY cevapları bulunamadı');
+                return null;
             }
-            
-            console.log('Eşleşen BY cevapları bulunamadı');
-            return {
-                MüşteriOdaklılık: '-',
-                BelirsizlikYönetimi: '-'
-            };
         } catch (error) {
             console.error('Sonuçlar alınırken hata:', error);
-            return {
-                MüşteriOdaklılık: '-',
-                BelirsizlikYönetimi: '-'
-            };
+            return null;
         }
     }
 

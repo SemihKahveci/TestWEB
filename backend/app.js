@@ -65,10 +65,9 @@ apiRouter.get('/check-status', wsService.getGameController().checkServerStatus.b
 // Değerlendirme işlemleri
 apiRouter.get('/evaluation/results', evaluationController.getAllEvaluations);
 apiRouter.get('/evaluation/:id', evaluationController.getEvaluationById);
-apiRouter.post('/evaluation/:id/pdf', evaluationController.generatePDF);
+apiRouter.post('/evaluation/generatePDF', evaluationController.generatePDF);
 
 // PDF işlemleri
-apiRouter.post('/generate-pdf', evaluationController.generatePDF);
 apiRouter.get('/preview-pdf', evaluationController.previewPDF);
 
 // Admin işlemleri

@@ -3,6 +3,8 @@ const htmlPdf = require('html-pdf-node');
 const fs = require('fs');
 const path = require('path');
 const mongoose = require('mongoose');
+const UserCode = require('../models/userCode');
+const Game = require('../models/game');
 
 const evaluationController = {
     async getEvaluationById(req, res) {
@@ -24,167 +26,58 @@ const evaluationController = {
         }
     },
 
-    generatePDF: async (req, res) => {
+    async generatePDF(req, res) {
         try {
-            const { code, options } = req.body;
-            console.log('PDF oluşturulacak kod:', code);
-            console.log('Seçilen bölümler:', options);
+            const { userCode, selectedOptions } = req.body;
+            console.log('PDF oluşturma için userCode:', userCode);
+            console.log('Gelen seçenekler:', selectedOptions);
 
-            const userCode = await mongoose.model('UserCode').findOne({ code });
-            if (!userCode) {
-                return res.status(404).json({ message: 'Kullanıcı kodu bulunamadı' });
-            }
-
-            if (!userCode.evaluationResult) {
-                return res.status(404).json({ message: 'Değerlendirme sonucu bulunamadı' });
-            }
-
-            const evaluation = userCode.evaluationResult;
-
-            // Verileri al
-            const genelDegerlendirme = evaluation['Genel Değerlendirme'];
-            const gucluYonler = evaluation['Güçlü Yönler'];
-            const gelisimAlanlari = evaluation['Gelişim Alanları'];
-            const mulakatSorulari = evaluation['Mülakat Soruları'];
-            const nedenBuSorular = evaluation['Neden Bu Sorular?'];
-            const gelisimOnerileri1 = evaluation['Gelişim Önerileri -1'];
-            const gelisimOnerileri2 = evaluation['Gelişim Önerileri -2'];
-            const gelisimOnerileri3 = evaluation['Gelişim Önerileri - 3'];
-
-            // Gelişim önerilerini ayrı başlıklar altında oluştur
-            let gelisimOnerileriHTML = '';
-            const gelisimOnerileriKeys = [
-                { key: 'Gelişim Önerileri -1', title: 'Gelişim Önerisi 1' },
-                { key: 'Gelişim Önerileri -2', title: 'Gelişim Önerisi 2' },
-                { key: 'Gelişim Önerileri - 3', title: 'Gelişim Önerisi 3' }
-            ];
-            
-            gelisimOnerileriKeys.forEach(item => {
-                if (evaluation[item.key]) {
-                    gelisimOnerileriHTML += `
-                        <div class="subsection">
-                            <h3>${item.title}</h3>
-                            <p>${evaluation[item.key]}</p>
-                        </div>
-                    `;
-                }
-            });
-
-            // HTML içeriğini oluştur
-            let htmlContent = `
-                <!DOCTYPE html>
-                <html>
-                <head>
-                    <meta charset="UTF-8">
-                    <style>
-                        body { 
-                            font-family: Arial, sans-serif; 
-                            padding: 20px;
-                            line-height: 1.6;
-                        }
-                        h1 { 
-                            text-align: center;
-                            color: #2c3e50;
-                            margin-bottom: 30px;
-                        }
-                        h2 { 
-                            color: #34495e;
-                            border-bottom: 2px solid #eee;
-                            padding-bottom: 10px;
-                            margin-top: 25px;
-                        }
-                        h3 {
-                            color: #2c3e50;
-                            margin-top: 15px;
-                            margin-bottom: 10px;
-                        }
-                        .section { 
-                            margin-bottom: 25px;
-                            padding: 15px;
-                            background-color: #f9f9f9;
-                            border-radius: 5px;
-                        }
-                        .subsection {
-                            margin-bottom: 15px;
-                        }
-                        p {
-                            margin: 10px 0;
-                        }
-                    </style>
-                </head>
-                <body>
-                    <h1>Değerlendirme Raporu</h1>
-            `;
-
-            // Seçilen bölümleri ekle
-            if (options.generalEvaluation) {
-                htmlContent += `
-                    <div class="section">
-                        <h2>Tanım ve Genel Değerlendirme</h2>
-                        <p>${genelDegerlendirme || 'Değerlendirme bulunamadı'}</p>
-                    </div>
-                `;
-            }
-
-            if (options.strengths) {
-                htmlContent += `
-                    <div class="section">
-                        <h2>Güçlü Yönler ve Gelişim Alanları</h2>
-                        <div class="subsection">
-                            <h3>Güçlü Yönler</h3>
-                            <p>${gucluYonler || 'Değerlendirme bulunamadı'}</p>
-                        </div>
-                        <div class="subsection">
-                            <h3>Gelişim Alanları</h3>
-                            <p>${gelisimAlanlari || 'Değerlendirme bulunamadı'}</p>
-                        </div>
-                    </div>
-                `;
-            }
-
-            if (options.interviewQuestions) {
-                htmlContent += `
-                    <div class="section">
-                        <h2>Mülakat Soruları</h2>
-                        <div class="subsection">
-                            <h3>Sorular</h3>
-                            <p>${mulakatSorulari || 'Değerlendirme bulunamadı'}</p>
-                        </div>
-                        <div class="subsection">
-                            <h3>Neden Bu Sorular?</h3>
-                            <p>${nedenBuSorular || 'Değerlendirme bulunamadı'}</p>
-                        </div>
-                    </div>
-                `;
-            }
-
-            if (options.developmentSuggestions) {
-                htmlContent += `
-                    <div class="section">
-                        <h2>Gelişim Planı</h2>
-                        ${gelisimOnerileriHTML}
-                    </div>
-                `;
-            }
-
-            htmlContent += `
-                </body>
-                </html>
-            `;
-
-            // PDF oluştur
-            const pdfOptions = {
-                format: 'A4',
-                margin: { top: 20, right: 20, bottom: 20, left: 20 }
+            // Seçenekleri kontrol et
+            const options = {
+                generalEvaluation: selectedOptions.generalEvaluation === true || selectedOptions.generalEvaluation === 'true',
+                strengths: selectedOptions.strengths === true || selectedOptions.strengths === 'true',
+                development: selectedOptions.development === true || selectedOptions.development === 'true',
+                interviewQuestions: selectedOptions.interviewQuestions === true || selectedOptions.interviewQuestions === 'true',
+                whyTheseQuestions: selectedOptions.whyTheseQuestions === true || selectedOptions.whyTheseQuestions === 'true',
+                developmentSuggestions: selectedOptions.developmentSuggestions === true || selectedOptions.developmentSuggestions === 'true'
             };
 
-            const file = { content: htmlContent };
-            const pdfBuffer = await htmlPdf.generatePdf(file, pdfOptions);
+            console.log('İşlenmiş seçenekler:', options);
 
-            // PDF'i gönder
-            res.setHeader('Content-Type', 'application/pdf');
-            res.setHeader('Content-Disposition', `attachment; filename=degerlendirme_${code}.pdf`);
-            res.send(pdfBuffer);
+            // Önce Game koleksiyonunda ara
+            let game = await Game.findOne({ playerCode: userCode });
+            if (!game) {
+                console.log('Game bulunamadı, EvaluationResult koleksiyonunda aranıyor...');
+                // Game bulunamazsa EvaluationResult koleksiyonunda ara
+                const evaluation = await EvaluationResult.findOne({ ID: userCode });
+                if (!evaluation) {
+                    console.log('EvaluationResult da bulunamadı');
+                    return res.status(404).json({ message: 'Değerlendirme bulunamadı' });
+                }
+                console.log('EvaluationResult bulundu:', evaluation);
+                return generateAndSendPDF(evaluation, options, res);
+            }
+
+            console.log('Game bulundu:', game);
+            
+            // Game içindeki evaluationResult'u kontrol et
+            if (!game.evaluationResult || Object.keys(game.evaluationResult).length === 0) {
+                console.log('Game içinde değerlendirme sonucu bulunamadı, EvaluationResult koleksiyonunda aranıyor...');
+                const evaluation = await EvaluationResult.findOne({ ID: userCode });
+                if (!evaluation) {
+                    console.log('EvaluationResult da bulunamadı');
+                    return res.status(404).json({ message: 'Değerlendirme bulunamadı' });
+                }
+                console.log('EvaluationResult bulundu:', evaluation);
+                
+                // Game modelini güncelle
+                game.evaluationResult = evaluation;
+                await game.save();
+                
+                return generateAndSendPDF(evaluation, options, res);
+            }
+
+            return generateAndSendPDF(game.evaluationResult, options, res);
         } catch (error) {
             console.error('PDF oluşturma hatası:', error);
             res.status(500).json({ message: 'PDF oluşturulurken bir hata oluştu' });
@@ -201,153 +94,46 @@ const evaluationController = {
                 developmentSuggestions: req.query.developmentSuggestions === 'true'
             };
 
-            const userCode = await mongoose.model('UserCode').findOne({ code });
-            if (!userCode) {
-                return res.status(404).json({ message: 'Kullanıcı kodu bulunamadı' });
-            }
+            console.log('Preview için code:', code);
+            console.log('Seçenekler:', options);
 
-            if (!userCode.evaluationResult) {
-                return res.status(404).json({ message: 'Değerlendirme sonucu bulunamadı' });
-            }
-
-            const evaluation = userCode.evaluationResult;
-
-            // Verileri al
-            const genelDegerlendirme = evaluation['Genel Değerlendirme'];
-            const gucluYonler = evaluation['Güçlü Yönler'];
-            const gelisimAlanlari = evaluation['Gelişim Alanları'];
-            const mulakatSorulari = evaluation['Mülakat Soruları'];
-            const nedenBuSorular = evaluation['Neden Bu Sorular?'];
-            const gelisimOnerileri1 = evaluation['Gelişim Önerileri -1'];
-            const gelisimOnerileri2 = evaluation['Gelişim Önerileri -2'];
-            const gelisimOnerileri3 = evaluation['Gelişim Önerileri - 3'];
-
-            // Gelişim önerilerini ayrı başlıklar altında oluştur
-            let gelisimOnerileriHTML = '';
-            const gelisimOnerileriKeys = [
-                { key: 'Gelişim Önerileri -1', title: 'Gelişim Önerisi 1' },
-                { key: 'Gelişim Önerileri -2', title: 'Gelişim Önerisi 2' },
-                { key: 'Gelişim Önerileri - 3', title: 'Gelişim Önerisi 3' }
-            ];
-            
-            gelisimOnerileriKeys.forEach(item => {
-                if (evaluation[item.key]) {
-                    gelisimOnerileriHTML += `
-                        <div class="subsection">
-                            <h3>${item.title}</h3>
-                            <p>${evaluation[item.key]}</p>
-                        </div>
-                    `;
+            // Önce Game koleksiyonunda ara
+            let game = await Game.findOne({ playerCode: code });
+            if (!game) {
+                console.log('Game bulunamadı, EvaluationResult koleksiyonunda aranıyor...');
+                // Game bulunamazsa EvaluationResult koleksiyonunda ara
+                const evaluation = await EvaluationResult.findOne({ ID: code });
+                if (!evaluation) {
+                    console.log('EvaluationResult da bulunamadı');
+                    return res.status(404).json({ message: 'Değerlendirme bulunamadı' });
                 }
-            });
-
-            // HTML içeriğini oluştur
-            let htmlContent = `
-                <!DOCTYPE html>
-                <html>
-                <head>
-                    <meta charset="UTF-8">
-                    <style>
-                        body { 
-                            font-family: Arial, sans-serif; 
-                            padding: 20px;
-                            line-height: 1.6;
-                        }
-                        h1 { 
-                            text-align: center;
-                            color: #2c3e50;
-                            margin-bottom: 30px;
-                        }
-                        h2 { 
-                            color: #34495e;
-                            border-bottom: 2px solid #eee;
-                            padding-bottom: 10px;
-                            margin-top: 25px;
-                        }
-                        h3 {
-                            color: #2c3e50;
-                            margin-top: 15px;
-                            margin-bottom: 10px;
-                        }
-                        .section { 
-                            margin-bottom: 25px;
-                            padding: 15px;
-                            background-color: #f9f9f9;
-                            border-radius: 5px;
-                        }
-                        .subsection {
-                            margin-bottom: 15px;
-                        }
-                        p {
-                            margin: 10px 0;
-                        }
-                    </style>
-                </head>
-                <body>
-                    <h1>Değerlendirme Raporu</h1>
-            `;
-
-            // Seçilen bölümleri ekle
-            if (options.generalEvaluation) {
-                htmlContent += `
-                    <div class="section">
-                        <h2>Tanım ve Genel Değerlendirme</h2>
-                        <p>${genelDegerlendirme || 'Değerlendirme bulunamadı'}</p>
-                    </div>
-                `;
+                console.log('EvaluationResult bulundu:', evaluation);
+                return generateAndSendPreview(evaluation, options, res);
             }
 
-            if (options.strengths) {
-                htmlContent += `
-                    <div class="section">
-                        <h2>Güçlü Yönler ve Gelişim Alanları</h2>
-                        <div class="subsection">
-                            <h3>Güçlü Yönler</h3>
-                            <p>${gucluYonler || 'Değerlendirme bulunamadı'}</p>
-                        </div>
-                        <div class="subsection">
-                            <h3>Gelişim Alanları</h3>
-                            <p>${gelisimAlanlari || 'Değerlendirme bulunamadı'}</p>
-                        </div>
-                    </div>
-                `;
+            console.log('Game bulundu:', game);
+            
+            // Game içindeki evaluationResult'u kontrol et
+            if (!game.evaluationResult || Object.keys(game.evaluationResult).length === 0) {
+                console.log('Game içinde değerlendirme sonucu bulunamadı, EvaluationResult koleksiyonunda aranıyor...');
+                const evaluation = await EvaluationResult.findOne({ ID: code });
+                if (!evaluation) {
+                    console.log('EvaluationResult da bulunamadı');
+                    return res.status(404).json({ message: 'Değerlendirme bulunamadı' });
+                }
+                console.log('EvaluationResult bulundu:', evaluation);
+                
+                // Game modelini güncelle
+                game.evaluationResult = evaluation;
+                await game.save();
+                
+                return generateAndSendPreview(evaluation, options, res);
             }
 
-            if (options.interviewQuestions) {
-                htmlContent += `
-                    <div class="section">
-                        <h2>Mülakat Soruları</h2>
-                        <div class="subsection">
-                            <h3>Sorular</h3>
-                            <p>${mulakatSorulari || 'Değerlendirme bulunamadı'}</p>
-                        </div>
-                        <div class="subsection">
-                            <h3>Neden Bu Sorular?</h3>
-                            <p>${nedenBuSorular || 'Değerlendirme bulunamadı'}</p>
-                        </div>
-                    </div>
-                `;
-            }
-
-            if (options.developmentSuggestions) {
-                htmlContent += `
-                    <div class="section">
-                        <h2>Gelişim Planı</h2>
-                        ${gelisimOnerileriHTML}
-                    </div>
-                `;
-            }
-
-            htmlContent += `
-                </body>
-                </html>
-            `;
-
-            res.setHeader('Content-Type', 'text/html');
-            res.send(htmlContent);
+            return generateAndSendPreview(game.evaluationResult, options, res);
         } catch (error) {
             console.error('PDF önizleme hatası:', error);
-            res.status(500).json({ message: 'PDF önizleme oluşturulurken bir hata oluştu' });
+            res.status(500).json({ message: 'PDF oluşturulurken bir hata oluştu' });
         }
     },
 
@@ -362,5 +148,300 @@ const evaluationController = {
         }
     }
 };
+
+async function generateAndSendPDF(evaluation, options, res) {
+    try {
+        console.log('PDF oluşturma için değerlendirme:', evaluation);
+        console.log('Seçenekler:', options);
+
+        // Gelişim önerilerini ayrı başlıklar altında oluştur
+        let gelisimOnerileriHTML = '';
+        const gelisimOnerileriKeys = [
+            { key: 'Gelişim Önerileri -1', title: 'Gelişim Önerisi 1' },
+            { key: 'Gelişim Önerileri -2', title: 'Gelişim Önerisi 2' },
+            { key: 'Gelişim Önerileri - 3', title: 'Gelişim Önerisi 3' }
+        ];
+        
+        gelisimOnerileriKeys.forEach(item => {
+            if (evaluation[item.key]) {
+                gelisimOnerileriHTML += `
+                    <div class="subsection">
+                        <h3>${item.title}</h3>
+                        <p>${evaluation[item.key]}</p>
+                    </div>
+                `;
+            }
+        });
+
+        // HTML içeriğini oluştur
+        const htmlContent = `
+            <!DOCTYPE html>
+            <html>
+            <head>
+                <meta charset="UTF-8">
+                <style>
+                    body { 
+                        font-family: Arial, sans-serif; 
+                        padding: 20px;
+                        line-height: 1.6;
+                    }
+                    h1 { 
+                        text-align: center;
+                        color: #2c3e50;
+                        margin-bottom: 30px;
+                    }
+                    h2 { 
+                        color: #34495e;
+                        border-bottom: 2px solid #eee;
+                        padding-bottom: 10px;
+                        margin-top: 25px;
+                    }
+                    h3 {
+                        color: #2c3e50;
+                        margin-top: 15px;
+                        margin-bottom: 10px;
+                    }
+                    .section { 
+                        margin-bottom: 25px;
+                        padding: 15px;
+                        background-color: #f9f9f9;
+                        border-radius: 5px;
+                    }
+                    .subsection {
+                        margin-top: 15px;
+                        margin-bottom: 15px;
+                        padding-left: 10px;
+                        border-left: 3px solid #3498db;
+                    }
+                    ul { 
+                        list-style-type: disc;
+                        margin-left: 20px;
+                    }
+                    li {
+                        margin-bottom: 8px;
+                    }
+                    .header {
+                        text-align: center;
+                        margin-bottom: 30px;
+                    }
+                    .date {
+                        color: #7f8c8d;
+                        font-size: 0.9em;
+                    }
+                </style>
+            </head>
+            <body>
+                <div class="header">
+                    <h1>Değerlendirme Raporu</h1>
+                    <div class="date">Oluşturulma Tarihi: ${new Date().toLocaleDateString('tr-TR')}</div>
+                </div>
+                
+                ${options.generalEvaluation ? `
+                <div class="section">
+                    <h2>Genel Değerlendirme</h2>
+                    <p>${evaluation['Genel Değerlendirme'] || 'Genel değerlendirme bulunamadı.'}</p>
+                </div>
+                ` : ''}
+
+                ${options.strengths ? `
+                <div class="section">
+                    <h2>Güçlü Yönler</h2>
+                    <p>${evaluation['Güçlü Yönler'] || 'Güçlü yönler bulunamadı.'}</p>
+                </div>
+                ` : ''}
+
+                ${options.development ? `
+                <div class="section">
+                    <h2>Gelişim Alanları</h2>
+                    <p>${evaluation['Gelişim Alanları'] || 'Gelişim alanları bulunamadı.'}</p>
+                </div>
+                ` : ''}
+
+                ${options.interviewQuestions ? `
+                <div class="section">
+                    <h2>Mülakat Soruları</h2>
+                    <p>${evaluation['Mülakat Soruları'] || 'Mülakat soruları bulunamadı.'}</p>
+                </div>
+                ` : ''}
+
+                ${options.whyTheseQuestions ? `
+                <div class="section">
+                    <h2>Neden Bu Sorular?</h2>
+                    <p>${evaluation['Neden Bu Sorular?'] || 'Neden bu sorular bilgisi bulunamadı.'}</p>
+                </div>
+                ` : ''}
+
+                ${options.developmentSuggestions ? `
+                <div class="section">
+                    <h2>Gelişim Önerileri</h2>
+                    ${gelisimOnerileriHTML || '<p>Gelişim önerisi bulunamadı.</p>'}
+                </div>
+                ` : ''}
+            </body>
+            </html>
+        `;
+
+        console.log('Oluşturulan HTML içeriği:', htmlContent);
+
+        const pdfOptions = {
+            format: 'A4',
+            margin: {
+                top: '20px',
+                right: '20px',
+                bottom: '20px',
+                left: '20px'
+            }
+        };
+
+        // PDF oluştur
+        const file = await htmlPdf.generatePdf({ content: htmlContent }, pdfOptions);
+        console.log('PDF oluşturuldu, boyut:', file.length);
+
+        // PDF'i indir
+        res.setHeader('Content-Type', 'application/pdf');
+        res.setHeader('Content-Disposition', `attachment; filename=evaluation_${evaluation.ID}.pdf`);
+        res.send(file);
+    } catch (error) {
+        console.error('PDF oluşturma hatası:', error);
+        throw error;
+    }
+}
+
+async function generateAndSendPreview(evaluation, options, res) {
+    try {
+        // Gelişim önerilerini ayrı başlıklar altında oluştur
+        let gelisimOnerileriHTML = '';
+        const gelisimOnerileriKeys = [
+            { key: 'Gelişim Önerileri -1', title: 'Gelişim Önerisi 1' },
+            { key: 'Gelişim Önerileri -2', title: 'Gelişim Önerisi 2' },
+            { key: 'Gelişim Önerileri - 3', title: 'Gelişim Önerisi 3' }
+        ];
+        
+        gelisimOnerileriKeys.forEach(item => {
+            if (evaluation[item.key]) {
+                gelisimOnerileriHTML += `
+                    <div class="subsection">
+                        <h3>${item.title}</h3>
+                        <p>${evaluation[item.key]}</p>
+                    </div>
+                `;
+            }
+        });
+
+        // HTML içeriğini oluştur
+        const htmlContent = `
+            <!DOCTYPE html>
+            <html>
+            <head>
+                <meta charset="UTF-8">
+                <style>
+                    body { 
+                        font-family: Arial, sans-serif; 
+                        padding: 20px;
+                        line-height: 1.6;
+                    }
+                    h1 { 
+                        text-align: center;
+                        color: #2c3e50;
+                        margin-bottom: 30px;
+                    }
+                    h2 { 
+                        color: #34495e;
+                        border-bottom: 2px solid #eee;
+                        padding-bottom: 10px;
+                        margin-top: 25px;
+                    }
+                    h3 {
+                        color: #2c3e50;
+                        margin-top: 15px;
+                        margin-bottom: 10px;
+                    }
+                    .section { 
+                        margin-bottom: 25px;
+                        padding: 15px;
+                        background-color: #f9f9f9;
+                        border-radius: 5px;
+                    }
+                    .subsection {
+                        margin-top: 15px;
+                        margin-bottom: 15px;
+                        padding-left: 10px;
+                        border-left: 3px solid #3498db;
+                    }
+                    ul { 
+                        list-style-type: disc;
+                        margin-left: 20px;
+                    }
+                    li {
+                        margin-bottom: 8px;
+                    }
+                    .header {
+                        text-align: center;
+                        margin-bottom: 30px;
+                    }
+                    .date {
+                        color: #7f8c8d;
+                        font-size: 0.9em;
+                    }
+                </style>
+            </head>
+            <body>
+                <div class="header">
+                    <h1>Değerlendirme Raporu</h1>
+                    <div class="date">Oluşturulma Tarihi: ${new Date().toLocaleDateString('tr-TR')}</div>
+                </div>
+                
+                ${options.generalEvaluation === true ? `
+                <div class="section">
+                    <h2>Genel Değerlendirme</h2>
+                    <p>${evaluation['Genel Değerlendirme'] || 'Genel değerlendirme bulunamadı.'}</p>
+                </div>
+                ` : ''}
+
+                ${options.strengths === true ? `
+                <div class="section">
+                    <h2>Güçlü Yönler</h2>
+                    <p>${evaluation['Güçlü Yönler'] || 'Güçlü yönler bulunamadı.'}</p>
+                </div>
+                ` : ''}
+
+                ${options.development === true ? `
+                <div class="section">
+                    <h2>Gelişim Alanları</h2>
+                    <p>${evaluation['Gelişim Alanları'] || 'Gelişim alanları bulunamadı.'}</p>
+                </div>
+                ` : ''}
+
+                ${options.interviewQuestions === true ? `
+                <div class="section">
+                    <h2>Mülakat Soruları</h2>
+                    <p>${evaluation['Mülakat Soruları'] || 'Mülakat soruları bulunamadı.'}</p>
+                </div>
+                ` : ''}
+
+                ${options.whyTheseQuestions === true ? `
+                <div class="section">
+                    <h2>Neden Bu Sorular?</h2>
+                    <p>${evaluation['Neden Bu Sorular?'] || 'Neden bu sorular bilgisi bulunamadı.'}</p>
+                </div>
+                ` : ''}
+
+                ${options.developmentSuggestions === true ? `
+                <div class="section">
+                    <h2>Gelişim Önerileri</h2>
+                    ${gelisimOnerileriHTML || '<p>Gelişim önerisi bulunamadı.</p>'}
+                </div>
+                ` : ''}
+            </body>
+            </html>
+        `;
+
+        res.setHeader('Content-Type', 'text/html');
+        res.send(htmlContent);
+    } catch (error) {
+        console.error('Önizleme oluşturma hatası:', error);
+        throw error;
+    }
+}
 
 module.exports = evaluationController;

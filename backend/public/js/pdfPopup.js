@@ -37,66 +37,57 @@ function previewPDF() {
         developmentSuggestions: document.getElementById('developmentSuggestions').checked
     };
 
-    try {
-        // PDF'i blob olarak al
-        fetch(`/api/preview-pdf?code=${currentEvaluationId}&${new URLSearchParams(selectedSections)}`)
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error('PDF oluşturulurken bir hata oluştu');
-                }
-                return response.blob();
-            })
-            .then(blob => {
-                // Blob'u URL'ye dönüştür
-                const url = URL.createObjectURL(blob);
-                
-                // PDF'i iframe'de göster
-                const frame = document.getElementById('pdfPreviewFrame');
-                if (!frame) {
-                    throw new Error('PDF önizleme alanı bulunamadı');
-                }
-                frame.src = url;
-                
-                // PDF popup'ını kapat ve önizleme popup'ını aç
-                closePDFPopup();
-                showPDFPreviewPopup();
-            })
-            .catch(error => {
-                console.error('PDF önizleme hatası:', error);
-                alert('PDF önizlenirken bir hata oluştu: ' + error.message);
-            });
-    } catch (error) {
-        console.error('PDF önizleme hatası:', error);
-        alert('PDF önizlenirken bir hata oluştu: ' + error.message);
-    }
+    console.log('Preview için ID:', currentEvaluationId);
+    console.log('Seçilen bölümler:', selectedSections);
+
+    fetch(`/api/preview-pdf?code=${currentEvaluationId}&${new URLSearchParams(selectedSections)}`)
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('PDF oluşturulurken bir hata oluştu');
+            }
+            return response.blob();
+        })
+        .then(blob => {
+            const url = URL.createObjectURL(blob);
+            const frame = document.getElementById('pdfPreviewFrame');
+            frame.src = url;
+            closePDFPopup();
+            showPDFPreviewPopup();
+        })
+        .catch(error => {
+            console.error('PDF önizleme hatası:', error);
+            alert('PDF önizlenirken bir hata oluştu: ' + error.message);
+        });
 }
 
-async function downloadPDF() {
-    const selectedSections = {
+function downloadPDF() {
+    const selectedOptions = {
         generalEvaluation: document.getElementById('generalEvaluation').checked,
         strengths: document.getElementById('strengths').checked,
         interviewQuestions: document.getElementById('interviewQuestions').checked,
         developmentSuggestions: document.getElementById('developmentSuggestions').checked
     };
 
-    try {
-        const response = await fetch('/api/generate-pdf', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-                code: currentEvaluationId,
-                options: selectedSections
-            })
-        });
+    console.log('PDF indirme için ID:', currentEvaluationId);
+    console.log('Seçilen seçenekler:', selectedOptions);
 
+    fetch('/api/evaluation/generatePDF', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+            userCode: currentEvaluationId,
+            selectedOptions: selectedOptions
+        })
+    })
+    .then(response => {
         if (!response.ok) {
-            const errorData = await response.json();
-            throw new Error(errorData.message || 'PDF oluşturulurken bir hata oluştu');
+            return response.json().then(err => { throw new Error(err.message || 'PDF oluşturulurken bir hata oluştu'); });
         }
-
-        const blob = await response.blob();
+        return response.blob();
+    })
+    .then(blob => {
         const url = window.URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
@@ -106,8 +97,9 @@ async function downloadPDF() {
         window.URL.revokeObjectURL(url);
         document.body.removeChild(a);
         closePDFPopup();
-    } catch (error) {
+    })
+    .catch(error => {
         console.error('PDF indirme hatası:', error);
         alert('PDF indirilirken bir hata oluştu: ' + error.message);
-    }
+    });
 } 
