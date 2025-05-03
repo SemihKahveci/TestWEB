@@ -1,5 +1,8 @@
 const htmlPdf = require('html-pdf-node');
-const options = { format: 'A4' };
+const options = { 
+    format: 'A4',
+    args: ['--no-sandbox', '--disable-setuid-sandbox']
+};
 
 const generatePDF = async (data) => {
     try {

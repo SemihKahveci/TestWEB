@@ -693,7 +693,7 @@
                                 row.innerHTML = `
                                     <td>${result.name}</td>
                                     <td>
-                                        <span class="status-badge ${result.status}">${result.status}</span>
+                                        <span class="status-badge ${result.status.charAt(0).toUpperCase() + result.status.slice(1)}">${result.status.charAt(0).toUpperCase() + result.status.slice(1)}</span>
                                     </td>
                                     <td>${formatDate(result.sentDate)}</td>
                                     <td>${result.completionDate ? formatDate(result.completionDate) : '-'}</td>
