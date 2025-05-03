@@ -37,7 +37,7 @@ class CodeController {
                 name,
                 email,
                 planet,
-                status: 'beklemede',
+                status: 'Beklemede',
                 sentDate: new Date(),
                 expiryDate
             });

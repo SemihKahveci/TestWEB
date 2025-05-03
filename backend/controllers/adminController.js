@@ -209,7 +209,7 @@ const adminController = {
                     name,
                     email,
                     planet,
-                    status: 'beklemede',
+                    status: 'Beklemede',
                     sentDate: new Date(),
                     expiryDate
                 },
@@ -292,7 +292,7 @@ const adminController = {
             const userCode = await UserCode.findOneAndUpdate(
                 { code },
                 {
-                    status: 'tamamlandı',
+                    status: 'Tamamlandı',
                     completionDate: new Date()
                 },
                 { new: true }
@@ -353,7 +353,7 @@ const adminController = {
                 { code },
                 { 
                     status,
-                    completionDate: status === 'tamamlandı' ? new Date() : null
+                    completionDate: status === 'Tamamlandı' ? new Date() : null
                 },
                 { new: true }
             );

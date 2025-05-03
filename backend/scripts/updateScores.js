@@ -13,7 +13,7 @@ async function updateScores() {
         console.log('Veritabanına bağlandı');
 
         // Tüm UserCode kayıtlarını al
-        const userCodes = await UserCode.find({ status: 'tamamlandı' });
+        const userCodes = await UserCode.find({ status: 'Tamamlandı' });
         console.log(`${userCodes.length} kayıt bulundu`);
 
         // Her kayıt için skorları güncelle

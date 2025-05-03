@@ -53,8 +53,8 @@ async function loadData() {
             
             // Sonuçları kontrol et ve durumları güncelle
             allData.forEach(result => {
-                if (result.status === 'beklemede' && result.completionDate) {
-                    updateResultStatus(result.code, 'tamamlandı');
+                if (result.status === 'Beklemede' && result.completionDate) {
+                    updateResultStatus(result.code, 'Tamamlandı');
                 }
             });
             

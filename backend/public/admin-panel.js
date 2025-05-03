@@ -6,10 +6,10 @@ function checkResults() {
                 const results = data.results;
                 if (results.length > 0) {
                     results.forEach(result => {
-                        if (result.status === 'beklemede') {
+                        if (result.status === 'Beklemede') {
                             // Sonuç geldiğinde durumu güncelle
                             if (result.completionDate) {
-                                updateResultStatus(result.code, 'tamamlandı');
+                                updateResultStatus(result.code, 'Tamamlandı');
                             }
                         }
                     });

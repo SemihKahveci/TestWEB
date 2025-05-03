@@ -20,8 +20,8 @@ const userCodeSchema = new mongoose.Schema({
     },
     status: {
         type: String,
-        enum: ['beklemede', 'tamamlandı'],
-        default: 'beklemede'
+        enum: ['Beklemede', 'Tamamlandı'],
+        default: 'Beklemede'
     },
     isUsed: {
         type: Boolean,

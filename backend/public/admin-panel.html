@@ -661,7 +661,10 @@
     <script src="/js/results.js"></script>
     <script src="js/pdfPopup.js"></script>
     <script>
-        let currentPage = 1;
+        // Eğer currentPage zaten tanımlanmamışsa tanımla
+        if (typeof currentPage === 'undefined') {
+            let currentPage = 1;
+        }
         const itemsPerPage = 5;
 
         document.addEventListener('DOMContentLoaded', () => {

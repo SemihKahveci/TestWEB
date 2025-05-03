@@ -1,30 +1,26 @@
-const nodemailer = require('nodemailer');
+const formData = require('form-data');
+const Mailgun = require('mailgun.js');
 require('dotenv').config();
 
-// E-posta gönderici yapılandırması
-const transporter = nodemailer.createTransport({
-    host: process.env.SMTP_HOST,
-    port: process.env.SMTP_PORT,
-    secure: false,
-    auth: {
-        user: process.env.SMTP_USER,
-        pass: process.env.SMTP_PASS
-    }
+const mailgun = new Mailgun(formData);
+const mg = mailgun.client({
+    username: 'api',
+    key: process.env.MAILGUN_API_KEY,
+    url: 'https://api.mailgun.net'
 });
 
-// E-posta gönderme fonksiyonu
 const sendEmail = async (to, subject, html) => {
     try {
-        const mailOptions = {
-            from: `"${process.env.SMTP_FROM_NAME}" <${process.env.SMTP_FROM}>`,
-            to,
-            subject,
-            html
+        const data = {
+            from: `${process.env.MAILGUN_FROM_NAME} <${process.env.MAILGUN_FROM_EMAIL}>`,
+            to: to,
+            subject: subject,
+            html: html
         };
 
-        const info = await transporter.sendMail(mailOptions);
-        console.log('E-posta gönderildi:', info.messageId);
-        return { success: true, messageId: info.messageId };
+        const result = await mg.messages.create(process.env.MAILGUN_DOMAIN, data);
+        console.log('E-posta gönderildi:', result.id);
+        return { success: true, messageId: result.id };
     } catch (error) {
         console.error('E-posta gönderme hatası:', error);
         throw error;
@@ -32,6 +28,5 @@ const sendEmail = async (to, subject, html) => {
 };
 
 module.exports = {
-    sendEmail,
-    transporter
+    sendEmail
 }; 

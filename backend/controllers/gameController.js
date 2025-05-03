@@ -111,7 +111,7 @@ class GameController {
             await UserCode.findOneAndUpdate(
                 { code: data.playerCode },
                 { 
-                    status: 'tamamlandı',
+                    status: 'Tamamlandı',
                     completionDate: new Date(),
                     evaluationResult: evaluationResult,
                     customerFocusScore: customerFocusScore.toFixed(2),
@@ -123,7 +123,7 @@ class GameController {
             const dummyData = {
                 id: data.playerCode,
                 name: userCode.name,
-                status: 'tamamlandı',
+                status: 'Tamamlandı',
                 submissionDate: userCode.sentDate,
                 completionDate: new Date(),
                 validityDate: userCode.expiryDate,
