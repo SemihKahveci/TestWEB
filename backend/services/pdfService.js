@@ -6,7 +6,6 @@ const options = {
 
 const generatePDF = async (data) => {
     try {
-        console.log('PDF oluşturma için veri alındı:', data);
         const { userCode, game, options } = data;
         
         if (!userCode || !game) {
@@ -14,7 +13,6 @@ const generatePDF = async (data) => {
         }
 
         // HTML şablonu oluştur
-        console.log('HTML şablonu oluşturuluyor...');
         const html = `
             <!DOCTYPE html>
             <html>
@@ -93,12 +91,9 @@ const generatePDF = async (data) => {
             </body>
             </html>
         `;
-        console.log('HTML şablonu oluşturuldu');
 
         // PDF oluştur
-        console.log('PDF oluşturuluyor...');
         const file = await htmlPdf.generatePdf({ content: html }, options);
-        console.log('PDF başarıyla oluşturuldu');
         return file;
     } catch (error) {
         console.error('PDF oluşturma hatası:', error);

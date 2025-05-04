@@ -74,8 +74,7 @@ class CodeController {
     // Kod doğrulama ve bölümleri getir
     async verifyGameCode(req, res) {
         try {
-            console.log('Gelen istek body:', req.body);
-            
+                  
             // JSON verilerini kontrol et
             if (!req.body || typeof req.body !== 'object') {
                 return res.status(400).json({
@@ -89,8 +88,6 @@ class CodeController {
             if (code && typeof code === 'string') {
                 code = code.trimEnd(); // Sondaki boşluğu temizle
             }
-            
-            console.log('Gelen kod (temizlenmiş):', code);
 
             if (!code) {
                 return res.status(400).json({
@@ -115,7 +112,7 @@ class CodeController {
             }
 
             // Durumu İşleniyor olarak güncelle
-            userCode.status = 'İşleniyor';
+            userCode.status = 'Oyun Devam Ediyor';
             await userCode.save();
 
             res.status(200).json({

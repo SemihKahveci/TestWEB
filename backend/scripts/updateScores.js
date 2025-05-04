@@ -10,11 +10,8 @@ async function updateScores() {
             useUnifiedTopology: true
         });
 
-        console.log('Veritabanına bağlandı');
-
         // Tüm UserCode kayıtlarını al
         const userCodes = await UserCode.find({ status: 'Tamamlandı' });
-        console.log(`${userCodes.length} kayıt bulundu`);
 
         // Her kayıt için skorları güncelle
         for (const userCode of userCodes) {
@@ -28,13 +25,11 @@ async function updateScores() {
                         uncertaintyScore: game.uncertaintyScore
                     }
                 );
-                console.log(`${userCode.code} için skorlar güncellendi`);
             }
         }
 
-        console.log('Tüm skorlar güncellendi');
         process.exit(0);
-    } catch (error) {
+    } catch (error) {   
         console.error('Hata:', error);
         process.exit(1);
     }

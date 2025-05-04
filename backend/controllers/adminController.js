@@ -11,7 +11,6 @@ const Game = require('../models/game');
 const adminController = {
     login: async (req, res) => {
         try {
-            console.log('Login isteği alındı:', req.body);
             const { email, password } = req.body;
 
             if (!email || !password) {
@@ -21,20 +20,20 @@ const adminController = {
             // Admin'i bul
             const admin = await Admin.findOne({ email });
             if (!admin) {
-                console.log('Admin bulunamadı:', email);
+              
                 return res.status(401).json({ message: 'Geçersiz email veya şifre' });
             }
 
             // Şifreyi kontrol et
             const isMatch = await admin.comparePassword(password);
             if (!isMatch) {
-                console.log('Şifre eşleşmedi:', email);
+          
                 return res.status(401).json({ message: 'Geçersiz email veya şifre' });
             }
 
             // Admin aktif değilse
             if (!admin.isActive) {
-                console.log('Admin aktif değil:', email);
+       
                 return res.status(401).json({ message: 'Hesabınız aktif değil' });
             }
 
@@ -50,7 +49,6 @@ const adminController = {
                 { expiresIn: '1d' }
             );
 
-            console.log('Giriş başarılı:', email);
             res.json({
                 success: true,
                 token,
@@ -107,32 +105,28 @@ const adminController = {
     generateAndSendPDF: async (req, res) => {
         try {
             const { code, email, options } = req.body;
-            console.log('PDF oluşturma isteği alındı:', { code, email, options });
-            
+                  
             // Kullanıcı kodunu bul
             const userCode = await UserCode.findOne({ code });
             if (!userCode) {
-                console.log('Kullanıcı kodu bulunamadı:', code);
+      
                 return res.status(404).json({ message: 'Kod bulunamadı' });
             }
-            console.log('Kullanıcı kodu bulundu:', userCode);
 
             // Oyun sonuçlarını bul
             const game = await Game.findOne({ playerCode: code });
             if (!game) {
-                console.log('Oyun sonuçları bulunamadı:', code);
+          
                 return res.status(404).json({ message: 'Oyun sonuçları bulunamadı' });
             }
-            console.log('Oyun sonuçları bulundu:', game);
+           
 
             // PDF oluştur
-            console.log('PDF oluşturma başlıyor...');
             const pdfBuffer = await generatePDF({
                 userCode,
                 game,
                 options
             });
-            console.log('PDF başarıyla oluşturuldu');
 
             // PDF'i indir
             res.setHeader('Content-Type', 'application/pdf');
@@ -264,9 +258,9 @@ const adminController = {
                 setTimeout(async () => {
                     try {
                         await UserCode.findOneAndDelete({ code });
-                        console.log(`Kod ${code} 72 saat sonra silindi`);
+                     
                     } catch (error) {
-                        console.error('Kod silme hatası:', error);
+                   
                     }
                 }, 72 * 60 * 60 * 1000); // 72 saat
 
@@ -275,7 +269,7 @@ const adminController = {
                 res.status(500).json({ success: false, message: 'E-posta gönderilirken bir hata oluştu' });
             }
         } catch (error) {
-            console.error('Kod gönderme hatası:', error);
+ 
             res.status(500).json({ success: false, message: 'Kod gönderilirken bir hata oluştu' });
         }
     },
@@ -340,8 +334,7 @@ const adminController = {
     updateResultStatus: async (req, res) => {
         try {
             const { code, status } = req.body;
-            console.log('Durum güncelleniyor:', { code, status });
-
+    
             if (!code || !status) {
                 return res.status(400).json({
                     success: false,

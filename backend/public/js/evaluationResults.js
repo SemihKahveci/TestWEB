@@ -14,7 +14,6 @@ async function loadEvaluationData() {
         const data = await response.json();
         
         if (data.success) {
-            console.log('Gelen veriler:', data.results); // Debug için
             allData = data.results;
             totalItems = allData.length;
             displayEvaluationData();
@@ -43,7 +42,7 @@ function displayEvaluationData() {
 
     pageData.forEach(item => {
         const row = document.createElement('tr');
-        const isInactive = item.status === 'Beklemede' || item.status === 'İşleniyor';
+        const isInactive = item.status === 'Beklemede' || item.status === 'Oyun Devam Ediyor';
         
         if (isInactive) {
             row.classList.add('inactive');

@@ -13,8 +13,6 @@ const connectDB = async () => {
         if (!process.env.MONGODB_URI) {
             throw new Error('MONGODB_URI environment variable is not defined');
         }
-        
-        console.log('Trying to connect with URI:', process.env.MONGODB_URI);
 
         const conn = await mongoose.connect(process.env.MONGODB_URI, {
             useNewUrlParser: true,
@@ -23,7 +21,7 @@ const connectDB = async () => {
             socketTimeoutMS: 45000, // Socket zaman aşımı
             family: 4 // IPv4'ü zorla
         });
-        console.log(`MongoDB bağlantısı başarılı: ${conn.connection.host}`);
+
 
         // Bağlantı hatalarını dinle
         mongoose.connection.on('error', err => {

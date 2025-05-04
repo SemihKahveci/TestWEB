@@ -314,14 +314,7 @@
                 <label>Gezegen Seçimi</label>
                 <select id="planetSelect">
                     <option value="">Lütfen Gezegen Seçiniz</option>
-                    <option value="merkur">Merkür</option>
-                    <option value="venus">Venüs</option>
-                    <option value="dunya">Dünya</option>
-                    <option value="mars">Mars</option>
-                    <option value="jupiter">Jüpiter</option>
-                    <option value="saturn">Satürn</option>
-                    <option value="uranus">Uranüs</option>
-                    <option value="neptun">Neptün</option>
+                    <option value="venus">Venüs</option> 
                 </select>
             </div>
             <button class="submit-btn" onclick="sendInterview()">
@@ -360,7 +353,6 @@
             })
             .then(response => response.json())
             .then(data => {
-                console.log('Üretilen kod:', data); // Hata ayıklama için
                 if (data.success && data.code) {
                     // Üretilen kodu kullanarak e-posta gönder
                     return fetch('/api/send-code', {

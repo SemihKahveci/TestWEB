@@ -11,14 +11,13 @@ function connectWebSocket() {
     ws = new WebSocket(`${protocol}//${window.location.host}/ws`);
     
     ws.onopen = () => {
-        console.log('WebSocket bağlantısı kuruldu');
+
         loadData();
     };
     
     ws.onmessage = (event) => {
         try {
             const data = JSON.parse(event.data);
-            console.log('WebSocket mesajı alındı:', data);
             
             if (data.type === 'newResult' || data.type === 'resultUpdate') {
                 loadData();
@@ -29,7 +28,7 @@ function connectWebSocket() {
     };
     
     ws.onclose = () => {
-        console.log('WebSocket bağlantısı kapandı, yeniden bağlanılıyor...');
+
         setTimeout(connectWebSocket, 3000);
     };
     
@@ -83,7 +82,7 @@ function displayData() {
     pageData.forEach(item => {
         const row = document.createElement('tr');
         const isPDFDisabled = item.status !== 'Tamamlandı';
-        const isInactive = item.status === 'Beklemede' || item.status === 'İşleniyor';
+        const isInactive = item.status === 'Beklemede' || item.status === 'Oyun Devam Ediyor';
         
         if (isInactive) {
             row.classList.add('inactive');
@@ -97,7 +96,7 @@ function displayData() {
         row.innerHTML = `
             <td>${item.name}</td>
             <td>
-                <span class="status-badge ${item.status === 'İşleniyor' ? 'işleniyor' : item.status.toLowerCase()}">${item.status}</span>
+                <span class="status-badge ${item.status === 'Oyun Devam Ediyor' ? 'oyun-devam-ediyor' : item.status.toLowerCase()}">${item.status}</span>
             </td>
             <td>${formatDate(item.sentDate)}</td>
             <td>${item.completionDate ? formatDate(item.completionDate) : '-'}</td>
@@ -172,7 +171,6 @@ async function viewItem(id) {
     try {
         const response = await fetch(`/api/evaluation/${id}`);
         const data = await response.json();
-        console.log('Görüntüle:', data);
         // Görüntüleme işlemleri burada yapılacak
     } catch (error) {
         console.error('Görüntüleme hatası:', error);
@@ -183,7 +181,6 @@ async function editItem(id) {
     try {
         const response = await fetch(`/api/evaluation/${id}`);
         const data = await response.json();
-        console.log('Düzenle:', data);
         // Düzenleme işlemleri burada yapılacak
     } catch (error) {
         console.error('Düzenleme hatası:', error);
@@ -237,7 +234,6 @@ function handleCheckboxes() {
             const selectedIds = Array.from(checkboxes)
                 .filter(cb => cb.checked)
                 .map(cb => cb.dataset.id);
-            console.log('Seçili öğeler:', selectedIds);
         });
     });
 }

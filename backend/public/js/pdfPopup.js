@@ -37,9 +37,6 @@ function previewPDF() {
         developmentSuggestions: document.getElementById('developmentSuggestions').checked
     };
 
-    console.log('Preview için ID:', currentEvaluationId);
-    console.log('Seçilen bölümler:', selectedSections);
-
     fetch(`/api/preview-pdf?code=${currentEvaluationId}&${new URLSearchParams(selectedSections)}`)
         .then(response => {
             if (!response.ok) {
@@ -68,9 +65,6 @@ function downloadPDF() {
         developmentSuggestions: document.getElementById('developmentSuggestions').checked
     };
 
-    console.log('PDF indirme için ID:', currentEvaluationId);
-    console.log('Seçilen seçenekler:', selectedOptions);
-
     fetch('/api/evaluation/generatePDF', {
         method: 'POST',
         headers: {
@@ -88,15 +82,28 @@ function downloadPDF() {
         return response.blob();
     })
     .then(blob => {
-        const url = window.URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `degerlendirme_${currentEvaluationId}.pdf`;
-        document.body.appendChild(a);
-        a.click();
-        window.URL.revokeObjectURL(url);
-        document.body.removeChild(a);
-        closePDFPopup();
+        // Kullanıcı bilgilerini al
+        return fetch(`/api/user-results?code=${currentEvaluationId}`)
+            .then(response => response.json())
+            .then(data => {
+                if (!data.success || !data.results || data.results.length === 0) {
+                    throw new Error('Kullanıcı bilgileri alınamadı');
+                }
+                
+                const user = data.results[0];
+                const date = user.completionDate ? new Date(user.completionDate) : new Date();
+                const formattedDate = `${date.getDate().toString().padStart(2, '0')}${(date.getMonth() + 1).toString().padStart(2, '0')}${date.getFullYear()}`;
+                
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `${user.name}_${formattedDate}.pdf`;
+                document.body.appendChild(a);
+                a.click();
+                window.URL.revokeObjectURL(url);
+                document.body.removeChild(a);
+                closePDFPopup();
+            });
     })
     .catch(error => {
         console.error('PDF indirme hatası:', error);

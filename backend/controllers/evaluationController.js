@@ -10,10 +10,10 @@ const evaluationController = {
     async getEvaluationById(req, res) {
         try {
             const { id } = req.params;
-            console.log('Aranan ID:', id);
+     
 
             const evaluation = await EvaluationResult.findOne({ ID: id });
-            console.log('Bulunan değerlendirme:', JSON.stringify(evaluation, null, 2));
+          
 
             if (!evaluation) {
                 return res.status(404).json({ error: 'Değerlendirme bulunamadı' });
@@ -21,7 +21,7 @@ const evaluationController = {
 
             res.json(evaluation);
         } catch (error) {
-            console.error('Değerlendirme getirme hatası:', error);
+ 
             res.status(500).json({ error: 'Değerlendirme yüklenirken bir hata oluştu' });
         }
     },
@@ -29,8 +29,7 @@ const evaluationController = {
     async generatePDF(req, res) {
         try {
             const { userCode, selectedOptions } = req.body;
-            console.log('PDF oluşturma için userCode:', userCode);
-            console.log('Gelen seçenekler:', selectedOptions);
+          
 
             // Seçenekleri kontrol et
             const options = {
@@ -42,33 +41,23 @@ const evaluationController = {
                 developmentSuggestions: selectedOptions.developmentSuggestions === true || selectedOptions.developmentSuggestions === 'true'
             };
 
-            console.log('İşlenmiş seçenekler:', options);
-
             // Önce Game koleksiyonunda ara
             let game = await Game.findOne({ playerCode: userCode });
             if (!game) {
-                console.log('Game bulunamadı, EvaluationResult koleksiyonunda aranıyor...');
                 // Game bulunamazsa EvaluationResult koleksiyonunda ara
                 const evaluation = await EvaluationResult.findOne({ ID: userCode });
                 if (!evaluation) {
-                    console.log('EvaluationResult da bulunamadı');
                     return res.status(404).json({ message: 'Değerlendirme bulunamadı' });
                 }
-                console.log('EvaluationResult bulundu:', evaluation);
                 return generateAndSendPDF(evaluation, options, res);
             }
 
-            console.log('Game bulundu:', game);
-            
             // Game içindeki evaluationResult'u kontrol et
             if (!game.evaluationResult || Object.keys(game.evaluationResult).length === 0) {
-                console.log('Game içinde değerlendirme sonucu bulunamadı, EvaluationResult koleksiyonunda aranıyor...');
                 const evaluation = await EvaluationResult.findOne({ ID: userCode });
                 if (!evaluation) {
-                    console.log('EvaluationResult da bulunamadı');
                     return res.status(404).json({ message: 'Değerlendirme bulunamadı' });
                 }
-                console.log('EvaluationResult bulundu:', evaluation);
                 
                 // Game modelini güncelle
                 game.evaluationResult = evaluation;
@@ -79,7 +68,7 @@ const evaluationController = {
 
             return generateAndSendPDF(game.evaluationResult, options, res);
         } catch (error) {
-            console.error('PDF oluşturma hatası:', error);
+           
             res.status(500).json({ message: 'PDF oluşturulurken bir hata oluştu' });
         }
     },
@@ -94,34 +83,27 @@ const evaluationController = {
                 developmentSuggestions: req.query.developmentSuggestions === 'true'
             };
 
-            console.log('Preview için code:', code);
-            console.log('Seçenekler:', options);
+           
 
             // Önce Game koleksiyonunda ara
             let game = await Game.findOne({ playerCode: code });
             if (!game) {
-                console.log('Game bulunamadı, EvaluationResult koleksiyonunda aranıyor...');
                 // Game bulunamazsa EvaluationResult koleksiyonunda ara
                 const evaluation = await EvaluationResult.findOne({ ID: code });
                 if (!evaluation) {
-                    console.log('EvaluationResult da bulunamadı');
                     return res.status(404).json({ message: 'Değerlendirme bulunamadı' });
                 }
-                console.log('EvaluationResult bulundu:', evaluation);
                 return generateAndSendPreview(evaluation, options, res);
             }
 
-            console.log('Game bulundu:', game);
+           
             
             // Game içindeki evaluationResult'u kontrol et
             if (!game.evaluationResult || Object.keys(game.evaluationResult).length === 0) {
-                console.log('Game içinde değerlendirme sonucu bulunamadı, EvaluationResult koleksiyonunda aranıyor...');
                 const evaluation = await EvaluationResult.findOne({ ID: code });
                 if (!evaluation) {
-                    console.log('EvaluationResult da bulunamadı');
                     return res.status(404).json({ message: 'Değerlendirme bulunamadı' });
                 }
-                console.log('EvaluationResult bulundu:', evaluation);
                 
                 // Game modelini güncelle
                 game.evaluationResult = evaluation;
@@ -132,7 +114,7 @@ const evaluationController = {
 
             return generateAndSendPreview(game.evaluationResult, options, res);
         } catch (error) {
-            console.error('PDF önizleme hatası:', error);
+           
             res.status(500).json({ message: 'PDF oluşturulurken bir hata oluştu' });
         }
     },
@@ -151,8 +133,7 @@ const evaluationController = {
 
 async function generateAndSendPDF(evaluation, options, res) {
     try {
-        console.log('PDF oluşturma için değerlendirme:', evaluation);
-        console.log('Seçenekler:', options);
+       
 
         // Gelişim önerilerini ayrı başlıklar altında oluştur
         let gelisimOnerileriHTML = '';
@@ -281,8 +262,6 @@ async function generateAndSendPDF(evaluation, options, res) {
             </html>
         `;
 
-        console.log('Oluşturulan HTML içeriği:', htmlContent);
-
         const pdfOptions = {
             format: 'A4',
             margin: {
@@ -295,7 +274,6 @@ async function generateAndSendPDF(evaluation, options, res) {
 
         // PDF oluştur
         const file = await htmlPdf.generatePdf({ content: htmlContent }, pdfOptions);
-        console.log('PDF oluşturuldu, boyut:', file.length);
 
         // PDF'i indir
         res.setHeader('Content-Type', 'application/pdf');

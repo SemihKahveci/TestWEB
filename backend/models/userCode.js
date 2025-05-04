@@ -20,7 +20,7 @@ const userCodeSchema = new mongoose.Schema({
     },
     status: {
         type: String,
-        enum: ['Beklemede', 'İşleniyor', 'Tamamlandı'],
+        enum: ['Beklemede', 'Oyun Devam Ediyor', 'Tamamlandı'],
         default: 'Beklemede'
     },
     isUsed: {

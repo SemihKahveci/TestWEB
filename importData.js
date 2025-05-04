@@ -8,14 +8,12 @@ const client = new MongoClient(uri);
 async function importData() {
     try {
         await client.connect();
-        console.log('MongoDB Atlas\'a bağlandı');
         
         const db = client.db('admin-paneli-cluster');
         const collection = db.collection('evaluationresults');
 
         // Önce koleksiyonu temizle
         await collection.deleteMany({});
-        console.log('Koleksiyon temizlendi');
 
         // CSV'yi oku ve MongoDB'ye aktar
         const results = [];
@@ -34,10 +32,9 @@ async function importData() {
                 try {
                     if (results.length > 0) {
                         await collection.insertMany(results);
-                        console.log(`${results.length} kayıt başarıyla eklendi`);
                     }
                     await client.close();
-                    console.log('İşlem tamamlandı');
+ 
                 } catch (err) {
                     console.error('Kayıtlar eklenirken hata:', err);
                     await client.close();

@@ -8,14 +8,14 @@ function createSidebar() {
     
     // Sayfa yolu ile menü öğesi eşleştirmesi
     const pageToMenuItem = {
-        '/admin-panel.html': 'Ana Sayfa',
+        '/admin-panel.html': 'Genel Takip Sistemi',
         '/results.html': 'Raporlar',
         '/index.html': 'Mülakat Gönder',
         '/admin-management.html': 'Firma Tanımlama'
     };
     
     // Aktif menü öğesini belirle
-    const activeMenuItem = pageToMenuItem[currentPath] || 'Ana Sayfa';
+    const activeMenuItem = pageToMenuItem[currentPath] || 'Genel Takip Sistemi';
     
     sidebar.innerHTML = `
         <div class="sidebar-header">
@@ -25,34 +25,25 @@ function createSidebar() {
             <div class="menu-section">
                 <div class="menu-title">Ana Menü</div>
                 <div class="menu-items">
-                    <div class="menu-item ${activeMenuItem === 'Ana Sayfa' ? 'active' : ''}">
+                    <div class="menu-item ${activeMenuItem === 'Genel Takip Sistemi' ? 'active' : ''}">
                         <i class="fas fa-home"></i>
-                        <span>Ana Sayfa</span>
-                    </div>
-                    <div class="menu-item ${activeMenuItem === 'Profil' ? 'active' : ''}">
-                        <i class="fas fa-user"></i>
-                        <span>Profil</span>
+                        <span>Genel Takip Sistemi</span>
                     </div>
                 </div>
             </div>
             <div class="menu-section">
                 <div class="menu-title">Sayfalar</div>
-                <div class="menu-items">
-                    <div class="menu-item ${activeMenuItem === 'Pozisyon' ? 'active' : ''}">
-                        <i class="fas fa-briefcase"></i>
-                        <span>Pozisyon</span>
-                        <i class="fas fa-chevron-right"></i>
-                    </div>
-                    <div class="menu-item ${activeMenuItem === 'Şirket Çalışanları' ? 'active' : ''}">
+                <div class="menu-items">.
+                     <div class="menu-item ${activeMenuItem === 'Şirket Çalışanları Sayfası' ? 'active' : ''}">
                         <i class="fas fa-building"></i>
-                        <span>Şirket Çalışanları</span>
+                        <span>Şirket Çalışanları Sayfası</span>
                         <i class="fas fa-chevron-right"></i>
                     </div>
-                    <div class="menu-item ${activeMenuItem === 'Kişi Sonuçları Sayfası' ? 'active' : ''}">
+                       <div class="menu-item ${activeMenuItem === 'Aday Sonuçları Sayfası' ? 'active' : ''}">
                         <i class="fas fa-chart-bar"></i>
-                        <span>Kişi Sonuçları Sayfası</span>
+                        <span>Aday Sonuçları Sayfası</span>
                         <i class="fas fa-chevron-right"></i>
-                    </div>
+                    </div>            
                     <div class="menu-item ${activeMenuItem === 'Mülakat Gönder' ? 'active' : ''}">
                         <i class="fas fa-comments"></i>
                         <span>Mülakat Gönder</span>
@@ -64,6 +55,11 @@ function createSidebar() {
             <div class="menu-section">
                 <div class="menu-title">Ayarlar</div>
                 <div class="menu-items">
+                    <div class="menu-item ${activeMenuItem === 'Pozisyon' ? 'active' : ''}">
+                        <i class="fas fa-briefcase"></i>
+                        <span>Pozisyon</span>
+                        <i class="fas fa-chevron-right"></i>
+                    </div>  
                    <div class="menu-item ${activeMenuItem === 'Yetkilendirme' ? 'active' : ''}">
                         <i class="fas fa-user-shield"></i>
                         <span>Yetkilendirme</span>
@@ -245,19 +241,16 @@ function createSidebar() {
             
             // Menü öğesine göre yönlendirme yap
             switch(menuText) {
-                case 'Ana Sayfa':
+                case 'Genel Takip Sistemi':
                     window.location.href = '/admin-panel.html';
-                    break;
-                case 'Profil':
-                    //window.location.href = '/profile.html';
                     break;
                 case 'Pozisyon':
                     //window.location.href = '/positions.html';
                     break;
-                case 'Şirket Çalışanları':
+                case 'Şirket Çalışanları Sayfası':
                     //window.location.href = '/employees.html';
                     break;
-                case 'Kişi Sonuçları Sayfası':
+                case 'Aday Sonuçları Sayfası':
                     window.location.href = '/results.html';
                     break;
                 case 'Mülakat Gönder':

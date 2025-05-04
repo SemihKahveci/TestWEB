@@ -19,7 +19,6 @@ const sendEmail = async (to, subject, html) => {
         };
 
         const result = await mg.messages.create(process.env.MAILGUN_DOMAIN, data);
-        console.log('E-posta gönderildi:', result.id);
         return { success: true, messageId: result.id };
     } catch (error) {
         console.error('E-posta gönderme hatası:', error);

@@ -21,15 +21,12 @@ class WebSocketService {
 
     initialize() {
         this.wss.on('connection', (ws) => {
-            console.log('Yeni WebSocket bağlantısı');
             this.wsManager.addConnection(ws);
             
             ws.on('message', (message) => {
-                console.log('WebSocket mesajı alındı:', message);
             });
             
             ws.on('close', () => {
-                console.log('WebSocket bağlantısı kapandı');
                 this.wsManager.removeConnection(ws);
             });
         });

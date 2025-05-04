@@ -57,7 +57,7 @@ class GameController {
     async registerGameResult(req, res) {
         try {
             const data = req.body;
-            console.log('Gelen veri:', data);
+
 
             if (!data?.playerCode || !data?.section || !Array.isArray(data?.answers)) {
                 return res.status(400).json({
@@ -105,7 +105,6 @@ class GameController {
             uncertaintyScore = uncertaintyScore * 100;
             // Değerlendirme sonuçlarını getir
             const evaluationResult = await this.getReportsByAnswerType(data.answers);
-            console.log('Değerlendirme sonucu:', evaluationResult);
 
             // UserCode durumunu güncelle
             await UserCode.findOneAndUpdate(
@@ -171,24 +170,19 @@ class GameController {
             const byAnswers = answers.filter(answer => answer.answerSubCategory === 'BY');
             const moAnswers = answers.filter(answer => answer.answerSubCategory === 'MO');
 
-            console.log('BY cevapları:', byAnswers);
-            console.log('MO cevapları:', moAnswers);
 
             // BY cevaplarından answerType1 değerlerini al
             const byAnswerTypes = byAnswers.map(answer => answer.answerType1);
-            console.log('BY answerType1 değerleri:', byAnswerTypes);
 
             // Boş olmayan BY cevaplarını filtrele
             const validByAnswerTypes = byAnswerTypes.filter(type => type && type !== '-');
-            console.log('Geçerli BY answerType1 değerleri:', validByAnswerTypes);
 
             // BY cevaplarını string formatına çevir
             const byAnswerString = validByAnswerTypes.join(', ');
-            console.log('BY cevapları string formatı:', byAnswerString);
+    
 
             // Koleksiyon isimlerini kontrol et
             const collections = await mongoose.connection.db.listCollections().toArray();
-            console.log('Mevcut koleksiyonlar:', collections.map(c => c.name));
 
             // evaluationanswers koleksiyonunda BY cevaplarıyla arama yap
             const matched = await mongoose.connection.collection('evaluationanswers').findOne({
@@ -196,17 +190,13 @@ class GameController {
             });
 
             if (matched) {
-                console.log('Eşleşen BY cevapları bulundu:', matched);
                 // ID ile evaluationresults koleksiyonunda arama yap
                 const evaluationResult = await mongoose.connection.collection('evaluationresults').findOne({ ID: matched.ID });
-                console.log('Bulunan değerlendirme sonucu:', evaluationResult);
                 return evaluationResult;
             } else {
-                console.log('Eşleşen BY cevapları bulunamadı');
                 return null;
             }
         } catch (error) {
-            console.error('Sonuçlar alınırken hata:', error);
             return null;
         }
     }
