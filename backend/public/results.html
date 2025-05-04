@@ -200,6 +200,19 @@
             background: rgba(2, 134, 247, 0.10);
         }
 
+        .results-table tr.inactive {
+            background-color: #f8f9fa;
+            color: #adb5bd;
+        }
+
+        .results-table tr.inactive td {
+            color: #adb5bd;
+        }
+
+        .results-table tr.inactive .status-badge {
+            opacity: 0.8;
+        }
+
         .action-buttons {
             display: flex;
             gap: 10px;
@@ -444,6 +457,40 @@
         .btn-refresh i {
             font-size: 14px;
         }
+
+        .status-badge {
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+
+        .işleniyor {
+            background-color: #FFD700;
+            color: #000;
+        }
+
+        .yellow {
+            background-color: #FFD700;
+            color: #000;
+        }
+
+        .green {
+            background-color: #00FF00;
+            color: #000;
+        }
+
+        .red {
+            background-color: #FF0000;
+            color: #FFF;
+        }
+
+        .score-badge {
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: 500;
+        }
     </style>
 </head>
 <body>
@@ -489,7 +536,6 @@
                             <th>Ad Soyad</th>
                             <th>Müşteri Odaklılık Skoru</th>
                             <th>Belirsizlik Yönetimi Skoru</th>
-                            <th>İşlemler</th>
                         </tr>
                     </thead>
                     <tbody id="resultsBody">
@@ -558,93 +604,11 @@
     <script src="js/pdfPopup.js"></script>
     <script>
         let currentPage = 1;
-        const itemsPerPage = 5;
+        const itemsPerPage = 10;
 
         document.addEventListener('DOMContentLoaded', () => {
             loadEvaluationData();
         });
-
-        function loadEvaluationData() {
-            const refreshButton = document.querySelector('.btn-refresh');
-            refreshButton.disabled = true;
-            refreshButton.innerHTML = '<i class="fas fa-sync-alt fa-spin"></i> Yenileniyor...';
-
-            fetch('/api/user-results')
-                .then(response => response.json())
-                .then(data => {
-                    if (data.success) {
-                        const tbody = document.getElementById('resultsBody');
-                        tbody.innerHTML = '';
-
-                        if (data.results && data.results.length > 0) {
-                            const startIndex = (currentPage - 1) * itemsPerPage;
-                            const endIndex = startIndex + itemsPerPage;
-                            const pageData = data.results.slice(startIndex, endIndex);
-
-                            pageData.forEach(result => {
-                                const row = document.createElement('tr');
-                                row.innerHTML = `
-                                    <td>${result.name}</td>
-                                    <td>${result.customerFocusScore || '-'}</td>
-                                    <td>${result.uncertaintyScore || '-'}</td>
-                                    <td class="action-buttons">
-                                        <div class="action-button" onclick="showPDFPopup('${result.code}')">
-                                            <i class="fas fa-file-pdf" style="color: #0286F7;"></i>
-                                        </div>
-                                        <div class="action-button" onclick="deleteResult('${result.code}')">
-                                            <i class="fas fa-trash" style="color: #FF0000;"></i>
-                                        </div>
-                                    </td>
-                                `;
-                                tbody.appendChild(row);
-                            });
-
-                            // Sayfalama kontrollerini güncelle
-                            updatePagination(data.results.length);
-                        }
-                    }
-                })
-                .catch(error => {
-                    console.error('Sonuçları yükleme hatası:', error);
-                })
-                .finally(() => {
-                    refreshButton.disabled = false;
-                    refreshButton.innerHTML = '<i class="fas fa-sync-alt"></i> Yenile';
-                });
-        }
-
-        function updatePagination(totalItems) {
-            const paginationContent = document.querySelector('.pagination-content');
-            if (!paginationContent) return;
-
-            const totalPages = Math.ceil(totalItems / itemsPerPage);
-            
-            let paginationHTML = `
-                <div class="page-nav" ${currentPage === 1 ? 'style="opacity: 0.5; pointer-events: none;"' : ''} onclick="changePage(${currentPage - 1})">Önceki Sayfa</div>
-            `;
-
-            for (let i = 1; i <= totalPages; i++) {
-                paginationHTML += `
-                    <div class="page-button ${currentPage === i ? 'active' : ''}" onclick="changePage(${i})">
-                        <div class="page-text">${i}</div>
-                    </div>
-                `;
-            }
-
-            paginationHTML += `
-                <div class="page-nav" ${currentPage === totalPages ? 'style="opacity: 0.5; pointer-events: none;"' : ''} onclick="changePage(${currentPage + 1})">Sonraki Sayfa</div>
-            `;
-
-            paginationContent.innerHTML = paginationHTML;
-        }
-
-        function changePage(page) {
-            if (page < 1 || page > Math.ceil(totalItems / itemsPerPage)) {
-                return;
-            }
-            currentPage = page;
-            loadEvaluationData();
-        }
     </script>
 </body>
 </html> 

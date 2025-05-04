@@ -92,7 +92,7 @@ class GameController {
                     return acc + ((multiplier1 + (multiplier2 / 2)) * 2) / 3;
                 }, 0) / customerFocusAnswers.length;
             }
-
+            customerFocusScore = customerFocusScore * 100;
             // BY skorunu hesapla
             let uncertaintyScore = 0;
             if (uncertaintyAnswers.length > 0) {
@@ -102,7 +102,7 @@ class GameController {
                     return acc + ((multiplier1 + (multiplier2 / 2)) * 2) / 3;
                 }, 0) / uncertaintyAnswers.length;
             }
-
+            uncertaintyScore = uncertaintyScore * 100;
             // Değerlendirme sonuçlarını getir
             const evaluationResult = await this.getReportsByAnswerType(data.answers);
             console.log('Değerlendirme sonucu:', evaluationResult);
@@ -114,8 +114,8 @@ class GameController {
                     status: 'Tamamlandı',
                     completionDate: new Date(),
                     evaluationResult: evaluationResult,
-                    customerFocusScore: customerFocusScore.toFixed(2),
-                    uncertaintyScore: uncertaintyScore.toFixed(2)
+                    customerFocusScore: Math.round(customerFocusScore),
+                    uncertaintyScore: Math.round(uncertaintyScore)
                 }
             );
 
@@ -128,8 +128,8 @@ class GameController {
                 completionDate: new Date(),
                 validityDate: userCode.expiryDate,
                 evaluationResult: evaluationResult,
-                customerFocusScore: customerFocusScore.toFixed(2),
-                uncertaintyScore: uncertaintyScore.toFixed(2)
+                customerFocusScore: Math.round(customerFocusScore),
+                uncertaintyScore: Math.round(uncertaintyScore)
             };
 
             // Dummy datayı Game modeline ekle
@@ -138,8 +138,8 @@ class GameController {
                 section: data.section,
                 dummyData: dummyData,
                 evaluationResult: evaluationResult,
-                customerFocusScore: customerFocusScore.toFixed(2),
-                uncertaintyScore: uncertaintyScore.toFixed(2)
+                customerFocusScore: Math.round(customerFocusScore),
+                uncertaintyScore: Math.round(uncertaintyScore)
             });
 
             await newGame.save();

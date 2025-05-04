@@ -1,6 +1,6 @@
 // Sayfalama için gerekli değişkenler
 let currentPage = 1;
-const itemsPerPage = 5; // Her sayfada 5 kişi gösterilecek
+const itemsPerPage = 10; // Her sayfada 10 kişi gösterilecek
 let totalItems = 0;
 let allData = [];
 let ws = null;
@@ -82,16 +82,29 @@ function displayData() {
 
     pageData.forEach(item => {
         const row = document.createElement('tr');
+        const isPDFDisabled = item.status !== 'Tamamlandı';
+        const isInactive = item.status === 'Beklemede' || item.status === 'İşleniyor';
+        
+        if (isInactive) {
+            row.classList.add('inactive');
+        }
+        
+        // Rapor geçerlilik tarihini hesapla (Gönderim tarihi + 6 ay)
+        const sentDate = new Date(item.sentDate);
+        const reportExpiryDate = new Date(sentDate);
+        reportExpiryDate.setMonth(reportExpiryDate.getMonth() + 6);
+        
         row.innerHTML = `
             <td>${item.name}</td>
             <td>
-                <span class="status-badge ${item.status}">${item.status}</span>
+                <span class="status-badge ${item.status === 'İşleniyor' ? 'işleniyor' : item.status.toLowerCase()}">${item.status}</span>
             </td>
             <td>${formatDate(item.sentDate)}</td>
             <td>${item.completionDate ? formatDate(item.completionDate) : '-'}</td>
             <td>${formatDate(item.expiryDate)}</td>
+            <td>${formatDate(reportExpiryDate)}</td>
             <td class="action-buttons">
-                <div class="action-button" onclick="showPDFPopup('${item.code}')">
+                <div class="action-button ${isPDFDisabled ? 'disabled' : ''}" ${isPDFDisabled ? '' : `onclick="showPDFPopup('${item.code}')"`}>
                     <i class="fas fa-file-pdf" style="color: #0286F7;"></i>
                 </div>
                 <div class="action-button" onclick="showDeletePopup('${item.code}')">

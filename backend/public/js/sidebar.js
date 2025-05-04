@@ -48,19 +48,9 @@ function createSidebar() {
                         <span>Şirket Çalışanları</span>
                         <i class="fas fa-chevron-right"></i>
                     </div>
-                    <div class="menu-item ${activeMenuItem === 'Adaylar' ? 'active' : ''}">
-                        <i class="fas fa-users"></i>
-                        <span>Adaylar</span>
-                        <i class="fas fa-chevron-right"></i>
-                    </div>
-                    <div class="menu-item ${activeMenuItem === 'MT / Stajyer' ? 'active' : ''}">
-                        <i class="fas fa-graduation-cap"></i>
-                        <span>MT / Stajyer</span>
-                        <i class="fas fa-chevron-right"></i>
-                    </div>
-                    <div class="menu-item ${activeMenuItem === 'Raporlar' ? 'active' : ''}">
+                    <div class="menu-item ${activeMenuItem === 'Kişi Sonuçları Sayfası' ? 'active' : ''}">
                         <i class="fas fa-chart-bar"></i>
-                        <span>Raporlar</span>
+                        <span>Kişi Sonuçları Sayfası</span>
                         <i class="fas fa-chevron-right"></i>
                     </div>
                     <div class="menu-item ${activeMenuItem === 'Mülakat Gönder' ? 'active' : ''}">
@@ -68,16 +58,22 @@ function createSidebar() {
                         <span>Mülakat Gönder</span>
                         <i class="fas fa-chevron-right"></i>
                     </div>
-                    <div class="menu-item ${activeMenuItem === 'Yetkilendirme' ? 'active' : ''}">
-                        <i class="fas fa-user-shield"></i>
-                        <span>Yetkilendirme</span>
-                        <i class="fas fa-chevron-right"></i>
-                    </div>
+                 
                 </div>
             </div>
             <div class="menu-section">
                 <div class="menu-title">Ayarlar</div>
                 <div class="menu-items">
+                   <div class="menu-item ${activeMenuItem === 'Yetkilendirme' ? 'active' : ''}">
+                        <i class="fas fa-user-shield"></i>
+                        <span>Yetkilendirme</span>
+                        <i class="fas fa-chevron-right"></i>
+                    </div>
+                       <div class="menu-item ${activeMenuItem === 'Organizasyon Yapısı' ? 'active' : ''}">
+                        <i class="fas fa-user-shield"></i>
+                        <span>Organizasyon Yapısı</span>
+                        <i class="fas fa-chevron-right"></i>
+                    </div>
                     <div class="menu-item ${activeMenuItem === 'Firma Tanımlama' ? 'active' : ''}">
                         <i class="fas fa-building"></i>
                         <span>Firma Tanımlama</span>
@@ -261,13 +257,7 @@ function createSidebar() {
                 case 'Şirket Çalışanları':
                     //window.location.href = '/employees.html';
                     break;
-                case 'Adaylar':
-                    //window.location.href = '/candidates.html';
-                    break;
-                case 'MT / Stajyer':
-                    //window.location.href = '/interns.html';
-                    break;
-                case 'Raporlar':
+                case 'Kişi Sonuçları Sayfası':
                     window.location.href = '/results.html';
                     break;
                 case 'Mülakat Gönder':
@@ -275,6 +265,9 @@ function createSidebar() {
                     break;
                 case 'Yetkilendirme':
                     //window.location.href = '/authorization.html';
+                    break;
+                case 'Organizasyon Yapısı':
+                    //window.location.href = '/organization-structure.html';
                     break;
                 case 'Firma Tanımlama':
                     window.location.href = '/admin-management.html';

@@ -207,6 +207,19 @@
             background: rgba(2, 134, 247, 0.10);
         }
 
+        .results-table tr.inactive {
+            background-color: #f8f9fa;
+            color: #adb5bd;
+        }
+
+        .results-table tr.inactive td {
+            color: #adb5bd;
+        }
+
+        .results-table tr.inactive .status-badge {
+            opacity: 0.8;
+        }
+
         .action-buttons {
             display: flex;
             gap: 10px;
@@ -225,6 +238,11 @@
         }
 
         .status-badge.beklemede {
+            background: #aaa9a6;
+            color: #201f1d;
+        }
+
+        .status-badge.işleniyor {
             background: #FFF3CD;
             color: #856404;
         }
@@ -232,6 +250,16 @@
         .status-badge.tamamlandı {
             background: #D4EDDA;
             color: #155724;
+        }
+
+        .action-button.disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            pointer-events: none;
+        }
+
+        .action-button.disabled i {
+            color: #ADB5BD !important;
         }
 
         @media (max-width: 1200px) {
@@ -358,6 +386,13 @@
 
         .page-button.active:hover {
             background: #0275D8;
+        }
+
+        .page-info {
+            padding: 8px 16px;
+            color: #232D42;
+            font-size: 14px;
+            font-weight: 500;
         }
 
         /* Silme Popup Stilleri */
@@ -579,7 +614,8 @@
                             <th>Statü</th>
                             <th>Gönderim Tarihi</th>
                             <th>Tamamlama Tarihi</th>
-                            <th>Geçerlilik Tarihi</th>
+                            <th>Kod Geçerlilik Tarihi</th>
+                            <th>Rapor Geçerlilik Tarihi</th>
                             <th>İşlemler</th>
                         </tr>
                     </thead>
@@ -665,109 +701,14 @@
         if (typeof currentPage === 'undefined') {
             let currentPage = 1;
         }
-        const itemsPerPage = 5;
+        if (typeof itemsPerPage === 'undefined') {
+            const itemsPerPage = 10;
+        }
+        
 
         document.addEventListener('DOMContentLoaded', () => {
             loadResults();
         });
-
-        function loadResults() {
-            const refreshButton = document.querySelector('.btn-refresh');
-            refreshButton.disabled = true;
-            refreshButton.innerHTML = '<i class="fas fa-sync-alt fa-spin"></i> Yenileniyor...';
-
-            fetch('/api/user-results')
-                .then(response => response.json())
-                .then(data => {
-                    if (data.success) {
-                        const tbody = document.getElementById('resultsBody');
-                        tbody.innerHTML = '';
-
-                        if (data.results && data.results.length > 0) {
-                            const startIndex = (currentPage - 1) * itemsPerPage;
-                            const endIndex = startIndex + itemsPerPage;
-                            const pageData = data.results.slice(startIndex, endIndex);
-
-                            pageData.forEach(result => {
-                                const row = document.createElement('tr');
-                                row.innerHTML = `
-                                    <td>${result.name}</td>
-                                    <td>
-                                        <span class="status-badge ${result.status.charAt(0).toUpperCase() + result.status.slice(1)}">${result.status.charAt(0).toUpperCase() + result.status.slice(1)}</span>
-                                    </td>
-                                    <td>${formatDate(result.sentDate)}</td>
-                                    <td>${result.completionDate ? formatDate(result.completionDate) : '-'}</td>
-                                    <td>${formatDate(result.expiryDate)}</td>
-                                    <td class="action-buttons">
-                                        <div class="action-button" onclick="showPDFPopup('${result.code}')">
-                                            <i class="fas fa-file-pdf" style="color: #0286F7;"></i>
-                                        </div>
-                                        <div class="action-button" onclick="deleteResult('${result.code}')">
-                                            <i class="fas fa-trash" style="color: #FF0000;"></i>
-                                        </div>
-                                    </td>
-                                `;
-                                tbody.appendChild(row);
-                            });
-
-                            // Sayfalama kontrollerini güncelle
-                            updatePagination(data.results.length);
-                        }
-                    }
-                })
-                .catch(error => {
-                    console.error('Sonuçları yükleme hatası:', error);
-                })
-                .finally(() => {
-                    refreshButton.disabled = false;
-                    refreshButton.innerHTML = '<i class="fas fa-sync-alt"></i> Yenile';
-                });
-        }
-
-        function updatePagination(totalItems) {
-            const paginationContent = document.querySelector('.pagination-content');
-            if (!paginationContent) return;
-
-            const totalPages = Math.ceil(totalItems / itemsPerPage);
-            
-            let paginationHTML = `
-                <div class="page-nav" ${currentPage === 1 ? 'style="opacity: 0.5; pointer-events: none;"' : ''} onclick="changePage(${currentPage - 1})">Önceki Sayfa</div>
-            `;
-
-            for (let i = 1; i <= totalPages; i++) {
-                paginationHTML += `
-                    <div class="page-button ${currentPage === i ? 'active' : ''}" onclick="changePage(${i})">
-                        <div class="page-text">${i}</div>
-                    </div>
-                `;
-            }
-
-            paginationHTML += `
-                <div class="page-nav" ${currentPage === totalPages ? 'style="opacity: 0.5; pointer-events: none;"' : ''} onclick="changePage(${currentPage + 1})">Sonraki Sayfa</div>
-            `;
-
-            paginationContent.innerHTML = paginationHTML;
-        }
-
-        function changePage(page) {
-            if (page < 1 || page > Math.ceil(totalItems / itemsPerPage)) {
-                return;
-            }
-            currentPage = page;
-            loadResults();
-        }
-
-        function formatDate(dateString) {
-            if (!dateString) return '-';
-            const date = new Date(dateString);
-            return date.toLocaleDateString('tr-TR', {
-                year: 'numeric',
-                month: 'long',
-                day: 'numeric',
-                hour: '2-digit',
-                minute: '2-digit'
-            });
-        }
     </script>
 </body>
 </html> 

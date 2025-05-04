@@ -1,6 +1,6 @@
 // Sayfalama için gerekli değişkenler
 let currentPage = 1;
-const itemsPerPage = 5; // Her sayfada 5 kişi gösterilecek
+const itemsPerPage = 10; // Her sayfada 10 kişi gösterilecek
 let totalItems = 0;
 let allData = [];
 
@@ -42,20 +42,30 @@ function displayEvaluationData() {
     tbody.innerHTML = '';
 
     pageData.forEach(item => {
-        console.log('İşlenen veri:', item); // Debug için
-
         const row = document.createElement('tr');
+        const isInactive = item.status === 'Beklemede' || item.status === 'İşleniyor';
+        
+        if (isInactive) {
+            row.classList.add('inactive');
+        }
+        
+        // Skorları kontrol et ve dönüştür
+        const customerFocusScore = (item.customerFocusScore && !isNaN(item.customerFocusScore)) ? 
+            Math.round(item.customerFocusScore) : '-';
+        const uncertaintyScore = (item.uncertaintyScore && !isNaN(item.uncertaintyScore)) ? 
+            Math.round(item.uncertaintyScore) : '-';
+        
         row.innerHTML = `
-            <td>${item.name || '-'}</td>
-            <td>${item.customerFocusScore || '-'}</td>
-            <td>${item.uncertaintyScore || '-'}</td>
-            <td class="action-buttons">
-                <div class="action-button" onclick="showPDFPopup('${item.code}')">
-                    <i class="fas fa-file-pdf" style="color: #0286F7;"></i>
-                </div>
-                <div class="action-button" onclick="showDeletePopup('${item.code}')">
-                    <i class="fas fa-trash" style="color: #FF0000;"></i>
-                </div>
+            <td>${item.name}</td>
+            <td>
+                <span class="score-badge ${customerFocusScore === '-' ? '' : getScoreColorClass(customerFocusScore)}">
+                    ${customerFocusScore}
+                </span>
+            </td>
+            <td>
+                <span class="score-badge ${uncertaintyScore === '-' ? '' : getScoreColorClass(uncertaintyScore)}">
+                    ${uncertaintyScore}
+                </span>
             </td>
         `;
         tbody.appendChild(row);
@@ -203,4 +213,13 @@ document.addEventListener('DOMContentLoaded', () => {
     loadEvaluationData();
     // Her 30 saniyede bir verileri güncelle
     setInterval(loadEvaluationData, 30000);
-}); 
+});
+
+function getScoreColorClass(score) {
+    if (score === '-' || isNaN(score)) return '';
+    const numScore = parseFloat(score);
+    if (numScore <= 37 || numScore >= 90) return 'red';
+    if (numScore <= 65) return 'yellow';
+    if (numScore <= 89.99999999999) return 'green';
+    return 'red';
+} 

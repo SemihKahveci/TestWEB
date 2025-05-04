@@ -114,6 +114,10 @@ class CodeController {
                 });
             }
 
+            // Durumu İşleniyor olarak güncelle
+            userCode.status = 'İşleniyor';
+            await userCode.save();
+
             res.status(200).json({
                 success: true,
                 message: 'Kod doğrulandı',
