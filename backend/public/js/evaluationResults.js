@@ -119,7 +119,11 @@ function displayData() {
             Math.round(parseFloat(item.uncertaintyScore)) : '-';
         
         row.innerHTML = `
-            <td>${item.name}</td>
+            <td>
+                <a href="/admin-panel.html" style="color: #0286F7; text-decoration: none; font-weight: 500;">
+                    ${item.name}
+                </a>
+            </td>
             <td>
                 <span class="score-badge ${getScoreColorClass(customerFocusScore)}">
                     ${customerFocusScore}
