@@ -3,9 +3,10 @@ let currentPage = 1;
 const itemsPerPage = 10; // Her sayfada 10 kişi gösterilecek
 let totalItems = 0;
 let allData = [];
+let filteredData = [];
 
 // Verileri yükle
-async function loadEvaluationData() {
+async function loadData(resetFilters = false) {
     try {
         const response = await fetch('/api/user-results');
         if (!response.ok) {
@@ -14,9 +15,20 @@ async function loadEvaluationData() {
         const data = await response.json();
         
         if (data.success) {
+            console.log('Yüklenen veri:', data.results);
             allData = data.results;
-            totalItems = allData.length;
-            displayEvaluationData();
+            
+            if (resetFilters) {
+                document.getElementById('customerFocusFilter').value = '';
+                document.getElementById('uncertaintyFilter').value = '';
+                document.getElementById('nameSearch').value = '';
+                filteredData = [...allData];
+            } else {
+                filteredData = [...allData];
+            }
+            
+            totalItems = filteredData.length;
+            displayData();
             updatePagination();
         } else {
             console.error('Veri çekme başarısız:', data.error);
@@ -27,7 +39,7 @@ async function loadEvaluationData() {
 }
 
 // Verileri görüntüle
-function displayEvaluationData() {
+function displayData() {
     const tbody = document.getElementById('resultsBody');
     if (!tbody) {
         console.error('Tablo gövdesi bulunamadı');
@@ -36,33 +48,34 @@ function displayEvaluationData() {
 
     const startIndex = (currentPage - 1) * itemsPerPage;
     const endIndex = startIndex + itemsPerPage;
-    const pageData = allData.slice(startIndex, endIndex);
+    const pageData = filteredData.slice(startIndex, endIndex);
+
+    console.log('Görüntülenecek veri:', pageData);
 
     tbody.innerHTML = '';
 
     pageData.forEach(item => {
-        const row = document.createElement('tr');
-        const isInactive = item.status === 'Beklemede' || item.status === 'Oyun Devam Ediyor';
-        
-        if (isInactive) {
-            row.classList.add('inactive');
+        if (!item || !item.name) {
+            console.log('Geçersiz öğe:', item);
+            return;
         }
+
+        const row = document.createElement('tr');
         
-        // Skorları kontrol et ve dönüştür
         const customerFocusScore = (item.customerFocusScore && !isNaN(item.customerFocusScore)) ? 
-            Math.round(item.customerFocusScore) : '-';
+            Math.round(parseFloat(item.customerFocusScore)) : '-';
         const uncertaintyScore = (item.uncertaintyScore && !isNaN(item.uncertaintyScore)) ? 
-            Math.round(item.uncertaintyScore) : '-';
+            Math.round(parseFloat(item.uncertaintyScore)) : '-';
         
         row.innerHTML = `
             <td>${item.name}</td>
             <td>
-                <span class="score-badge ${customerFocusScore === '-' ? '' : getScoreColorClass(customerFocusScore)}">
+                <span class="score-badge ${getScoreColorClass(customerFocusScore)}">
                     ${customerFocusScore}
                 </span>
             </td>
             <td>
-                <span class="score-badge ${uncertaintyScore === '-' ? '' : getScoreColorClass(uncertaintyScore)}">
+                <span class="score-badge ${getScoreColorClass(uncertaintyScore)}">
                     ${uncertaintyScore}
                 </span>
             </td>
@@ -144,7 +157,7 @@ function changePage(page) {
         return;
     }
     currentPage = page;
-    displayEvaluationData();
+    displayData();
     updatePagination();
 }
 
@@ -200,24 +213,107 @@ async function confirmDelete() {
 
         // Popup'ı kapat ve tabloyu yenile
         closeDeletePopup();
-        await loadEvaluationData();
+        await loadData();
     } catch (error) {
         console.error('Sonuç silme hatası:', error);
         alert('Sonuç silinirken bir hata oluştu');
     }
 }
 
+// Filtreleme popup'ını göster
+function showFilterPopup() {
+    const popup = document.getElementById('filterPopup');
+    popup.style.display = 'flex';
+}
+
+// Filtreleme popup'ını kapat
+function closeFilterPopup() {
+    const popup = document.getElementById('filterPopup');
+    popup.style.display = 'none';
+}
+
+// Filtreleri uygula
+function applyFilters() {
+    try {
+        const customerFocusFilter = document.getElementById('customerFocusFilter').value;
+        const uncertaintyFilter = document.getElementById('uncertaintyFilter').value;
+        const nameSearch = document.getElementById('nameSearch').value.toLowerCase();
+
+        console.log('Filtreler:', {
+            nameSearch,
+            customerFocusFilter,
+            uncertaintyFilter
+        });
+
+        filteredData = allData.filter(item => {
+            try {
+                // Name kontrolü
+                if (!item || !item.name) {
+                    console.log('Name özelliği eksik:', item);
+                    return false;
+                }
+
+                const itemName = item.name.toString().toLowerCase();
+                const customerFocusScore = item.customerFocusScore === '-' ? null : parseFloat(item.customerFocusScore);
+                const uncertaintyScore = item.uncertaintyScore === '-' ? null : parseFloat(item.uncertaintyScore);
+
+                // İsim araması
+                let nameMatch = true;
+                if (nameSearch) {
+                    nameMatch = itemName.includes(nameSearch);
+                }
+
+                // Müşteri Odaklılık Skoru filtresi
+                let customerFocusMatch = true;
+                if (customerFocusFilter && customerFocusScore !== null) {
+                    const [min, max] = customerFocusFilter.split('-').map(Number);
+                    customerFocusMatch = customerFocusScore >= min && customerFocusScore <= max;
+                }
+
+                // Belirsizlik Yönetimi Skoru filtresi
+                let uncertaintyMatch = true;
+                if (uncertaintyFilter && uncertaintyScore !== null) {
+                    const [min, max] = uncertaintyFilter.split('-').map(Number);
+                    uncertaintyMatch = uncertaintyScore >= min && uncertaintyScore <= max;
+                }
+
+                const matches = nameMatch && customerFocusMatch && uncertaintyMatch;
+                console.log('Öğe kontrolü:', {
+                    name: itemName,
+                    customerFocusScore,
+                    uncertaintyScore,
+                    matches
+                });
+
+                return matches;
+            } catch (error) {
+                console.error('Öğe filtreleme hatası:', error, item);
+                return false;
+            }
+        });
+
+        console.log('Filtrelenmiş veri sayısı:', filteredData.length);
+        totalItems = filteredData.length;
+        currentPage = 1;
+        displayData();
+        updatePagination();
+        closeFilterPopup();
+    } catch (error) {
+        console.error('Filtreleme hatası:', error);
+    }
+}
+
 // Sayfa yüklendiğinde
 document.addEventListener('DOMContentLoaded', () => {
-    loadEvaluationData();
-    // Her 30 saniyede bir verileri güncelle
-    setInterval(loadEvaluationData, 30000);
+    loadData(true);
+    // Her 5 saniyede bir verileri güncelle
+    setInterval(() => loadData(false), 5000);
 });
 
 function getScoreColorClass(score) {
     if (score === '-' || isNaN(score)) return '';
     const numScore = parseFloat(score);
-    if (numScore <= 37 || numScore >= 90) return 'red';
+    if (numScore <= 37) return 'red';
     if (numScore <= 65) return 'yellow';
     if (numScore <= 89.99999999999) return 'green';
     return 'red';
