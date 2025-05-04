@@ -19,14 +19,22 @@ async function loadData(resetFilters = false) {
             allData = data.results;
             
             if (resetFilters) {
-                document.getElementById('customerFocusFilter').value = '';
-                document.getElementById('uncertaintyFilter').value = '';
+                document.getElementById('customerFocusMin').value = '0';
+                document.getElementById('customerFocusMax').value = '100';
+                document.getElementById('uncertaintyMin').value = '0';
+                document.getElementById('uncertaintyMax').value = '100';
                 document.getElementById('nameSearch').value = '';
+                document.getElementById('customerFocusMinValue').textContent = '0';
+                document.getElementById('customerFocusMaxValue').textContent = '100';
+                document.getElementById('uncertaintyMinValue').textContent = '0';
+                document.getElementById('uncertaintyMaxValue').textContent = '100';
                 filteredData = [...allData];
             } else {
                 // Mevcut filtreleri koru
-                const customerFocusFilter = document.getElementById('customerFocusFilter').value;
-                const uncertaintyFilter = document.getElementById('uncertaintyFilter').value;
+                const customerFocusMin = document.getElementById('customerFocusMin').value;
+                const customerFocusMax = document.getElementById('customerFocusMax').value;
+                const uncertaintyMin = document.getElementById('uncertaintyMin').value;
+                const uncertaintyMax = document.getElementById('uncertaintyMax').value;
                 const nameSearch = document.getElementById('nameSearch').value.toLowerCase();
 
                 filteredData = allData.filter(item => {
@@ -48,15 +56,17 @@ async function loadData(resetFilters = false) {
 
                         // Müşteri Odaklılık Skoru filtresi
                         let customerFocusMatch = true;
-                        if (customerFocusFilter && customerFocusScore !== null) {
-                            const [min, max] = customerFocusFilter.split('-').map(Number);
+                        if (customerFocusScore !== null) {
+                            const min = parseFloat(customerFocusMin);
+                            const max = parseFloat(customerFocusMax);
                             customerFocusMatch = customerFocusScore >= min && customerFocusScore <= max;
                         }
 
                         // Belirsizlik Yönetimi Skoru filtresi
                         let uncertaintyMatch = true;
-                        if (uncertaintyFilter && uncertaintyScore !== null) {
-                            const [min, max] = uncertaintyFilter.split('-').map(Number);
+                        if (uncertaintyScore !== null) {
+                            const min = parseFloat(uncertaintyMin);
+                            const max = parseFloat(uncertaintyMax);
                             uncertaintyMatch = uncertaintyScore >= min && uncertaintyScore <= max;
                         }
 
@@ -276,19 +286,22 @@ function closeFilterPopup() {
 // Filtreleri uygula
 function applyFilters() {
     try {
-        const customerFocusFilter = document.getElementById('customerFocusFilter').value;
-        const uncertaintyFilter = document.getElementById('uncertaintyFilter').value;
+        const customerFocusMin = document.getElementById('customerFocusMin').value;
+        const customerFocusMax = document.getElementById('customerFocusMax').value;
+        const uncertaintyMin = document.getElementById('uncertaintyMin').value;
+        const uncertaintyMax = document.getElementById('uncertaintyMax').value;
         const nameSearch = document.getElementById('nameSearch').value.toLowerCase();
 
         console.log('Filtreler:', {
             nameSearch,
-            customerFocusFilter,
-            uncertaintyFilter
+            customerFocusMin,
+            customerFocusMax,
+            uncertaintyMin,
+            uncertaintyMax
         });
 
         filteredData = allData.filter(item => {
             try {
-                // Name kontrolü
                 if (!item || !item.name) {
                     console.log('Name özelliği eksik:', item);
                     return false;
@@ -306,27 +319,21 @@ function applyFilters() {
 
                 // Müşteri Odaklılık Skoru filtresi
                 let customerFocusMatch = true;
-                if (customerFocusFilter && customerFocusScore !== null) {
-                    const [min, max] = customerFocusFilter.split('-').map(Number);
+                if (customerFocusScore !== null) {
+                    const min = parseFloat(customerFocusMin);
+                    const max = parseFloat(customerFocusMax);
                     customerFocusMatch = customerFocusScore >= min && customerFocusScore <= max;
                 }
 
                 // Belirsizlik Yönetimi Skoru filtresi
                 let uncertaintyMatch = true;
-                if (uncertaintyFilter && uncertaintyScore !== null) {
-                    const [min, max] = uncertaintyFilter.split('-').map(Number);
+                if (uncertaintyScore !== null) {
+                    const min = parseFloat(uncertaintyMin);
+                    const max = parseFloat(uncertaintyMax);
                     uncertaintyMatch = uncertaintyScore >= min && uncertaintyScore <= max;
                 }
 
-                const matches = nameMatch && customerFocusMatch && uncertaintyMatch;
-                console.log('Öğe kontrolü:', {
-                    name: itemName,
-                    customerFocusScore,
-                    uncertaintyScore,
-                    matches
-                });
-
-                return matches;
+                return nameMatch && customerFocusMatch && uncertaintyMatch;
             } catch (error) {
                 console.error('Öğe filtreleme hatası:', error, item);
                 return false;
@@ -349,8 +356,26 @@ function clearFilters() {
     try {
         // Input ve select elementlerini temizle
         document.getElementById('nameSearch').value = '';
-        document.getElementById('customerFocusFilter').value = '';
-        document.getElementById('uncertaintyFilter').value = '';
+        document.getElementById('customerFocusMin').value = '0';
+        document.getElementById('customerFocusMax').value = '100';
+        document.getElementById('uncertaintyMin').value = '0';
+        document.getElementById('uncertaintyMax').value = '100';
+        document.getElementById('customerFocusMinValue').textContent = '0';
+        document.getElementById('customerFocusMaxValue').textContent = '100';
+        document.getElementById('uncertaintyMinValue').textContent = '0';
+        document.getElementById('uncertaintyMaxValue').textContent = '100';
+
+        // Range görünümünü güncelle
+        ['customerFocus', 'uncertainty'].forEach(prefix => {
+            const range = document.querySelector(`#${prefix}Min`).parentElement.querySelector('.range');
+            const leftThumb = document.querySelector(`#${prefix}Min`).parentElement.querySelector('.thumb.left');
+            const rightThumb = document.querySelector(`#${prefix}Min`).parentElement.querySelector('.thumb.right');
+
+            range.style.left = '0%';
+            range.style.right = '0%';
+            leftThumb.style.left = '0%';
+            rightThumb.style.right = '0%';
+        });
 
         // Filtrelenmiş veriyi orijinal veriye eşitle
         filteredData = [...allData];
@@ -370,9 +395,63 @@ function clearFilters() {
 // Sayfa yüklendiğinde
 document.addEventListener('DOMContentLoaded', () => {
     loadData(true);
+    
+    // Multi-range input'ları başlat
+    initMultiRange('customerFocus');
+    initMultiRange('uncertainty');
+
     // Her 5 saniyede bir verileri güncelle
     setInterval(() => loadData(false), 5000);
 });
+
+// Multi-range input'ları başlat
+function initMultiRange(prefix) {
+    const minInput = document.getElementById(`${prefix}Min`);
+    const maxInput = document.getElementById(`${prefix}Max`);
+    const minValue = document.getElementById(`${prefix}MinValue`);
+    const maxValue = document.getElementById(`${prefix}MaxValue`);
+    const range = document.querySelector(`#${prefix}Min`).parentElement.querySelector('.range');
+    const leftThumb = document.querySelector(`#${prefix}Min`).parentElement.querySelector('.thumb.left');
+    const rightThumb = document.querySelector(`#${prefix}Min`).parentElement.querySelector('.thumb.right');
+
+    function updateRange() {
+        const min = parseInt(minInput.value);
+        const max = parseInt(maxInput.value);
+        
+        if (min > max) {
+            minInput.value = max;
+            minValue.textContent = max;
+        } else {
+            minValue.textContent = min;
+        }
+        
+        if (max < min) {
+            maxInput.value = min;
+            maxValue.textContent = min;
+        } else {
+            maxValue.textContent = max;
+        }
+
+        const minPercent = (min / 100) * 100;
+        const maxPercent = (max / 100) * 100;
+        
+        range.style.left = `${minPercent}%`;
+        range.style.right = `${100 - maxPercent}%`;
+        leftThumb.style.left = `${minPercent}%`;
+        rightThumb.style.right = `${100 - maxPercent}%`;
+    }
+
+    minInput.addEventListener('input', updateRange);
+    maxInput.addEventListener('input', updateRange);
+
+    // Thumb hover ve active efektleri
+    [leftThumb, rightThumb].forEach(thumb => {
+        thumb.addEventListener('mouseenter', () => thumb.classList.add('hover'));
+        thumb.addEventListener('mouseleave', () => thumb.classList.remove('hover'));
+        thumb.addEventListener('mousedown', () => thumb.classList.add('active'));
+        thumb.addEventListener('mouseup', () => thumb.classList.remove('active'));
+    });
+}
 
 function getScoreColorClass(score) {
     if (score === '-' || isNaN(score)) return '';
