@@ -24,7 +24,48 @@ async function loadData(resetFilters = false) {
                 document.getElementById('nameSearch').value = '';
                 filteredData = [...allData];
             } else {
-                filteredData = [...allData];
+                // Mevcut filtreleri koru
+                const customerFocusFilter = document.getElementById('customerFocusFilter').value;
+                const uncertaintyFilter = document.getElementById('uncertaintyFilter').value;
+                const nameSearch = document.getElementById('nameSearch').value.toLowerCase();
+
+                filteredData = allData.filter(item => {
+                    try {
+                        if (!item || !item.name) {
+                            console.log('Name özelliği eksik:', item);
+                            return false;
+                        }
+
+                        const itemName = item.name.toString().toLowerCase();
+                        const customerFocusScore = item.customerFocusScore === '-' ? null : parseFloat(item.customerFocusScore);
+                        const uncertaintyScore = item.uncertaintyScore === '-' ? null : parseFloat(item.uncertaintyScore);
+
+                        // İsim araması
+                        let nameMatch = true;
+                        if (nameSearch) {
+                            nameMatch = itemName.includes(nameSearch);
+                        }
+
+                        // Müşteri Odaklılık Skoru filtresi
+                        let customerFocusMatch = true;
+                        if (customerFocusFilter && customerFocusScore !== null) {
+                            const [min, max] = customerFocusFilter.split('-').map(Number);
+                            customerFocusMatch = customerFocusScore >= min && customerFocusScore <= max;
+                        }
+
+                        // Belirsizlik Yönetimi Skoru filtresi
+                        let uncertaintyMatch = true;
+                        if (uncertaintyFilter && uncertaintyScore !== null) {
+                            const [min, max] = uncertaintyFilter.split('-').map(Number);
+                            uncertaintyMatch = uncertaintyScore >= min && uncertaintyScore <= max;
+                        }
+
+                        return nameMatch && customerFocusMatch && uncertaintyMatch;
+                    } catch (error) {
+                        console.error('Öğe filtreleme hatası:', error, item);
+                        return false;
+                    }
+                });
             }
             
             totalItems = filteredData.length;
@@ -300,6 +341,29 @@ function applyFilters() {
         closeFilterPopup();
     } catch (error) {
         console.error('Filtreleme hatası:', error);
+    }
+}
+
+// Filtreleri temizle
+function clearFilters() {
+    try {
+        // Input ve select elementlerini temizle
+        document.getElementById('nameSearch').value = '';
+        document.getElementById('customerFocusFilter').value = '';
+        document.getElementById('uncertaintyFilter').value = '';
+
+        // Filtrelenmiş veriyi orijinal veriye eşitle
+        filteredData = [...allData];
+        
+        // Sayfalama ve görüntülemeyi güncelle
+        totalItems = filteredData.length;
+        currentPage = 1;
+        displayData();
+        updatePagination();
+        
+        console.log('Filtreler temizlendi');
+    } catch (error) {
+        console.error('Filtre temizleme hatası:', error);
     }
 }
 

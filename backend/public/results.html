@@ -566,7 +566,7 @@
         .filter-popup-footer {
             display: flex;
             justify-content: center;
-            gap: 20px;
+            gap: 10px;
             padding-top: 20px;
         }
 
@@ -587,6 +587,21 @@
         .filter-select:focus {
             outline: none;
             border-color: #0286F7;
+        }
+
+        .btn-clear {
+            background: #6C757D;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 500;
+            transition: background-color 0.3s;
+        }
+
+        .btn-clear:hover {
+            background: #5A6268;
         }
     </style>
 </head>
@@ -729,6 +744,7 @@
                     </div>
                     <div class="filter-popup-footer">
                         <button class="btn-cancel" onclick="closeFilterPopup()">İptal</button>
+                        <button class="btn-clear" onclick="clearFilters()">Filtreleri Temizle</button>
                         <button class="btn-confirm" onclick="applyFilters()">Uygula</button>
                     </div>
                 </div>
