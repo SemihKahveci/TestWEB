@@ -169,8 +169,9 @@ class GameController {
             // BY ve MO olanları ayrı gruplandır
             const byAnswers = answers.filter(answer => answer.answerSubCategory === 'BY');
             const moAnswers = answers.filter(answer => answer.answerSubCategory === 'MO');
-
-
+            console.log('Tüm cevaplar:', answers);
+            console.log('BY cevapları:', byAnswers);
+            console.log('MO cevapları:', moAnswers);
             // BY cevaplarından answerType1 değerlerini al
             const byAnswerTypes = byAnswers.map(answer => answer.answerType1);
 
