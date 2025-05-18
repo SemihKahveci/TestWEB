@@ -375,7 +375,7 @@ const adminController = {
     // Yeni admin oluşturma
     createAdmin: async (req, res) => {
         try {
-            const { email, password, name, role } = req.body;
+            const { email, password, name, role, company } = req.body;
 
             // Email kontrolü
             const existingAdmin = await Admin.findOne({ email });
@@ -388,22 +388,30 @@ const adminController = {
                 email,
                 password,
                 name,
+                company,
                 role: role || 'admin'
             });
 
             await admin.save();
 
             res.status(201).json({
+                success: true,
                 message: 'Admin başarıyla oluşturuldu',
                 admin: {
                     id: admin._id,
                     email: admin.email,
                     name: admin.name,
+                    company: admin.company,
                     role: admin.role
                 }
             });
         } catch (error) {
-            res.status(500).json({ message: 'Sunucu hatası' });
+            console.error('Admin oluşturma hatası:', error);
+            res.status(500).json({ 
+                success: false,
+                message: 'Admin oluşturulurken bir hata oluştu',
+                error: error.message 
+            });
         }
     },
 
@@ -472,6 +480,35 @@ const adminController = {
         } catch (error) {
             console.error('Sonuç silme hatası:', error);
             res.status(500).json({ message: 'Sonuç silinirken bir hata oluştu' });
+        }
+    },
+
+    // Admin silme
+    deleteAdmin: async (req, res) => {
+        try {
+            const { id } = req.params;
+
+            // Admin'i bul ve sil
+            const admin = await Admin.findByIdAndDelete(id);
+            
+            if (!admin) {
+                return res.status(404).json({ 
+                    success: false,
+                    message: 'Admin bulunamadı' 
+                });
+            }
+
+            res.json({ 
+                success: true,
+                message: 'Admin başarıyla silindi' 
+            });
+        } catch (error) {
+            console.error('Admin silme hatası:', error);
+            res.status(500).json({ 
+                success: false,
+                message: 'Admin silinirken bir hata oluştu',
+                error: error.message 
+            });
         }
     }
 };

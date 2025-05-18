@@ -35,4 +35,7 @@ router.get('/evaluation/:id/preview', evaluationController.previewPDF);
 // PDF indirme
 router.post('/evaluation/:id/pdf', evaluationController.generatePDF);
 
+// Admin silme
+router.delete('/:id', isSuperAdmin, adminController.deleteAdmin);
+
 module.exports = router; 
