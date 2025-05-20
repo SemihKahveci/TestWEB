@@ -203,7 +203,7 @@ class GameController {
                 // Önce koleksiyonun varlığını kontrol et
                 const collections = await mongoose.connection.db.listCollections().toArray();
                 const collectionNames = collections.map(c => c.name);
-                console.log('Mevcut koleksiyonlar:', collectionNames);
+         
 
                 // MO raporları için arama yap
                 const matchedMO = await mongoose.connection.collection('evaluationanswersMY').findOne({
@@ -213,11 +213,11 @@ class GameController {
                     ]
                 });
 
-                console.log('MO arama sonucu:', matchedMO);
+ 
 
                 if (matchedMO) {
                     const moResult = await mongoose.connection.collection('evaluationresultsMY').findOne({ ID: matchedMO.ID });
-                    console.log('MO rapor sonucu:', moResult);
+          
                     if (moResult) {
                         results.push({ type: 'MO', data: moResult });
                     }

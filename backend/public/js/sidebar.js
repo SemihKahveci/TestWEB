@@ -1,5 +1,5 @@
 // Sidebar'ı oluştur
-function createSidebar() {
+async function createSidebar() {
     const sidebar = document.createElement('div');
     sidebar.className = 'sidebar';
     
@@ -20,6 +20,22 @@ function createSidebar() {
     
     // Aktif menü öğesini belirle
     const activeMenuItem = pageToMenuItem[currentPath] || 'Genel Takip Sistemi';
+
+    // Kullanıcı rolünü kontrol et
+    let isSuperAdmin = false;
+    try {
+        const token = localStorage.getItem('token');
+        const response = await fetch('/api/admin/check-superadmin', {
+            headers: {
+                'Authorization': `Bearer ${token}`
+            }
+        });
+        const data = await response.json();
+        console.log('Süper admin kontrolü:', data);
+        isSuperAdmin = data.isSuperAdmin;
+    } catch (error) {
+        console.error('Rol kontrolü hatası:', error);
+    }
     
     sidebar.innerHTML = `
         <div class="sidebar-header">
@@ -74,11 +90,13 @@ function createSidebar() {
                         <span>Organizasyon Yapısı</span>
                         <i class="fas fa-chevron-right"></i>
                     </div>
+                    ${isSuperAdmin ? `
                     <div class="menu-item ${activeMenuItem === 'Firma Tanımlama' ? 'active' : ''}">
                         <i class="fas fa-building"></i>
                         <span>Firma Tanımlama</span>
                         <i class="fas fa-chevron-right"></i>
                     </div>
+                    ` : ''}
                     <div class="menu-item ${activeMenuItem === 'Organizasyon Tanımlama' ? 'active' : ''}">
                         <i class="fas fa-user-plus"></i>
                         <span>Organizasyon Tanımlama</span>

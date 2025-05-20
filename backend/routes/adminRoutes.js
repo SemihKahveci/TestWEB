@@ -10,6 +10,11 @@ router.post('/login', adminController.login);
 // Diğer route'lar authentication gerektirir
 router.use(authenticateAdmin);
 
+// Süper admin kontrolü
+router.get('/check-superadmin', (req, res) => {
+    res.json({ isSuperAdmin: req.admin.role === 'superadmin' });
+});
+
 // Yeni admin oluşturma (sadece superadmin)
 router.post('/create', isSuperAdmin, adminController.createAdmin);
 
