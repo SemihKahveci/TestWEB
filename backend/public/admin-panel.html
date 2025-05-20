@@ -608,7 +608,7 @@
 
             <div class="content">
                 <div style="display: flex; justify-content: flex-end; margin-bottom: 16px;">
-                    <button class="btn-refresh" onclick="loadResults()">
+                    <button class="btn-refresh" onclick="loadData()">
                         <i class="fas fa-sync-alt"></i> Yenile
                     </button>
                 </div>
@@ -710,9 +710,8 @@
             const itemsPerPage = 10;
         }
         
-
         document.addEventListener('DOMContentLoaded', () => {
-            loadResults();
+            loadData();
         });
     </script>
 </body>

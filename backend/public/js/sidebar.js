@@ -9,9 +9,13 @@ function createSidebar() {
     // Sayfa yolu ile menü öğesi eşleştirmesi
     const pageToMenuItem = {
         '/admin-panel.html': 'Genel Takip Sistemi',
-        '/results.html': 'Raporlar',
-        '/index.html': 'Mülakat Gönder',
-        '/admin-management.html': 'Firma Tanımlama'
+        '/results.html': 'Aday Sonuçları Sayfası',
+        '/index.html': 'Oyun Gönder',
+        '/admin-management.html': 'Firma Tanımlama',
+        '/addGroup.html': 'Organizasyon Tanımlama',
+        '/authorization.html': 'Yetkilendirme',
+        '/grouping.html': 'Yetkilendirme', 
+        '/organization.html': 'Yetkilendirme',
     };
     
     // Aktif menü öğesini belirle
@@ -44,9 +48,9 @@ function createSidebar() {
                         <span>Aday Sonuçları Sayfası</span>
                         <i class="fas fa-chevron-right"></i>
                     </div>            
-                    <div class="menu-item ${activeMenuItem === 'Mülakat Gönder' ? 'active' : ''}">
+                    <div class="menu-item ${activeMenuItem === 'Oyun Gönder' ? 'active' : ''}">
                         <i class="fas fa-comments"></i>
-                        <span>Mülakat Gönder</span>
+                        <span>Oyun Gönder</span>
                         <i class="fas fa-chevron-right"></i>
                     </div>
                  
@@ -75,9 +79,9 @@ function createSidebar() {
                         <span>Firma Tanımlama</span>
                         <i class="fas fa-chevron-right"></i>
                     </div>
-                    <div class="menu-item ${activeMenuItem === 'Kişi Tanımlama' ? 'active' : ''}">
+                    <div class="menu-item ${activeMenuItem === 'Organizasyon Tanımlama' ? 'active' : ''}">
                         <i class="fas fa-user-plus"></i>
-                        <span>Kişi Tanımlama</span>
+                        <span>Organizasyon Tanımlama</span>
                         <i class="fas fa-chevron-right"></i>
                     </div>
                     <div class="menu-item ${activeMenuItem === 'Sistem Ayarları' ? 'active' : ''}">
@@ -253,11 +257,11 @@ function createSidebar() {
                 case 'Aday Sonuçları Sayfası':
                     window.location.href = '/results.html';
                     break;
-                case 'Mülakat Gönder':
+                case 'Oyun Gönder':
                     window.location.href = '/index.html';
                     break;
                 case 'Yetkilendirme':
-                    //window.location.href = '/authorization.html';
+                    window.location.href = '/authorization.html';
                     break;
                 case 'Organizasyon Yapısı':
                     //window.location.href = '/organization-structure.html';
@@ -265,8 +269,8 @@ function createSidebar() {
                 case 'Firma Tanımlama':
                     window.location.href = '/admin-management.html';
                     break;
-                case 'Kişi Tanımlama':
-                    //window.location.href = '/person-settings.html';
+                case 'Organizasyon Tanımlama':
+                    window.location.href = '/addGroup.html';
                     break;
                 case 'Sistem Ayarları':
                     //window.location.href = '/system-settings.html';

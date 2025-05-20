@@ -169,35 +169,71 @@ class GameController {
             // BY ve MO olanları ayrı gruplandır
             const byAnswers = answers.filter(answer => answer.answerSubCategory === 'BY');
             const moAnswers = answers.filter(answer => answer.answerSubCategory === 'MO');
-            console.log('Tüm cevaplar:', answers);
-            console.log('BY cevapları:', byAnswers);
-            console.log('MO cevapları:', moAnswers);
+            
             // BY cevaplarından answerType1 değerlerini al
             const byAnswerTypes = byAnswers.map(answer => answer.answerType1);
+            const moAnswerTypes = moAnswers.map(answer => answer.answerType1);
 
-            // Boş olmayan BY cevaplarını filtrele
+            // Boş olmayan cevapları filtrele
             const validByAnswerTypes = byAnswerTypes.filter(type => type && type !== '-');
+            const validMoAnswerTypes = moAnswerTypes.filter(type => type && type !== '-');
 
-            // BY cevaplarını string formatına çevir
+            // Cevapları string formatına çevir
             const byAnswerString = validByAnswerTypes.join(', ');
-    
+            const moAnswerString = validMoAnswerTypes.join(', ');
 
-            // Koleksiyon isimlerini kontrol et
-            const collections = await mongoose.connection.db.listCollections().toArray();
+            let results = [];
 
-            // evaluationanswers koleksiyonunda BY cevaplarıyla arama yap
-            const matched = await mongoose.connection.collection('evaluationanswers').findOne({
-                Cevaplar: { $regex: new RegExp(byAnswerString, 'i') }
-            });
+            // BY raporlarını kontrol et
+            if (byAnswerString) {
+                const matchedBY = await mongoose.connection.collection('evaluationanswers').findOne({
+                    Cevaplar: { $regex: new RegExp(byAnswerString, 'i') }
+                });
 
-            if (matched) {
-                // ID ile evaluationresults koleksiyonunda arama yap
-                const evaluationResult = await mongoose.connection.collection('evaluationresults').findOne({ ID: matched.ID });
-                return evaluationResult;
-            } else {
+                if (matchedBY) {
+                    const byResult = await mongoose.connection.collection('evaluationresults').findOne({ ID: matchedBY.ID });
+                    if (byResult) {
+                        results.push({ type: 'BY', data: byResult });
+                    }
+                }
+            }
+
+            // MO raporlarını kontrol et
+            if (moAnswerString) {
+                // Önce koleksiyonun varlığını kontrol et
+                const collections = await mongoose.connection.db.listCollections().toArray();
+                const collectionNames = collections.map(c => c.name);
+                console.log('Mevcut koleksiyonlar:', collectionNames);
+
+                // MO raporları için arama yap
+                const matchedMO = await mongoose.connection.collection('evaluationanswersMY').findOne({
+                    $or: [
+                        { Cevaplar: { $regex: new RegExp(moAnswerString, 'i') } },
+                        { Cevaplar: { $regex: new RegExp(moAnswerString.replace(/, /g, ','), 'i') } }
+                    ]
+                });
+
+                console.log('MO arama sonucu:', matchedMO);
+
+                if (matchedMO) {
+                    const moResult = await mongoose.connection.collection('evaluationresultsMY').findOne({ ID: matchedMO.ID });
+                    console.log('MO rapor sonucu:', moResult);
+                    if (moResult) {
+                        results.push({ type: 'MO', data: moResult });
+                    }
+                }
+            }
+
+            // Eğer hiç sonuç bulunamadıysa null döndür
+            if (results.length === 0) {
                 return null;
             }
+
+            // Bulunan tüm raporları döndür
+            return results;
+
         } catch (error) {
+            console.error('Rapor sorgulama hatası:', error);
             return null;
         }
     }

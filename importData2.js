@@ -11,7 +11,7 @@ async function importData() {
         console.log('MongoDB Atlas\'a bağlandı');
         
         const db = client.db('admin-paneli-cluster');
-        const collection = db.collection('evaluationanswers');
+        const collection = db.collection('evaluationanswersMY');
 
         // Önce koleksiyonu temizle
         await collection.deleteMany({});
@@ -21,7 +21,7 @@ async function importData() {
         const results = [];
         let rowCount = 0;
 
-        fs.createReadStream('Semih Dosya.csv')
+        fs.createReadStream('Musteri_Odaklilik_Rapor_IDler.csv')
             .pipe(csv({ 
                 separator: ';',
                 headers: ['ID', 'Cevaplar'],

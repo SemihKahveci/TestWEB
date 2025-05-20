@@ -10,14 +10,14 @@ async function importData() {
         await client.connect();
         
         const db = client.db('admin-paneli-cluster');
-        const collection = db.collection('evaluationresults');
+        const collection = db.collection('evaluationresultsMY');
 
         // Önce koleksiyonu temizle
         await collection.deleteMany({});
 
         // CSV'yi oku ve MongoDB'ye aktar
         const results = [];
-        fs.createReadStream('Semih dosya 2.csv')
+        fs.createReadStream('Musteri_Odaklilik_Rapor_Detay.csv')
             .pipe(csv({ 
                 separator: ';',
                 headers: ['ID', 'Genel Değerlendirme', 'Güçlü Yönler', 'Gelişim Alanları', 

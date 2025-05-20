@@ -7,36 +7,106 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&family=Poppins:wght@500;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
     <style>
-        body {
+        * {
             margin: 0;
             padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: #F8F9FA;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        .container {
+            width: 100%;
+            min-height: 100vh;
+            position: relative;
+            background: white;
+            display: flex;
+        }
+
+        .main-content {
+            flex: 1;
+            margin-left: 0;
+            width: 100%;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .header {
+            width: 100%;
+            height: 76px;
+            padding: 16px 32px;
+            background: white;
+            backdrop-filter: blur(32px);
             display: flex;
             justify-content: center;
             align-items: center;
-            min-height: 100vh;
-            background-color: #f5f5f5;
-            font-family: 'Inter', sans-serif;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
         }
-        .container {
+
+        .header-content {
             width: 100%;
-            max-width: 800px;
-            padding: 30px 35px;
-            background: white;
-            border-radius: 15px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-            position: relative;
+            max-width: 1400px;
+            display: flex;
+            justify-content: flex-end;
+            align-items: center;
+            padding: 0 20px;
         }
-        .header {
-            text-align: center;
-            margin-bottom: 15px;
+
+        .header-right {
+            display: flex;
+            justify-content: flex-end;
+            align-items: center;
+            gap: 16px;
+            margin-left: auto;
         }
-        .header h1 {
-            color: black;
-            font-size: 20px;
+
+        .notification-icon {
+            width: 24px;
+            height: 24px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+        }
+
+        .user-info {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 16px;
+            cursor: pointer;
+            margin-left: 0px;
+        }
+
+        .user-details {
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-start;
+            align-items: flex-start;
+        }
+
+        .user-name {
+            color: #232D42;
+            font-size: 16px;
             font-family: 'Inter', sans-serif;
-            font-weight: 700;
-            margin: 0;
+            font-weight: 400;
+            line-height: 28px;
         }
+
+        .user-role {
+            color: #8A92A6;
+            font-size: 13px;
+            font-family: 'Inter', sans-serif;
+            font-weight: 400;
+            line-height: 16.90px;
+        }
+
         .divider {
             width: 44px;
             height: 3px;
@@ -117,6 +187,8 @@
             margin-top: 30px;
             border-top: 1px solid #eee;
             padding-top: 20px;
+            height: calc(100% - 400px); /* Form yüksekliğini çıkarıyoruz */
+            overflow-y: auto;
         }
         .admin-list h2 {
             color: black;
@@ -155,7 +227,10 @@
             background: #c02633;
         }
         .content-wrapper {
-            display: none; /* Başlangıçta içeriği gizle */
+            display: none;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
         }
         .unauthorized-message {
             display: none;
@@ -168,6 +243,40 @@
             margin: 20px;
             font-family: 'Inter', sans-serif;
         }
+        .page-title {
+            width: 100%;
+            height: 75px;
+            background: radial-gradient(ellipse 150.93% 36.28% at 50.00% 50.00%, #3B8AFF 0%, #0048B2 100%);
+            border-bottom-right-radius: 16px;
+            border-bottom-left-radius: 16px;
+            display: flex;
+            justify-content: flex-start;
+            align-items: center;
+            padding: 0 32px;
+            margin-left: 10px;
+        }
+        .title-content {
+            width: 100%;
+            display: flex;
+            justify-content: flex-start;
+            align-items: center;
+        }
+        .title-text {
+            color: white;
+            font-size: 30px;
+            font-family: 'Inter', sans-serif;
+            font-weight: 700;
+        }
+        .content-container {
+            width: 100%;
+            max-width: 800px;
+            padding: 30px 35px;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            position: relative;
+            margin: 0 auto;
+        }
     </style>
 </head>
 <body>
@@ -176,50 +285,73 @@
     </div>
 
     <div id="contentWrapper" class="content-wrapper">
-        <div class="container">
+        <div class="main-content">
             <div class="header">
-                <h1>Organizasyon Düzenle</h1>
-                <div class="divider"></div>
+                <div class="header-content">
+                    <div class="header-right">
+                        <div class="notification-icon">
+                            <i class="fas fa-bell" style="color: #8A92A6;"></i>
+                        </div>
+                        <div class="user-info">
+                            <div class="user-details">
+                                <div class="user-name">Andron Games</div>
+                                <div class="user-role">Founder</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
-            <form id="adminForm">
-                <div class="form-group">
-                    <label for="adSoyad">Ad Soyad</label>
-                    <input type="text" id="adSoyad" class="form-control" required>
-                </div>
-                <div class="form-group">
-                    <label for="sirket">Şirket</label>
-                    <input type="text" id="sirket" class="form-control" required>
-                </div>
-                <div class="form-group">
-                    <label for="mail">Mail</label>
-                    <input type="email" id="mail" class="form-control" required>
-                </div>
-                <div class="form-group">
-                    <label for="sifre">Şifre</label>
-                    <input type="password" id="sifre" class="form-control" required>
-                </div>
-                <div class="button-group">
-                    <button type="button" class="btn btn-cancel" onclick="window.location.href='admin-panel.html'">İptal</button>
-                    <button type="submit" class="btn btn-save">Kaydet</button>
-                </div>
-                <div id="formAlert" class="alert"></div>
-            </form>
 
-            <div class="admin-list">
-                <h2>Admin Listesi</h2>
-                <table class="admin-table">
-                    <thead>
-                        <tr>
-                            <th>Ad Soyad</th>
-                            <th>Şirket</th>
-                            <th>E-posta</th>
-                            <th>İşlem</th>
-                        </tr>
-                    </thead>
-                    <tbody id="adminTableBody">
-                        <!-- Admin listesi buraya gelecek -->
-                    </tbody>
-                </table>
+            <div class="page-title">
+                <div class="title-content">
+                    <div class="title-text">Firma Tanımlama</div>
+                </div>
+
+            </div>
+            <div class="container">
+                <div class="content-container">
+ 
+                    <form id="adminForm">
+                        <div class="form-group">
+                            <label for="adSoyad">Ad Soyad</label>
+                            <input type="text" id="adSoyad" class="form-control" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="sirket">Şirket</label>
+                            <input type="text" id="sirket" class="form-control" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="mail">Mail</label>
+                            <input type="email" id="mail" class="form-control" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="sifre">Şifre</label>
+                            <input type="password" id="sifre" class="form-control" required>
+                        </div>
+                        <div class="button-group">
+                            <button type="button" class="btn btn-cancel" onclick="window.location.href='admin-panel.html'">İptal</button>
+                            <button type="submit" class="btn btn-save">Kaydet ve Gönder</button>
+                        </div>
+                        <div id="formAlert" class="alert"></div>
+                    </form>
+
+                    <div class="admin-list">
+                        <h2>Admin Listesi</h2>
+                        <table class="admin-table">
+                            <thead>
+                                <tr>
+                                    <th>Ad Soyad</th>
+                                    <th>Şirket</th>
+                                    <th>E-posta</th>
+                                    <th>İşlem</th>
+                                </tr>
+                            </thead>
+                            <tbody id="adminTableBody">
+                                <!-- Admin listesi buraya gelecek -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
