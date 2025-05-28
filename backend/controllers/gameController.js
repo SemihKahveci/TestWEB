@@ -135,6 +135,7 @@ class GameController {
             const newGame = new Game({
                 playerCode: data.playerCode,
                 section: data.section,
+                answers: data.answers,
                 dummyData: dummyData,
                 evaluationResult: evaluationResult,
                 customerFocusScore: Math.round(customerFocusScore),
