@@ -10,7 +10,7 @@ async function createSidebar() {
     const pageToMenuItem = {
         '/admin-panel.html': 'Genel Takip Sistemi',
         '/results.html': 'Aday Sonuçları Sayfası',
-        '/index.html': 'Oyun Gönder',
+        '/game-send.html': 'Oyun Gönder',
         '/admin-management.html': 'Firma Tanımlama',
         '/addGroup.html': 'Organizasyon Tanımlama',
         '/authorization.html': 'Yetkilendirme',
@@ -276,7 +276,7 @@ async function createSidebar() {
                     window.location.href = '/results.html';
                     break;
                 case 'Oyun Gönder':
-                    window.location.href = '/index.html';
+                    window.location.href = '/game-send.html';
                     break;
                 case 'Yetkilendirme':
                     window.location.href = '/authorization.html';
@@ -308,10 +308,39 @@ function logout() {
     window.location.href = '/admin.html';
 }
 
+
+// Token kontrolü ve otomatik yönlendirme
+function checkToken() {
+    const token = localStorage.getItem('token');
+    if (!token) {
+        window.location.href = '/admin.html';
+        return;
+    }
+
+    try {
+        const payload = JSON.parse(atob(token.split('.')[1]));
+        const expiry = payload.exp * 1000; // saniyeyi milisaniyeye çevir
+        
+        if (Date.now() >= expiry) {
+            localStorage.removeItem('token');
+            window.location.href = '/admin.html';
+            return;
+        }
+    } catch (error) {
+        localStorage.removeItem('token');
+        window.location.href = '/admin.html';
+        return;
+    }
+}
+
+// Her 5 dakikada bir token kontrolü yap
+setInterval(checkToken, 5 * 60 * 1000);
+
 // Sayfa yüklendiğinde sidebar'ı oluştur
 document.addEventListener('DOMContentLoaded', () => {
     // Login sayfasında sidebar'ı gösterme
     if (!window.location.pathname.includes('admin.html')) {
         createSidebar();
+        checkToken(); // Sayfa yüklendiğinde token kontrolü yap
     }
 }); 

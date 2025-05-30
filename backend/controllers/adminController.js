@@ -46,7 +46,7 @@ const adminController = {
                     name: admin.name
                 },
                 process.env.JWT_SECRET || 'andron2025secretkey',
-                { expiresIn: '1d' }
+                { expiresIn: '7d' }
             );
 
             res.json({
