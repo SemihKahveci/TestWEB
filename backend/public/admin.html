@@ -240,7 +240,7 @@
             </div>
             <div class="remember-forgot">
                 <div class="remember-me">
-                    <input type="checkbox" id="remember" class="checkbox">
+                    <input type="checkbox" id="remember" class="checkbox" checked>
                     <label for="remember">Beni Hatırla</label>
                 </div>
                 <a href="#" class="forgot-password">Şifremi Unuttum</a>
@@ -254,6 +254,15 @@
     </div>
 
     <script>
+        // Sayfa yüklendiğinde token kontrolü yap
+        document.addEventListener('DOMContentLoaded', () => {
+            const token = localStorage.getItem('token') || sessionStorage.getItem('token');
+            if (token) {
+                window.location.href = '/admin-panel.html';
+                return;
+            }
+        });
+
         function login() {
             const email = document.getElementById('email').value;
             const password = document.getElementById('password').value;
@@ -275,6 +284,7 @@
             .then(data => {
                 if (data.success) {
                     localStorage.setItem('token', data.token);
+                    sessionStorage.setItem('token', data.token);
                     window.location.href = '/admin-panel.html';
                 } else {
                     showAlert(data.message || 'Giriş başarısız');

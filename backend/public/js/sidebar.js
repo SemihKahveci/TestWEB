@@ -304,14 +304,14 @@ async function createSidebar() {
 // Çıkış işlemi
 function logout() {
     localStorage.removeItem('token');
+    sessionStorage.removeItem('token');
     localStorage.removeItem('userEmail');
     window.location.href = '/admin.html';
 }
 
-
 // Token kontrolü ve otomatik yönlendirme
 function checkToken() {
-    const token = localStorage.getItem('token');
+    const token = localStorage.getItem('token') || sessionStorage.getItem('token');
     if (!token) {
         window.location.href = '/admin.html';
         return;
@@ -323,11 +323,13 @@ function checkToken() {
         
         if (Date.now() >= expiry) {
             localStorage.removeItem('token');
+            sessionStorage.removeItem('token');
             window.location.href = '/admin.html';
             return;
         }
     } catch (error) {
         localStorage.removeItem('token');
+        sessionStorage.removeItem('token');
         window.location.href = '/admin.html';
         return;
     }
