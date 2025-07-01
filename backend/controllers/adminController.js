@@ -255,14 +255,12 @@ const adminController = {
 
             if (emailResult.success) {
                 // 72 saat sonra kodu sil
-                setTimeout(async () => {
-                    try {
-                        await UserCode.findOneAndDelete({ code });
-                     
-                    } catch (error) {
-                   
-                    }
-                }, 72 * 60 * 60 * 1000); // 72 saat
+                // setTimeout(async () => {
+                //     try {
+                //         await UserCode.findOneAndDelete({ code });
+                //     } catch (error) {
+                //     }
+                // }, 72 * 60 * 60 * 1000); // 72 saat
 
                 res.json({ success: true, message: 'Kod başarıyla gönderildi' });
             } else {
