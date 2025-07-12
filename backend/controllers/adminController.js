@@ -304,9 +304,13 @@ const adminController = {
     // Kullanıcı sonuçlarını getir
     getUserResults: async (req, res) => {
         try {
-            const results = await UserCode.find()
-                .sort({ sentDate: -1 });
-
+            const { code } = req.query;
+            let results;
+            if (code) {
+                results = await UserCode.find({ code });
+            } else {
+                results = await UserCode.find().sort({ sentDate: -1 });
+            }
             res.json({
                 success: true,
                 results: results.map(result => ({
