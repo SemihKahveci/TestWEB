@@ -8,6 +8,7 @@ function showPDFPopup(id) {
     document.getElementById('generalEvaluation').checked = true;
     document.getElementById('strengths').checked = true;
     document.getElementById('interviewQuestions').checked = true;
+    document.getElementById('whyTheseQuestions').checked = true;
     document.getElementById('developmentSuggestions').checked = true;
 }
 
@@ -34,6 +35,7 @@ function previewPDF() {
         generalEvaluation: document.getElementById('generalEvaluation').checked,
         strengths: document.getElementById('strengths').checked,
         interviewQuestions: document.getElementById('interviewQuestions').checked,
+        whyTheseQuestions: document.getElementById('whyTheseQuestions').checked,
         developmentSuggestions: document.getElementById('developmentSuggestions').checked
     };
 
@@ -62,6 +64,7 @@ function downloadPDF() {
         generalEvaluation: document.getElementById('generalEvaluation').checked,
         strengths: document.getElementById('strengths').checked,
         interviewQuestions: document.getElementById('interviewQuestions').checked,
+        whyTheseQuestions: document.getElementById('whyTheseQuestions').checked,
         developmentSuggestions: document.getElementById('developmentSuggestions').checked
     };
 
