@@ -18,6 +18,12 @@ const userCodeSchema = new mongoose.Schema({
         type: String,
         required: true
     },
+    allPlanets: {
+        type: [String],
+        default: function() {
+            return [this.planet]; // Varsayılan olarak sadece planet'i içer
+        }
+    },
     status: {
         type: String,
         enum: ['Beklemede', 'Oyun Devam Ediyor', 'Tamamlandı'],

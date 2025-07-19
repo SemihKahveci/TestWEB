@@ -19,7 +19,7 @@ class CodeController {
     // Kod üretme
     async generateCode(req, res) {
         try {
-            const { name, email, planet } = req.body;
+            const { name, email, planet, allPlanets } = req.body;
             
             if (!name || !email || !planet) {
                 return res.status(400).json({ 
@@ -37,6 +37,7 @@ class CodeController {
                 name,
                 email,
                 planet,
+                allPlanets: allPlanets || [planet], // Eğer allPlanets yoksa sadece planet'i kullan
                 status: 'Beklemede',
                 sentDate: new Date(),
                 expiryDate
@@ -115,12 +116,30 @@ class CodeController {
             userCode.status = 'Oyun Devam Ediyor';
             await userCode.save();
 
+            // Tüm seçilen gezegenleri section değerlerine çevir
+            const allPlanets = userCode.allPlanets || [userCode.planet];
+            console.log(`Tüm seçilen gezegenler: ${allPlanets}`);
+            
+            const sectionNames = allPlanets.map(planet => {
+                if (planet === 'venus') {
+                    console.log('Venus -> section 0');
+                    return '0';
+                } else if (planet === 'titan') {
+                    console.log('Titan -> section 1');
+                    return '1';
+                } else {
+                    console.log(`Bilinmeyen gezegen: '${planet}' -> varsayılan 0`);
+                    return '0';
+                }
+            });
+            
+            console.log(`Oluşturulan section'lar: ${sectionNames}`);
+
             res.status(200).json({
                 success: true,
                 message: 'Kod doğrulandı',
-                sections: [
-                    { name: '0' },
-                ]
+                sections: sectionNames.map(name => ({ name })),
+                allPlanets: allPlanets
             });
         } catch (error) {
             console.error('Kod doğrulama hatası:', error);

@@ -95,6 +95,7 @@ function displayData() {
         
         row.innerHTML = `
             <td>${item.name}</td>
+            <td>${item.email || '-'}</td>
             <td>
                 <span class="status-badge ${item.status === 'Oyun Devam Ediyor' ? 'oyun-devam-ediyor' : item.status.toLowerCase()}">${item.status}</span>
             </td>

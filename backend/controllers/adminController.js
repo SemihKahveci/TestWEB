@@ -316,6 +316,7 @@ const adminController = {
                 results: results.map(result => ({
                     code: result.code,
                     name: result.name,
+                    email: result.email,
                     status: result.status,
                     sentDate: result.sentDate,
                     completionDate: result.completionDate,

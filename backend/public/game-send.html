@@ -256,6 +256,122 @@
             color: #721c24;
             border: 1px solid #f5c6cb;
         }
+
+        .planet-selection-container {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .planet-dropdown-container {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+        }
+
+        .add-planet-btn {
+            background: #28a745;
+            color: white;
+            border: none;
+            padding: 8px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: background-color 0.3s;
+        }
+
+        .add-planet-btn:hover {
+            background: #218838;
+        }
+
+        .add-planet-btn:disabled {
+            background: #6c757d;
+            cursor: not-allowed;
+        }
+
+        .selected-planets {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            min-height: 40px;
+            padding: 8px;
+            border: 1px solid #E9ECEF;
+            border-radius: 4px;
+            background: #f8f9fa;
+        }
+
+
+
+        .remove-planet-btn {
+            background: none;
+            border: none;
+            color: white;
+            cursor: pointer;
+            font-size: 14px;
+            padding: 0;
+            width: 16px;
+            height: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .remove-planet-btn:hover {
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 50%;
+        }
+
+        .planet-tag-controls {
+            display: flex;
+            gap: 4px;
+            align-items: center;
+        }
+
+        .planet-tag {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: #3A57E8;
+            color: white;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 500;
+            cursor: grab;
+            user-select: none;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .planet-tag:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+        }
+
+        .planet-tag.dragging {
+            opacity: 0.5;
+            transform: rotate(5deg);
+            cursor: grabbing;
+        }
+
+        .planet-tag.drag-over {
+            border: 2px dashed #fff;
+            background: #4A67F8;
+        }
+
+        .drag-handle {
+            cursor: grab;
+            padding: 2px;
+            border-radius: 3px;
+            transition: background-color 0.2s;
+        }
+
+        .drag-handle:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        .drag-handle:active {
+            cursor: grabbing;
+        }
     </style>
 </head>
 
@@ -313,10 +429,21 @@
             </div>
             <div class="form-group">
                 <label>Gezegen Seçimi</label>
-                <select id="planetSelect">
-                    <option value="">Lütfen Gezegen Seçiniz</option>
-                    <option value="venus">Venüs</option> 
-                </select>
+                <div class="planet-selection-container">
+                    <div class="planet-dropdown-container">
+                        <select id="planetSelect">
+                            <option value="">Lütfen Gezegen Seçiniz</option>
+                            <option value="venus">Venüs</option> 
+                            <option value="titan">Titan</option>
+                        </select>
+                        <button type="button" class="add-planet-btn" onclick="addPlanet()">
+                            <i class="fas fa-plus"></i>
+                        </button>
+                    </div>
+                    <div id="selectedPlanets" class="selected-planets">
+                        <!-- Seçilen gezegenler burada görünecek -->
+                    </div>
+                </div>
             </div>
             <button class="submit-btn" onclick="sendInterview()">
                 <i class="fas fa-paper-plane"></i>
@@ -327,18 +454,176 @@
     </div>
 
     <script>
+        let selectedPlanets = [];
+        let availablePlanets = [
+            { value: 'venus', label: 'Venüs' },
+            { value: 'titan', label: 'Titan' }
+        ];
+
+        function addPlanet() {
+            const planetSelect = document.getElementById('planetSelect');
+            const selectedValue = planetSelect.value;
+            
+            if (!selectedValue) {
+                alert('Lütfen bir gezegen seçin');
+                return;
+            }
+
+            // Gezegen zaten seçilmiş mi kontrol et
+            if (selectedPlanets.includes(selectedValue)) {
+                alert('Bu gezegen zaten seçilmiş');
+                return;
+            }
+
+            // Gezegeni listeye ekle
+            selectedPlanets.push(selectedValue);
+            
+            // UI'ı güncelle
+            updatePlanetUI();
+            
+            // Dropdown'ı sıfırla
+            planetSelect.value = '';
+        }
+
+        function removePlanet(planetValue) {
+            const index = selectedPlanets.indexOf(planetValue);
+            if (index > -1) {
+                selectedPlanets.splice(index, 1);
+                updatePlanetUI();
+                
+                // Dropdown'ı sıfırla
+                document.getElementById('planetSelect').value = '';
+            }
+        }
+
+        // Drag and Drop fonksiyonları
+        let draggedElement = null;
+
+        function handleDragStart(e) {
+            draggedElement = e.target;
+            e.target.classList.add('dragging');
+            e.dataTransfer.effectAllowed = 'move';
+            e.dataTransfer.setData('text/html', e.target.outerHTML);
+        }
+
+        function handleDragEnd(e) {
+            e.target.classList.remove('dragging');
+            draggedElement = null;
+        }
+
+        function handleDragOver(e) {
+            e.preventDefault();
+            e.dataTransfer.dropEffect = 'move';
+        }
+
+        function handleDragEnter(e) {
+            e.preventDefault();
+            if (e.target.classList.contains('planet-tag') && e.target !== draggedElement) {
+                e.target.classList.add('drag-over');
+            }
+        }
+
+        function handleDragLeave(e) {
+            if (e.target.classList.contains('planet-tag')) {
+                e.target.classList.remove('drag-over');
+            }
+        }
+
+        function handleDrop(e) {
+            e.preventDefault();
+            if (e.target.classList.contains('planet-tag') && draggedElement) {
+                e.target.classList.remove('drag-over');
+                
+                // Sürüklenen ve hedef gezegenlerin değerlerini al
+                const draggedPlanetValue = draggedElement.getAttribute('data-planet');
+                const targetPlanetValue = e.target.getAttribute('data-planet');
+                
+                if (draggedPlanetValue && targetPlanetValue && draggedPlanetValue !== targetPlanetValue) {
+                    // Gezegenlerin sırasını değiştir
+                    const draggedIndex = selectedPlanets.indexOf(draggedPlanetValue);
+                    const targetIndex = selectedPlanets.indexOf(targetPlanetValue);
+                    
+                    if (draggedIndex !== -1 && targetIndex !== -1) {
+                        // Gezegenleri yer değiştir
+                        const temp = selectedPlanets[draggedIndex];
+                        selectedPlanets[draggedIndex] = selectedPlanets[targetIndex];
+                        selectedPlanets[targetIndex] = temp;
+                        
+                        updatePlanetUI();
+                    }
+                }
+            }
+        }
+
+        function updatePlanetUI() {
+            const selectedPlanetsContainer = document.getElementById('selectedPlanets');
+            const addButton = document.querySelector('.add-planet-btn');
+            const planetSelect = document.getElementById('planetSelect');
+            
+            // Dropdown'ı güncelle - seçilen gezegenleri çıkar
+            planetSelect.innerHTML = '<option value="">Lütfen Gezegen Seçiniz</option>';
+            availablePlanets.forEach(planet => {
+                if (!selectedPlanets.includes(planet.value)) {
+                    const option = document.createElement('option');
+                    option.value = planet.value;
+                    option.textContent = planet.label;
+                    planetSelect.appendChild(option);
+                }
+            });
+            
+            // Seçilen gezegenleri göster
+            selectedPlanetsContainer.innerHTML = '';
+            selectedPlanets.forEach((planetValue, index) => {
+                const planet = availablePlanets.find(p => p.value === planetValue);
+                if (planet) {
+                    const planetTag = document.createElement('div');
+                    planetTag.className = 'planet-tag';
+                    planetTag.setAttribute('data-planet', planetValue);
+                    planetTag.draggable = true;
+                    
+                    // Drag and drop event listener'ları ekle
+                    planetTag.addEventListener('dragstart', handleDragStart);
+                    planetTag.addEventListener('dragend', handleDragEnd);
+                    planetTag.addEventListener('dragover', handleDragOver);
+                    planetTag.addEventListener('dragenter', handleDragEnter);
+                    planetTag.addEventListener('dragleave', handleDragLeave);
+                    planetTag.addEventListener('drop', handleDrop);
+                    
+                    planetTag.innerHTML = `
+                        <div class="drag-handle">
+                            <i class="fas fa-grip-vertical"></i>
+                        </div>
+                        ${planet.label}
+                        <button class="remove-planet-btn" onclick="removePlanet('${planetValue}')">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    `;
+                    selectedPlanetsContainer.appendChild(planetTag);
+                }
+            });
+
+            // Tüm gezegenler seçilmişse butonu devre dışı bırak
+            if (selectedPlanets.length >= availablePlanets.length) {
+                addButton.disabled = true;
+            } else {
+                addButton.disabled = false;
+            }
+        }
+
         function sendInterview() {
             const name = document.getElementById('interviewName').value;
             const email = document.getElementById('interviewEmail').value;
-            const planet = document.getElementById('planetSelect').value;
             const alert = document.getElementById('interviewAlert');
 
-            if (!name || !email || !planet) {
+            if (!name || !email || selectedPlanets.length === 0) {
                 alert.style.display = 'block';
                 alert.className = 'alert alert-error';
-                alert.textContent = 'Lütfen tüm alanları doldurun.';
+                alert.textContent = 'Lütfen tüm alanları doldurun ve en az bir gezegen seçin.';
                 return;
             }
+
+            // Tüm seçilen gezegenleri gönder
+            const primaryPlanet = selectedPlanets[0]; // İlk seçilen gezegen
 
             // Kod üretme ve gönderme işlemi
             fetch('/api/generate-code', {
@@ -349,7 +634,8 @@
                 body: JSON.stringify({
                     name: name,
                     email: email,
-                    planet: planet
+                    planet: primaryPlanet, // İlk gezegen (geriye uyumluluk için)
+                    allPlanets: selectedPlanets // Tüm gezegenlerin sırası
                 })
             })
             .then(response => response.json())
@@ -365,7 +651,8 @@
                             code: data.code,
                             name: name,
                             email: email,
-                            planet: planet
+                            planet: primaryPlanet, // İlk gezegen (geriye uyumluluk için)
+                            allPlanets: selectedPlanets // Tüm gezegenlerin sırası
                         })
                     });
                 } else {
@@ -381,6 +668,8 @@
                     document.getElementById('interviewName').value = '';
                     document.getElementById('interviewEmail').value = '';
                     document.getElementById('planetSelect').value = '';
+                    selectedPlanets = [];
+                    updatePlanetUI();
                     setTimeout(() => {
                         alert.style.display = 'none';
                     }, 3000);

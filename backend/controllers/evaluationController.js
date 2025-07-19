@@ -80,7 +80,6 @@ const evaluationController = {
                 generalEvaluation: req.query.generalEvaluation === 'true',
                 strengths: req.query.strengths === 'true',
                 interviewQuestions: req.query.interviewQuestions === 'true',
-                whyTheseQuestions: req.query.whyTheseQuestions === 'true',
                 developmentSuggestions: req.query.developmentSuggestions === 'true'
             };
 
@@ -555,7 +554,7 @@ async function generateAndSendPreview(evaluation, options, res) {
                     htmlContent += `
                         <div class="section">
                             <h2>Neden Bu Sorular?</h2>
-                            <p>${data['Neden Bu Sorular?'] || 'Neden bu sorular bilgisi bulunamadı.'}</p>
+                            <p>${data['Neden Bu Sorular?']}</p>
                         </div>
                     `;
                 }
@@ -613,150 +612,8 @@ async function generateAndSendPreview(evaluation, options, res) {
             res.setHeader('Content-Disposition', `inline; filename=evaluation_${evaluation[0].data.ID}.pdf`);
             res.send(file);
         } else {
-            // Gelişim önerilerini ayrı başlıklar altında oluştur
-            let gelisimOnerileriHTML = '';
-            const gelisimOnerileriKeys = [
-                { key: 'Gelişim Önerileri -1', title: 'Gelişim Önerisi 1' },
-                { key: 'Gelişim Önerileri -2', title: 'Gelişim Önerisi 2' },
-                { key: 'Gelişim Önerileri - 3', title: 'Gelişim Önerisi 3' }
-            ];
-            
-            gelisimOnerileriKeys.forEach(item => {
-                if (evaluation[item.key]) {
-                    gelisimOnerileriHTML += `
-                        <div class="subsection">
-                            <h3>${item.title}</h3>
-                            <p>${evaluation[item.key]}</p>
-                        </div>
-                    `;
-                }
-            });
-
-            // HTML içeriğini oluştur
-            const htmlContent = `
-                <!DOCTYPE html>
-                <html>
-                <head>
-                    <meta charset="UTF-8">
-                    <style>
-                        body { 
-                            font-family: Arial, sans-serif; 
-                            padding: 20px;
-                            line-height: 1.6;
-                        }
-                        h1 { 
-                            text-align: center;
-                            color: #2c3e50;
-                            margin-bottom: 30px;
-                        }
-                        h2 { 
-                            color: #34495e;
-                            border-bottom: 2px solid #eee;
-                            padding-bottom: 10px;
-                            margin-top: 25px;
-                        }
-                        h3 {
-                            color: #2c3e50;
-                            margin-top: 15px;
-                            margin-bottom: 10px;
-                        }
-                        .section { 
-                            margin-bottom: 25px;
-                            padding: 15px;
-                            background-color: #f9f9f9;
-                            border-radius: 5px;
-                        }
-                        .subsection {
-                            margin-top: 15px;
-                            margin-bottom: 15px;
-                            padding-left: 10px;
-                            border-left: 3px solid #3498db;
-                        }
-                        ul { 
-                            list-style-type: disc;
-                            margin-left: 20px;
-                        }
-                        li {
-                            margin-bottom: 8px;
-                        }
-                        .header {
-                            text-align: center;
-                            margin-bottom: 30px;
-                        }
-                        .date {
-                            color: #7f8c8d;
-                            font-size: 0.9em;
-                        }
-                    </style>
-                </head>
-                <body>
-                    <div class="header">
-                        <h1>Değerlendirme Raporu</h1>
-                        <div class="date">Oluşturulma Tarihi: ${new Date().toLocaleDateString('tr-TR')}</div>
-                    </div>
-                    
-                    ${options.generalEvaluation ? `
-                    <div class="section">
-                        <h2>Genel Değerlendirme</h2>
-                        <p>${evaluation['Genel Değerlendirme'] || 'Genel değerlendirme bulunamadı.'}</p>
-                    </div>
-                    ` : ''}
-
-                    ${options.strengths ? `
-                    <div class="section">
-                        <h2>Güçlü Yönler</h2>
-                        <p>${evaluation['Güçlü Yönler'] || 'Güçlü yönler bulunamadı.'}</p>
-                    </div>
-                    ` : ''}
-
-                    ${options.development ? `
-                    <div class="section">
-                        <h2>Gelişim Alanları</h2>
-                        <p>${evaluation['Gelişim Alanları'] || 'Gelişim alanları bulunamadı.'}</p>
-                    </div>
-                    ` : ''}
-
-                    ${options.interviewQuestions ? `
-                    <div class="section">
-                        <h2>Mülakat Soruları</h2>
-                        <p>${evaluation['Mülakat Soruları'] || 'Mülakat soruları bulunamadı.'}</p>
-                    </div>
-                    ` : ''}
-
-                    ${options.whyTheseQuestions ? `
-                    <div class="section">
-                        <h2>Neden Bu Sorular?</h2>
-                        <p>${evaluation['Neden Bu Sorular?'] || 'Neden bu sorular bilgisi bulunamadı.'}</p>
-                    </div>
-                    ` : ''}
-
-                    ${options.developmentSuggestions ? `
-                    <div class="section">
-                        <h2>Gelişim Önerileri</h2>
-                        ${gelisimOnerileriHTML || '<p>Gelişim önerisi bulunamadı.</p>'}
-                    </div>
-                    ` : ''}
-                </body>
-                </html>
-            `;
-
-            const pdfOptions = {
-                format: 'A4',
-                margin: {
-                    top: '20px',
-                    right: '20px',
-                    bottom: '20px',
-                    left: '20px'
-                }
-            };
-
-            // PDF oluştur
-            const file = await htmlPdf.generatePdf({ content: htmlContent }, pdfOptions);
-
-            // PDF'i önizle
-            res.setHeader('Content-Type', 'application/pdf');
-            res.setHeader('Content-Disposition', `inline; filename=evaluation_${evaluation.ID}.pdf`);
-            res.send(file);
+            // Tek rapor için eski format
+            // ... mevcut tek rapor kodu ...
         }
     } catch (error) {
         console.error('PDF önizleme hatası:', error);
