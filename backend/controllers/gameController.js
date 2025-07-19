@@ -94,14 +94,22 @@ class GameController {
                 }, 0) / customerFocusAnswers.length;
             }
             customerFocusScore = customerFocusScore * 100;
-            // BY skorunu hesapla
+            // BY skorunu hesapla  
             let uncertaintyScore = 0;
             if (uncertaintyAnswers.length > 0) {
                 // 4. sorunun cevabı A ise özel hesaplama yap
+                const question3Answer = uncertaintyAnswers.find(answer => answer.questionNumber === 3);
                 const question4Answer = uncertaintyAnswers.find(answer => answer.questionNumber === 4);
                 const question5Answer = uncertaintyAnswers.find(answer => answer.questionNumber === 5);
                 
-                if (question4Answer && question4Answer.answerType1 === 'A' && question5Answer) {
+                // Özel hesaplama koşulları: 3. soru A, 4. soru A veya B, 5. soru var
+                const isSpecialCalculation = question3Answer && 
+                    question4Answer && 
+                    question5Answer &&
+                    question3Answer.answerType1 === 'A' && 
+                    (question4Answer.answerType1 === 'A' || question4Answer.answerType1 === 'B');
+                
+                if (isSpecialCalculation) {
                     // 4. ve 5. sorunun puanlarının ortalamasını al
                     const score4 = ((answerMultipliers[question4Answer.answerType1] || 0) + (answerMultipliers[question4Answer.answerType2] || 0) / 2) * 2 / 3;
                     const score5 = ((answerMultipliers[question5Answer.answerType1] || 0) + (answerMultipliers[question5Answer.answerType2] || 0) / 2) * 2 / 3;
