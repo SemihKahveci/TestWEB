@@ -112,11 +112,9 @@ class CodeController {
                 });
             }
 
-            // Durumu İşleniyor olarak güncelle
             userCode.status = 'Oyun Devam Ediyor';
             await userCode.save();
 
-            // Tüm seçilen gezegenleri section değerlerine çevir
             const allPlanets = userCode.allPlanets || [userCode.planet];
             console.log(`Tüm seçilen gezegenler: ${allPlanets}`);
             
