@@ -464,4 +464,28 @@ function getScoreColorClass(score) {
     if (numScore <= 65) return 'yellow';
     if (numScore <= 89.99999999999) return 'green';
     return 'red';
+}
+
+// Arama fonksiyonu
+function filterResults() {
+    const searchTerm = document.getElementById('searchInput').value.toLowerCase().trim();
+    
+    if (searchTerm === '') {
+        // Arama boşsa tüm verileri göster
+        filteredData = [...allData];
+    } else {
+        // Arama terimini ad soyad sütununda ara
+        filteredData = allData.filter(item => {
+            const name = (item.name || '').toLowerCase();
+            return name.includes(searchTerm);
+        });
+    }
+    
+    // Sayfalama sıfırla
+    currentPage = 1;
+    totalItems = filteredData.length;
+    
+    // Tabloyu güncelle
+    displayData();
+    updatePagination();
 } 

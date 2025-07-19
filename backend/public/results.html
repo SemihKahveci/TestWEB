@@ -84,6 +84,22 @@
             line-height: 28px;
         }
 
+        .search-input {
+            width: 240px;
+            border: none;
+            outline: none;
+            background: transparent;
+            color: #232D42;
+            font-size: 16px;
+            font-family: Inter;
+            font-weight: 400;
+            line-height: 28px;
+        }
+
+        .search-input::placeholder {
+            color: #ADB5BD;
+        }
+
         .header-right {
             display: flex;
             justify-content: flex-end;
@@ -731,12 +747,6 @@
         <div class="main-content">
             <div class="header">
                 <div class="header-content">
-                    <div class="search-box">
-                        <div class="search-icon">
-                            <i class="fas fa-search" style="color: #ADB5BD;"></i>
-                        </div>
-                        <div class="search-text">Arama yapın...</div>
-                    </div>
                     <div class="header-right">
                         <div class="notification-icon">
                             <i class="fas fa-bell" style="color: #8A92A6;"></i>
@@ -758,7 +768,13 @@
             </div>
 
             <div class="content">
-                <div style="display: flex; justify-content: flex-end; margin-bottom: 16px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+                    <div class="search-box">
+                        <div class="search-icon">
+                            <i class="fas fa-search" style="color: #ADB5BD;"></i>
+                        </div>
+                        <input type="text" id="searchInput" class="search-input" placeholder="Arama yapın..." oninput="filterResults()">
+                    </div>
                     <button class="btn-refresh" onclick="showFilterPopup()">
                         <i class="fas fa-filter"></i> Filtrele
                     </button>
