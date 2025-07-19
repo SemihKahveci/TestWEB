@@ -488,4 +488,50 @@ function filterResults() {
     // Tabloyu güncelle
     displayData();
     updatePagination();
+}
+
+// Excel indirme fonksiyonu
+function downloadExcel() {
+    try {
+        // Tüm filtrelenmiş verileri al
+        const dataToExport = filteredData.map(item => ({
+            'Ad Soyad': item.name || '-',
+            'Müşteri Odaklılık Skoru': item.customerFocusScore || '-',
+            'Belirsizlik Yönetimi Skoru': item.uncertaintyScore || '-'
+        }));
+
+        if (dataToExport.length === 0) {
+            alert('İndirilecek veri bulunamadı!');
+            return;
+        }
+
+        // SheetJS ile Excel dosyası oluştur
+        const workbook = XLSX.utils.book_new();
+        const worksheet = XLSX.utils.json_to_sheet(dataToExport);
+
+        // Sütun genişliklerini ayarla
+        const columnWidths = [
+            { wch: 20 }, // Ad Soyad
+            { wch: 25 }, // Müşteri Odaklılık Skoru
+            { wch: 25 }  // Belirsizlik Yönetimi Skoru
+        ];
+        worksheet['!cols'] = columnWidths;
+
+        // Çalışma sayfasını workbook'a ekle
+        XLSX.utils.book_append_sheet(workbook, worksheet, 'Sonuçlar');
+
+        // Dosya adı oluştur
+        const now = new Date();
+        const dateStr = now.toISOString().split('T')[0];
+        const timeStr = now.toTimeString().split(' ')[0].replace(/:/g, '-');
+        const fileName = `sonuclar_${dateStr}_${timeStr}.xlsx`;
+
+        // Excel dosyasını indir
+        XLSX.writeFile(workbook, fileName);
+        
+        console.log(`${dataToExport.length} kayıt Excel dosyası olarak indirildi: ${fileName}`);
+    } catch (error) {
+        console.error('Excel indirme hatası:', error);
+        alert('Excel dosyası indirilirken bir hata oluştu!');
+    }
 } 

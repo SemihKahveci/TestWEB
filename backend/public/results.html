@@ -351,12 +351,25 @@
         }
 
         .btn-download {
-            background: #0286F7;
+            background: #01A94D;
             color: white;
             border: none;
             padding: 8px 16px;
             border-radius: 8px;
             cursor: pointer;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: background-color 0.3s;
+        }
+
+        .btn-download:hover {
+            background: #018F3F;
+        }
+
+        .btn-download i {
+            font-size: 14px;
         }
 
         /* Silme Popup Stilleri */
@@ -775,9 +788,14 @@
                         </div>
                         <input type="text" id="searchInput" class="search-input" placeholder="Arama yapın..." oninput="filterResults()">
                     </div>
-                    <button class="btn-refresh" onclick="showFilterPopup()">
-                        <i class="fas fa-filter"></i> Filtrele
-                    </button>
+                    <div style="display: flex; gap: 12px;">
+                        <button class="btn-refresh" onclick="showFilterPopup()">
+                            <i class="fas fa-filter"></i> Filtrele
+                        </button>
+                        <button class="btn-download" onclick="downloadExcel()">
+                            <i class="fas fa-download"></i> İndir
+                        </button>
+                    </div>
                 </div>
                 <table class="results-table">
                     <thead>
@@ -912,6 +930,7 @@
     </div>
 
     <script src="/js/sidebar.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <script src="/js/evaluationResults.js"></script>
     <script src="js/pdfPopup.js"></script>
     <script>
