@@ -3,6 +3,7 @@ let currentPage = 1;
 const itemsPerPage = 10; // Her sayfada 10 kişi gösterilecek
 let totalItems = 0;
 let allData = [];
+let filteredData = []; // Filtrelenmiş veriler için
 let ws = null;
 
 // WebSocket bağlantısını kur
@@ -48,7 +49,8 @@ async function loadData() {
         
         if (data.success) {
             allData = data.results;
-            totalItems = allData.length;
+            filteredData = [...allData]; // Başlangıçta tüm veriler
+            totalItems = filteredData.length;
             
             // Sonuçları kontrol et ve durumları güncelle
             allData.forEach(result => {
@@ -75,7 +77,7 @@ function displayData() {
 
     const startIndex = (currentPage - 1) * itemsPerPage;
     const endIndex = startIndex + itemsPerPage;
-    const pageData = allData.slice(startIndex, endIndex);
+    const pageData = filteredData.slice(startIndex, endIndex);
 
     tbody.innerHTML = '';
 
@@ -327,6 +329,30 @@ function closePDFPreviewPopup() {
     if (frame) {
         frame.src = ''; // iframe'i temizle
     }
+}
+
+// Arama fonksiyonu
+function filterResults() {
+    const searchTerm = document.getElementById('searchInput').value.toLowerCase().trim();
+    
+    if (searchTerm === '') {
+        // Arama boşsa tüm verileri göster
+        filteredData = [...allData];
+    } else {
+        // Arama terimini ad soyad sütununda ara
+        filteredData = allData.filter(item => {
+            const name = (item.name || '').toLowerCase();
+            return name.includes(searchTerm);
+        });
+    }
+    
+    // Sayfalama sıfırla
+    currentPage = 1;
+    totalItems = filteredData.length;
+    
+    // Tabloyu güncelle
+    displayData();
+    updatePagination();
 }
 
 // Sayfa yüklendiğinde
