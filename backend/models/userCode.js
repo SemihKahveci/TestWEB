@@ -56,6 +56,14 @@ const userCodeSchema = new mongoose.Schema({
         type: String,
         default: '-'
     },
+    hiScore: {
+        type: String,
+        default: '-'
+    },
+    twScore: {
+        type: String,
+        default: '-'
+    },
     createdAt: {
         type: Date,
         default: Date.now

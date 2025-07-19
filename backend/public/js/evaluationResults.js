@@ -47,6 +47,8 @@ async function loadData(resetFilters = false) {
                         const itemName = item.name.toString().toLowerCase();
                         const customerFocusScore = item.customerFocusScore === '-' ? null : parseFloat(item.customerFocusScore);
                         const uncertaintyScore = item.uncertaintyScore === '-' ? null : parseFloat(item.uncertaintyScore);
+                        const hiScore = item.hiScore === '-' ? null : parseFloat(item.hiScore);
+                        const twScore = item.twScore === '-' ? null : parseFloat(item.twScore);
 
                         // İsim araması
                         let nameMatch = true;
@@ -70,7 +72,23 @@ async function loadData(resetFilters = false) {
                             uncertaintyMatch = uncertaintyScore >= min && uncertaintyScore <= max;
                         }
 
-                        return nameMatch && customerFocusMatch && uncertaintyMatch;
+                        // HI Skoru filtresi
+                        let hiMatch = true;
+                        if (hiScore !== null) {
+                            const min = parseFloat(document.getElementById('hiMin').value);
+                            const max = parseFloat(document.getElementById('hiMax').value);
+                            hiMatch = hiScore >= min && hiScore <= max;
+                        }
+
+                        // TW Skoru filtresi
+                        let twMatch = true;
+                        if (twScore !== null) {
+                            const min = parseFloat(document.getElementById('twMin').value);
+                            const max = parseFloat(document.getElementById('twMax').value);
+                            twMatch = twScore >= min && twScore <= max;
+                        }
+
+                        return nameMatch && customerFocusMatch && uncertaintyMatch && hiMatch && twMatch;
                     } catch (error) {
                         console.error('Öğe filtreleme hatası:', error, item);
                         return false;
@@ -117,6 +135,10 @@ function displayData() {
             Math.round(parseFloat(item.customerFocusScore)) : '-';
         const uncertaintyScore = (item.uncertaintyScore && !isNaN(item.uncertaintyScore)) ? 
             Math.round(parseFloat(item.uncertaintyScore)) : '-';
+        const hiScore = (item.hiScore && !isNaN(item.hiScore)) ? 
+            Math.round(parseFloat(item.hiScore)) : '-';
+        const twScore = (item.twScore && !isNaN(item.twScore)) ? 
+            Math.round(parseFloat(item.twScore)) : '-';
         
         row.innerHTML = `
             <td>
@@ -132,6 +154,16 @@ function displayData() {
             <td>
                 <span class="score-badge ${getScoreColorClass(uncertaintyScore)}">
                     ${uncertaintyScore}
+                </span>
+            </td>
+            <td>
+                <span class="score-badge ${getScoreColorClass(hiScore)}">
+                    ${hiScore}
+                </span>
+            </td>
+            <td>
+                <span class="score-badge ${getScoreColorClass(twScore)}">
+                    ${twScore}
                 </span>
             </td>
         `;
@@ -328,13 +360,21 @@ function clearFilters() {
         document.getElementById('customerFocusMax').value = '100';
         document.getElementById('uncertaintyMin').value = '0';
         document.getElementById('uncertaintyMax').value = '100';
+        document.getElementById('hiMin').value = '0';
+        document.getElementById('hiMax').value = '100';
+        document.getElementById('twMin').value = '0';
+        document.getElementById('twMax').value = '100';
         document.getElementById('customerFocusMinValue').textContent = '0';
         document.getElementById('customerFocusMaxValue').textContent = '100';
         document.getElementById('uncertaintyMinValue').textContent = '0';
         document.getElementById('uncertaintyMaxValue').textContent = '100';
+        document.getElementById('hiMinValue').textContent = '0';
+        document.getElementById('hiMaxValue').textContent = '100';
+        document.getElementById('twMinValue').textContent = '0';
+        document.getElementById('twMaxValue').textContent = '100';
 
         // Range görünümünü güncelle
-        ['customerFocus', 'uncertainty'].forEach(prefix => {
+        ['customerFocus', 'uncertainty', 'hi', 'tw'].forEach(prefix => {
             const range = document.querySelector(`#${prefix}Min`).parentElement.querySelector('.range');
             const leftThumb = document.querySelector(`#${prefix}Min`).parentElement.querySelector('.thumb.left');
             const rightThumb = document.querySelector(`#${prefix}Min`).parentElement.querySelector('.thumb.right');
@@ -367,6 +407,8 @@ document.addEventListener('DOMContentLoaded', () => {
     // Multi-range input'ları başlat
     initMultiRange('customerFocus');
     initMultiRange('uncertainty');
+    initMultiRange('hi');
+    initMultiRange('tw');
 
     // Her 5 saniyede bir verileri güncelle
     setInterval(() => loadData(false), 5000);
@@ -460,8 +502,10 @@ function downloadExcel() {
         // Tüm filtrelenmiş verileri al
         const dataToExport = filteredData.map(item => ({
             'Ad Soyad': item.name || '-',
-            'Müşteri Odaklılık Skoru': item.customerFocusScore || '-',
-            'Belirsizlik Yönetimi Skoru': item.uncertaintyScore || '-'
+            'Venus - MO': item.customerFocusScore || '-',
+            'Venus - BY': item.uncertaintyScore || '-',
+            'Titan - HI': item.hiScore || '-',
+            'Titan - TW': item.twScore || '-'
         }));
 
         if (dataToExport.length === 0) {
@@ -476,8 +520,10 @@ function downloadExcel() {
         // Sütun genişliklerini ayarla
         const columnWidths = [
             { wch: 20 }, // Ad Soyad
-            { wch: 25 }, // Müşteri Odaklılık Skoru
-            { wch: 25 }  // Belirsizlik Yönetimi Skoru
+            { wch: 15 }, // Venus - MO
+            { wch: 15 }, // Venus - BY
+            { wch: 15 }, // Titan - HI
+            { wch: 15 }  // Titan - TW
         ];
         worksheet['!cols'] = columnWidths;
 

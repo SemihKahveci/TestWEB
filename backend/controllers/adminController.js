@@ -322,7 +322,9 @@ const adminController = {
                     completionDate: result.completionDate,
                     expiryDate: result.expiryDate,
                     customerFocusScore: result.customerFocusScore,
-                    uncertaintyScore: result.uncertaintyScore
+                    uncertaintyScore: result.uncertaintyScore,
+                    hiScore: result.hiScore,
+                    twScore: result.twScore
                 }))
             });
         } catch (error) {

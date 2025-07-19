@@ -802,7 +802,9 @@
                         <tr>
                             <th>Ad Soyad</th>
                             <th>Müşteri Odaklılık Skoru</th>
-                            <th>Belirsizlik Yönetimi Skoru</th>
+                            <th>Belirsizlik Yönetimi Skoru</th>                     
+                            <th>İnsanları Etkileme Skoru</th>
+                            <th>Güven Veren Işbirliği ve Sinerji Skoru</th>
                         </tr>
                     </thead>
                     <tbody id="resultsBody">
@@ -915,6 +917,44 @@
                                 <div style="display: flex; justify-content: space-between; margin-top: 5px;">
                                     <span id="uncertaintyMinValue">0</span>
                                     <span id="uncertaintyMaxValue">100</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="filter-group">
+                            <label for="hiFilter" style="display: block; margin-bottom: 8px; color: #232D42; font-weight: 500;">Titan - HI Skoru</label>
+                            <div style="position: relative; height: 50px;">
+                                <div class="multi-range">
+                                    <input type="range" id="hiMin" min="0" max="100" value="0">
+                                    <input type="range" id="hiMax" min="0" max="100" value="100">
+                                    <div class="slider">
+                                        <div class="track"></div>
+                                        <div class="range"></div>
+                                        <div class="thumb left"></div>
+                                        <div class="thumb right"></div>
+                                    </div>
+                                </div>
+                                <div style="display: flex; justify-content: space-between; margin-top: 5px;">
+                                    <span id="hiMinValue">0</span>
+                                    <span id="hiMaxValue">100</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="filter-group">
+                            <label for="twFilter" style="display: block; margin-bottom: 8px; color: #232D42; font-weight: 500;">Titan - TW Skoru</label>
+                            <div style="position: relative; height: 50px;">
+                                <div class="multi-range">
+                                    <input type="range" id="twMin" min="0" max="100" value="0">
+                                    <input type="range" id="twMax" min="0" max="100" value="100">
+                                    <div class="slider">
+                                        <div class="track"></div>
+                                        <div class="range"></div>
+                                        <div class="thumb left"></div>
+                                        <div class="thumb right"></div>
+                                    </div>
+                                </div>
+                                <div style="display: flex; justify-content: space-between; margin-top: 5px;">
+                                    <span id="twMinValue">0</span>
+                                    <span id="twMaxValue">100</span>
                                 </div>
                             </div>
                         </div>

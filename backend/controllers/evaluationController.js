@@ -131,6 +131,16 @@ const evaluationController = {
     }
 };
 
+function getReportTitle(type) {
+    switch (type) {
+        case 'BY': return 'Belirsizlik Yönetimi Raporu';
+        case 'MO': return 'Müşteri Odaklılık Raporu';
+        case 'HI': return 'İnsanları Etkileme Raporu';
+        case 'TW': return 'Güven Veren İşbirligi ve Sinerji Raporu';
+        default: return 'Bilinmeyen Yetenek Raporu';
+    }
+}
+
 async function generateAndSendPDF(evaluation, options, res) {
     try {
         // Eğer evaluation bir dizi ise (hem BY hem MO raporları)
@@ -193,7 +203,7 @@ async function generateAndSendPDF(evaluation, options, res) {
                 const data = report.data;
                 htmlContent += `
                     <div class="report-type">
-                        <h2>${report.type === 'BY' ? 'Belirsizlik Yönetimi Raporu' : 'Müşteri Odaklılık Raporu'}</h2>
+                        <h2>${getReportTitle(report.type)}</h2>
                     </div>
                 `;
 
@@ -509,7 +519,7 @@ async function generateAndSendPreview(evaluation, options, res) {
                 const data = report.data;
                 htmlContent += `
                     <div class="report-type">
-                        <h2>${report.type === 'BY' ? 'Belirsizlik Yönetimi Raporu' : 'Müşteri Odaklılık Raporu'}</h2>
+                        <h2>${getReportTitle(report.type)}</h2>
                     </div>
                 `;
 
