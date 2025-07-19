@@ -5,6 +5,7 @@ const AnswerType = require('../models/answerType');
 const Section = require('../models/section');
 const EvaluationController = require('./evaluationController');
 const mongoose = require('mongoose');
+const { sendEmail } = require('../services/emailService');
 
 class GameController {
     constructor(wss) {
@@ -96,11 +97,39 @@ class GameController {
             // BY skorunu hesapla
             let uncertaintyScore = 0;
             if (uncertaintyAnswers.length > 0) {
-                uncertaintyScore = uncertaintyAnswers.reduce((acc, answer) => {
-                    const multiplier1 = answerMultipliers[answer.answerType1] || 0;
-                    const multiplier2 = answerMultipliers[answer.answerType2] || 0;
-                    return acc + ((multiplier1 + (multiplier2 / 2)) * 2) / 3;
-                }, 0) / uncertaintyAnswers.length;
+                // 4. sorunun cevabı A ise özel hesaplama yap
+                const question4Answer = uncertaintyAnswers.find(answer => answer.questionNumber === 4);
+                const question5Answer = uncertaintyAnswers.find(answer => answer.questionNumber === 5);
+                
+                if (question4Answer && question4Answer.answerType1 === 'A' && question5Answer) {
+                    // 4. ve 5. sorunun puanlarının ortalamasını al
+                    const score4 = ((answerMultipliers[question4Answer.answerType1] || 0) + (answerMultipliers[question4Answer.answerType2] || 0) / 2) * 2 / 3;
+                    const score5 = ((answerMultipliers[question5Answer.answerType1] || 0) + (answerMultipliers[question5Answer.answerType2] || 0) / 2) * 2 / 3;
+                    const combinedScore = (score4 + score5) / 2;
+                    
+                    // Diğer soruları normal hesapla
+                    const otherAnswers = uncertaintyAnswers.filter(answer => answer.questionNumber !== 4 && answer.questionNumber !== 5);
+                    let otherScores = 0;
+                    
+                    if (otherAnswers.length > 0) {
+                        otherScores = otherAnswers.reduce((acc, answer) => {
+                            const multiplier1 = answerMultipliers[answer.answerType1] || 0;
+                            const multiplier2 = answerMultipliers[answer.answerType2] || 0;
+                            return acc + ((multiplier1 + (multiplier2 / 2)) * 2) / 3;
+                        }, 0);
+                    }
+                    
+                    // Toplam skoru hesapla (4-5 kombinasyonu + diğer sorular)
+                    const totalScore = combinedScore + otherScores;
+                    uncertaintyScore = totalScore / (otherAnswers.length + 1); // +1 çünkü 4-5 kombinasyonu tek soru sayılıyor
+                } else {
+                    // Normal hesaplama (4. soru A değilse veya 5. soru yoksa)
+                    uncertaintyScore = uncertaintyAnswers.reduce((acc, answer) => {
+                        const multiplier1 = answerMultipliers[answer.answerType1] || 0;
+                        const multiplier2 = answerMultipliers[answer.answerType2] || 0;
+                        return acc + ((multiplier1 + (multiplier2 / 2)) * 2) / 3;
+                    }, 0) / uncertaintyAnswers.length;
+                }
             }
             uncertaintyScore = uncertaintyScore * 100;
             // Değerlendirme sonuçlarını getir
@@ -143,6 +172,33 @@ class GameController {
             });
 
             await newGame.save();
+
+            // Oyun tamamlandığında e-posta gönder
+            try {
+                const completionEmailHtml = `
+                    <div style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
+                        <p><strong>Kaptan ${userCode.name},</strong></p>
+
+                        <p>Tebrikler, ANDRON Evreni'ndeki keşif maceranı başarıyla tamamladın! 🚀</p>
+
+                        <p>Görev boyunca aldığın veriler ve kararların, ANDRON Komuta Merkezi'ne eksiksiz ulaştı.</p>
+
+                        <p>Keyifli keşifler ve yeni görevlerde görüşmek üzere, Kaptan!<br>
+                        <strong>ANDRON Game Ekibi</strong></p>
+                    </div>
+                `;
+
+                await sendEmail(
+                    userCode.email,
+                    'Görev Başarıyla Tamamlandı!',
+                    completionEmailHtml
+                );
+
+                console.log(`Tamamlanma e-postası gönderildi: ${userCode.email}`);
+            } catch (emailError) {
+                console.error('Tamamlanma e-postası gönderme hatası:', emailError);
+                // E-posta hatası oyun kaydetmeyi etkilemesin
+            }
 
             // WebSocket üzerinden güncellemeyi yayınla
             this.broadcastUpdate({

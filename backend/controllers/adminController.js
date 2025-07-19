@@ -217,39 +217,39 @@ const adminController = {
             // E-posta içeriği
             const emailHtml = `
                 <div style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
-                    <p>Sevgili ${name},</p>
+                    <p><strong>Kaptan ${name},</strong></p>
 
-                    <p>Andron Yetkinlik Değerlendirme Oyununu oynamaya davetlisin.</p>
+                    <p>Artık komuta sende, yeni yetkinlik değerlendirme çözümümüz ile ANDRON Evreni'ne ilk adımını at ve 15-20 dakikalık maceraya hazır ol! 🚀</p>
 
-                    <p>Oyunu, dikkatinin dağılmayacağı sessiz bir ortamda yapmanızı öneriyoruz. Oyuna tabletinden veya akıllı telefonundan erişebilirsin.</p>
+                    <p>🎥 Görevine başlamadan önce <a href="https://www.youtube.com/watch?v=QALP4qOnFws" style="color: #0286F7; text-decoration: none; font-weight: bold;">"Oyun Deneyim Rehberi"</a>ni izle ve dikkat edilmesi gereken püf noktaları öğren.</p>
 
-                    <p>Oyunla ilgili aşağıda dikkat etmen gereken bazı önemli noktalar bulunmaktadır.</p>
+                    <p><strong>🔺Giriş Bilgileri:</strong></p>
+                    <p>🗝 Tek Kullanımlık Giriş Kodu: <strong>${code}</strong><br>
+                    ⏱️ <strong>${formattedExpiryDate}</strong> tarihine kadar geçerlidir.</p>
 
-                    <ul style="list-style-type: none; padding-left: 0;">
-                        <li style="margin-bottom: 10px;">► Oyunun başında gelen oyun oynama talimatlarını dikkatlice incelemen ve oyun için istenen izinleri vermen gereklidir.</li>
-                        <li style="margin-bottom: 10px;">► Her bir soru için belirli bir süren olacaktır.</li>
-                        <li style="margin-bottom: 10px;">► Her soru için belirlenen süre içinde seçim yapmadığın durumda en üstte bulunan seçenek senin seçimin olarak kabul edilir.</li>
-                        <li style="margin-bottom: 10px;">► Oyunu oynarken parlaklığı en üst seviyede tutmanı ve telefonunun sesinin açık olmasını öneriyoruz.</li>
-                    </ul>
+                    <p><strong>🔺Uygulamayı İndir ve Başla:</strong></p>
+                    <p>
+                        <a href="https://play.google.com/store/apps/details?id=com.Fugi.Andron" style="color: #0286F7; text-decoration: none; font-weight: bold;">Google Play Store</a><br>
+                        <a href="https://apps.apple.com/us/app/andron-mission-venus/id6739467164" style="color: #0286F7; text-decoration: none; font-weight: bold;">App Store</a>
+                    </p>
 
-                    <p>Oyunu en geç ${formattedExpiryDate} tarihine kadar tamamlamanızı önemle rica ediyoruz.</p>
+                    <p><strong>🔺Geri Bildirim:</strong></p>
+                    <p>📍 ANDRON Evreni'nde keşfin tamamladığında, 15 dakikalık kısa bir görüşme ile deneyim ve görüşlerini dinlemek istiyoruz.<br>
+                    📩 <strong>ANDRON Komuta Merkezi size en kısa süre içerisinde ulaşacaktır.</strong></p>
 
-                    <p>Oyunu başlatmak için lütfen aşağıdaki linkden oyunu indirip size gönderilen kod ile oyuna giriş yapınız.</p>
+                    <p><strong>⚠️ Unutma!</strong> Oyun Deneyim Rehberini atlamak, görev verimliliği düşürülebilir ve keşif esnasında sorun yaşayabilirsin!</p>
 
-                    <p>IOS linki : https://apps.apple.com/us/app/andron-mission-venus/id6739467164 <br>
-                    ANDROID linki : https://play.google.com/store/apps/details?id=com.Fugi.Andron <br>
-                    <strong>Kod: ${code}</strong></p>
+                    <p>Herhangi bir teknik aksaklıkta <a href="mailto:info@androngame.com" style="color: #0286F7; text-decoration: none;">info@androngame.com</a> üzerinden bize ulaşabilirsin.</p>
 
-                    <p>Herhangi bir sorunuz olduğunda info@androngame.com üzerinden Andron ekibi ile iletişime geçebilirsiniz.</p>
-
-                    <p>Saygılarımızla,</p>
+                    <p>Keyifli keşifler, Kaptan!<br>
+                    <strong>ANDRON Game Ekibi</strong></p>
                 </div>
             `;
 
             // E-posta gönder
             const emailResult = await sendEmail(
                 email,
-                'Yetkinlik Değerlendirme Oyunu Daveti',
+                'ANDRON Game Deneyimine Davetlisin!',
                 emailHtml
             );
 
@@ -511,6 +511,60 @@ const adminController = {
                 success: false,
                 message: 'Admin silinirken bir hata oluştu',
                 error: error.message 
+            });
+        }
+    },
+
+    // Oyun tamamlandığında e-posta gönder
+    sendCompletionEmail: async (req, res) => {
+        try {
+            const { code, email, name } = req.body;
+
+            if (!code || !email || !name) {
+                return res.status(400).json({ 
+                    success: false, 
+                    message: 'Kod, e-posta ve isim gereklidir' 
+                });
+            }
+
+            const completionEmailHtml = `
+                <div style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
+                    <p><strong>Kaptan ${name},</strong></p>
+
+                    <p>Tebrikler, ANDRON Evreni'ndeki keşif maceranı başarıyla tamamladın! 🚀</p>
+
+                    <p>Görev boyunca aldığın veriler ve kararların, ANDRON Komuta Merkezi'ne eksiksiz ulaştı.</p>
+
+                    <p>Keyifli keşifler ve yeni görevlerde görüşmek üzere, Kaptan!<br>
+                    <strong>ANDRON Game Ekibi</strong></p>
+                </div>
+            `;
+
+            const emailResult = await sendEmail(
+                email,
+                'ANDRON Evreni Keşif Maceran Tamamlandı!',
+                completionEmailHtml
+            );
+
+            if (emailResult.success) {
+                res.json({
+                    success: true,
+                    message: 'Tamamlanma e-postası başarıyla gönderildi'
+                });
+            } else {
+                res.status(500).json({
+                    success: false,
+                    message: 'E-posta gönderilirken bir hata oluştu',
+                    error: emailResult.error
+                });
+            }
+
+        } catch (error) {
+            console.error('Tamamlanma e-postası gönderme hatası:', error);
+            res.status(500).json({
+                success: false,
+                message: 'E-posta gönderilirken bir hata oluştu',
+                error: error.message
             });
         }
     }

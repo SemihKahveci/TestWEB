@@ -139,43 +139,7 @@ function displayData() {
     });
 }
 
-// Müşteri Odaklılık Skorunu Hesapla
-function calculateCustomerFocusScore(answers) {
-    if (!answers || !Array.isArray(answers)) return '-';
-    
-    const customerFocusAnswers = answers.filter(answer => 
-        answer.answerSubCategory === 'MO'
-    );
-    
-    if (customerFocusAnswers.length === 0) return '-';
-    
-    const totalScore = customerFocusAnswers.reduce((acc, answer) => {
-        const multiplier1 = answerMultipliers[answer.answerType1] || 0;
-        const multiplier2 = answerMultipliers[answer.answerType2] || 0;
-        return acc + ((multiplier1 + (multiplier2 / 2)) * 2) / 3;
-    }, 0) / customerFocusAnswers.length;
-    
-    return totalScore.toFixed(2);
-}
 
-// Belirsizlik Yönetimi Skorunu Hesapla
-function calculateUncertaintyManagementScore(answers) {
-    if (!answers || !Array.isArray(answers)) return '-';
-    
-    const uncertaintyAnswers = answers.filter(answer => 
-        answer.answerSubCategory === 'BY'
-    );
-    
-    if (uncertaintyAnswers.length === 0) return '-';
-    
-    const totalScore = uncertaintyAnswers.reduce((acc, answer) => {
-        const multiplier1 = answerMultipliers[answer.answerType1] || 0;
-        const multiplier2 = answerMultipliers[answer.answerType2] || 0;
-        return acc + ((multiplier1 + (multiplier2 / 2)) * 2) / 3;
-    }, 0) / uncertaintyAnswers.length;
-    
-    return totalScore.toFixed(2);
-}
 
 // Sayfalama kontrollerini güncelle
 function updatePagination() {
@@ -528,8 +492,7 @@ function downloadExcel() {
 
         // Excel dosyasını indir
         XLSX.writeFile(workbook, fileName);
-        
-        console.log(`${dataToExport.length} kayıt Excel dosyası olarak indirildi: ${fileName}`);
+
     } catch (error) {
         console.error('Excel indirme hatası:', error);
         alert('Excel dosyası indirilirken bir hata oluştu!');

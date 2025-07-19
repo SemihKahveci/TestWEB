@@ -34,6 +34,9 @@ router.post('/generate-pdf', adminController.generateAndSendPDF);
 // Kod gönderme
 router.post('/send-code', adminController.sendCode);
 
+// Oyun tamamlandığında e-posta gönder
+router.post('/send-completion-email', adminController.sendCompletionEmail);
+
 // PDF önizleme
 router.get('/evaluation/:id/preview', evaluationController.previewPDF);
 
