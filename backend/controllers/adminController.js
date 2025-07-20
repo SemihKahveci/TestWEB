@@ -233,10 +233,6 @@ const adminController = {
                         <a href="https://apps.apple.com/us/app/andron-mission-venus/id6739467164" style="color: #0286F7; text-decoration: none; font-weight: bold;">App Store</a>
                     </p>
 
-                    <p><strong>🔺Geri Bildirim:</strong></p>
-                    <p>📍 ANDRON Evreni'nde keşfin tamamladığında, 15 dakikalık kısa bir görüşme ile deneyim ve görüşlerini dinlemek istiyoruz.<br>
-                    📩 <strong>ANDRON Komuta Merkezi size en kısa süre içerisinde ulaşacaktır.</strong></p>
-
                     <p><strong>⚠️ Unutma!</strong> Oyun Deneyim Rehberini atlamak, görev verimliliği düşürülebilir ve keşif esnasında sorun yaşayabilirsin!</p>
 
                     <p>Herhangi bir teknik aksaklıkta <a href="mailto:info@androngame.com" style="color: #0286F7; text-decoration: none;">info@androngame.com</a> üzerinden bize ulaşabilirsin.</p>

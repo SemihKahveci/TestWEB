@@ -6,6 +6,7 @@ const path = require('path');
 const WebSocketService = require('./services/websocketService');
 const evaluationController = require('./controllers/evaluationController');
 const adminRoutes = require('./routes/adminRoutes');
+const gameManagementRoutes = require('./routes/gameManagementRoutes');
 const codeController = require('./controllers/codeController');
 const adminController = require('./controllers/adminController');
 
@@ -22,7 +23,8 @@ mongoose.connect(process.env.MONGODB_URI, {
 
 // Middleware
 app.use(cors());
-app.use(express.json());
+app.use(express.json({ limit: '50mb' }));
+app.use(express.urlencoded({ limit: '50mb', extended: true }));
 app.use(express.static(path.join(__dirname, 'public')));
 
 // HTTP sunucusu
@@ -72,6 +74,9 @@ apiRouter.get('/preview-pdf', evaluationController.previewPDF);
 
 // Admin işlemleri
 apiRouter.use('/admin', adminRoutes);
+
+// Game Management işlemleri
+apiRouter.use('/game-management', gameManagementRoutes);
 
 // API route'larını uygula
 app.use('/api', apiRouter);

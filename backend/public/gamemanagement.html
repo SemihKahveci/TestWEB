@@ -1,0 +1,1554 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Oyun Tanımlama</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Montserrat:wght@400;500;700&family=Poppins:wght@400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: #F8F9FA;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        .container {
+            width: 100%;
+            min-height: 100vh;
+            position: relative;
+            background: white;
+            display: flex;
+        }
+
+        .main-content {
+            flex: 1;
+            margin-left: 0;
+            width: 100%;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .header {
+            width: 100%;
+            height: 76px;
+            padding: 16px 32px;
+            background: white;
+            backdrop-filter: blur(32px);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+        }
+
+        .header-content {
+            width: 100%;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .search-box {
+            padding: 4px 16px;
+            background: white;
+            border-radius: 4px;
+            outline: 1px #E9ECEF solid;
+            display: flex;
+            justify-content: flex-start;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .search-icon {
+            width: 24px;
+            height: 24px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .search-text {
+            width: 240px;
+            color: #ADB5BD;
+            font-size: 16px;
+            font-family: Inter;
+            font-weight: 400;
+            line-height: 28px;
+        }
+
+        .search-input {
+            width: 240px;
+            border: none;
+            outline: none;
+            background: transparent;
+            color: #232D42;
+            font-size: 16px;
+            font-family: Inter;
+            font-weight: 400;
+            line-height: 28px;
+        }
+
+        .search-input::placeholder {
+            color: #ADB5BD;
+        }
+
+        .header-right {
+            display: flex;
+            justify-content: flex-end;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .user-avatar {
+            width: 31px;
+            height: 31px;
+            border-radius: 50%;
+            object-fit: cover;
+        }
+
+        .notification-icon, .message-icon {
+            width: 24px;
+            height: 24px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+        }
+
+        .user-info {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 16px;
+            cursor: pointer;
+        }
+
+        .user-details {
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-start;
+            align-items: flex-start;
+        }
+
+        .user-name {
+            color: #232D42;
+            font-size: 16px;
+            font-family: Inter;
+            font-weight: 400;
+            line-height: 28px;
+        }
+
+        .user-role {
+            color: #8A92A6;
+            font-size: 13px;
+            font-family: Inter;
+            font-weight: 400;
+            line-height: 16.90px;
+        }
+
+        .page-title {
+            width: 100%;
+            height: 75px;
+            background: radial-gradient(ellipse 150.93% 36.28% at 50.00% 50.00%, #3B8AFF 0%, #0048B2 100%);
+            border-bottom-right-radius: 16px;
+            border-bottom-left-radius: 16px;
+            display: flex;
+            justify-content: flex-start;
+            align-items: center;
+            padding: 0 32px;
+            margin-left: 10px;
+        }
+
+        .title-content {
+            width: 100%;
+            display: flex;
+            justify-content: flex-start;
+            align-items: center;
+        }
+
+        .title-text {
+            color: white;
+            font-size: 30px;
+            font-family: Inter;
+            font-weight: 700;
+        }
+
+        .content {
+            flex: 1;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .results-table {
+            width: 100%;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+            border-collapse: collapse;
+        }
+
+        .results-table th,
+        .results-table td {
+            padding: 16px;
+            text-align: left;
+            border-bottom: 1px solid #E9ECEF;
+        }
+
+        .results-table th {
+            background: #F8F9FA;
+            color: #232D42;
+            font-size: 14px;
+            font-family: Montserrat;
+            font-weight: 700;
+        }
+
+        .results-table td {
+            color: #232D42;
+            font-size: 14px;
+            font-family: Montserrat;
+            font-weight: 500;
+        }
+
+        .results-table tr:hover {
+            background: rgba(2, 134, 247, 0.10);
+        }
+
+        .results-table tr.inactive {
+            background-color: #f8f9fa;
+            color: #adb5bd;
+        }
+
+        .results-table tr.inactive td {
+            color: #adb5bd;
+        }
+
+        .results-table tr.inactive .status-badge {
+            opacity: 0.8;
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+        }
+
+        .action-button {
+            cursor: pointer;
+        }
+
+        .status-badge {
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+
+        .status-badge.beklemede {
+            background: #aaa9a6;
+            color: #201f1d;
+        }
+
+        .status-badge.işleniyor {
+            background: #FFF3CD;
+            color: #856404;
+        }
+
+        .status-badge.oyun-devam-ediyor {
+            background: #FFF3CD;
+            color: #856404;
+        }
+
+        .status-badge.tamamlandı {
+            background: #D4EDDA;
+            color: #155724;
+        }
+
+        .status-badge.süresi-doldu {
+            background: #F8D7DA;
+            color: #721C24;
+        }
+
+        .action-button.disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            pointer-events: none;
+        }
+
+        .action-button.disabled i {
+            color: #ADB5BD !important;
+        }
+
+        @media (max-width: 1200px) {
+            .main-content {
+                margin-left: 0;
+                width: 100%;
+            }
+        }
+
+        .pdf-popup {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+
+        .pdf-popup-content {
+            width: 500px;
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+        }
+
+        .pdf-popup-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #0286F7;
+        }
+
+        .pdf-popup-title {
+            color: #0286F7;
+            font-size: 25px;
+            font-weight: 700;
+        }
+
+        .pdf-popup-close {
+            cursor: pointer;
+            font-size: 24px;
+        }
+
+        .pdf-popup-body {
+            padding: 20px 0;
+        }
+
+        .pdf-option {
+            display: flex;
+            align-items: center;
+            padding: 10px 0;
+        }
+
+        .pdf-option input[type="checkbox"] {
+            margin-right: 10px;
+        }
+
+        .pdf-popup-footer {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            padding-top: 20px;
+        }
+
+        .btn-preview {
+            background: #01A94D;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 8px;
+            cursor: pointer;
+        }
+
+        .btn-download {
+            background: #0286F7;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 8px;
+            cursor: pointer;
+        }
+
+        /* Sayfalama Stilleri */
+        .page-nav {
+            padding: 8px 16px;
+            background: #F8F9FA;
+            border: 1px solid #E9ECEF;
+            border-radius: 4px;
+            cursor: pointer;
+            color: #232D42;
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        .page-nav:hover {
+            background: #E9ECEF;
+        }
+
+        .page-button {
+            padding: 8px 16px;
+            background: #F8F9FA;
+            border: 1px solid #E9ECEF;
+            border-radius: 4px;
+            cursor: pointer;
+            color: #232D42;
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        .page-button:hover {
+            background: #E9ECEF;
+        }
+
+        .page-button.active {
+            background: #0286F7;
+            color: white;
+            border-color: #0286F7;
+        }
+
+        .page-button.active:hover {
+            background: #0275D8;
+        }
+
+        .page-info {
+            padding: 8px 16px;
+            color: #232D42;
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        /* Silme Popup Stilleri */
+        .delete-popup {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+
+        .delete-popup-content {
+            width: 400px;
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .delete-popup-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #0286F7;
+        }
+
+        .delete-popup-title {
+            color: #0286F7;
+            font-size: 20px;
+            font-weight: 700;
+        }
+
+        .delete-popup-close {
+            cursor: pointer;
+            font-size: 24px;
+            color: #666;
+        }
+
+        .delete-popup-body {
+            padding: 20px 0;
+            text-align: center;
+        }
+
+        .delete-popup-body p {
+            margin: 10px 0;
+            color: #232D42;
+            font-size: 16px;
+        }
+
+        .delete-warning {
+            color: #0286F7 !important;
+            font-weight: 500;
+        }
+
+        .delete-popup-footer {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            padding-top: 20px;
+        }
+
+        .btn-cancel {
+            background: #6C757D;
+            color: white;
+            border: none;
+            padding: 8px 24px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 500;
+        }
+
+        .btn-confirm {
+            background: #0286F7;
+            color: white;
+            border: none;
+            padding: 8px 24px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 500;
+        }
+
+        .btn-cancel:hover {
+            background: #5A6268;
+        }
+
+        .btn-confirm:hover {
+            background: #0275D8;
+        }
+
+        /* PDF Önizleme Popup Stilleri */
+        .pdf-preview-popup {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+
+        .pdf-preview-content {
+            width: 80%;
+            height: 80%;
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            display: flex;
+            flex-direction: column;
+        }
+
+        .pdf-preview-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #0286F7;
+        }
+
+        .pdf-preview-title {
+            color: #0286F7;
+            font-size: 20px;
+            font-weight: 700;
+        }
+
+        .pdf-preview-close {
+            cursor: pointer;
+            font-size: 24px;
+            color: #666;
+        }
+
+        .pdf-preview-body {
+            flex: 1;
+            margin-top: 20px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        #pdfPreviewFrame {
+            width: 100%;
+            height: 100%;
+            border: none;
+        }
+
+        .btn-refresh {
+            background: #0286F7;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: background-color 0.3s;
+        }
+
+        .btn-refresh:hover {
+            background: #0275D8;
+        }
+
+        .btn-refresh i {
+            font-size: 14px;
+        }
+
+        /* Gruplandırma stilleri */
+        .expand-icon {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            line-height: 18px;
+            text-align: center;
+            background: #0286F7;
+            color: white;
+            border-radius: 50%;
+            cursor: pointer;
+            font-weight: bold;
+            margin-right: 8px;
+            transition: background-color 0.3s;
+        }
+
+        .expand-icon:hover {
+            background: #0275D8;
+        }
+
+        .group-count {
+            color: #666;
+            font-size: 12px;
+            margin-left: 8px;
+        }
+
+        .sub-row {
+            background: #f8f9fa;
+        }
+
+        .sub-row.hidden {
+            display: none;
+        }
+
+        .grouped-row {
+            background: #e3f2fd;
+        }
+
+        .expired-warning {
+            position: relative;
+            color: #dc3545;
+            font-size: 14px;
+            margin-left: 8px;
+            cursor: help;
+        }
+
+        .expired-warning i {
+            color: #dc3545;
+        }
+
+        .expired-warning:hover::after {
+            content: "Oynanmamış oyun var";
+            position: absolute;
+            bottom: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #333;
+            color: white;
+            padding: 5px 10px;
+            border-radius: 4px;
+            font-size: 12px;
+            white-space: nowrap;
+            z-index: 1000;
+            margin-bottom: 5px;
+        }
+
+        .expired-warning:hover::before {
+            content: "";
+            position: absolute;
+            bottom: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+            border: 5px solid transparent;
+            border-top-color: #333;
+            margin-bottom: -5px;
+        }
+
+        /* Loading spinner */
+        .loading-spinner {
+            width: 40px;
+            height: 40px;
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #0286F7;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Ekle butonu stilleri */
+        .btn-add {
+            background: #01A94D;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            font-family: Montserrat;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: background-color 0.3s;
+        }
+
+        .btn-add:hover {
+            background: #018f3f;
+        }
+
+        .content-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+        }
+
+        /* Popup stilleri */
+        .popup-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .popup-content {
+            width: 100%;
+            max-width: 600px;
+            height: auto;
+            padding: 30px 35px;
+            position: relative;
+            background: white;
+            border-radius: 15px;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-start;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .popup-title-container {
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-start;
+            align-items: flex-start;
+            gap: 13px;
+        }
+
+        .popup-title {
+            text-align: center;
+            color: black;
+            font-size: 20px;
+            font-family: Inter;
+            font-weight: 700;
+        }
+
+        .popup-title-line {
+            width: 44px;
+            height: 3px;
+            background: black;
+            border-radius: 29px;
+        }
+
+        .popup-form {
+            width: 100%;
+            padding: 19px 0;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-start;
+            align-items: flex-start;
+            gap: 15px;
+        }
+
+        .popup-input-group {
+            width: 100%;
+            height: 80px;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-start;
+            align-items: flex-start;
+            gap: 8px;
+        }
+
+        .popup-input-label {
+            color: #8A92A6;
+            font-size: 16px;
+            font-family: Inter;
+            font-weight: 400;
+            line-height: 28px;
+        }
+
+        .popup-input-field {
+            width: 436px;
+            padding: 8px 16px;
+            background: white;
+            border-radius: 4px;
+            outline: 1px #3A57E8 solid;
+            outline-offset: -1px;
+            color: black;
+            font-family: Poppins;
+            font-weight: 500;
+            font-size: 16px;
+            line-height: 28px;
+        }
+
+        .popup-buttons {
+            display: flex;
+            justify-content: flex-start;
+            align-items: flex-start;
+            gap: 15px;
+            margin-top: 10px;
+        }
+
+        .popup-close {
+            width: 24px;
+            height: 24px;
+            padding: 4px;
+            position: absolute;
+            right: 13px;
+            top: 13px;
+            background: #E5E5E5;
+            border-radius: 29px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+        }
+
+        .popup-close-icon {
+            width: 10px;
+            height: 10px;
+        }
+
+        .cancel-button {
+            padding: 8px 16px;
+            background: #F8F9FA;
+            border: 1px solid #E9ECEF;
+            border-radius: 8px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .cancel-text {
+            color: #6C757D;
+            font-family: 'Poppins', sans-serif;
+            font-size: 14px;
+            font-weight: 700;
+        }
+
+        .save-button {
+            padding: 8px 16px;
+            background: #01A94D;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .save-icon {
+            width: 16px;
+            height: 16px;
+        }
+
+        .save-text {
+            color: white;
+            font-family: 'Poppins', sans-serif;
+            font-size: 14px;
+            font-weight: 700;
+        }
+
+        /* Dosya yükleme stilleri */
+        .file-upload-container {
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .file-upload-button {
+            width: 436px;
+            height: 48px;
+            padding: 8px 16px;
+            background: white;
+            border: 2px dashed #3A57E8;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .file-upload-button:hover {
+            background: #f8f9ff;
+            border-color: #2a47d8;
+        }
+
+        .file-upload-text {
+            color: #3A57E8;
+            font-family: Poppins;
+            font-weight: 500;
+            font-size: 16px;
+        }
+
+        .selected-file-name {
+            color: #01A94D;
+            font-family: Poppins;
+            font-weight: 500;
+            font-size: 14px;
+            padding: 4px 8px;
+            background: #f0f9f0;
+            border-radius: 4px;
+            border: 1px solid #01A94D;
+            margin-bottom: 20px;
+            display: inline-block;
+        }
+
+        /* Fatura görüntüleme popup stilleri */
+        .invoice-preview-popup {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            z-index: 2000;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .invoice-preview-content {
+            width: 90%;
+            max-width: 800px;
+            height: 90%;
+            background: white;
+            border-radius: 15px;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+        }
+
+        .invoice-preview-header {
+            padding: 20px;
+            border-bottom: 1px solid #E9ECEF;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .invoice-preview-title {
+            color: #232D42;
+            font-size: 18px;
+            font-weight: 700;
+            font-family: Montserrat;
+        }
+
+        .invoice-preview-close {
+            cursor: pointer;
+            font-size: 24px;
+            color: #8A92A6;
+            padding: 5px;
+        }
+
+        .invoice-preview-body {
+            flex: 1;
+            padding: 20px;
+            overflow: auto;
+        }
+
+        .invoice-preview-iframe {
+            width: 100%;
+            height: 100%;
+            border: none;
+            border-radius: 8px;
+        }
+
+        .invoice-preview-image {
+            width: 100%;
+            height: auto;
+            max-height: 100%;
+            object-fit: contain;
+            border-radius: 8px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="main-content">
+            <div class="header">
+                <div class="header-content">
+                    <div class="header-right">
+                        <div class="notification-icon">
+                            <i class="fas fa-bell" style="color: #8A92A6;"></i>
+                        </div>
+                        <div class="user-info">
+                            <div class="user-details">
+                                <div class="user-name">Andron Games</div>
+                                <div class="user-role">Founder</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="page-title">
+                <div class="title-content">
+                    <div class="title-text">Oyun Tanımlama</div>
+                </div>
+            </div>
+
+            <div class="content">
+                <div class="content-header">
+                    <div></div> <!-- Sol taraf boş -->
+                    <button class="btn-add" onclick="addNewCompany()">
+                        <i class="fas fa-plus"></i> Ekle
+                    </button>
+                </div>
+                <div id="gameDataContainer" style="width: 100%; display: grid; grid-template-columns: 1fr 1fr 1fr 1fr 1fr; gap: 0;">
+                    <!-- Başlık satırı -->
+                    <div style="padding: 16px; background: white; text-align: center; color: black; font-size: 14px; font-family: Montserrat; font-weight: 700; border-bottom: 1px solid #E9ECEF;">FİRMA ADI</div>
+                    <div style="padding: 16px; background: white; text-align: center; color: black; font-size: 14px; font-family: Montserrat; font-weight: 700; border-bottom: 1px solid #E9ECEF;">FATURA NO</div>
+                    <div style="padding: 16px; background: white; text-align: center; color: black; font-size: 14px; font-family: Montserrat; font-weight: 700; border-bottom: 1px solid #E9ECEF;">KREDİ</div>
+                    <div style="padding: 16px; background: white; text-align: center; color: black; font-size: 14px; font-family: Montserrat; font-weight: 700; border-bottom: 1px solid #E9ECEF;">TARİH</div>
+                    <div style="padding: 16px; background: white; text-align: center; color: black; font-size: 14px; font-family: Montserrat; font-weight: 700; border-bottom: 1px solid #E9ECEF;">İŞLEMLER</div>
+                    
+                    <!-- Veri satırları buraya dinamik olarak eklenecek -->
+                    <div id="gameDataRows" style="grid-column: 1 / -1; display: contents;">
+                        <!-- Veriler dinamik olarak eklenecek -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- PDF İndirme Popup -->
+            <div id="pdfPopup" class="pdf-popup" style="display: none;">
+                <div class="pdf-popup-content">
+                    <div class="pdf-popup-header">
+                        <div class="pdf-popup-title">PDF İndir</div>
+                        <div class="pdf-popup-close" onclick="closePDFPopup()">×</div>
+                    </div>
+                    <div class="pdf-popup-body">
+                        <div class="pdf-option">
+                            <input type="checkbox" id="generalEvaluation" checked>
+                            <label for="generalEvaluation">Tanım ve Genel Değerlendirme</label>
+                        </div>
+                        <div class="pdf-option">
+                            <input type="checkbox" id="strengths" checked>
+                            <label for="strengths">Güçlü Yönler ve Gelişim Alanları</label>
+                        </div>
+                        <div class="pdf-option">
+                            <input type="checkbox" id="interviewQuestions" checked>
+                            <label for="interviewQuestions">Mülakat Soruları</label>
+                        </div>
+                        <div class="pdf-option">
+                            <input type="checkbox" id="whyTheseQuestions" checked>
+                            <label for="whyTheseQuestions">Neden Bu Sorular?</label>
+                        </div>
+                        <div class="pdf-option">
+                            <input type="checkbox" id="developmentSuggestions" checked>
+                            <label for="developmentSuggestions">Gelişim Planı</label>
+                        </div>
+                    </div>
+                    <div class="pdf-popup-footer">
+                        <button class="btn-preview" onclick="previewPDF()">Önizleme</button>
+                        <button class="btn-download" onclick="downloadPDF()">PDF İndir</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Silme Onay Popup -->
+            <div id="deletePopup" class="delete-popup" style="display: none;">
+                <div class="delete-popup-content">
+                    <div class="delete-popup-header">
+                        <div class="delete-popup-title">Sonucu Sil</div>
+                        <div class="delete-popup-close" onclick="closeDeletePopup()">×</div>
+                    </div>
+                    <div class="delete-popup-body">
+                        <p>Bu sonucu silmek istediğinizden emin misiniz?</p>
+                        <p class="delete-warning">Bu işlem geri alınamaz ve sonuç kalıcı olarak silinecektir.</p>
+                    </div>
+                    <div class="delete-popup-footer">
+                        <button class="btn-cancel" onclick="closeDeletePopup()">Hayır</button>
+                        <button class="btn-confirm" onclick="confirmDelete()">Evet, Sil</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- PDF Önizleme Popup -->
+            <div id="pdfPreviewPopup" class="pdf-preview-popup" style="display: none;">
+                <div class="pdf-preview-content">
+                    <div class="pdf-preview-header">
+                        <div class="pdf-preview-title">PDF Önizleme</div>
+                        <div class="pdf-preview-close" onclick="closePDFPreviewPopup()">×</div>
+                    </div>
+                    <div class="pdf-preview-body">
+                        <iframe id="pdfPreviewFrame" width="100%" height="100%" frameborder="0" style="border: none;"></iframe>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Popup -->
+    <div class="popup-overlay" id="companyPopup">
+        <div class="popup-content">
+            <div class="popup-title-container">
+                <div class="popup-title">Firma Ekle</div>
+                <div class="popup-title-line"></div>
+            </div>
+            
+            <div class="popup-form">
+                <div class="popup-input-group">
+                    <div class="popup-input-label">Firma Adı</div>
+                    <input type="text" class="popup-input-field" id="companyName" placeholder="Firma adını giriniz">
+                </div>
+                <div class="popup-input-group">
+                    <div class="popup-input-label">Fatura No</div>
+                    <input type="text" class="popup-input-field" id="invoiceNo" placeholder="Fatura numarasını giriniz">
+                </div>
+                <div class="popup-input-group">
+                    <div class="popup-input-label">Kredi</div>
+                    <input type="number" class="popup-input-field" id="credit" placeholder="Kredi miktarını giriniz">
+                </div>
+                <div class="popup-input-group">
+                    <div class="popup-input-label">Fatura Yükle</div>
+                    <div class="file-upload-container">
+                        <input type="file" id="invoiceFile" class="file-input" accept=".pdf,.jpeg,.jpg,.png" style="display: none;" onchange="checkFileSize(this)">
+                        <div class="file-upload-button" onclick="document.getElementById('invoiceFile').click()">
+                            <i class="fas fa-plus" style="color: #3A57E8; font-size: 20px;"></i>
+                            <span class="file-upload-text">Dosya Seç</span>
+                        </div>
+                        <div id="selectedFileName" class="selected-file-name" style="display: none;"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="popup-buttons">
+                <div class="cancel-button" onclick="closeCompanyPopup()">
+                    <div class="cancel-text">İptal</div>
+                </div>
+                <div class="save-button" onclick="saveCompany()">
+                    <img src="/images/save-icon.svg" alt="Kaydet" class="save-icon">
+                    <div class="save-text">Kaydet</div>
+                </div>
+            </div>
+
+            <div class="popup-close" onclick="closeCompanyPopup()">
+                <img src="/images/close-icon.svg" alt="Kapat" class="popup-close-icon">
+            </div>
+        </div>
+    </div>
+
+    <!-- Fatura Görüntüleme Popup -->
+    <div class="invoice-preview-popup" id="invoicePreviewPopup">
+        <div class="invoice-preview-content">
+            <div class="invoice-preview-header">
+                <div class="invoice-preview-title">Fatura Görüntüle</div>
+                <div class="invoice-preview-close" onclick="closeInvoicePreview()">×</div>
+            </div>
+            <div class="invoice-preview-body">
+                <iframe id="invoicePreviewFrame" class="invoice-preview-iframe" style="display: none;"></iframe>
+                <img id="invoicePreviewImage" class="invoice-preview-image" style="display: none;">
+            </div>
+        </div>
+    </div>
+
+    <script src="/js/sidebar.js"></script>
+    <script>
+        // Oyun verilerini yükle
+        async function loadGameData() {
+            try {
+                const response = await fetch('/api/game-management/games');
+                if (!response.ok) {
+                    throw new Error('Veriler yüklenemedi');
+                }
+                
+                const games = await response.json();
+                
+                // Grid container'ı tamamen temizle
+                const gridContainer = document.getElementById('gameDataContainer');
+                gridContainer.innerHTML = '';
+                
+                // Başlık satırını yeniden oluştur
+                const headerRow = document.createElement('div');
+                headerRow.style.cssText = 'display: contents;';
+                
+                const headers = ['Firma Adı', 'Fatura No', 'Kredi', 'Tarih', 'İşlemler'];
+                headers.forEach(headerText => {
+                    const headerDiv = document.createElement('div');
+                    headerDiv.style.cssText = 'padding: 16px; background: #F8F9FA; color: #232D42; font-size: 14px; font-family: Montserrat; font-weight: 700; text-align: center;';
+                    headerDiv.textContent = headerText;
+                    headerRow.appendChild(headerDiv);
+                });
+                
+                gridContainer.appendChild(headerRow);
+                
+                // Game data rows container'ı ekle
+                const gameDataRows = document.createElement('div');
+                gameDataRows.id = 'gameDataRows';
+                gameDataRows.style.cssText = 'grid-column: 1 / -1; display: contents;';
+                gridContainer.appendChild(gameDataRows);
+                
+                // API'den gelen verileri yükle
+                games.forEach(game => {
+                    addGameData(game.firmName, game.invoiceNo, game.credit, new Date(game.date).toLocaleDateString('tr-TR'), game.invoiceFile);
+                });
+                
+                console.log('Oyun verileri yüklendi:', games.length, 'kayıt');
+            } catch (error) {
+                console.error('Veri yükleme hatası:', error);
+                alert('Veriler yüklenirken bir hata oluştu');
+            }
+        }
+
+        // Oyun düzenleme fonksiyonu
+        function editGame(element) {
+            const actionsDiv = element.closest('.data-row');
+            const gridContainer = document.getElementById('gameDataContainer');
+            const allDataRows = Array.from(gridContainer.querySelectorAll('.data-row'));
+            const rowIndex = allDataRows.indexOf(actionsDiv);
+            const startIndex = Math.floor(rowIndex / 5) * 5;
+            
+            const firmName = allDataRows[startIndex].textContent;
+            const invoiceNo = allDataRows[startIndex + 1].textContent;
+            const credit = allDataRows[startIndex + 2].textContent;
+            const date = allDataRows[startIndex + 3].textContent;
+            
+            console.log('Düzenleme:', { firmName, invoiceNo, credit, date });
+            // Burada düzenleme popup'ı açılabilir
+        }
+
+        // Oyun silme fonksiyonu
+        async function deleteGame(element) {
+            const actionsDiv = element.closest('.data-row');
+            const gridContainer = document.getElementById('gameDataContainer');
+            const allDataRows = Array.from(gridContainer.querySelectorAll('.data-row'));
+            const rowIndex = allDataRows.indexOf(actionsDiv);
+            const startIndex = Math.floor(rowIndex / 5) * 5;
+            
+            const firmName = allDataRows[startIndex].textContent;
+            
+            if (confirm(`${firmName} firmasını silmek istediğinizden emin misiniz?`)) {
+                try {
+                    // Önce firma adına göre veriyi bul
+                    const response = await fetch(`/api/game-management/games/firm/${encodeURIComponent(firmName)}`);
+                    if (!response.ok) {
+                        throw new Error('Firma bulunamadı');
+                    }
+                    
+                    const gameData = await response.json();
+                    
+                    // Veriyi sil
+                    const deleteResponse = await fetch(`/api/game-management/games/${gameData._id}`, {
+                        method: 'DELETE'
+                    });
+                    
+                    if (!deleteResponse.ok) {
+                        throw new Error('Silme işlemi başarısız');
+                    }
+                    
+                    console.log('Silme başarılı:', firmName);
+                    
+                    // Verileri yeniden yükle
+                    loadGameData();
+                    
+                } catch (error) {
+                    console.error('Silme hatası:', error);
+                    alert('Silme işlemi sırasında bir hata oluştu');
+                }
+            }
+        }
+
+        // Dosya verilerini saklamak için global değişken
+        let uploadedFiles = [];
+
+        // Dinamik veri ekleme fonksiyonu (örnek)
+        function addGameData(firmName, invoiceNo, credit, date, fileData = null) {
+            const container = document.getElementById('gameDataRows');
+            const isEven = Math.floor(container.children.length / 5) % 2 === 0;
+            const backgroundColor = isEven ? 'white' : 'rgba(2, 134, 247, 0.10)';
+            
+            // Her veri için ayrı div oluştur
+            const firmDiv = document.createElement('div');
+            firmDiv.className = 'data-row';
+            firmDiv.style.cssText = `padding: 16px; background: ${backgroundColor}; text-align: center; color: black; font-size: 14px; font-family: Montserrat; font-weight: 500;`;
+            firmDiv.textContent = firmName;
+            
+            const invoiceDiv = document.createElement('div');
+            invoiceDiv.className = 'data-row';
+            invoiceDiv.style.cssText = `padding: 16px; background: ${backgroundColor}; text-align: center; color: black; font-size: 14px; font-family: Montserrat; font-weight: 500;`;
+            invoiceDiv.textContent = invoiceNo;
+            
+            const creditDiv = document.createElement('div');
+            creditDiv.className = 'data-row';
+            creditDiv.style.cssText = `padding: 16px; background: ${backgroundColor}; text-align: center; color: black; font-size: 14px; font-family: Montserrat; font-weight: 500;`;
+            creditDiv.textContent = credit;
+            
+            const dateDiv = document.createElement('div');
+            dateDiv.className = 'data-row';
+            dateDiv.style.cssText = `padding: 16px; background: ${backgroundColor}; text-align: center; color: black; font-size: 14px; font-family: Montserrat; font-weight: 500;`;
+            dateDiv.textContent = date;
+            
+            const actionsDiv = document.createElement('div');
+            actionsDiv.className = 'data-row';
+            actionsDiv.style.cssText = `padding: 16px; background: ${backgroundColor}; text-align: center; display: flex; justify-content: center; align-items: center; gap: 16px;`;
+            actionsDiv.innerHTML = `
+                <img src="/images/edit.svg" alt="Düzenle" style="width: 24px; height: 24px; cursor: pointer;" onclick="editGame(this)">
+                <i class="fas fa-eye" style="color: #0286F7; font-size: 18px; cursor: pointer;" onclick="viewInvoice(this)" title="Faturayı Görüntüle"></i>
+                <i class="fas fa-trash" style="color: #FF0000; font-size: 18px; cursor: pointer;" onclick="deleteGame(this)"></i>
+            `;
+            
+            // Dosya verilerini sakla
+            if (fileData) {
+                uploadedFiles.push({
+                    firmName: firmName,
+                    fileData: fileData,
+                    fileName: fileData.name,
+                    fileType: fileData.type
+                });
+            }
+            
+            // Grid container'a ekle
+            const gridContainer = document.getElementById('gameDataContainer');
+            gridContainer.appendChild(firmDiv);
+            gridContainer.appendChild(invoiceDiv);
+            gridContainer.appendChild(creditDiv);
+            gridContainer.appendChild(dateDiv);
+            gridContainer.appendChild(actionsDiv);
+        }
+
+        function addNewCompany() {
+            console.log('Yeni firma ekleme popup\'ı açılıyor...');
+            document.getElementById('companyPopup').style.display = 'flex';
+        }
+
+        function clearCompanyForm() {
+            document.getElementById('companyName').value = '';
+            document.getElementById('invoiceNo').value = '';
+            document.getElementById('credit').value = '';
+            document.getElementById('invoiceFile').value = '';
+            document.getElementById('selectedFileName').style.display = 'none';
+            document.querySelector('.file-upload-text').textContent = 'Dosya Seç';
+        }
+
+        function closeCompanyPopup() {
+            document.getElementById('companyPopup').style.display = 'none';
+            clearCompanyForm();
+        }
+
+        async function saveCompany() {
+            const companyName = document.getElementById('companyName').value;
+            const invoiceNo = document.getElementById('invoiceNo').value;
+            const credit = document.getElementById('credit').value;
+            const invoiceFile = document.getElementById('invoiceFile').files[0];
+            
+            if (!companyName || !invoiceNo || !credit) {
+                alert('Lütfen tüm alanları doldurunuz!');
+                return;
+            }
+            
+            if (!invoiceFile) {
+                alert('Lütfen fatura dosyasını yükleyiniz!');
+                return;
+            }
+            
+            // Dosya boyutunu kontrol et (5MB limit)
+            const maxSize = 5 * 1024 * 1024; // 5MB
+            if (invoiceFile.size > maxSize) {
+                alert('Dosya boyutu 5MB\'dan büyük olamaz! Lütfen daha küçük bir dosya seçin.');
+                return;
+            }
+            
+            // Dosya formatını kontrol et
+            const allowedTypes = ['application/pdf', 'image/jpeg', 'image/jpg', 'image/png'];
+            if (!allowedTypes.includes(invoiceFile.type)) {
+                alert('Sadece PDF, JPEG ve PNG formatları kabul edilir!');
+                return;
+            }
+            
+            try {
+                // Dosyayı base64'e çevir
+                const fileData = await new Promise((resolve) => {
+                    const reader = new FileReader();
+                    reader.onload = (e) => resolve(e.target.result);
+                    reader.readAsDataURL(invoiceFile);
+                });
+                
+                // API'ye gönder
+                const response = await fetch('/api/game-management/games', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        firmName: companyName,
+                        invoiceNo: invoiceNo,
+                        credit: credit,
+                        invoiceFile: {
+                            fileName: invoiceFile.name,
+                            fileType: invoiceFile.type,
+                            fileData: fileData
+                        }
+                    })
+                });
+                
+                if (!response.ok) {
+                    throw new Error('Veri kaydedilemedi');
+                }
+                
+                const result = await response.json();
+                console.log('Veri kaydedildi:', result);
+                
+                // Popup'ı kapat
+                closeCompanyPopup();
+                
+                // Verileri yeniden yükle
+                loadGameData();
+                
+            } catch (error) {
+                console.error('Kaydetme hatası:', error);
+                alert('Veri kaydedilirken bir hata oluştu');
+            }
+        }
+
+        // Dosya boyutunu kontrol et
+        function checkFileSize(input) {
+            const file = input.files[0];
+            if (file) {
+                const maxSize = 5 * 1024 * 1024; // 5MB (daha güvenli limit)
+                if (file.size > maxSize) {
+                    alert('Dosya boyutu 5MB\'dan büyük olamaz! Lütfen daha küçük bir dosya seçin.');
+                    input.value = '';
+                    document.getElementById('selectedFileName').style.display = 'none';
+                    document.querySelector('.file-upload-text').textContent = 'Dosya Seç';
+                    return false;
+                }
+                console.log('Dosya boyutu:', (file.size / 1024).toFixed(2), 'KB');
+            }
+            handleFileSelect();
+        }
+
+        // Dosya seçildiğinde çalışacak fonksiyon
+        function handleFileSelect() {
+            const fileInput = document.getElementById('invoiceFile');
+            const fileNameDiv = document.getElementById('selectedFileName');
+            const fileUploadButton = document.querySelector('.file-upload-button');
+            const fileUploadText = document.querySelector('.file-upload-text');
+            
+            if (fileInput.files.length > 0) {
+                const file = fileInput.files[0];
+                fileNameDiv.textContent = `Seçilen dosya: ${file.name}`;
+                fileNameDiv.style.display = 'block';
+                fileUploadText.textContent = 'Dosya Değiştir';
+            } else {
+                fileNameDiv.style.display = 'none';
+                fileUploadText.textContent = 'Dosya Seç';
+            }
+        }
+
+        // Fatura görüntüleme fonksiyonu
+        async function viewInvoice(element) {
+            const actionsDiv = element.closest('.data-row');
+            const gridContainer = document.getElementById('gameDataContainer');
+            const allDataRows = Array.from(gridContainer.querySelectorAll('.data-row'));
+            const rowIndex = allDataRows.indexOf(actionsDiv);
+            const startIndex = Math.floor(rowIndex / 5) * 5;
+            
+            const firmName = allDataRows[startIndex].textContent;
+            
+            try {
+                // API'den firma verilerini al
+                const response = await fetch(`/api/game-management/games/firm/${encodeURIComponent(firmName)}`);
+                if (!response.ok) {
+                    throw new Error('Firma bulunamadı');
+                }
+                
+                const gameData = await response.json();
+                
+                if (!gameData.invoiceFile) {
+                    alert('Bu firma için fatura dosyası bulunamadı!');
+                    return;
+                }
+                
+                // Dosya türüne göre görüntüleme
+                const popup = document.getElementById('invoicePreviewPopup');
+                const iframe = document.getElementById('invoicePreviewFrame');
+                const image = document.getElementById('invoicePreviewImage');
+                
+                if (gameData.invoiceFile.fileType === 'application/pdf') {
+                    // PDF için iframe kullan
+                    iframe.src = gameData.invoiceFile.fileData;
+                    iframe.style.display = 'block';
+                    image.style.display = 'none';
+                } else {
+                    // Resim için img kullan
+                    image.src = gameData.invoiceFile.fileData;
+                    image.style.display = 'block';
+                    iframe.style.display = 'none';
+                }
+                
+                popup.style.display = 'flex';
+                
+            } catch (error) {
+                console.error('Fatura görüntüleme hatası:', error);
+                alert('Fatura görüntülenirken bir hata oluştu');
+            }
+        }
+
+        // Fatura görüntüleme popup'ını kapat
+        function closeInvoicePreview() {
+            const popup = document.getElementById('invoicePreviewPopup');
+            const iframe = document.getElementById('invoicePreviewFrame');
+            const image = document.getElementById('invoicePreviewImage');
+            
+            // URL'leri temizle
+            if (iframe.src) {
+                URL.revokeObjectURL(iframe.src);
+                iframe.src = '';
+            }
+            if (image.src) {
+                URL.revokeObjectURL(image.src);
+                image.src = '';
+            }
+            
+            iframe.style.display = 'none';
+            image.style.display = 'none';
+            popup.style.display = 'none';
+        }
+
+        // Sayfa yüklendiğinde çalışacak
+        document.addEventListener('DOMContentLoaded', () => {
+            loadGameData();
+            
+            // Dosya seçimi event listener'ı ekle
+            document.getElementById('invoiceFile').addEventListener('change', handleFileSelect);
+            
+            // Test için örnek veri ekleme (daha sonra kaldırılacak)
+            // addGameData('Test Firma', 'FTR-002', '7,500', '15.01.2024');
+        });
+    </script>
+</body>
+</html> 

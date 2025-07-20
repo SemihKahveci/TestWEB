@@ -12,6 +12,7 @@ async function createSidebar() {
         '/results.html': 'Aday Sonuçları Sayfası',
         '/game-send.html': 'Oyun Gönder',
         '/admin-management.html': 'Firma Tanımlama',
+        '/gamemanagement.html': 'Oyun Tanımlama',
         '/addGroup.html': 'Organizasyon Tanımlama',
         '/authorization.html': 'Yetkilendirme',
         '/grouping.html': 'Yetkilendirme', 
@@ -49,11 +50,6 @@ async function createSidebar() {
                         <i class="fas fa-home"></i>
                         <span>Genel Takip Sistemi</span>
                     </div>
-                </div>
-            </div>
-            <div class="menu-section">
-                <div class="menu-title">Sayfalar</div>
-                <div class="menu-items">.
                      <div class="menu-item ${activeMenuItem === 'Şirket Çalışanları Sayfası' ? 'active' : ''}">
                         <i class="fas fa-building"></i>
                         <span>Şirket Çalışanları Sayfası</span>
@@ -69,17 +65,39 @@ async function createSidebar() {
                         <span>Oyun Gönder</span>
                         <i class="fas fa-chevron-right"></i>
                     </div>
-                 
-                </div>
+                     <div class="menu-item ${activeMenuItem === 'Oyun Kullanım Özeti' ? 'active' : ''}">
+                        <i class="fas fa-comments"></i>
+                        <span>Oyun Kullanım Özeti</span>
+                        <i class="fas fa-chevron-right"></i>
+                    </div>
             </div>
             <div class="menu-section">
                 <div class="menu-title">Ayarlar</div>
                 <div class="menu-items">
-                    <div class="menu-item ${activeMenuItem === 'Pozisyon' ? 'active' : ''}">
-                        <i class="fas fa-briefcase"></i>
-                        <span>Pozisyon</span>
-                        <i class="fas fa-chevron-right"></i>
-                    </div>  
+
+                    <div class="menu-item expandable" data-expanded="${activeMenuItem === 'Firma Tanımlama' || activeMenuItem === 'Oyun Tanımlama' ? 'true' : 'false'}">
+                        <i class="fas fa-user-shield"></i>
+                        <span>Firma Ayarları</span>
+                        <i class="fas fa-plus expand-icon"></i>
+                    </div>
+                    <div class="submenu" style="display: ${activeMenuItem === 'Firma Tanımlama' || activeMenuItem === 'Oyun Tanımlama' ? 'block' : 'none'};">
+                        ${isSuperAdmin ? `
+                        <div class="submenu-item ${activeMenuItem === 'Firma Tanımlama' ? 'active' : ''}">
+                            <i class="fas fa-building"></i>
+                            <span>Firma Tanımlama</span>
+                        </div>
+                        ` : ''}
+                        <div class="submenu-item">
+                            <i class="fas fa-user-cog"></i>
+                            <span>Firma Admini Tanımlama</span>
+                        </div>
+                        ${isSuperAdmin ? `
+                        <div class="submenu-item ${activeMenuItem === 'Oyun Tanımlama' ? 'active' : ''}">
+                            <i class="fas fa-gamepad"></i>
+                            <span>Oyun Tanımlama</span>
+                        </div>
+                        ` : ''}
+                    </div>
                    <div class="menu-item ${activeMenuItem === 'Yetkilendirme' ? 'active' : ''}">
                         <i class="fas fa-user-shield"></i>
                         <span>Yetkilendirme</span>
@@ -90,13 +108,7 @@ async function createSidebar() {
                         <span>Organizasyon Yapısı</span>
                         <i class="fas fa-chevron-right"></i>
                     </div>
-                    ${isSuperAdmin ? `
-                    <div class="menu-item ${activeMenuItem === 'Firma Tanımlama' ? 'active' : ''}">
-                        <i class="fas fa-building"></i>
-                        <span>Firma Tanımlama</span>
-                        <i class="fas fa-chevron-right"></i>
-                    </div>
-                    ` : ''}
+
                     <div class="menu-item ${activeMenuItem === 'Organizasyon Tanımlama' ? 'active' : ''}">
                         <i class="fas fa-user-plus"></i>
                         <span>Organizasyon Tanımlama</span>
@@ -207,6 +219,67 @@ async function createSidebar() {
             margin-left: 10px;
         }
 
+        .menu-item.expandable {
+            position: relative;
+        }
+
+        .expand-icon {
+            font-size: 12px;
+            margin-left: 10px;
+            transition: transform 0.3s ease;
+        }
+
+
+        .menu-item.expandable.expanded .expand-icon {
+            transform: rotate(45deg);
+        }
+
+        .menu-item.expandable .expand-icon {
+            font-size: 12px;
+            margin-left: 10px;
+            transition: transform 0.3s ease;
+            color: #232D42;
+            background: none !important;
+            border: none !important;
+            padding: 0 !important;
+        }
+
+        .menu-item.active .expand-icon {
+            color: white;
+            background-color: transparent !important;
+        }
+
+        .submenu {
+            background-color: #f8f9fa;
+            border-left: 3px solid #3A57E8;
+        }
+
+        .submenu-item {
+            display: flex;
+            align-items: center;
+            padding: 10px 20px 10px 50px;
+            color: #232D42;
+            text-decoration: none;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 14px;
+        }
+
+        .submenu-item:hover {
+            background-color: #e9ecef;
+        }
+
+        .submenu-item.active {
+            background-color: #3A57E8;
+            color: white;
+        }
+
+        .submenu-item i {
+            margin-right: 10px;
+            width: 20px;
+            text-align: center;
+        }
+
         .sidebar-footer {
             padding: 20px;
             border-top: 1px solid #eee;
@@ -253,21 +326,38 @@ async function createSidebar() {
     const menuItems = sidebar.querySelectorAll('.menu-item');
     menuItems.forEach(item => {
         item.addEventListener('click', () => {
+            const menuText = item.querySelector('span').textContent;
+            
+            // Eğer expandable menü öğesiyse
+            if (item.classList.contains('expandable')) {
+                const isExpanded = item.getAttribute('data-expanded') === 'true';
+                const submenu = item.nextElementSibling;
+                
+                if (isExpanded) {
+                    // Daralt
+                    item.setAttribute('data-expanded', 'false');
+                    item.classList.remove('expanded');
+                    submenu.style.display = 'none';
+                } else {
+                    // Genişlet
+                    item.setAttribute('data-expanded', 'true');
+                    item.classList.add('expanded');
+                    submenu.style.display = 'block';
+                }
+                return; // Yönlendirme yapma
+            }
+            
             // Önce tüm active sınıflarını kaldır
             menuItems.forEach(i => i.classList.remove('active'));
+            sidebar.querySelectorAll('.submenu-item').forEach(i => i.classList.remove('active'));
+            
             // Tıklanan öğeye active sınıfını ekle
             item.classList.add('active');
-            
-            // Menü öğesinin metnini al
-            const menuText = item.querySelector('span').textContent;
             
             // Menü öğesine göre yönlendirme yap
             switch(menuText) {
                 case 'Genel Takip Sistemi':
                     window.location.href = '/admin-panel.html';
-                    break;
-                case 'Pozisyon':
-                    //window.location.href = '/positions.html';
                     break;
                 case 'Şirket Çalışanları Sayfası':
                     //window.location.href = '/employees.html';
@@ -277,6 +367,12 @@ async function createSidebar() {
                     break;
                 case 'Oyun Gönder':
                     window.location.href = '/game-send.html';
+                    break;
+                case 'Oyun Kullanım Özeti':
+                  //  window.location.href = '/game-summary.html';
+                    break;
+                case 'Firma Ayarları':
+                   // window.location.href = '/authorization.html';
                     break;
                 case 'Yetkilendirme':
                     window.location.href = '/authorization.html';
@@ -295,6 +391,39 @@ async function createSidebar() {
                     break;
                 case 'Bildirimler':
                     //window.location.href = '/notifications.html';
+                    break;
+            }
+        });
+    });
+
+    // Submenu öğelerine tıklama olayı ekle
+    const submenuItems = sidebar.querySelectorAll('.submenu-item');
+    submenuItems.forEach(item => {
+        item.addEventListener('click', () => {
+            // Önce tüm active sınıflarını kaldır
+            menuItems.forEach(i => i.classList.remove('active'));
+            submenuItems.forEach(i => i.classList.remove('active'));
+            
+            // Tıklanan öğeye active sınıfını ekle
+            item.classList.add('active');
+            
+            // Menü öğesinin metnini al
+            const menuText = item.querySelector('span').textContent;
+            
+            // Menü öğesine göre yönlendirme yap
+            switch(menuText) {
+                case 'Firma Tanımlama':
+                    if (isSuperAdmin) {
+                        window.location.href = '/admin-management.html';
+                    }
+                    break;
+                case 'Firma Admini Tanımlama':
+                    // window.location.href = '/firma-admin-management.html';
+                    break;
+                case 'Oyun Tanımlama':
+                    if (isSuperAdmin) {
+                        window.location.href = '/gamemanagement.html';
+                    }
                     break;
             }
         });
