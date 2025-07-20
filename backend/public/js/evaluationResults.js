@@ -5,8 +5,38 @@ let totalItems = 0;
 let allData = [];
 let filteredData = [];
 
+// Yükleme göstergesi göster
+function showLoadingIndicator() {
+    const tbody = document.getElementById('resultsBody');
+    if (tbody) {
+        tbody.innerHTML = `
+            <tr>
+                <td colspan="5" style="text-align: center; padding: 40px;">
+                    <div style="display: flex; flex-direction: column; align-items: center; gap: 16px;">
+                        <div class="loading-spinner"></div>
+                        <div style="color: #666; font-size: 14px;">Veriler yükleniyor...</div>
+                    </div>
+                </td>
+            </tr>
+        `;
+    }
+}
+
+// Yükleme göstergesini gizle
+function hideLoadingIndicator() {
+    // Bu fonksiyon displayData() tarafından otomatik olarak çağrılır
+}
+
+// Yenileme fonksiyonu
+function refreshData() {
+    loadData(true); // Filtreleri sıfırla
+}
+
 // Verileri yükle
 async function loadData(resetFilters = false) {
+    // Yükleme göstergesi göster
+    showLoadingIndicator();
+    
     try {
         const response = await fetch('/api/user-results');
         if (!response.ok) {
@@ -99,11 +129,17 @@ async function loadData(resetFilters = false) {
             totalItems = filteredData.length;
             displayData();
             updatePagination();
+            // Yükleme göstergesini gizle
+            hideLoadingIndicator();
         } else {
             console.error('Veri çekme başarısız:', data.error);
+            // Hata durumunda da yükleme göstergesini gizle
+            hideLoadingIndicator();
         }
     } catch (error) {
         console.error('Veri yükleme hatası:', error);
+        // Hata durumunda da yükleme göstergesini gizle
+        hideLoadingIndicator();
     }
 }
 
@@ -409,9 +445,6 @@ document.addEventListener('DOMContentLoaded', () => {
     initMultiRange('uncertainty');
     initMultiRange('hi');
     initMultiRange('tw');
-
-    // Her 5 saniyede bir verileri güncelle
-    setInterval(() => loadData(false), 5000);
 });
 
 // Multi-range input'ları başlat

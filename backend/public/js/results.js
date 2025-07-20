@@ -7,40 +7,38 @@ let filteredData = []; // Filtrelenmiş veriler için
 let ws = null;
 let expandedGroups = new Set(); // Açık olan grupları takip et
 
-// WebSocket bağlantısını kur
-function connectWebSocket() {
-    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-    ws = new WebSocket(`${protocol}//${window.location.host}/ws`);
-    
-    ws.onopen = () => {
+// Yükleme göstergesi göster
+function showLoadingIndicator() {
+    const tbody = document.getElementById('resultsBody');
+    if (tbody) {
+        tbody.innerHTML = `
+            <tr>
+                <td colspan="8" style="text-align: center; padding: 40px;">
+                    <div style="display: flex; flex-direction: column; align-items: center; gap: 16px;">
+                        <div class="loading-spinner"></div>
+                        <div style="color: #666; font-size: 14px;">Veriler yükleniyor...</div>
+                    </div>
+                </td>
+            </tr>
+        `;
+    }
+}
 
-        loadData();
-    };
-    
-    ws.onmessage = (event) => {
-        try {
-            const data = JSON.parse(event.data);
-            
-            if (data.type === 'newResult' || data.type === 'resultUpdate') {
-                loadData();
-            }
-        } catch (error) {
-            console.error('WebSocket mesaj işleme hatası:', error);
-        }
-    };
-    
-    ws.onclose = () => {
+// Yükleme göstergesini gizle
+function hideLoadingIndicator() {
+    // Bu fonksiyon displayData() tarafından otomatik olarak çağrılır
+}
 
-        setTimeout(connectWebSocket, 3000);
-    };
-    
-    ws.onerror = (error) => {
-        console.error('WebSocket hatası:', error);
-    };
+// Sayfa yüklendiğinde verileri yükle
+function initializeData() {
+    loadData();
 }
 
 // Verileri yükle
 async function loadData() {
+    // Yükleme göstergesi göster
+    showLoadingIndicator();
+    
     try {
         const response = await fetch('/api/user-results');
         if (!response.ok) {
@@ -55,38 +53,32 @@ async function loadData() {
             filteredData = groupedData; // Gruplandırılmış veriler
             totalItems = filteredData.length;
             
-            // Sonuçları kontrol et ve durumları güncelle
-            let hasUpdates = false;
+            // Sonuçları kontrol et ve durumları güncelle (sadece görüntüleme için)
             allData.forEach(result => {
                 if (result.status === 'Beklemede') {
-                    // Kod süresi kontrolü
+                    // Kod süresi kontrolü (sadece görüntüleme için, güncelleme yapma)
                     const now = new Date();
                     const expiryDate = new Date(result.expiryDate);
                     
                     if (now > expiryDate) {
-                        // Süresi dolmuşsa durumu güncelle
-                        updateResultStatus(result.code, 'Süresi Doldu');
-                        hasUpdates = true;
+                        // Süresi dolmuşsa sadece görüntüleme için işaretle
+                        result.status = 'Süresi Doldu';
                     } else if (result.completionDate) {
-                        // Sonuç geldiğinde durumu güncelle
-                        updateResultStatus(result.code, 'Tamamlandı');
-                        hasUpdates = true;
+                        // Sonuç geldiğinde sadece görüntüleme için işaretle
+                        result.status = 'Tamamlandı';
                     }
                 }
             });
             
-            // Eğer güncelleme varsa, verileri yeniden yükle
-            if (hasUpdates) {
-                setTimeout(() => {
-                    loadData();
-                }, 1000); // 1 saniye bekle
-            }
-            
             displayData();
             updatePagination();
+            // Yükleme göstergesini gizle
+            hideLoadingIndicator();
         }
     } catch (error) {
         console.error('Veri yükleme hatası:', error);
+        // Hata durumunda da yükleme göstergesini gizle
+        hideLoadingIndicator();
     }
 }
 
@@ -132,7 +124,7 @@ function displayData() {
                 }
                 ${item.name}
                 ${item.hasExpiredCode ? 
-                    `<span class="expired-warning" title="Bu kişinin süresi dolmuş kodu var"><i class="fas fa-exclamation-triangle"></i></span> ` : 
+                    `<span class="expired-warning" title="Oynanmamış oyun var"><i class="fas fa-exclamation-triangle"></i></span> ` : 
                     ''
                 }
                 ${item.isGrouped && item.groupCount > 1 ? 
