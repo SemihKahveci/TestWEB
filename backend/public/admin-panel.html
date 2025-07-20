@@ -273,6 +273,11 @@
             color: #155724;
         }
 
+        .status-badge.süresi-doldu {
+            background: #F8D7DA;
+            color: #721C24;
+        }
+
         .action-button.disabled {
             opacity: 0.5;
             cursor: not-allowed;
@@ -589,6 +594,55 @@
         .btn-refresh i {
             font-size: 14px;
         }
+
+        /* Gruplandırma stilleri */
+        .expand-icon {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            line-height: 18px;
+            text-align: center;
+            background: #0286F7;
+            color: white;
+            border-radius: 50%;
+            cursor: pointer;
+            font-weight: bold;
+            margin-right: 8px;
+            transition: background-color 0.3s;
+        }
+
+        .expand-icon:hover {
+            background: #0275D8;
+        }
+
+        .group-count {
+            color: #666;
+            font-size: 12px;
+            margin-left: 8px;
+        }
+
+        .sub-row {
+            background: #f8f9fa;
+        }
+
+        .sub-row.hidden {
+            display: none;
+        }
+
+        .grouped-row {
+            background: #e3f2fd;
+        }
+
+        .expired-warning {
+            color: #dc3545;
+            font-size: 14px;
+            margin-left: 8px;
+            cursor: help;
+        }
+
+        .expired-warning i {
+            color: #dc3545;
+        }
     </style>
 </head>
 <body>
@@ -624,7 +678,7 @@
                         </div>
                         <input type="text" id="searchInput" class="search-input" placeholder="Arama yapın..." oninput="filterResults()">
                     </div>
-                    <button class="btn-refresh" onclick="loadData()">
+                    <button class="btn-refresh" onclick="refreshData()">
                         <i class="fas fa-sync-alt"></i> Yenile
                     </button>
                 </div>
@@ -729,6 +783,11 @@
         }
         if (typeof itemsPerPage === 'undefined') {
             const itemsPerPage = 10;
+        }
+        
+        // Yenileme fonksiyonu
+        function refreshData() {
+            loadData();
         }
         
         document.addEventListener('DOMContentLoaded', () => {

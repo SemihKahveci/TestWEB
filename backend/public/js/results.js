@@ -5,6 +5,7 @@ let totalItems = 0;
 let allData = [];
 let filteredData = []; // Filtrelenmiş veriler için
 let ws = null;
+let expandedGroups = new Set(); // Açık olan grupları takip et
 
 // WebSocket bağlantısını kur
 function connectWebSocket() {
@@ -49,15 +50,37 @@ async function loadData() {
         
         if (data.success) {
             allData = data.results;
-            filteredData = [...allData]; // Başlangıçta tüm veriler
+            // Aynı e-posta adresine sahip kişileri grupla
+            const groupedData = groupByEmail(allData);
+            filteredData = groupedData; // Gruplandırılmış veriler
             totalItems = filteredData.length;
             
             // Sonuçları kontrol et ve durumları güncelle
+            let hasUpdates = false;
             allData.forEach(result => {
-                if (result.status === 'Beklemede' && result.completionDate) {
-                    updateResultStatus(result.code, 'Tamamlandı');
+                if (result.status === 'Beklemede') {
+                    // Kod süresi kontrolü
+                    const now = new Date();
+                    const expiryDate = new Date(result.expiryDate);
+                    
+                    if (now > expiryDate) {
+                        // Süresi dolmuşsa durumu güncelle
+                        updateResultStatus(result.code, 'Süresi Doldu');
+                        hasUpdates = true;
+                    } else if (result.completionDate) {
+                        // Sonuç geldiğinde durumu güncelle
+                        updateResultStatus(result.code, 'Tamamlandı');
+                        hasUpdates = true;
+                    }
                 }
             });
+            
+            // Eğer güncelleme varsa, verileri yeniden yükle
+            if (hasUpdates) {
+                setTimeout(() => {
+                    loadData();
+                }, 1000); // 1 saniye bekle
+            }
             
             displayData();
             updatePagination();
@@ -95,11 +118,31 @@ function displayData() {
         const reportExpiryDate = new Date(sentDate);
         reportExpiryDate.setMonth(reportExpiryDate.getMonth() + 6);
         
+        // Gruplandırılmış satır için özel stil
+        if (item.isGrouped && item.groupCount > 1) {
+            row.classList.add('grouped-row');
+            row.setAttribute('data-email', item.email);
+        }
+        
         row.innerHTML = `
-            <td>${item.name}</td>
+            <td>
+                ${item.isGrouped && item.groupCount > 1 ? 
+                    `<span class="expand-icon" onclick="toggleGroup('${item.email}')">+</span> ` : 
+                    ''
+                }
+                ${item.name}
+                ${item.hasExpiredCode ? 
+                    `<span class="expired-warning" title="Bu kişinin süresi dolmuş kodu var"><i class="fas fa-exclamation-triangle"></i></span> ` : 
+                    ''
+                }
+                ${item.isGrouped && item.groupCount > 1 ? 
+                    `<span class="group-count">(${item.groupCount} sonuç)</span>` : 
+                    ''
+                }
+            </td>
             <td>${item.email || '-'}</td>
             <td>
-                <span class="status-badge ${item.status === 'Oyun Devam Ediyor' ? 'oyun-devam-ediyor' : item.status.toLowerCase()}">${item.status}</span>
+                <span class="status-badge ${getStatusClass(item.status)}">${item.status}</span>
             </td>
             <td>${formatDate(item.sentDate)}</td>
             <td>${item.completionDate ? formatDate(item.completionDate) : '-'}</td>
@@ -115,7 +158,51 @@ function displayData() {
             </td>
         `;
         tbody.appendChild(row);
+        
+        // Gruplandırılmış satırlar için alt satırları ekle (başlangıçta gizli)
+        if (item.isGrouped && item.groupCount > 1) {
+            item.allGroupItems.slice(1).forEach(groupItem => {
+                const subRow = document.createElement('tr');
+                subRow.classList.add('sub-row', 'hidden');
+                subRow.setAttribute('data-parent-email', item.email);
+                
+                const subIsPDFDisabled = groupItem.status !== 'Tamamlandı';
+                const subIsInactive = groupItem.status === 'Beklemede' || groupItem.status === 'Oyun Devam Ediyor';
+                
+                if (subIsInactive) {
+                    subRow.classList.add('inactive');
+                }
+                
+                const subSentDate = new Date(groupItem.sentDate);
+                const subReportExpiryDate = new Date(subSentDate);
+                subReportExpiryDate.setMonth(subReportExpiryDate.getMonth() + 6);
+                
+                subRow.innerHTML = `
+                    <td style="padding-left: 30px;">${groupItem.name}</td>
+                    <td>${groupItem.email || '-'}</td>
+                    <td>
+                        <span class="status-badge ${getStatusClass(groupItem.status)}">${groupItem.status}</span>
+                    </td>
+                    <td>${formatDate(groupItem.sentDate)}</td>
+                    <td>${groupItem.completionDate ? formatDate(groupItem.completionDate) : '-'}</td>
+                    <td>${formatDate(groupItem.expiryDate)}</td>
+                    <td>${formatDate(subReportExpiryDate)}</td>
+                    <td class="action-buttons">
+                        <div class="action-button ${subIsPDFDisabled ? 'disabled' : ''}" ${subIsPDFDisabled ? '' : `onclick="showPDFPopup('${groupItem.code}')"`}>
+                            <i class="fas fa-file-pdf" style="color: #0286F7;"></i>
+                        </div>
+                        <div class="action-button" onclick="showDeletePopup('${groupItem.code}')">
+                            <i class="fas fa-trash" style="color: #FF0000;"></i>
+                        </div>
+                    </td>
+                `;
+                tbody.appendChild(subRow);
+            });
+        }
     });
+    
+    // Açık olan grupları tekrar aç
+    restoreExpandedGroups();
 }
 
 // Sayfalama kontrollerini güncelle
@@ -154,6 +241,73 @@ function changePage(page) {
         currentPage = page;
         displayData();
         updatePagination();
+    }
+}
+
+// Aynı e-posta adresine sahip kişileri grupla
+function groupByEmail(data) {
+    const emailGroups = {};
+    
+    // Verileri e-posta adresine göre grupla
+    data.forEach(item => {
+        const email = item.email || 'no-email';
+        if (!emailGroups[email]) {
+            emailGroups[email] = [];
+        }
+        emailGroups[email].push(item);
+    });
+    
+    // Her grup içindeki verileri tarihe göre sırala (en yeni üstte)
+    Object.keys(emailGroups).forEach(email => {
+        emailGroups[email].sort((a, b) => new Date(b.sentDate) - new Date(a.sentDate));
+    });
+    
+    // Gruplandırılmış verileri düzleştir
+    const groupedData = [];
+    Object.keys(emailGroups).forEach(email => {
+        const group = emailGroups[email];
+        if (group.length === 1) {
+            // Tek sonuç varsa normal göster
+            const hasExpiredCode = group[0].status === 'Süresi Doldu';
+            groupedData.push({
+                ...group[0],
+                isGrouped: false,
+                groupCount: 1,
+                hasExpiredCode: hasExpiredCode
+            });
+        } else {
+            // Birden fazla sonuç varsa gruplandır
+            const latestItem = group[0]; // En yeni olan
+            
+            // Grupta süresi dolmuş kod var mı kontrol et
+            const hasExpiredCode = group.some(item => item.status === 'Süresi Doldu');
+            
+            groupedData.push({
+                ...latestItem,
+                isGrouped: true,
+                groupCount: group.length,
+                allGroupItems: group,
+                hasExpiredCode: hasExpiredCode
+            });
+        }
+    });
+    
+    return groupedData;
+}
+
+// Status badge CSS sınıfını belirle
+function getStatusClass(status) {
+    switch (status) {
+        case 'Oyun Devam Ediyor':
+            return 'oyun-devam-ediyor';
+        case 'Süresi Doldu':
+            return 'süresi-doldu';
+        case 'Tamamlandı':
+            return 'tamamlandı';
+        case 'Beklemede':
+            return 'beklemede';
+        default:
+            return status.toLowerCase();
     }
 }
 
@@ -239,6 +393,38 @@ function handleCheckboxes() {
                 .map(cb => cb.dataset.id);
         });
     });
+}
+
+// Açık olan grupları tekrar aç
+function restoreExpandedGroups() {
+    expandedGroups.forEach(email => {
+        const expandIcon = document.querySelector(`tr[data-email="${email}"] .expand-icon`);
+        const subRows = document.querySelectorAll(`tr[data-parent-email="${email}"]`);
+        
+        if (expandIcon && subRows.length > 0) {
+            subRows.forEach(row => row.classList.remove('hidden'));
+            expandIcon.textContent = '-';
+        }
+    });
+}
+
+// Grup açma/kapama fonksiyonu
+function toggleGroup(email) {
+    const expandIcon = event.target;
+    const subRows = document.querySelectorAll(`tr[data-parent-email="${email}"]`);
+    const isExpanded = !subRows[0].classList.contains('hidden');
+    
+    if (isExpanded) {
+        // Grubu kapat
+        subRows.forEach(row => row.classList.add('hidden'));
+        expandIcon.textContent = '+';
+        expandedGroups.delete(email);
+    } else {
+        // Grubu aç
+        subRows.forEach(row => row.classList.remove('hidden'));
+        expandIcon.textContent = '-';
+        expandedGroups.add(email);
+    }
 }
 
 // Durum güncelle

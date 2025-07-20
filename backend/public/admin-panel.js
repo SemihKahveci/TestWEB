@@ -7,8 +7,15 @@ function checkResults() {
                 if (results.length > 0) {
                     results.forEach(result => {
                         if (result.status === 'Beklemede') {
-                            // Sonuç geldiğinde durumu güncelle
-                            if (result.completionDate) {
+                            // Kod süresi kontrolü
+                            const now = new Date();
+                            const expiryDate = new Date(result.expiryDate);
+                            
+                            if (now > expiryDate) {
+                                // Süresi dolmuşsa durumu güncelle
+                                updateResultStatus(result.code, 'Süresi Doldu');
+                            } else if (result.completionDate) {
+                                // Sonuç geldiğinde durumu güncelle
                                 updateResultStatus(result.code, 'Tamamlandı');
                             }
                         }
