@@ -82,6 +82,12 @@ async function loadData() {
     }
 }
 
+// Süresi doldu uyarılarını göster/gizle kontrolü
+function isShowExpiredWarning() {
+    const cb = document.getElementById('showExpiredWarning');
+    return !cb || cb.checked;
+}
+
 // Verileri görüntüle
 function displayData() {
     const tbody = document.getElementById('resultsBody');
@@ -95,6 +101,8 @@ function displayData() {
     const pageData = filteredData.slice(startIndex, endIndex);
 
     tbody.innerHTML = '';
+
+    const showExpired = isShowExpiredWarning();
 
     pageData.forEach(item => {
         const row = document.createElement('tr');
@@ -123,7 +131,7 @@ function displayData() {
                     ''
                 }
                 ${item.name}
-                ${item.hasExpiredCode ? 
+                ${showExpired && item.hasExpiredCode ? 
                     `<span class="expired-warning" title="Oynanmamış oyun var"><i class="fas fa-exclamation-triangle"></i></span> ` : 
                     ''
                 }
@@ -535,9 +543,12 @@ function filterResults() {
 
 // Sayfa yüklendiğinde
 document.addEventListener('DOMContentLoaded', () => {
-    connectWebSocket();
+    const expiredCb = document.getElementById('showExpiredWarning');
+    if (expiredCb) {
+        expiredCb.addEventListener('change', () => {
+            displayData();
+        });
+    }
     handleCheckboxes();
     loadData();
-    // Her 5 saniyede bir verileri güncelle
-    setInterval(loadData, 5000);
 }); 
