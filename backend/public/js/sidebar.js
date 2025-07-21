@@ -11,7 +11,6 @@ async function createSidebar() {
         '/admin-panel.html': 'Genel Takip Sistemi',
         '/results.html': 'Aday Sonuçları Sayfası',
         '/game-send.html': 'Oyun Gönder',
-        '/admin-management.html': 'Firma Tanımlama',
         '/gamemanagement.html': 'Oyun Tanımlama',
         '/addGroup.html': 'Organizasyon Tanımlama',
         '/authorization.html': 'Yetkilendirme',
@@ -21,6 +20,9 @@ async function createSidebar() {
     
     // Aktif menü öğesini belirle
     const activeMenuItem = pageToMenuItem[currentPath] || 'Genel Takip Sistemi';
+    // Aktif submenu kontrolü için
+    const isFirmaAdminiActive = currentPath === '/admin-management.html';
+    const isFirmaTanimlamaActive = currentPath === '/companyIdentification.html';
 
     // Kullanıcı rolünü kontrol et
     let isSuperAdmin = false;
@@ -74,20 +76,19 @@ async function createSidebar() {
             <div class="menu-section">
                 <div class="menu-title">Ayarlar</div>
                 <div class="menu-items">
-
-                    <div class="menu-item expandable" data-expanded="${activeMenuItem === 'Firma Tanımlama' || activeMenuItem === 'Oyun Tanımlama' ? 'true' : 'false'}">
+                    <div class="menu-item expandable" data-expanded="${activeMenuItem === 'Firma Tanımlama' || activeMenuItem === 'Oyun Tanımlama' ? 'true' : 'false'}${isFirmaAdminiActive ? ' true' : ''}${isFirmaTanimlamaActive ? ' true' : ''}" ${isFirmaTanimlamaActive ? 'class="active"' : ''}>
                         <i class="fas fa-user-shield"></i>
                         <span>Firma Ayarları</span>
                         <i class="fas fa-plus expand-icon"></i>
                     </div>
-                    <div class="submenu" style="display: ${activeMenuItem === 'Firma Tanımlama' || activeMenuItem === 'Oyun Tanımlama' ? 'block' : 'none'};">
+                    <div class="submenu" style="display: ${activeMenuItem === 'Firma Tanımlama' || activeMenuItem === 'Oyun Tanımlama' || isFirmaAdminiActive || isFirmaTanimlamaActive ? 'block' : 'none'};">
                         ${isSuperAdmin ? `
-                        <div class="submenu-item ${activeMenuItem === 'Firma Tanımlama' ? 'active' : ''}">
+                        <div class="submenu-item ${isFirmaTanimlamaActive ? 'active' : ''}">
                             <i class="fas fa-building"></i>
                             <span>Firma Tanımlama</span>
                         </div>
                         ` : ''}
-                        <div class="submenu-item">
+                        <div class="submenu-item ${isFirmaAdminiActive ? 'active' : ''}">
                             <i class="fas fa-user-cog"></i>
                             <span>Firma Admini Tanımlama</span>
                         </div>
@@ -380,9 +381,6 @@ async function createSidebar() {
                 case 'Organizasyon Yapısı':
                     //window.location.href = '/organization-structure.html';
                     break;
-                case 'Firma Tanımlama':
-                    window.location.href = '/admin-management.html';
-                    break;
                 case 'Organizasyon Tanımlama':
                     window.location.href = '/addGroup.html';
                     break;
@@ -413,12 +411,10 @@ async function createSidebar() {
             // Menü öğesine göre yönlendirme yap
             switch(menuText) {
                 case 'Firma Tanımlama':
-                    if (isSuperAdmin) {
-                        window.location.href = '/admin-management.html';
-                    }
+                    window.location.href = '/companyIdentification.html';
                     break;
                 case 'Firma Admini Tanımlama':
-                    // window.location.href = '/firma-admin-management.html';
+                    window.location.href = '/admin-management.html';
                     break;
                 case 'Oyun Tanımlama':
                     if (isSuperAdmin) {

@@ -1024,36 +1024,66 @@
             <div class="content">
                 <div class="content-header">
                     <div></div> <!-- Sol taraf boş -->
-                    <button class="btn-add" onclick="addNewCompany()">
+                    <button class="btn-add" onclick="openCompanyPopup()">
                         <i class="fas fa-plus"></i> Ekle
                     </button>
                 </div>
-                <div id="gameDataContainer" style="width: 100%; display: grid; grid-template-columns: 1fr 1fr 1fr 1fr 1fr; gap: 0;">
+                <div id="gameDataContainer" style="width: 100%; display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 0;">
                     <!-- Başlık satırı -->
+                    <div style="padding: 16px; background: white; text-align: center; color: black; font-size: 14px; font-family: Montserrat; font-weight: 700; border-bottom: 1px solid #E9ECEF;">VKN</div>
                     <div style="padding: 16px; background: white; text-align: center; color: black; font-size: 14px; font-family: Montserrat; font-weight: 700; border-bottom: 1px solid #E9ECEF;">FİRMA ADI</div>
-                    <div style="padding: 16px; background: white; text-align: center; color: black; font-size: 14px; font-family: Montserrat; font-weight: 700; border-bottom: 1px solid #E9ECEF;">FATURA NO</div>
-                    <div style="padding: 16px; background: white; text-align: center; color: black; font-size: 14px; font-family: Montserrat; font-weight: 700; border-bottom: 1px solid #E9ECEF;">KREDİ</div>
-                    <div style="padding: 16px; background: white; text-align: center; color: black; font-size: 14px; font-family: Montserrat; font-weight: 700; border-bottom: 1px solid #E9ECEF;">TARİH</div>
+                    <div style="padding: 16px; background: white; text-align: center; color: black; font-size: 14px; font-family: Montserrat; font-weight: 700; border-bottom: 1px solid #E9ECEF;">FİRMA MAİLİ</div>
                     <div style="padding: 16px; background: white; text-align: center; color: black; font-size: 14px; font-family: Montserrat; font-weight: 700; border-bottom: 1px solid #E9ECEF;">İŞLEMLER</div>
-                    
-                    <!-- Veri satırları buraya dinamik olarak eklenecek -->
-                    <div id="gameDataRows" style="grid-column: 1 / -1; display: contents;">
-                        <!-- Veriler dinamik olarak eklenecek -->
+                    <!-- Veri satırları dinamik olarak eklenmeyecek, sadece başlıklar kalacak -->
+                </div>
+            </div>
+
+            <!-- PDF İndirme Popup -->
+            <div id="pdfPopup" class="pdf-popup" style="display: none;">
+                <div class="pdf-popup-content">
+                    <div class="pdf-popup-header">
+                        <div class="pdf-popup-title">PDF İndir</div>
+                        <div class="pdf-popup-close" onclick="closePDFPopup()">×</div>
+                    </div>
+                    <div class="pdf-popup-body">
+                        <div class="pdf-option">
+                            <input type="checkbox" id="generalEvaluation" checked>
+                            <label for="generalEvaluation">Tanım ve Genel Değerlendirme</label>
+                        </div>
+                        <div class="pdf-option">
+                            <input type="checkbox" id="strengths" checked>
+                            <label for="strengths">Güçlü Yönler ve Gelişim Alanları</label>
+                        </div>
+                        <div class="pdf-option">
+                            <input type="checkbox" id="interviewQuestions" checked>
+                            <label for="interviewQuestions">Mülakat Soruları</label>
+                        </div>
+                        <div class="pdf-option">
+                            <input type="checkbox" id="whyTheseQuestions" checked>
+                            <label for="whyTheseQuestions">Neden Bu Sorular?</label>
+                        </div>
+                        <div class="pdf-option">
+                            <input type="checkbox" id="developmentSuggestions" checked>
+                            <label for="developmentSuggestions">Gelişim Planı</label>
+                        </div>
+                    </div>
+                    <div class="pdf-popup-footer">
+                        <button class="btn-preview" onclick="previewPDF()">Önizleme</button>
+                        <button class="btn-download" onclick="downloadPDF()">PDF İndir</button>
                     </div>
                 </div>
-                <button id="loadMoreBtn" style="margin: 24px auto 0 auto; display: none; background: #0286F7; color: white; border: none; padding: 12px 32px; border-radius: 8px; font-size: 16px; font-weight: 600; cursor: pointer;">Daha fazla yükle</button>
             </div>
 
             <!-- Silme Onay Popup -->
             <div id="deletePopup" class="delete-popup" style="display: none;">
                 <div class="delete-popup-content">
                     <div class="delete-popup-header">
-                        <div class="delete-popup-title">Kaydı Sil</div>
+                        <div class="delete-popup-title">Sonucu Sil</div>
                         <div class="delete-popup-close" onclick="closeDeletePopup()">×</div>
                     </div>
                     <div class="delete-popup-body">
-                        <p>Bu kaydı silmek istediğinizden emin misiniz?</p>
-                        <p class="delete-warning">Bu işlem geri alınamaz ve kayıt kalıcı olarak silinecektir.</p>
+                        <p>Bu sonucu silmek istediğinizden emin misiniz?</p>
+                        <p class="delete-warning">Bu işlem geri alınamaz ve sonuç kalıcı olarak silinecektir.</p>
                     </div>
                     <div class="delete-popup-footer">
                         <button class="btn-cancel" onclick="closeDeletePopup()">Hayır</button>
@@ -1062,501 +1092,175 @@
                 </div>
             </div>
 
-    <!-- Popup -->
-    <div class="popup-overlay" id="companyPopup">
+            <!-- PDF Önizleme Popup -->
+            <div id="pdfPreviewPopup" class="pdf-preview-popup" style="display: none;">
+                <div class="pdf-preview-content">
+                    <div class="pdf-preview-header">
+                        <div class="pdf-preview-title">PDF Önizleme</div>
+                        <div class="pdf-preview-close" onclick="closePDFPreviewPopup()">×</div>
+                    </div>
+                    <div class="pdf-preview-body">
+                        <iframe id="pdfPreviewFrame" width="100%" height="100%" frameborder="0" style="border: none;"></iframe>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Firma Ekle Popup -->
+    <div class="popup-overlay" id="companyPopup" style="display: none;">
         <div class="popup-content">
             <div class="popup-title-container">
                 <div class="popup-title">Firma Ekle</div>
                 <div class="popup-title-line"></div>
             </div>
-            
             <div class="popup-form">
                 <div class="popup-input-group">
+                    <div class="popup-input-label">VKN</div>
+                    <input type="text" class="popup-input-field" id="popupVKN" placeholder="VKN giriniz">
+                </div>
+                <div class="popup-input-group">
                     <div class="popup-input-label">Firma Adı</div>
-                    <select class="popup-input-field" id="companySelect">
-                        <option value="">Firma seçiniz</option>
-                    </select>
+                    <input type="text" class="popup-input-field" id="popupFirmName" placeholder="Firma adını giriniz">
                 </div>
                 <div class="popup-input-group">
-                    <div class="popup-input-label">Fatura No</div>
-                    <input type="text" class="popup-input-field" id="invoiceNo" placeholder="Fatura numarasını giriniz">
-                </div>
-                <div class="popup-input-group">
-                    <div class="popup-input-label">Kredi</div>
-                    <input type="number" class="popup-input-field" id="credit" placeholder="Kredi miktarını giriniz">
-                </div>
-                <div class="popup-input-group">
-                    <div class="popup-input-label">Fatura Yükle</div>
-                    <div class="file-upload-container">
-                        <input type="file" id="invoiceFile" class="file-input" accept=".pdf,.jpeg,.jpg,.png" style="display: none;" onchange="checkFileSize(this)">
-                        <div class="file-upload-button" onclick="document.getElementById('invoiceFile').click()">
-                            <i class="fas fa-plus" style="color: #3A57E8; font-size: 20px;"></i>
-                            <span class="file-upload-text">Dosya Seç</span>
-                        </div>
-                        <div id="selectedFileName" class="selected-file-name" style="display: none;"></div>
-                    </div>
+                    <div class="popup-input-label">Firma Maili</div>
+                    <input type="email" class="popup-input-field" id="popupFirmMail" placeholder="Firma mailini giriniz">
                 </div>
             </div>
-
+            <div id="popupMessage" style="width:100%;text-align:center;margin-bottom:10px;font-size:14px;display:none;"></div>
             <div class="popup-buttons">
                 <div class="cancel-button" onclick="closeCompanyPopup()">
                     <div class="cancel-text">İptal</div>
                 </div>
                 <div class="save-button" onclick="saveCompany()">
-                    <img src="/images/save-icon.svg" alt="Kaydet" class="save-icon">
                     <div class="save-text">Kaydet</div>
                 </div>
             </div>
-
             <div class="popup-close" onclick="closeCompanyPopup()">
                 <img src="/images/close-icon.svg" alt="Kapat" class="popup-close-icon">
             </div>
         </div>
     </div>
 
-    <!-- Fatura Görüntüleme Popup -->
-    <div class="invoice-preview-popup" id="invoicePreviewPopup">
-        <div class="invoice-preview-content">
-            <div class="invoice-preview-header">
-                <div class="invoice-preview-title">Fatura Görüntüle</div>
-                <div class="invoice-preview-close" onclick="closeInvoicePreview()">×</div>
-            </div>
-            <div class="invoice-preview-body">
-                <iframe id="invoicePreviewFrame" class="invoice-preview-iframe" style="display: none;"></iframe>
-                <img id="invoicePreviewImage" class="invoice-preview-image" style="display: none;">
-            </div>
-        </div>
-    </div>
-
+    <!-- Tüm veri ekleme, silme, düzenleme, dosya yükleme ve popup fonksiyonları kaldırıldı -->
     <script src="/js/sidebar.js"></script>
     <script>
-        // Fetch iptali için global AbortController
-        let gameDataAbortController = null;
-        // Sayfa aktiflik flag'i
-        let isPageActive = true;
-        // Sayfa unload olduğunda fetch iptal et ve flag'i false yap
-        window.addEventListener('beforeunload', () => {
-            isPageActive = false;
-            if (gameDataAbortController) {
-                gameDataAbortController.abort();
+    // Tabloya veri ekleme fonksiyonu
+    function addCompanyRow(vkn, firmName, firmMail) {
+        const gridContainer = document.getElementById('gameDataContainer');
+        // Satır ekle
+        const vknDiv = document.createElement('div');
+        vknDiv.className = 'data-row';
+        vknDiv.style.cssText = 'padding: 16px; background: white; text-align: center; color: black; font-size: 14px; font-family: Montserrat; font-weight: 500;';
+        vknDiv.textContent = vkn;
+
+        const firmDiv = document.createElement('div');
+        firmDiv.className = 'data-row';
+        firmDiv.style.cssText = 'padding: 16px; background: white; text-align: center; color: black; font-size: 14px; font-family: Montserrat; font-weight: 500;';
+        firmDiv.textContent = firmName;
+
+        const mailDiv = document.createElement('div');
+        mailDiv.className = 'data-row';
+        mailDiv.style.cssText = 'padding: 16px; background: white; text-align: center; color: black; font-size: 14px; font-family: Montserrat; font-weight: 500;';
+        mailDiv.textContent = firmMail;
+
+        const actionsDiv = document.createElement('div');
+        actionsDiv.className = 'data-row';
+        actionsDiv.style.cssText = 'padding: 16px; background: white; text-align: center; display: flex; justify-content: center; align-items: center; gap: 16px;';
+        actionsDiv.innerHTML = `
+            <img src="/images/edit.svg" alt="Düzenle" style="width: 24px; height: 24px; opacity: 0.5; cursor: not-allowed;">
+            <i class="fas fa-eye" style="color: #0286F7; font-size: 18px; opacity: 0.5; cursor: not-allowed;" title="Görüntüle"></i>
+            <i class="fas fa-trash" style="color: #FF0000; font-size: 18px; opacity: 0.5; cursor: not-allowed;"></i>
+        `;
+
+        gridContainer.appendChild(vknDiv);
+        gridContainer.appendChild(firmDiv);
+        gridContainer.appendChild(mailDiv);
+        gridContainer.appendChild(actionsDiv);
+    }
+
+    // Tüm şirketleri çekip tabloya ekle
+    async function loadCompanies() {
+        const gridContainer = document.getElementById('gameDataContainer');
+        // Sadece başlıkları bırak, diğer satırları sil
+        while (gridContainer.children.length > 4) {
+            gridContainer.removeChild(gridContainer.lastChild);
+        }
+        try {
+            const response = await fetch('/api/company-management');
+            const data = await response.json();
+            if (data.success && Array.isArray(data.companies)) {
+                data.companies.forEach(c => {
+                    addCompanyRow(c.vkn, c.firmName, c.firmMail);
+                });
             }
-        });
-        // Hata mesajı için özel kutu
-        function showError(message) {
-            let errorDiv = document.getElementById('customErrorDiv');
-            if (!errorDiv) {
-                errorDiv = document.createElement('div');
-                errorDiv.id = 'customErrorDiv';
-                errorDiv.style.position = 'fixed';
-                errorDiv.style.top = '20px';
-                errorDiv.style.left = '50%';
-                errorDiv.style.transform = 'translateX(-50%)';
-                errorDiv.style.background = '#dc3545';
-                errorDiv.style.color = 'white';
-                errorDiv.style.padding = '16px 32px';
-                errorDiv.style.borderRadius = '8px';
-                errorDiv.style.zIndex = '9999';
-                document.body.appendChild(errorDiv);
+        } catch (err) {
+            // Hata durumunda tabloyu boş bırak
+        }
+    }
+
+    function openCompanyPopup() {
+        document.getElementById('companyPopup').style.display = 'flex';
+        showPopupMessage('','');
+    }
+    function closeCompanyPopup() {
+        document.getElementById('companyPopup').style.display = 'none';
+        document.getElementById('popupVKN').value = '';
+        document.getElementById('popupFirmName').value = '';
+        document.getElementById('popupFirmMail').value = '';
+        showPopupMessage('','');
+    }
+    function showPopupMessage(msg, type) {
+        const msgDiv = document.getElementById('popupMessage');
+        if (!msg) {
+            msgDiv.style.display = 'none';
+            msgDiv.textContent = '';
+            msgDiv.style.color = '';
+            return;
+        }
+        msgDiv.textContent = msg;
+        msgDiv.style.display = 'block';
+        msgDiv.style.color = type === 'success' ? '#01A94D' : '#dc3545';
+    }
+    function validateEmail(email) {
+        // Basit mail regex
+        return /^\S+@\S+\.\S+$/.test(email);
+    }
+    async function saveCompany() {
+        const vkn = document.getElementById('popupVKN').value.trim();
+        const firmName = document.getElementById('popupFirmName').value.trim();
+        const firmMail = document.getElementById('popupFirmMail').value.trim();
+        if (!vkn || !firmName || !firmMail) {
+            showPopupMessage('Lütfen tüm alanları doldurunuz!','error');
+            return;
+        }
+        if (!validateEmail(firmMail)) {
+            showPopupMessage('Lütfen geçerli bir mail adresi giriniz!','error');
+            return;
+        }
+        try {
+            const response = await fetch('/api/company-management', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ vkn, firmName, firmMail })
+            });
+            if (!response.ok) {
+                const data = await response.json();
+                showPopupMessage(data.message || 'Kayıt başarısız','error');
+                return;
             }
-            errorDiv.textContent = message;
-            errorDiv.style.display = 'block';
+            showPopupMessage('Firma başarıyla kaydedildi!','success');
             setTimeout(() => {
-                if (errorDiv) errorDiv.style.display = 'none';
-            }, 3000);
-        }
-        let currentPage = 1;
-        let totalGames = 0;
-        const pageLimit = 20;
-        let isLoading = false;
-
-        async function loadGameData(page = 1, append = false) {
-            if (isLoading) return;
-            isLoading = true;
-            const gridContainer = document.getElementById('gameDataContainer');
-            if (!append) {
-                gridContainer.innerHTML = `
-                    <div style="grid-column: 1 / -1; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 200px; gap: 16px;">
-                        <div class="loading-spinner"></div>
-                        <div style="color: #666; font-size: 14px;">Veriler yükleniyor...</div>
-                    </div>
-                `;
-            }
-            try {
-                // fetch'e timeout ekle
-                const controller = new AbortController();
-                const timeout = setTimeout(() => controller.abort(), 10000); // 10 saniye
-                const response = await fetch(`/api/game-management/games?page=${page}&limit=${pageLimit}`, { signal: controller.signal });
-                clearTimeout(timeout);
-
-                if (!response.ok) throw new Error('Veriler yüklenemedi');
-                const data = await response.json();
-                const games = data.games || [];
-                totalGames = data.total || 0;
-                if (!append) {
-                    gridContainer.innerHTML = '';
-                    // Başlık satırını yeniden oluştur
-                    const headers = ['Firma Adı', 'Fatura No', 'Kredi', 'Tarih', 'İşlemler'];
-                    headers.forEach(headerText => {
-                        const headerDiv = document.createElement('div');
-                        headerDiv.style.cssText = 'padding: 16px; background: #F8F9FA; color: #232D42; font-size: 14px; font-family: Montserrat; font-weight: 700; text-align: center;';
-                        headerDiv.textContent = headerText;
-                        gridContainer.appendChild(headerDiv);
-                    });
-                }
-                // Game data rows container'ı ekle veya bul
-                let gameDataRows = document.getElementById('gameDataRows');
-                if (!gameDataRows) {
-                    gameDataRows = document.createElement('div');
-                    gameDataRows.id = 'gameDataRows';
-                    gameDataRows.style.cssText = 'grid-column: 1 / -1; display: contents;';
-                    gridContainer.appendChild(gameDataRows);
-                }
-                // API'den gelen verileri yükle
-                games.forEach(game => {
-                    addGameData(game.firmName, game.invoiceNo, game.credit, new Date(game.date).toLocaleDateString('tr-TR'), game._id);
-                });
-                // Daha fazla yükle butonunu ekle/güncelle
-                updateLoadMoreButton();
-            } catch (error) {
-                if (!append) {
-                    gridContainer.innerHTML = '<div style="color: #dc3545; text-align:center; padding:40px;">Veriler yüklenemedi. Lütfen tekrar deneyin.</div>';
-                }
-                console.error('Veri yükleme hatası:', error);
-            } finally {
-                isLoading = false;
-            }
-        }
-
-        function updateLoadMoreButton() {
-            let btn = document.getElementById('loadMoreBtn');
-            if (!btn) {
-                btn = document.createElement('button');
-                btn.id = 'loadMoreBtn';
-                btn.textContent = 'Daha fazla yükle';
-                btn.style.cssText = 'margin: 24px auto 0 auto; display: block; background: #0286F7; color: white; border: none; padding: 12px 32px; border-radius: 8px; font-size: 16px; font-weight: 600; cursor: pointer;';
-                btn.onclick = () => {
-                    currentPage++;
-                    loadGameData(currentPage, true);
-                };
-                document.querySelector('.content').appendChild(btn);
-            }
-            // Toplam kayıt sayısına göre butonu göster/gizle
-            const loadedCount = document.querySelectorAll('#gameDataRows .data-row').length / 5;
-            if (loadedCount >= totalGames) {
-                btn.style.display = 'none';
-            } else {
-                btn.style.display = 'block';
-            }
-        }
-
-        // Oyun düzenleme fonksiyonu
-        function editGame(element) {
-            const actionsDiv = element.closest('.data-row');
-            const gridContainer = document.getElementById('gameDataContainer');
-            const allDataRows = Array.from(gridContainer.querySelectorAll('.data-row'));
-            const rowIndex = allDataRows.indexOf(actionsDiv);
-            const startIndex = Math.floor(rowIndex / 5) * 5;
-            
-            const firmName = allDataRows[startIndex].textContent;
-            const invoiceNo = allDataRows[startIndex + 1].textContent;
-            const credit = allDataRows[startIndex + 2].textContent;
-            const date = allDataRows[startIndex + 3].textContent;
-            
-            console.log('Düzenleme:', { firmName, invoiceNo, credit, date });
-            // Burada düzenleme popup'ı açılabilir
-        }
-
-        // Silme popup kontrolü için global değişken
-        let deleteGameId = null;
-        function deleteGame(element) {
-            // data-id'yi doğrudan al
-            deleteGameId = element.getAttribute('data-id');
-            document.getElementById('deletePopup').style.display = 'flex';
-        }
-        function closeDeletePopup() {
-            document.getElementById('deletePopup').style.display = 'none';
-            deleteGameId = null;
-        }
-        async function confirmDelete() {
-            if (!deleteGameId) return closeDeletePopup();
-            try {
-                const deleteResponse = await fetch(`/api/game-management/games/${deleteGameId}`, { method: 'DELETE' });
-                if (!deleteResponse.ok) throw new Error('Silme işlemi başarısız');
-                closeDeletePopup();
-                loadGameData(1, false);
-            } catch (error) {
-                closeDeletePopup();
-                alert('Silme işlemi sırasında bir hata oluştu');
-            }
-        }
-
-        // Dinamik veri ekleme fonksiyonu (örnek)
-        function addGameData(firmName, invoiceNo, credit, date, _id) {
-            const container = document.getElementById('gameDataRows');
-            const isEven = Math.floor(container.children.length / 5) % 2 === 0;
-            const backgroundColor = isEven ? 'white' : 'rgba(2, 134, 247, 0.10)';
-
-            // Her veri için ayrı div oluştur
-            const firmDiv = document.createElement('div');
-            firmDiv.className = 'data-row';
-            firmDiv.style.cssText = `padding: 16px; background: ${backgroundColor}; text-align: center; color: black; font-size: 14px; font-family: Montserrat; font-weight: 500;`;
-            firmDiv.textContent = firmName;
-            firmDiv.setAttribute('data-id', _id);
-
-            const invoiceDiv = document.createElement('div');
-            invoiceDiv.className = 'data-row';
-            invoiceDiv.style.cssText = `padding: 16px; background: ${backgroundColor}; text-align: center; color: black; font-size: 14px; font-family: Montserrat; font-weight: 500;`;
-            invoiceDiv.textContent = invoiceNo;
-
-            const creditDiv = document.createElement('div');
-            creditDiv.className = 'data-row';
-            creditDiv.style.cssText = `padding: 16px; background: ${backgroundColor}; text-align: center; color: black; font-size: 14px; font-family: Montserrat; font-weight: 500;`;
-            creditDiv.textContent = credit;
-
-            const dateDiv = document.createElement('div');
-            dateDiv.className = 'data-row';
-            dateDiv.style.cssText = `padding: 16px; background: ${backgroundColor}; text-align: center; color: black; font-size: 14px; font-family: Montserrat; font-weight: 500;`;
-            dateDiv.textContent = date;
-
-            const actionsDiv = document.createElement('div');
-            actionsDiv.className = 'data-row';
-            actionsDiv.style.cssText = `padding: 16px; background: ${backgroundColor}; text-align: center; display: flex; justify-content: center; align-items: center; gap: 16px;`;
-            actionsDiv.innerHTML = `
-                <img src="/images/edit.svg" alt="Düzenle" style="width: 24px; height: 24px; cursor: pointer;" onclick="editGame(this)">
-                <i class="fas fa-eye" style="color: #0286F7; font-size: 18px; cursor: pointer;" onclick="viewInvoice(this)" title="Faturayı Görüntüle"></i>
-                <i class="fas fa-trash" style="color: #FF0000; font-size: 18px; cursor: pointer;" onclick="deleteGame(this)" data-id="${_id}"></i>
-            `;
-
-            // Grid container'a ekle
-            const gridContainer = document.getElementById('gameDataContainer');
-            gridContainer.appendChild(firmDiv);
-            gridContainer.appendChild(invoiceDiv);
-            gridContainer.appendChild(creditDiv);
-            gridContainer.appendChild(dateDiv);
-            gridContainer.appendChild(actionsDiv);
-        }
-
-        let cachedCompanyList = null;
-        let companyListLoading = false;
-
-        // Firma listesini select'e doldur (cache'li)
-        async function loadCompanyOptions() {
-            const select = document.getElementById('companySelect');
-            if (!select) return;
-            select.innerHTML = '<option value="">Firma seçiniz</option>';
-            if (cachedCompanyList) {
-                cachedCompanyList.forEach(firmName => {
-                    const opt = document.createElement('option');
-                    opt.value = firmName;
-                    opt.textContent = firmName;
-                    select.appendChild(opt);
-                });
-                return;
-            }
-            if (companyListLoading) return;
-            companyListLoading = true;
-            try {
-                const response = await fetch('/api/company-management');
-                const data = await response.json();
-                if (data.success && Array.isArray(data.companies)) {
-                    cachedCompanyList = data.companies.map(c => c.firmName);
-                    cachedCompanyList.forEach(firmName => {
-                        const opt = document.createElement('option');
-                        opt.value = firmName;
-                        opt.textContent = firmName;
-                        select.appendChild(opt);
-                    });
-                }
-            } catch (err) {}
-            companyListLoading = false;
-        }
-
-        // Popup açıldığında firma listesini tekrar fetch etme, sadece select'i doldur
-        function addNewCompany() {
-            loadCompanyOptions();
-            document.getElementById('companyPopup').style.display = 'flex';
-        }
-        // Kapatınca eski fonksiyon çalışsın
-        function closeCompanyPopup() {
-            document.getElementById('companyPopup').style.display = 'none';
-            document.getElementById('companySelect').value = '';
-            document.getElementById('invoiceNo').value = '';
-            document.getElementById('credit').value = '';
-            document.getElementById('invoiceFile').value = '';
-            document.getElementById('selectedFileName').style.display = 'none';
-            document.querySelector('.file-upload-text').textContent = 'Dosya Seç';
-        }
-
-        // saveCompany fonksiyonunda companyName yerine companySelect kullanılacak
-        async function saveCompany() {
-            const companyName = document.getElementById('companySelect').value;
-            const invoiceNo = document.getElementById('invoiceNo').value;
-            const credit = document.getElementById('credit').value;
-            const invoiceFile = document.getElementById('invoiceFile').files[0];
-            if (!companyName || !invoiceNo || !credit) {
-                alert('Lütfen tüm alanları doldurunuz!');
-                return;
-            }
-            if (!invoiceFile) {
-                alert('Lütfen fatura dosyasını yükleyiniz!');
-                return;
-            }
-            const maxSize = 5 * 1024 * 1024;
-            if (invoiceFile.size > maxSize) {
-                alert('Dosya boyutu 5MB\'dan büyük olamaz! Lütfen daha küçük bir dosya seçin.');
-                return;
-            }
-            const allowedTypes = ['application/pdf', 'image/jpeg', 'image/jpg', 'image/png'];
-            if (!allowedTypes.includes(invoiceFile.type)) {
-                alert('Sadece PDF, JPEG ve PNG formatları kabul edilir!');
-                return;
-            }
-            try {
-                const fileData = await new Promise((resolve) => {
-                    const reader = new FileReader();
-                    reader.onload = (e) => resolve(e.target.result);
-                    reader.readAsDataURL(invoiceFile);
-                });
-                const response = await fetch('/api/game-management/games', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({
-                        firmName: companyName,
-                        invoiceNo: invoiceNo,
-                        credit: credit,
-                        invoiceFile: {
-                            fileName: invoiceFile.name,
-                            fileType: invoiceFile.type,
-                            fileData: fileData
-                        }
-                    })
-                });
-                if (!response.ok) {
-                    throw new Error('Veri kaydedilemedi');
-                }
-                const result = await response.json();
                 closeCompanyPopup();
-                loadGameData();
-            } catch (error) {
-                console.error('Kaydetme hatası:', error);
-                alert('Veri kaydedilirken bir hata oluştu');
-            }
+                loadCompanies();
+            }, 1000);
+        } catch (err) {
+            showPopupMessage('Kayıt sırasında bir hata oluştu','error');
         }
-
-        // Dosya boyutunu kontrol et
-        function checkFileSize(input) {
-            const file = input.files[0];
-            if (file) {
-                const maxSize = 5 * 1024 * 1024; // 5MB (daha güvenli limit)
-                if (file.size > maxSize) {
-                    alert('Dosya boyutu 5MB\'dan büyük olamaz! Lütfen daha küçük bir dosya seçin.');
-                    input.value = '';
-                    document.getElementById('selectedFileName').style.display = 'none';
-                    document.querySelector('.file-upload-text').textContent = 'Dosya Seç';
-                    return false;
-                }
-                console.log('Dosya boyutu:', (file.size / 1024).toFixed(2), 'KB');
-            }
-            handleFileSelect();
-        }
-
-        // Dosya seçildiğinde çalışacak fonksiyon
-        function handleFileSelect() {
-            const fileInput = document.getElementById('invoiceFile');
-            const fileNameDiv = document.getElementById('selectedFileName');
-            const fileUploadButton = document.querySelector('.file-upload-button');
-            const fileUploadText = document.querySelector('.file-upload-text');
-            
-            if (fileInput.files.length > 0) {
-                const file = fileInput.files[0];
-                fileNameDiv.textContent = `Seçilen dosya: ${file.name}`;
-                fileNameDiv.style.display = 'block';
-                fileUploadText.textContent = 'Dosya Değiştir';
-            } else {
-                fileNameDiv.style.display = 'none';
-                fileUploadText.textContent = 'Dosya Seç';
-            }
-        }
-
-        // Fatura görüntüleme fonksiyonu
-        async function viewInvoice(element) {
-            const actionsDiv = element.closest('.data-row');
-            const gridContainer = document.getElementById('gameDataContainer');
-            const allDataRows = Array.from(gridContainer.querySelectorAll('.data-row'));
-            const rowIndex = allDataRows.indexOf(actionsDiv);
-            const startIndex = Math.floor(rowIndex / 5) * 5;
-            
-            const firmName = allDataRows[startIndex].textContent;
-            
-            try {
-                // API'den firma verilerini al
-                const response = await fetch(`/api/game-management/games/firm/${encodeURIComponent(firmName)}`);
-                if (!response.ok) {
-                    throw new Error('Firma bulunamadı');
-                }
-                
-                const gameData = await response.json();
-                
-                if (!gameData.invoiceFile) {
-                    alert('Bu firma için fatura dosyası bulunamadı!');
-                    return;
-                }
-                
-                // Dosya türüne göre görüntüleme
-                const popup = document.getElementById('invoicePreviewPopup');
-                const iframe = document.getElementById('invoicePreviewFrame');
-                const image = document.getElementById('invoicePreviewImage');
-                
-                if (gameData.invoiceFile.fileType === 'application/pdf') {
-                    // PDF için iframe kullan
-                    iframe.src = gameData.invoiceFile.fileData;
-                    iframe.style.display = 'block';
-                    image.style.display = 'none';
-                } else {
-                    // Resim için img kullan
-                    image.src = gameData.invoiceFile.fileData;
-                    image.style.display = 'block';
-                    iframe.style.display = 'none';
-                }
-                
-                popup.style.display = 'flex';
-                
-            } catch (error) {
-                console.error('Fatura görüntüleme hatası:', error);
-                alert('Fatura görüntülenirken bir hata oluştu');
-            }
-        }
-
-        // Fatura görüntüleme popup'ını kapat
-        function closeInvoicePreview() {
-            const popup = document.getElementById('invoicePreviewPopup');
-            const iframe = document.getElementById('invoicePreviewFrame');
-            const image = document.getElementById('invoicePreviewImage');
-            
-            // URL'leri temizle
-            if (iframe.src) {
-                URL.revokeObjectURL(iframe.src);
-                iframe.src = '';
-            }
-            if (image.src) {
-                URL.revokeObjectURL(image.src);
-                image.src = '';
-            }
-            
-            iframe.style.display = 'none';
-            image.style.display = 'none';
-            popup.style.display = 'none';
-        }
-
-        // Sayfa yüklendiğinde ilk sayfa yüklenir
-        currentPage = 1;
-        document.addEventListener('DOMContentLoaded', () => {
-            loadGameData(1, false);
-            document.getElementById('invoiceFile').addEventListener('change', handleFileSelect);
-            loadCompanyOptions(); // Sadece bir defa fetch edecek, cache'leyecek
-        });
+    }
+    // Sayfa yüklendiğinde şirketleri getir
+    document.addEventListener('DOMContentLoaded', loadCompanies);
     </script>
 </body>
 </html> 

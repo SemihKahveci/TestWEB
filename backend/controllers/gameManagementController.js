@@ -4,8 +4,15 @@ class GameManagementController {
     // Tüm oyun yönetimi verilerini getir
     async getAllGames(req, res) {
         try {
-            const games = await GameManagement.find().sort({ createdAt: -1 });
-            res.json(games);
+            const page = parseInt(req.query.page) || 1;
+            const limit = parseInt(req.query.limit) || 20;
+            const skip = (page - 1) * limit;
+            const games = await GameManagement.find({}, 'firmName invoiceNo credit date')
+                .sort({ createdAt: -1 })
+                .skip(skip)
+                .limit(limit);
+            const total = await GameManagement.countDocuments();
+            res.json({ games, total });
         } catch (error) {
             console.error('Oyun verileri getirme hatası:', error);
             res.status(500).json({ message: 'Oyun verileri getirilemedi' });
