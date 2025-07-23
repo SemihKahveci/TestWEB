@@ -98,13 +98,28 @@ function displayData() {
 
     const startIndex = (currentPage - 1) * itemsPerPage;
     const endIndex = startIndex + itemsPerPage;
-    const pageData = filteredData.slice(startIndex, endIndex);
+    const showExpired = isShowExpiredWarning();
+
+    // Süresi dolan oyunları göster kapalıysa, status'u 'Süresi Doldu' olanları gizle
+    let pageData = filteredData;
+    if (!showExpired) {
+        pageData = pageData.filter(item => item.status !== 'Süresi Doldu');
+    }
+    pageData = pageData.slice(startIndex, endIndex);
 
     tbody.innerHTML = '';
 
-    const showExpired = isShowExpiredWarning();
-
     pageData.forEach(item => {
+        // Eğer ana satır grupluysa ve alt grupta sadece 'Süresi Doldu' olanlar varsa, onları da gizle
+        if (!showExpired && item.status === 'Süresi Doldu') {
+            return; // Ana satırı hiç ekleme
+        }
+        // Aktif (gözüken) alt grup sayısını hesapla
+        let visibleGroupCount = 1;
+        if (item.isGrouped && item.groupCount > 1 && item.allGroupItems) {
+            visibleGroupCount = 1 + item.allGroupItems.slice(1).filter(sub => showExpired || sub.status !== 'Süresi Doldu').length;
+        }
+        const showExpandIcon = item.isGrouped && visibleGroupCount > 1;
         const row = document.createElement('tr');
         const isPDFDisabled = item.status !== 'Tamamlandı';
         const isInactive = item.status === 'Beklemede' || item.status === 'Oyun Devam Ediyor';
@@ -126,19 +141,10 @@ function displayData() {
         
         row.innerHTML = `
             <td>
-                ${item.isGrouped && item.groupCount > 1 ? 
-                    `<span class="expand-icon" onclick="toggleGroup('${item.email}')">+</span> ` : 
-                    ''
-                }
+                ${showExpandIcon ? `<span class="expand-icon" onclick="toggleGroup('${item.email}')">+</span> ` : ''}
                 ${item.name}
-                ${showExpired && item.hasExpiredCode ? 
-                    `<span class="expired-warning" title="Oynanmamış oyun var"><i class="fas fa-exclamation-triangle"></i></span> ` : 
-                    ''
-                }
-                ${item.isGrouped && item.groupCount > 1 ? 
-                    `<span class="group-count">(${item.groupCount} sonuç)</span>` : 
-                    ''
-                }
+                ${showExpired && item.hasExpiredCode ? `<span class="expired-warning" title="Oynanmamış oyun var"><i class="fas fa-exclamation-triangle"></i></span> ` : ''}
+                ${showExpandIcon ? `<span class="group-count">(${visibleGroupCount} sonuç)</span>` : ''}
             </td>
             <td>${item.email || '-'}</td>
             <td>
@@ -162,6 +168,9 @@ function displayData() {
         // Gruplandırılmış satırlar için alt satırları ekle (başlangıçta gizli)
         if (item.isGrouped && item.groupCount > 1) {
             item.allGroupItems.slice(1).forEach(groupItem => {
+                if (!showExpired && groupItem.status === 'Süresi Doldu') {
+                    return; // Alt satırı da ekleme
+                }
                 const subRow = document.createElement('tr');
                 subRow.classList.add('sub-row', 'hidden');
                 subRow.setAttribute('data-parent-email', item.email);
