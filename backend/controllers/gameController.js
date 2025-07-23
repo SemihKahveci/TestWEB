@@ -269,8 +269,8 @@ class GameController {
             // Tüm yetenek türlerini gruplandır
             const byAnswers = answers.filter(answer => answer.answerSubCategory === 'BY');
             const moAnswers = answers.filter(answer => answer.answerSubCategory === 'MO');
-            const hiAnswers = answers.filter(answer => answer.answerSubCategory === 'HI');
-            const twAnswers = answers.filter(answer => answer.answerSubCategory === 'TW');
+            const hiAnswers = answers.filter(answer => answer.answerSubCategory === 'IE');
+            const twAnswers = answers.filter(answer => answer.answerSubCategory === 'IDIK');
             
             // Cevapları answerType1 değerlerini al
             const byAnswerTypes = byAnswers.map(answer => answer.answerType1);

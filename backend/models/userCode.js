@@ -56,11 +56,11 @@ const userCodeSchema = new mongoose.Schema({
         type: String,
         default: '-'
     },
-    hiScore: {
+    ieScore: {
         type: String,
         default: '-'
     },
-    twScore: {
+    idikScore: {
         type: String,
         default: '-'
     },

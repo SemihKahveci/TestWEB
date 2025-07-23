@@ -77,8 +77,8 @@ async function loadData(resetFilters = false) {
                         const itemName = item.name.toString().toLowerCase();
                         const customerFocusScore = item.customerFocusScore === '-' ? null : parseFloat(item.customerFocusScore);
                         const uncertaintyScore = item.uncertaintyScore === '-' ? null : parseFloat(item.uncertaintyScore);
-                        const hiScore = item.hiScore === '-' ? null : parseFloat(item.hiScore);
-                        const twScore = item.twScore === '-' ? null : parseFloat(item.twScore);
+                        const ieScore = item.ieScore === '-' ? null : parseFloat(item.ieScore);
+                        const idikScore = item.idikScore === '-' ? null : parseFloat(item.idikScore);
 
                         // İsim araması
                         let nameMatch = true;
@@ -102,23 +102,23 @@ async function loadData(resetFilters = false) {
                             uncertaintyMatch = uncertaintyScore >= min && uncertaintyScore <= max;
                         }
 
-                        // HI Skoru filtresi
-                        let hiMatch = true;
-                        if (hiScore !== null) {
-                            const min = parseFloat(document.getElementById('hiMin').value);
-                            const max = parseFloat(document.getElementById('hiMax').value);
-                            hiMatch = hiScore >= min && hiScore <= max;
+                        // IE Skoru filtresi
+                        let ieMatch = true;
+                        if (ieScore !== null) {
+                            const min = parseFloat(document.getElementById('ieMin').value);
+                            const max = parseFloat(document.getElementById('ieMax').value);
+                            ieMatch = ieScore >= min && ieScore <= max;
                         }
 
-                        // TW Skoru filtresi
-                        let twMatch = true;
-                        if (twScore !== null) {
-                            const min = parseFloat(document.getElementById('twMin').value);
-                            const max = parseFloat(document.getElementById('twMax').value);
-                            twMatch = twScore >= min && twScore <= max;
+                        // IDIK Skoru filtresi
+                        let idikMatch = true;
+                        if (idikScore !== null) {
+                            const min = parseFloat(document.getElementById('idikMin').value);
+                            const max = parseFloat(document.getElementById('idikMax').value);
+                            idikMatch = idikScore >= min && idikScore <= max;
                         }
 
-                        return nameMatch && customerFocusMatch && uncertaintyMatch && hiMatch && twMatch;
+                        return nameMatch && customerFocusMatch && uncertaintyMatch && ieMatch && idikMatch;
                     } catch (error) {
                         console.error('Öğe filtreleme hatası:', error, item);
                         return false;
@@ -171,10 +171,10 @@ function displayData() {
             Math.round(parseFloat(item.customerFocusScore)) : '-';
         const uncertaintyScore = (item.uncertaintyScore && !isNaN(item.uncertaintyScore)) ? 
             Math.round(parseFloat(item.uncertaintyScore)) : '-';
-        const hiScore = (item.hiScore && !isNaN(item.hiScore)) ? 
-            Math.round(parseFloat(item.hiScore)) : '-';
-        const twScore = (item.twScore && !isNaN(item.twScore)) ? 
-            Math.round(parseFloat(item.twScore)) : '-';
+        const ieScore = (item.ieScore && !isNaN(item.ieScore)) ? 
+            Math.round(parseFloat(item.ieScore)) : '-';
+        const idikScore = (item.idikScore && !isNaN(item.idikScore)) ? 
+            Math.round(parseFloat(item.idikScore)) : '-';
         
         row.innerHTML = `
             <td>
@@ -193,13 +193,13 @@ function displayData() {
                 </span>
             </td>
             <td>
-                <span class="score-badge ${getScoreColorClass(hiScore)}">
-                    ${hiScore}
+                <span class="score-badge ${getScoreColorClass(ieScore)}">
+                    ${ieScore}
                 </span>
             </td>
             <td>
-                <span class="score-badge ${getScoreColorClass(twScore)}">
-                    ${twScore}
+                <span class="score-badge ${getScoreColorClass(idikScore)}">
+                    ${idikScore}
                 </span>
             </td>
         `;
@@ -396,21 +396,21 @@ function clearFilters() {
         document.getElementById('customerFocusMax').value = '100';
         document.getElementById('uncertaintyMin').value = '0';
         document.getElementById('uncertaintyMax').value = '100';
-        document.getElementById('hiMin').value = '0';
-        document.getElementById('hiMax').value = '100';
-        document.getElementById('twMin').value = '0';
-        document.getElementById('twMax').value = '100';
+        document.getElementById('ieMin').value = '0';
+        document.getElementById('ieMax').value = '100';
+        document.getElementById('idikMin').value = '0';
+        document.getElementById('idikMax').value = '100';
         document.getElementById('customerFocusMinValue').textContent = '0';
         document.getElementById('customerFocusMaxValue').textContent = '100';
         document.getElementById('uncertaintyMinValue').textContent = '0';
         document.getElementById('uncertaintyMaxValue').textContent = '100';
-        document.getElementById('hiMinValue').textContent = '0';
-        document.getElementById('hiMaxValue').textContent = '100';
-        document.getElementById('twMinValue').textContent = '0';
-        document.getElementById('twMaxValue').textContent = '100';
+        document.getElementById('ieMinValue').textContent = '0';
+        document.getElementById('ieMaxValue').textContent = '100';
+        document.getElementById('idikMinValue').textContent = '0';
+        document.getElementById('idikMaxValue').textContent = '100';
 
         // Range görünümünü güncelle
-        ['customerFocus', 'uncertainty', 'hi', 'tw'].forEach(prefix => {
+        ['customerFocus', 'uncertainty', 'ie', 'idik'].forEach(prefix => {
             const range = document.querySelector(`#${prefix}Min`).parentElement.querySelector('.range');
             const leftThumb = document.querySelector(`#${prefix}Min`).parentElement.querySelector('.thumb.left');
             const rightThumb = document.querySelector(`#${prefix}Min`).parentElement.querySelector('.thumb.right');
@@ -443,8 +443,8 @@ document.addEventListener('DOMContentLoaded', () => {
     // Multi-range input'ları başlat
     initMultiRange('customerFocus');
     initMultiRange('uncertainty');
-    initMultiRange('hi');
-    initMultiRange('tw');
+    initMultiRange('ie');
+    initMultiRange('idik');
 });
 
 // Multi-range input'ları başlat
@@ -537,8 +537,8 @@ function downloadExcel() {
             'Ad Soyad': item.name || '-',
             'Venus - MO': item.customerFocusScore || '-',
             'Venus - BY': item.uncertaintyScore || '-',
-            'Titan - HI': item.hiScore || '-',
-            'Titan - TW': item.twScore || '-'
+            'Titan - HI': item.ieScore || '-',
+            'Titan - TW': item.idikScore || '-'
         }));
 
         if (dataToExport.length === 0) {

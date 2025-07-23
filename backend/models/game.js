@@ -24,8 +24,8 @@ const gameSchema = new mongoose.Schema({
         answerSubCategory: { 
             type: String, 
             required: true,
-            enum: ['MO', 'BY', 'HI', 'TW'],
-            message: 'answerSubCategory must be "MO", "BY", "HI", or "TW"'
+            enum: ['MO', 'BY', 'IE', 'IDIK'],
+            message: 'answerSubCategory must be "MO", "BY", "IE", or "IDIK"'
         },
         reserved1: { type: String },
         reserved2: { type: String },
@@ -57,11 +57,11 @@ const gameSchema = new mongoose.Schema({
         type: String,
         default: '-'
     },
-    hiScore: {
+    ieScore: {
         type: String,
         default: '-'
     },
-    twScore: {
+    idikScore: {
         type: String,
         default: '-'
     }

@@ -319,8 +319,8 @@ const adminController = {
                     expiryDate: result.expiryDate,
                     customerFocusScore: result.customerFocusScore,
                     uncertaintyScore: result.uncertaintyScore,
-                    hiScore: result.hiScore,
-                    twScore: result.twScore
+                    ieScore: result.ieScore,
+                    idikScore: result.idikScore
                 }))
             });
         } catch (error) {
