@@ -24,6 +24,9 @@ router.put('/:id', isSuperAdmin, adminController.updateAdmin);
 // Admin listesi (sadece superadmin)
 router.get('/list', isSuperAdmin, adminController.getAdmins);
 
+// Tekil admin getirme (sadece superadmin)
+router.get('/:id', isSuperAdmin, adminController.getAdminById);
+
 // Değerlendirme işlemleri
 router.post('/evaluations', adminController.createEvaluation);
 router.delete('/evaluations/:id', adminController.deleteEvaluation);

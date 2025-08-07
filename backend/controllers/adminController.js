@@ -420,35 +420,46 @@ const adminController = {
     updateAdmin: async (req, res) => {
         try {
             const { id } = req.params;
-            const { email, password, name, role, isActive } = req.body;
+            const { email, password, name, company, role, isActive } = req.body;
 
             // Admin'i bul
             const admin = await Admin.findById(id);
             if (!admin) {
-                return res.status(404).json({ message: 'Admin bulunamadı' });
+                return res.status(404).json({ 
+                    success: false,
+                    message: 'Admin bulunamadı' 
+                });
             }
 
             // Güncelleme
             if (email) admin.email = email;
             if (password) admin.password = password;
             if (name) admin.name = name;
+            if (company) admin.company = company;
             if (role) admin.role = role;
             if (typeof isActive === 'boolean') admin.isActive = isActive;
 
             await admin.save();
 
             res.json({
+                success: true,
                 message: 'Admin başarıyla güncellendi',
                 admin: {
                     id: admin._id,
                     email: admin.email,
                     name: admin.name,
+                    company: admin.company,
                     role: admin.role,
                     isActive: admin.isActive
                 }
             });
         } catch (error) {
-            res.status(500).json({ message: 'Sunucu hatası' });
+            console.error('Admin güncelleme hatası:', error);
+            res.status(500).json({ 
+                success: false,
+                message: 'Admin güncellenirken bir hata oluştu',
+                error: error.message 
+            });
         }
     },
 
@@ -456,9 +467,44 @@ const adminController = {
     getAdmins: async (req, res) => {
         try {
             const admins = await Admin.find().select('-password');
-            res.json(admins);
+            res.json({
+                success: true,
+                admins: admins
+            });
         } catch (error) {
-            res.status(500).json({ message: 'Sunucu hatası' });
+            console.error('Admin listesi alma hatası:', error);
+            res.status(500).json({ 
+                success: false,
+                message: 'Admin listesi alınırken bir hata oluştu',
+                error: error.message 
+            });
+        }
+    },
+
+    // Tekil admin getirme
+    getAdminById: async (req, res) => {
+        try {
+            const { id } = req.params;
+            
+            const admin = await Admin.findById(id).select('-password');
+            if (!admin) {
+                return res.status(404).json({ 
+                    success: false,
+                    message: 'Admin bulunamadı' 
+                });
+            }
+
+            res.json({
+                success: true,
+                admin: admin
+            });
+        } catch (error) {
+            console.error('Admin getirme hatası:', error);
+            res.status(500).json({ 
+                success: false,
+                message: 'Admin bilgileri alınırken bir hata oluştu',
+                error: error.message 
+            });
         }
     },
 

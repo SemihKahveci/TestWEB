@@ -216,7 +216,52 @@
             background: #018f3f;
         }
 
-        /* Popup stilleri */
+        /* Tablo stilleri */
+        .results-table {
+            width: 100%;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+            border-collapse: collapse;
+        }
+
+        .results-table th,
+        .results-table td {
+            padding: 16px;
+            text-align: left;
+            border-bottom: 1px solid #E9ECEF;
+        }
+
+        .results-table th {
+            background: #F8F9FA;
+            color: #232D42;
+            font-size: 14px;
+            font-family: Montserrat;
+            font-weight: 700;
+        }
+
+        .results-table td {
+            color: #232D42;
+            font-size: 14px;
+            font-family: Montserrat;
+            font-weight: 500;
+        }
+
+        .results-table tr:hover {
+            background: rgba(2, 134, 247, 0.10);
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+        }
+
+        .action-button {
+            cursor: pointer;
+        }
+
+        /* Modal Popup stilleri */
         .popup-overlay {
             display: none;
             position: fixed;
@@ -380,51 +425,6 @@
             font-weight: 700;
         }
 
-        /* Tablo stilleri */
-        .results-table {
-            width: 100%;
-            background: white;
-            border-radius: 8px;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
-            border-collapse: collapse;
-        }
-
-        .results-table th,
-        .results-table td {
-            padding: 16px;
-            text-align: left;
-            border-bottom: 1px solid #E9ECEF;
-        }
-
-        .results-table th {
-            background: #F8F9FA;
-            color: #232D42;
-            font-size: 14px;
-            font-family: Montserrat;
-            font-weight: 700;
-        }
-
-        .results-table td {
-            color: #232D42;
-            font-size: 14px;
-            font-family: Montserrat;
-            font-weight: 500;
-        }
-
-        .results-table tr:hover {
-            background: rgba(2, 134, 247, 0.10);
-        }
-
-        .action-buttons {
-            display: flex;
-            gap: 10px;
-            justify-content: center;
-        }
-
-        .action-button {
-            cursor: pointer;
-        }
-
         /* Yükleme durumu stilleri */
         .save-button.loading {
             opacity: 0.7;
@@ -502,7 +502,7 @@
             <div class="content">
                 <div class="content-header">
                     <div></div> <!-- Sol taraf boş -->
-                    <button class="btn-add" onclick="addNewAdmin()">
+                    <button class="btn-add" onclick="openAdminPopup()">
                         <i class="fas fa-plus"></i> Ekle
                     </button>
                 </div>
@@ -523,7 +523,7 @@
             </div>
 
             <!-- Admin Ekleme Popup -->
-            <div class="popup-overlay" id="adminPopup">
+            <div class="popup-overlay" id="adminPopup" style="display: none;">
                 <div class="popup-content">
                     <div class="popup-title-container">
                         <div class="popup-title">Admin Ekle</div>
@@ -549,6 +549,8 @@
                         </div>
                     </div>
 
+                    <div id="popupMessage" style="width:100%;text-align:center;margin-bottom:10px;font-size:14px;display:none;"></div>
+
                     <div class="popup-buttons">
                         <div class="cancel-button" onclick="closeAdminPopup()" id="cancelButton">
                             <div class="cancel-text">İptal</div>
@@ -564,11 +566,85 @@
                     </div>
                 </div>
             </div>
+
+            <!-- Admin Düzenleme Popup -->
+            <div class="popup-overlay" id="editAdminPopup" style="display: none;">
+                <div class="popup-content">
+                    <div class="popup-title-container">
+                        <div class="popup-title">Admin Düzenle</div>
+                        <div class="popup-title-line"></div>
+                    </div>
+                    
+                    <div class="popup-form">
+                        <div class="popup-input-group">
+                            <div class="popup-input-label">Ad Soyad</div>
+                            <input type="text" class="popup-input-field" id="editAdminName" placeholder="Ad soyad giriniz">
+                        </div>
+                        <div class="popup-input-group">
+                            <div class="popup-input-label">Şirket</div>
+                            <input type="text" class="popup-input-field" id="editAdminCompany" placeholder="Şirket adını giriniz">
+                        </div>
+                        <div class="popup-input-group">
+                            <div class="popup-input-label">E-posta</div>
+                            <input type="email" class="popup-input-field" id="editAdminEmail" placeholder="E-posta adresini giriniz">
+                        </div>
+                        <div class="popup-input-group">
+                            <div class="popup-input-label">Şifre</div>
+                            <input type="password" class="popup-input-field" id="editAdminPassword" placeholder="Yeni şifre (boş bırakılabilir)">
+                        </div>
+                    </div>
+
+                    <div id="editPopupMessage" style="width:100%;text-align:center;margin-bottom:10px;font-size:14px;display:none;"></div>
+
+                    <div class="popup-buttons">
+                        <div class="cancel-button" onclick="closeEditAdminPopup()" id="editCancelButton">
+                            <div class="cancel-text">İptal</div>
+                        </div>
+                        <div class="save-button" onclick="updateAdmin()" id="editSaveButton">
+                            <img src="/images/save-icon.svg" alt="Güncelle" class="save-icon">
+                            <div class="save-text">Güncelle</div>
+                        </div>
+                    </div>
+
+                    <div class="popup-close" onclick="closeEditAdminPopup()">
+                        <img src="/images/close-icon.svg" alt="Kapat" class="popup-close-icon">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Silme Onay Popup -->
+            <div class="popup-overlay" id="deleteConfirmPopup" style="display: none;">
+                <div class="popup-content" style="max-width: 400px;">
+                    <div class="popup-title-container">
+                        <div class="popup-title">Admin Sil</div>
+                        <div class="popup-title-line"></div>
+                    </div>
+                    <div style="text-align: center; margin: 20px 0;">
+                        <p style="color: #232D42; font-size: 16px; margin-bottom: 10px;">Bu admini silmek istediğinizden emin misiniz?</p>
+                        <p style="color: #dc3545; font-size: 14px; font-weight: 500;">Bu işlem geri alınamaz!</p>
+                    </div>
+                    <div id="deletePopupMessage" style="width:100%;text-align:center;margin-bottom:10px;font-size:14px;display:none;"></div>
+                    <div class="popup-buttons">
+                        <div class="cancel-button" onclick="closeDeleteConfirmPopup()">
+                            <div class="cancel-text">İptal</div>
+                        </div>
+                        <div class="save-button" onclick="confirmDeleteAdmin()" style="background: #dc3545;">
+                            <div class="save-text">Sil</div>
+                        </div>
+                    </div>
+                    <div class="popup-close" onclick="closeDeleteConfirmPopup()">
+                        <img src="/images/close-icon.svg" alt="Kapat" class="popup-close-icon">
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 
     <script src="/js/sidebar.js"></script>
     <script>
+        let currentEditAdminId = null;
+        let currentDeleteAdminId = null;
+
         // Sayfa yüklendiğinde verileri yükle
         document.addEventListener('DOMContentLoaded', () => {
             loadAdmins();
@@ -587,8 +663,12 @@
                     throw new Error('Admin listesi yüklenemedi');
                 }
                 
-                const admins = await response.json();
-                displayAdmins(admins);
+                const result = await response.json();
+                if (result.success) {
+                    displayAdmins(result.admins);
+                } else {
+                    throw new Error(result.message || 'Admin listesi alınamadı');
+                }
             } catch (error) {
                 console.error('Admin listesi yükleme hatası:', error);
                 document.getElementById('adminTableBody').innerHTML = '<tr><td colspan="4" style="text-align: center; color: #dc3545;">Veriler yüklenemedi</td></tr>';
@@ -625,7 +705,7 @@
         }
 
         // Admin ekleme popup'ını aç
-        function addNewAdmin() {
+        function openAdminPopup() {
             document.getElementById('adminPopup').style.display = 'flex';
         }
 
@@ -636,6 +716,7 @@
             document.getElementById('adminCompany').value = '';
             document.getElementById('adminEmail').value = '';
             document.getElementById('adminPassword').value = '';
+            document.getElementById('popupMessage').style.display = 'none';
             
             // Yükleme durumunu sıfırla
             const saveButton = document.getElementById('saveButton');
@@ -666,13 +747,13 @@
             const password = document.getElementById('adminPassword').value;
             
             if (!name || !company || !email || !password) {
-                alert('Lütfen tüm alanları doldurunuz!');
+                showPopupMessage('Lütfen tüm alanları doldurunuz!', 'error');
                 return;
             }
 
             // Email formatı kontrolü
             if (!/^\S+@\S+\.\S+$/.test(email)) {
-                alert('Lütfen geçerli bir e-posta adresi giriniz!');
+                showPopupMessage('Lütfen geçerli bir e-posta adresi giriniz!', 'error');
                 return;
             }
 
@@ -708,14 +789,14 @@
                 if (result.success) {
                     closeAdminPopup();
                     loadAdmins();
-                    alert('Admin başarıyla eklendi!');
+                    showPopupMessage('Admin başarıyla eklendi!', 'success');
                 } else {
                     throw new Error(result.message || 'Admin eklenirken bir hata oluştu');
                 }
                 
             } catch (error) {
                 console.error('Admin ekleme hatası:', error);
-                alert('Admin eklenirken bir hata oluştu: ' + error.message);
+                showPopupMessage('Admin eklenirken bir hata oluştu: ' + error.message, 'error');
             } finally {
                 // Yükleme durumunu kapat
                 saveButton.classList.remove('loading');
@@ -726,39 +807,225 @@
         }
 
         // Admin düzenle
-        function editAdmin(adminId) {
-            // Bu fonksiyon daha sonra implement edilecek
-            alert('Düzenleme özelliği yakında eklenecek!');
+        async function editAdmin(adminId) {
+            try {
+                const response = await fetch(`/api/admin/${adminId}`, {
+                    headers: {
+                        'Authorization': `Bearer ${localStorage.getItem('token')}`
+                    }
+                });
+                
+                if (!response.ok) {
+                    throw new Error('Admin bilgileri alınamadı');
+                }
+                
+                const result = await response.json();
+                if (result.success) {
+                    const admin = result.admin;
+                    currentEditAdminId = adminId;
+                    
+                    // Form alanlarını doldur
+                    document.getElementById('editAdminName').value = admin.name || '';
+                    document.getElementById('editAdminCompany').value = admin.company || '';
+                    document.getElementById('editAdminEmail').value = admin.email || '';
+                    document.getElementById('editAdminPassword').value = '';
+                } else {
+                    throw new Error(result.message || 'Admin bilgileri alınamadı');
+                }
+                
+                // Popup'ı aç
+                document.getElementById('editAdminPopup').style.display = 'flex';
+                
+            } catch (error) {
+                console.error('Admin bilgileri alma hatası:', error);
+                alert('Admin bilgileri alınırken bir hata oluştu: ' + error.message);
+            }
+        }
+
+        // Admin düzenleme popup'ını kapat
+        function closeEditAdminPopup() {
+            document.getElementById('editAdminPopup').style.display = 'none';
+            currentEditAdminId = null;
+            document.getElementById('editAdminName').value = '';
+            document.getElementById('editAdminCompany').value = '';
+            document.getElementById('editAdminEmail').value = '';
+            document.getElementById('editAdminPassword').value = '';
+            document.getElementById('editPopupMessage').style.display = 'none';
+            
+            // Yükleme durumunu sıfırla
+            const saveButton = document.getElementById('editSaveButton');
+            const cancelButton = document.getElementById('editCancelButton');
+            if (saveButton) {
+                saveButton.classList.remove('loading');
+                saveButton.style.pointerEvents = 'auto';
+            }
+            if (cancelButton) {
+                cancelButton.classList.remove('loading');
+                cancelButton.style.pointerEvents = 'auto';
+            }
+        }
+
+        // Admin güncelle
+        async function updateAdmin() {
+            if (!currentEditAdminId) {
+                showEditPopupMessage('Admin ID bulunamadı!', 'error');
+                return;
+            }
+
+            const saveButton = document.getElementById('editSaveButton');
+            const cancelButton = document.getElementById('editCancelButton');
+            
+            if (saveButton.classList.contains('loading')) {
+                return;
+            }
+
+            const name = document.getElementById('editAdminName').value.trim();
+            const company = document.getElementById('editAdminCompany').value.trim();
+            const email = document.getElementById('editAdminEmail').value.trim();
+            const password = document.getElementById('editAdminPassword').value;
+            
+            if (!name || !company || !email) {
+                showEditPopupMessage('Lütfen gerekli alanları doldurunuz!', 'error');
+                return;
+            }
+
+            // Email formatı kontrolü
+            if (!/^\S+@\S+\.\S+$/.test(email)) {
+                showEditPopupMessage('Lütfen geçerli bir e-posta adresi giriniz!', 'error');
+                return;
+            }
+
+            // Yükleme durumunu başlat
+            saveButton.classList.add('loading');
+            cancelButton.classList.add('loading');
+            saveButton.style.pointerEvents = 'none';
+            cancelButton.style.pointerEvents = 'none';
+
+            try {
+                const updateData = {
+                    name: name,
+                    company: company,
+                    email: email
+                };
+
+                // Şifre varsa ekle
+                if (password) {
+                    updateData.password = password;
+                }
+
+                const response = await fetch(`/api/admin/${currentEditAdminId}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Authorization': `Bearer ${localStorage.getItem('token')}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(updateData)
+                });
+                
+                if (!response.ok) {
+                    throw new Error('Admin güncellenemedi');
+                }
+                
+                const result = await response.json();
+                if (result.success) {
+                    closeEditAdminPopup();
+                    loadAdmins();
+                    showEditPopupMessage('Admin başarıyla güncellendi!', 'success');
+                } else {
+                    throw new Error(result.message || 'Admin güncellenirken bir hata oluştu');
+                }
+                
+            } catch (error) {
+                console.error('Admin güncelleme hatası:', error);
+                showEditPopupMessage('Admin güncellenirken bir hata oluştu: ' + error.message, 'error');
+            } finally {
+                // Yükleme durumunu kapat
+                saveButton.classList.remove('loading');
+                cancelButton.classList.remove('loading');
+                saveButton.style.pointerEvents = 'auto';
+                cancelButton.style.pointerEvents = 'auto';
+            }
         }
 
         // Admin sil
-        async function deleteAdmin(adminId) {
-            if (confirm('Bu admini silmek istediğinizden emin misiniz?')) {
-                try {
-                    const response = await fetch(`/api/admin/${adminId}`, {
-                        method: 'DELETE',
-                        headers: {
-                            'Authorization': `Bearer ${localStorage.getItem('token')}`
-                        }
-                    });
-                    
-                    if (!response.ok) {
-                        throw new Error('Admin silinemedi');
-                    }
-                    
-                    const result = await response.json();
-                    if (result.success) {
-                        loadAdmins();
-                        alert('Admin başarıyla silindi!');
-                    } else {
-                        throw new Error(result.message || 'Admin silinirken bir hata oluştu');
-                    }
-                    
-                } catch (error) {
-                    console.error('Admin silme hatası:', error);
-                    alert('Admin silinirken bir hata oluştu: ' + error.message);
-                }
+        function deleteAdmin(adminId) {
+            currentDeleteAdminId = adminId;
+            document.getElementById('deleteConfirmPopup').style.display = 'flex';
+        }
+
+        // Silme onay popup'ını kapat
+        function closeDeleteConfirmPopup() {
+            document.getElementById('deleteConfirmPopup').style.display = 'none';
+            currentDeleteAdminId = null;
+            document.getElementById('deletePopupMessage').style.display = 'none';
+        }
+
+        // Admin silmeyi onayla
+        async function confirmDeleteAdmin() {
+            if (!currentDeleteAdminId) {
+                showDeletePopupMessage('Admin ID bulunamadı!', 'error');
+                return;
             }
+
+            try {
+                const response = await fetch(`/api/admin/${currentDeleteAdminId}`, {
+                    method: 'DELETE',
+                    headers: {
+                        'Authorization': `Bearer ${localStorage.getItem('token')}`
+                    }
+                });
+                
+                if (!response.ok) {
+                    throw new Error('Admin silinemedi');
+                }
+                
+                const result = await response.json();
+                if (result.success) {
+                    closeDeleteConfirmPopup();
+                    loadAdmins();
+                    showDeletePopupMessage('Admin başarıyla silindi!', 'success');
+                } else {
+                    throw new Error(result.message || 'Admin silinirken bir hata oluştu');
+                }
+                
+            } catch (error) {
+                console.error('Admin silme hatası:', error);
+                showDeletePopupMessage('Admin silinirken bir hata oluştu: ' + error.message, 'error');
+            }
+        }
+
+        // Popup mesaj gösterme fonksiyonları
+        function showPopupMessage(message, type) {
+            const messageDiv = document.getElementById('popupMessage');
+            messageDiv.textContent = message;
+            messageDiv.style.display = 'block';
+            messageDiv.style.color = type === 'error' ? '#dc3545' : '#01A94D';
+            
+            setTimeout(() => {
+                messageDiv.style.display = 'none';
+            }, 3000);
+        }
+
+        function showEditPopupMessage(message, type) {
+            const messageDiv = document.getElementById('editPopupMessage');
+            messageDiv.textContent = message;
+            messageDiv.style.display = 'block';
+            messageDiv.style.color = type === 'error' ? '#dc3545' : '#01A94D';
+            
+            setTimeout(() => {
+                messageDiv.style.display = 'none';
+            }, 3000);
+        }
+
+        function showDeletePopupMessage(message, type) {
+            const messageDiv = document.getElementById('deletePopupMessage');
+            messageDiv.textContent = message;
+            messageDiv.style.display = 'block';
+            messageDiv.style.color = type === 'error' ? '#dc3545' : '#01A94D';
+            
+            setTimeout(() => {
+                messageDiv.style.display = 'none';
+            }, 3000);
         }
     </script>
 </body>
