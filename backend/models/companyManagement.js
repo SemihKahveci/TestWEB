@@ -3,7 +3,8 @@ const mongoose = require('mongoose');
 const companyManagementSchema = new mongoose.Schema({
     vkn: {
         type: String,
-        required: true
+        required: true,
+        unique: true
     },
     firmName: {
         type: String,

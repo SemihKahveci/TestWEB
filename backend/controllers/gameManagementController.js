@@ -56,26 +56,45 @@ class GameManagementController {
             const { id } = req.params;
             const { firmName, invoiceNo, credit, invoiceFile } = req.body;
 
+            // Validasyon
+            if (!firmName || !invoiceNo || !credit) {
+                return res.status(400).json({ success: false, message: 'Tüm zorunlu alanlar doldurulmalıdır' });
+            }
+
+            // Mevcut oyunu kontrol et
+            const existingGame = await GameManagement.findById(id);
+            if (!existingGame) {
+                return res.status(404).json({ success: false, message: 'Oyun bulunamadı' });
+            }
+
+            // Güncelleme verisi hazırla
+            const updateData = {
+                firmName,
+                invoiceNo,
+                credit: Number(credit),
+                updatedAt: Date.now()
+            };
+
+            // Eğer yeni dosya varsa ekle
+            if (invoiceFile) {
+                // Dosya formatı kontrolü
+                const allowedTypes = ['application/pdf', 'image/jpeg', 'image/jpg', 'image/png'];
+                if (!allowedTypes.includes(invoiceFile.fileType)) {
+                    return res.status(400).json({ success: false, message: 'Sadece PDF, JPEG ve PNG formatları kabul edilir' });
+                }
+                updateData.invoiceFile = invoiceFile;
+            }
+
             const updatedGame = await GameManagement.findByIdAndUpdate(
                 id,
-                {
-                    firmName,
-                    invoiceNo,
-                    credit: Number(credit),
-                    invoiceFile,
-                    updatedAt: Date.now()
-                },
+                updateData,
                 { new: true }
             );
 
-            if (!updatedGame) {
-                return res.status(404).json({ message: 'Oyun bulunamadı' });
-            }
-
-            res.json(updatedGame);
+            res.json({ success: true, message: 'Oyun başarıyla güncellendi', game: updatedGame });
         } catch (error) {
             console.error('Oyun güncelleme hatası:', error);
-            res.status(500).json({ message: 'Oyun güncellenemedi' });
+            res.status(500).json({ success: false, message: 'Oyun güncellenemedi' });
         }
     }
 
@@ -93,6 +112,23 @@ class GameManagementController {
         } catch (error) {
             console.error('Oyun silme hatası:', error);
             res.status(500).json({ message: 'Oyun silinemedi' });
+        }
+    }
+
+    // ID'ye göre oyun verisi getir
+    async getGameById(req, res) {
+        try {
+            const { id } = req.params;
+            const game = await GameManagement.findById(id);
+
+            if (!game) {
+                return res.status(404).json({ success: false, message: 'Oyun bulunamadı' });
+            }
+
+            res.json({ success: true, game });
+        } catch (error) {
+            console.error('Oyun getirme hatası:', error);
+            res.status(500).json({ success: false, message: 'Oyun getirilemedi' });
         }
     }
 

@@ -5,6 +5,12 @@ const gameManagementController = require('../controllers/gameManagementControlle
 // Tüm oyun verilerini getir
 router.get('/games', gameManagementController.getAllGames);
 
+// Firma adına göre oyun verisi getir (spesifik route önce gelmeli)
+router.get('/games/firm/:firmName', gameManagementController.getGameByFirmName);
+
+// ID'ye göre oyun verisi getir
+router.get('/games/:id', gameManagementController.getGameById);
+
 // Yeni oyun verisi ekle
 router.post('/games', gameManagementController.addGame);
 
@@ -13,8 +19,5 @@ router.put('/games/:id', gameManagementController.updateGame);
 
 // Oyun verisini sil
 router.delete('/games/:id', gameManagementController.deleteGame);
-
-// Firma adına göre oyun verisi getir
-router.get('/games/firm/:firmName', gameManagementController.getGameByFirmName);
 
 module.exports = router; 
