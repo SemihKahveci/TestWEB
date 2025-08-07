@@ -21,7 +21,7 @@ async function createSidebar() {
     // Aktif menü öğesini belirle
     const activeMenuItem = pageToMenuItem[currentPath] || 'Genel Takip Sistemi';
     // Aktif submenu kontrolü için
-    const isFirmaAdminiActive = currentPath === '/admin-management.html';
+    const isFirmaAdminiActive = currentPath === '/defineCompanyAdmin.html';
     const isFirmaTanimlamaActive = currentPath === '/companyIdentification.html';
 
     // Kullanıcı rolünü kontrol et
@@ -385,7 +385,7 @@ async function createSidebar() {
                     window.location.href = '/addGroup.html';
                     break;
                 case 'Sistem Ayarları':
-                    //window.location.href = '/system-settings.html';
+                    window.location.href = '/admin-management.html';
                     break;
                 case 'Bildirimler':
                     //window.location.href = '/notifications.html';
@@ -414,7 +414,7 @@ async function createSidebar() {
                     window.location.href = '/companyIdentification.html';
                     break;
                 case 'Firma Admini Tanımlama':
-                    window.location.href = '/admin-management.html';
+                    window.location.href = '/defineCompanyAdmin.html';
                     break;
                 case 'Oyun Tanımlama':
                     if (isSuperAdmin) {
