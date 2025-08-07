@@ -16,6 +16,7 @@ async function createSidebar() {
         '/authorization.html': 'Yetkilendirme',
         '/grouping.html': 'Yetkilendirme', 
         '/organization.html': 'Yetkilendirme',
+        '/subscriptionSettings.html': 'Oyun Kullanım Özeti',
     };
     
     // Aktif menü öğesini belirle
@@ -372,7 +373,7 @@ async function createSidebar() {
                     window.location.href = '/game-send.html';
                     break;
                 case 'Oyun Kullanım Özeti':
-                  //  window.location.href = '/game-summary.html';
+                    window.location.href = '/subscriptionSettings.html';
                     break;
                 case 'Firma Ayarları':
                    // window.location.href = '/authorization.html';

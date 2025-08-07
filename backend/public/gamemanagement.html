@@ -1373,22 +1373,22 @@
         // Verileri görüntüle
         function displayData() {
             const gridContainer = document.getElementById('gameDataContainer');
-            gridContainer.innerHTML = '';
+                    gridContainer.innerHTML = '';
             
             // Başlık satırını oluştur
-            const headers = ['Firma Adı', 'Fatura No', 'Kredi', 'Tarih', 'İşlemler'];
-            headers.forEach(headerText => {
-                const headerDiv = document.createElement('div');
-                headerDiv.style.cssText = 'padding: 16px; background: #F8F9FA; color: #232D42; font-size: 14px; font-family: Montserrat; font-weight: 700; text-align: center;';
-                headerDiv.textContent = headerText;
-                gridContainer.appendChild(headerDiv);
-            });
+                    const headers = ['Firma Adı', 'Fatura No', 'Kredi', 'Tarih', 'İşlemler'];
+                    headers.forEach(headerText => {
+                        const headerDiv = document.createElement('div');
+                        headerDiv.style.cssText = 'padding: 16px; background: #F8F9FA; color: #232D42; font-size: 14px; font-family: Montserrat; font-weight: 700; text-align: center;';
+                        headerDiv.textContent = headerText;
+                        gridContainer.appendChild(headerDiv);
+                    });
 
             // Game data rows container'ı ekle
             const gameDataRows = document.createElement('div');
-            gameDataRows.id = 'gameDataRows';
-            gameDataRows.style.cssText = 'grid-column: 1 / -1; display: contents;';
-            gridContainer.appendChild(gameDataRows);
+                    gameDataRows.id = 'gameDataRows';
+                    gameDataRows.style.cssText = 'grid-column: 1 / -1; display: contents;';
+                    gridContainer.appendChild(gameDataRows);
 
             // Mevcut sayfa için verileri göster
             const startIndex = (currentPage - 1) * itemsPerPage;
@@ -1396,8 +1396,8 @@
             const currentPageGames = allGames.slice(startIndex, endIndex);
 
             currentPageGames.forEach(game => {
-                addGameData(game.firmName, game.invoiceNo, game.credit, new Date(game.date).toLocaleDateString('tr-TR'), game._id);
-            });
+                    addGameData(game.firmName, game.invoiceNo, game.credit, new Date(game.date).toLocaleDateString('tr-TR'), game._id);
+                });
         }
 
         // Sayfalama kontrollerini güncelle

@@ -1,0 +1,987 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Abonelik Ayarları</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: #F8F9FA;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        .container {
+            width: 100%;
+            min-height: 100vh;
+            position: relative;
+            background: white;
+            display: flex;
+        }
+
+        .main-content {
+            flex: 1;
+            margin-left: 0;
+            width: 100%;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .header {
+            width: 100%;
+            height: 76px;
+            padding: 16px 32px;
+            background: white;
+            backdrop-filter: blur(32px);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+        }
+
+        .header-content {
+            width: 100%;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .header-right {
+            display: flex;
+            justify-content: flex-end;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .notification-icon {
+            width: 24px;
+            height: 24px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+        }
+
+        .user-info {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 16px;
+            cursor: pointer;
+        }
+
+        .search-box {
+            padding: 4px 16px;
+            background: white;
+            border-radius: 4px;
+            outline: 1px #E9ECEF solid;
+            display: flex;
+            justify-content: flex-start;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .search-icon {
+            width: 24px;
+            height: 24px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .search-input {
+            width: 240px;
+            border: none;
+            outline: none;
+            background: transparent;
+            color: #232D42;
+            font-size: 16px;
+            font-family: Inter;
+            font-weight: 400;
+            line-height: 28px;
+        }
+
+        .search-input::placeholder {
+            color: #ADB5BD;
+        }
+
+        .user-section {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .user-avatar {
+            width: 31px;
+            height: 31px;
+            border-radius: 50%;
+            background: #ddd;
+        }
+
+        .user-details {
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-start;
+            align-items: flex-start;
+        }
+
+        .user-name {
+            color: #232D42;
+            font-size: 16px;
+            font-family: Inter;
+            font-weight: 400;
+            line-height: 28px;
+        }
+
+        .user-role {
+            color: #8A92A6;
+            font-size: 13px;
+            font-family: Inter;
+            font-weight: 400;
+            line-height: 16.90px;
+        }
+
+        .page-title {
+            width: 100%;
+            height: 75px;
+            background: radial-gradient(ellipse 150.93% 36.28% at 50.00% 50.00%, #3B8AFF 0%, #0048B2 100%);
+            border-bottom-right-radius: 16px;
+            border-bottom-left-radius: 16px;
+            display: flex;
+            justify-content: flex-start;
+            align-items: center;
+            padding: 0 32px;
+            margin-left: 10px;
+        }
+
+        .title-content {
+            width: 100%;
+            display: flex;
+            justify-content: flex-start;
+            align-items: center;
+        }
+
+        .title-text {
+            color: white;
+            font-size: 30px;
+            font-family: Inter;
+            font-weight: 700;
+        }
+
+        .content {
+            flex: 1;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .tab-navigation {
+            width: 100%;
+            height: 52px;
+            display: flex;
+            border-radius: 6px;
+            background: white;
+            border-bottom: 1px solid #E9ECEF;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+        }
+
+        .tab-item {
+            flex: 1;
+            padding: 16px;
+            border-bottom: 2px solid rgba(0, 0, 0, 0.30);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .tab-item.active {
+            border-bottom: 2px solid #3A57E8;
+        }
+
+        .tab-text {
+            color: rgba(0, 0, 0, 0.30);
+            font-size: 14px;
+            font-family: Poppins;
+            font-weight: 500;
+            line-height: 20px;
+        }
+
+        .tab-item.active .tab-text {
+            color: #3A57E8;
+            font-weight: 700;
+        }
+
+        .content-card {
+            width: 100%;
+            background: white;
+            border-radius: 15px;
+            border: 1px solid #DDDDDD;
+            padding: 30px;
+            display: flex;
+            flex-direction: column;
+            gap: 40px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+        }
+
+        .info-row {
+            display: flex;
+            justify-content: flex-start;
+            align-items: center;
+            gap: 107px;
+        }
+
+        .info-item {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: flex-start;
+            gap: 3px;
+        }
+
+        .info-label {
+            align-self: stretch;
+            color: #8B8B8B;
+            font-size: 14px;
+            font-family: Poppins;
+            font-weight: 400;
+            word-wrap: break-word;
+        }
+
+        .info-value {
+            align-self: stretch;
+            color: black;
+            font-size: 14px;
+            font-family: Poppins;
+            font-weight: 600;
+            word-wrap: break-word;
+        }
+
+        .chart-container {
+            width: 100%;
+            min-height: 250px;
+            background: #FDFDFD;
+            border-radius: 10px;
+            border: 1px solid #D0D0D0;
+            padding: 15px;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .chart-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+        }
+
+        .chart-title-section {
+            display: flex;
+            flex-direction: column;
+            gap: 3px;
+        }
+
+        .chart-title {
+            color: #3A57E8;
+            font-size: 16px;
+            font-family: Poppins;
+            font-weight: 700;
+            line-height: 18px;
+        }
+
+        .chart-subtitle {
+            color: #6F6F6F;
+            font-size: 12px;
+            font-family: Poppins;
+            font-weight: 400;
+            line-height: 16px;
+        }
+
+        .buy-credits-btn {
+            width: fit-content;
+            padding: 6px 20px;
+            border-radius: 4px;
+            border: 1px solid #3A57E8;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .buy-credits-btn:hover {
+            background: #3A57E8;
+        }
+
+        .buy-credits-text {
+            color: #3A57E8;
+            font-size: 14px;
+            font-family: Poppins;
+            font-weight: 600;
+            line-height: 24px;
+        }
+
+        .buy-credits-btn:hover .buy-credits-text {
+            color: white;
+        }
+
+        .chart-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .progress-container {
+            position: relative;
+            width: 100%;
+            height: 36px;
+        }
+
+        .progress-background {
+            position: absolute;
+            width: 100%;
+            height: 36px;
+            background: #A7C4FF;
+            border-radius: 50px;
+        }
+
+        .progress-fill {
+            position: absolute;
+            width: 78%;
+            height: 36px;
+            background: #3A57E8;
+            border-radius: 50px;
+        }
+
+        .progress-text {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 12px;
+            font-family: Poppins;
+            font-weight: 700;
+            line-height: 16px;
+        }
+
+        .progress-text.used {
+            left: 10px;
+            color: white;
+        }
+
+        .progress-text.remaining {
+            right: 10px;
+            color: black;
+        }
+
+        .legend {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+        }
+
+        .legend-item {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .legend-color {
+            width: 30px;
+            height: 16px;
+        }
+
+        .legend-text {
+            color: #6C6C6C;
+            font-size: 12px;
+            font-family: Poppins;
+            font-weight: 500;
+            line-height: 16px;
+        }
+
+        .history-section {
+            color: #636363;
+            font-size: 16px;
+            font-family: Poppins;
+            font-weight: 600;
+            line-height: 20px;
+            margin-bottom: 10px;
+        }
+
+        .history-table {
+            width: 100%;
+            background: white;
+            border-radius: 8px;
+            overflow: hidden;
+            border: 1px solid #E9ECEF;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+        }
+
+        .table-header {
+            background: #F2F2F2;
+            display: flex;
+            border-bottom: 1px solid rgba(0, 0, 0, 0.30);
+        }
+
+        .table-row {
+            display: flex;
+            border-bottom: 1px solid rgba(0, 0, 0, 0.30);
+        }
+
+        .table-row:last-child {
+            border-bottom: none;
+        }
+
+        .table-cell {
+            padding: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .table-cell.header {
+            color: black;
+            font-size: 13px;
+            font-family: Poppins;
+            font-weight: 700;
+            line-height: 18px;
+        }
+
+        .table-cell.data {
+            color: black;
+            font-size: 13px;
+            font-family: Poppins;
+            font-weight: 500;
+            line-height: 18px;
+        }
+
+        .download-icon {
+            width: 24px;
+            height: 22px;
+            background-image: url('/images/download.svg');
+            background-size: contain;
+            background-repeat: no-repeat;
+            background-position: center;
+            cursor: pointer;
+            border-radius: 4px;
+        }
+
+        .id-cell {
+            width: 57px;
+            flex-shrink: 0;
+        }
+
+        .date-cell {
+            width: 207px;
+            flex-shrink: 0;
+        }
+
+        .invoice-cell {
+            width: 207px;
+            flex-shrink: 0;
+        }
+
+        .amount-cell {
+            width: 97px;
+            flex-shrink: 0;
+        }
+
+        .action-cell {
+            width: 97px;
+            flex-shrink: 0;
+        }
+
+        .flex-cell {
+            flex: 1;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .profile-form {
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            gap: 28px;
+        }
+
+        .form-row {
+            display: flex;
+            justify-content: flex-start;
+            align-items: flex-start;
+            gap: 32px;
+        }
+
+        .form-label {
+            width: 260px;
+            color: #1E293B;
+            font-size: 16px;
+            font-family: Poppins;
+            font-weight: 600;
+            line-height: 22px;
+            word-wrap: break-word;
+        }
+
+        .form-input {
+            width: 436px;
+            padding: 8px 16px;
+            background: white;
+            border-radius: 4px;
+            outline: 1px solid #D6D6D6;
+            outline-offset: -1px;
+            color: black;
+            font-size: 16px;
+            font-family: Poppins;
+            font-weight: 400;
+            line-height: 22px;
+            border: none;
+        }
+
+        .profile-photo-section {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .profile-photo {
+            width: 64px;
+            height: 64px;
+            border-radius: 50%;
+            background: #FFD52F;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+        }
+
+        .profile-photo img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .photo-buttons {
+            display: flex;
+            gap: 8px;
+        }
+
+        .btn-edit {
+            width: 99px;
+            padding: 10px 16px;
+            background: #0286F7;
+            border-radius: 8px;
+            color: white;
+            font-size: 14px;
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            font-weight: 700;
+            line-height: 20px;
+            border: none;
+            cursor: pointer;
+        }
+
+        .btn-delete {
+            width: 94px;
+            padding: 10px 16px;
+            background: #F43F5E;
+            border-radius: 8px;
+            color: white;
+            font-size: 14px;
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            font-weight: 700;
+            line-height: 20px;
+            border: none;
+            cursor: pointer;
+        }
+
+        .notification-section {
+            width: 520px;
+            display: flex;
+            flex-direction: column;
+            gap: 24px;
+        }
+
+        .notification-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+        }
+
+        .checkbox {
+            width: 20px;
+            height: 20px;
+            background: #E9ECEF;
+            border-radius: 8px;
+            position: relative;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background-color 0.3s ease;
+        }
+
+        .checkbox.checked {
+            background: #0286F7;
+        }
+
+        .checkbox::after {
+            content: '';
+            position: absolute;
+            width: 8px;
+            height: 6px;
+            border: 2px solid white;
+            border-top: none;
+            border-right: none;
+            transform: rotate(-50deg);
+            top: 30%;
+            left: 40%;
+            margin-top: -1px;
+            margin-left: -3px;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .checkbox.checked::after {
+            opacity: 1;
+        }
+
+        .notification-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .notification-title {
+            color: #1E293B;
+            font-size: 16px;
+            font-family: Poppins;
+            font-weight: 600;
+            line-height: 22px;
+        }
+
+        .notification-description {
+            color: #475569;
+            font-size: 16px;
+            font-family: Poppins;
+            font-weight: 400;
+            line-height: 25.60px;
+        }
+
+        .save-button {
+            width: fit-content;
+            padding: 8px 24px;
+            background: #3A57E8;
+            border-radius: 4px;
+            color: white;
+            font-size: 16px;
+            font-family: Poppins;
+            font-weight: 400;
+            line-height: 28px;
+            border: none;
+            cursor: pointer;
+            margin-left: auto;
+        }
+
+        @media (max-width: 768px) {
+            .info-row {
+                flex-direction: column;
+                gap: 20px;
+            }
+            
+            .legend {
+                flex-direction: column;
+                align-items: center;
+            }
+
+            .chart-container {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="main-content">
+            <div class="header">
+                <div class="header-content">
+                    <div class="header-right">
+                        <div class="notification-icon">
+                            <i class="fas fa-bell" style="color: #8A92A6;"></i>
+                        </div>
+                        <div class="user-info">
+                            <div class="user-details">
+                                <div class="user-name">Andron Game</div>
+                                <div class="user-role">Founder</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="page-title">
+                <div class="title-content">
+                    <div class="title-text">Abonelik Ayarları</div>
+                </div>
+            </div>
+
+            <div class="content">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+                    <div class="search-box">
+                        <div class="search-icon">
+                            <i class="fas fa-search" style="color: #ADB5BD;"></i>
+                        </div>
+                        <input type="text" class="search-input" placeholder="Arama yapın...">
+                    </div>
+                </div>
+
+                <div class="tab-navigation">
+                    <div class="tab-item" onclick="switchTab('profile')">
+                        <div class="tab-text">Profil Ayarları</div>
+                    </div>
+                    <div class="tab-item active" onclick="switchTab('subscription')">
+                        <div class="tab-text">Abonelik Ayarları</div>
+                    </div>
+                </div>
+
+                <!-- Profil Ayarları Tab İçeriği -->
+                <div id="profile-tab" class="tab-content">
+                    <div class="profile-form">
+                        <div class="form-row">
+                            <div class="form-label">Ad Soyad</div>
+                            <input type="text" class="form-input" value="">
+                        </div>
+                        
+                        <div class="form-row">
+                            <div class="form-label">Profil Fotoğrafı</div>
+                            <div class="profile-photo-section">
+                                <div class="profile-photo">
+                                    <img src="https://placehold.co/64x64" alt="Profil Fotoğrafı">
+                                </div>
+                                <div class="photo-buttons">
+                                    <button class="btn-edit">Düzenle</button>
+                                    <button class="btn-delete">Sil</button>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="form-row">
+                            <div class="form-label">E-Mail</div>
+                            <input type="email" class="form-input" value="">
+                        </div>
+                        
+                        <div class="form-row">
+                            <div class="form-label">Telefon Numarası</div>
+                            <input type="tel" class="form-input" value="">
+                        </div>
+                        
+                        <div class="form-row">
+                            <div class="form-label">Bildirim Tercihleri</div>
+                            <div class="notification-section">
+                                <div class="notification-item">
+                                    <div class="checkbox checked" onclick="toggleCheckbox(this)"></div>
+                                    <div class="notification-content">
+                                        <div class="notification-title">E-posta Bildirimleri</div>
+                                        <div class="notification-description">Önemli güncellemeler ve bildirimler için e-posta al</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <button class="save-button">Kaydet</button>
+                    </div>
+                </div>
+
+                <!-- Abonelik Ayarları Tab İçeriği -->
+                <div id="subscription-tab" class="tab-content active">
+                    <div class="content-card">
+                        <div class="info-row">
+                            <div class="info-item">
+                                <div class="info-label">Seçili Plan</div>
+                                <div class="info-value">Premium V2</div>
+                            </div>
+                            <div class="info-item">
+                                <div class="info-label">Başlangıç Tarihi</div>
+                                <div class="info-value">10/10/2023</div>
+                            </div>
+                            <div class="info-item">
+                                <div class="info-label">Toplam Kredi</div>
+                                <div class="info-value">10,000 Kredi</div>
+                            </div>
+                            <div class="info-item">
+                                <div class="info-label">Ücret</div>
+                                <div class="info-value">120$ /Aylık</div>
+                            </div>
+                        </div>
+                        
+                        <div class="chart-container">
+                            <div class="chart-header">
+                                <div class="chart-title-section">
+                                    <div class="chart-title">Kredi Kullanımları</div>
+                                    <div class="chart-subtitle">10/04/2025 12:16 tarihinden bugüne</div>
+                                </div>
+                                <div class="buy-credits-btn">
+                                    <div class="buy-credits-text">Daha Fazla Kredi</div>
+                                </div>
+                            </div>
+                            <div class="chart-content">
+                                <div class="progress-container">
+                                    <div class="progress-background"></div>
+                                    <div class="progress-fill"></div>
+                                    <div class="progress-text used">7800 Kredi</div>
+                                    <div class="progress-text remaining">2200 Kredi</div>
+                                </div>
+                                <div class="legend">
+                                    <div class="legend-item">
+                                        <div class="legend-color" style="background: #3A57E8"></div>
+                                        <div class="legend-text">Kalan Kullanımlarım</div>
+                                    </div>
+                                    <div class="legend-item">
+                                        <div class="legend-color" style="background: #A7C4FF"></div>
+                                        <div class="legend-text">Harcanan Kullanımlarım</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="history-section">Geçmiş Ödemeler</div>
+
+                    <div class="history-table">
+                        <div class="table-header">
+                            <div class="table-cell header id-cell">#</div>
+                            <div class="table-cell header date-cell">Tarih</div>
+                            <div class="table-cell header invoice-cell">Fatura No</div>
+                            <div class="table-cell header flex-cell"></div>
+                            <div class="table-cell header amount-cell">Ücret</div>
+                            <div class="table-cell header action-cell">İşlemler</div>
+                        </div>
+                        <div class="table-row">
+                            <div class="table-cell data id-cell">1</div>
+                            <div class="table-cell data date-cell">10/04/2025</div>
+                            <div class="table-cell data invoice-cell">EF012023021</div>
+                            <div class="table-cell data flex-cell"></div>
+                            <div class="table-cell data amount-cell">120$</div>
+                            <div class="table-cell data action-cell">
+                                <div class="download-icon"></div>
+                            </div>
+                        </div>
+                        <div class="table-row">
+                            <div class="table-cell data id-cell">2</div>
+                            <div class="table-cell data date-cell">10/03/2025</div>
+                            <div class="table-cell data invoice-cell">EF012023074</div>
+                            <div class="table-cell data flex-cell"></div>
+                            <div class="table-cell data amount-cell">120$</div>
+                            <div class="table-cell data action-cell">
+                                <div class="download-icon"></div>
+                            </div>
+                        </div>
+                        <div class="table-row">
+                            <div class="table-cell data id-cell">3</div>
+                            <div class="table-cell data date-cell">10/02/2025</div>
+                            <div class="table-cell data invoice-cell">EF012023153</div>
+                            <div class="table-cell data flex-cell"></div>
+                            <div class="table-cell data amount-cell">120$</div>
+                            <div class="table-cell data action-cell">
+                                <div class="download-icon"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="/js/sidebar.js"></script>
+    <script>
+        // Çıkış işlemi
+        function logout() {
+            localStorage.removeItem('token');
+            sessionStorage.removeItem('token');
+            localStorage.removeItem('userEmail');
+            window.location.href = '/admin.html';
+        }
+
+        // Tab geçiş fonksiyonu
+        function switchTab(tabId) {
+            // Tüm tab'ları pasif yap
+            document.querySelectorAll('.tab-item').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            
+            // Tüm içerikleri gizle
+            document.querySelectorAll('.tab-content').forEach(content => {
+                content.classList.remove('active');
+            });
+            
+            // Seçilen tab'ı aktif yap
+            const selectedTab = document.querySelector(`[onclick="switchTab('${tabId}')"]`);
+            if (selectedTab) {
+                selectedTab.classList.add('active');
+            }
+            
+            // Seçilen içeriği göster
+            const selectedContent = document.getElementById(tabId + '-tab');
+            if (selectedContent) {
+                selectedContent.classList.add('active');
+            }
+            
+            // Seçilen tab'ı localStorage'a kaydet
+            localStorage.setItem('activeTab', tabId);
+        }
+
+        // Checkbox toggle fonksiyonu
+        function toggleCheckbox(checkboxElement) {
+            checkboxElement.classList.toggle('checked');
+            
+            // Checkbox durumunu localStorage'a kaydet
+            const isChecked = checkboxElement.classList.contains('checked');
+            localStorage.setItem('emailNotifications', isChecked);
+        }
+
+        // Sayfa yüklendiğinde token kontrolü
+        document.addEventListener('DOMContentLoaded', () => {
+            const token = localStorage.getItem('token') || sessionStorage.getItem('token');
+            if (!token) {
+                window.location.href = '/admin.html';
+                return;
+            }
+            
+            // Son açık tab'ı al
+            const lastActiveTab = localStorage.getItem('activeTab');
+            if (lastActiveTab) {
+                switchTab(lastActiveTab);
+            }
+            
+            // Checkbox durumunu geri yükle
+            const emailNotifications = localStorage.getItem('emailNotifications');
+            if (emailNotifications !== null) {
+                const checkbox = document.querySelector('.checkbox');
+                if (emailNotifications === 'true') {
+                    checkbox.classList.add('checked');
+                } else {
+                    checkbox.classList.remove('checked');
+                }
+            }
+        });
+    </script>
+</body>
+</html>
