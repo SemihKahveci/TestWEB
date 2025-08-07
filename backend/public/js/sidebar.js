@@ -88,10 +88,12 @@ async function createSidebar() {
                             <span>Firma Tanımlama</span>
                         </div>
                         ` : ''}
-                        <div class="submenu-item ${isFirmaAdminiActive ? 'active' : ''}">
-                            <i class="fas fa-user-cog"></i>
-                            <span>Firma Admini Tanımlama</span>
-                        </div>
+                                                 ${isSuperAdmin ? `
+                         <div class="submenu-item ${isFirmaAdminiActive ? 'active' : ''}">
+                             <i class="fas fa-user-cog"></i>
+                             <span>Firma Admini Tanımlama</span>
+                         </div>
+                         ` : ''}
                         ${isSuperAdmin ? `
                         <div class="submenu-item ${activeMenuItem === 'Oyun Tanımlama' ? 'active' : ''}">
                             <i class="fas fa-gamepad"></i>

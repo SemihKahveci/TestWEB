@@ -645,10 +645,32 @@
         let currentEditAdminId = null;
         let currentDeleteAdminId = null;
 
-        // Sayfa yüklendiğinde verileri yükle
-        document.addEventListener('DOMContentLoaded', () => {
-            loadAdmins();
-        });
+                 // Sayfa yüklendiğinde superadmin kontrolü yap ve verileri yükle
+         document.addEventListener('DOMContentLoaded', async () => {
+             // Superadmin kontrolü
+             try {
+                 const token = localStorage.getItem('token');
+                 const response = await fetch('/api/admin/check-superadmin', {
+                     headers: {
+                         'Authorization': `Bearer ${token}`
+                     }
+                 });
+                 const data = await response.json();
+                 
+                 if (!data.isSuperAdmin) {
+                     alert('Bu sayfaya erişim yetkiniz bulunmamaktadır!');
+                     window.location.href = '/admin-panel.html';
+                     return;
+                 }
+                 
+                 // Superadmin ise verileri yükle
+                 loadAdmins();
+             } catch (error) {
+                 console.error('Yetki kontrolü hatası:', error);
+                 alert('Yetki kontrolü yapılamadı!');
+                 window.location.href = '/admin-panel.html';
+             }
+         });
 
         // Admin listesini yükle
         async function loadAdmins() {

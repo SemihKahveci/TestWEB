@@ -261,6 +261,24 @@
                 window.location.href = '/admin-panel.html';
                 return;
             }
+
+            // Enter tuşu ile giriş yapma özelliği
+            const emailInput = document.getElementById('email');
+            const passwordInput = document.getElementById('password');
+
+            // Email input'unda Enter tuşuna basıldığında
+            emailInput.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') {
+                    login();
+                }
+            });
+
+            // Password input'unda Enter tuşuna basıldığında
+            passwordInput.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') {
+                    login();
+                }
+            });
         });
 
         function login() {
