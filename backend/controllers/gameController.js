@@ -22,13 +22,18 @@ class GameController {
     // Sonuçları getir
     async getResults(req, res) {
         try {
+            // Hem Game hem de UserCode verilerini al
             const games = await Game.find().sort({ date: -1 });
+            const userCodes = await UserCode.find().sort({ sentDate: -1 });
             
             if (!games || games.length === 0) {
                 return res.status(200).json([]);
             }
 
             const formattedData = games.map(game => {
+                // UserCode'dan ilgili veriyi bul
+                const userCode = userCodes.find(uc => uc.code === game.playerCode);
+                
                 return {
                     playerCode: game.playerCode || '-',
                     section: game.section || '-',
@@ -37,13 +42,16 @@ class GameController {
                     evaluationResult: game.evaluationResult,
                     // Results.html için gerekli alanlar
                     code: game.playerCode,
-                    name: game.dummyData?.name || '-',
-                    sentDate: game.sentDate,
-                    completionDate: game.completionDate,
-                    expiryDate: game.expiryDate,
-                    status: game.status,
-                    customerFocusScore: game.customerFocusScore || '-',
-                    uncertaintyScore: game.uncertaintyScore || '-'
+                    name: game.dummyData?.name || userCode?.name || '-',
+                    sentDate: userCode?.sentDate || game.sentDate,
+                    completionDate: userCode?.completionDate || game.completionDate,
+                    expiryDate: userCode?.expiryDate || game.expiryDate,
+                    status: userCode?.status || game.status,
+                    // Skorları hem Game hem UserCode'dan al, öncelik UserCode'da
+                    customerFocusScore: userCode?.customerFocusScore || game.customerFocusScore || '-',
+                    uncertaintyScore: userCode?.uncertaintyScore || game.uncertaintyScore || '-',
+                    ieScore: userCode?.ieScore || game.ieScore || '-',
+                    idikScore: userCode?.idikScore || game.idikScore || '-'
                 };
             });
 
@@ -143,34 +151,34 @@ class GameController {
             uncertaintyScore = uncertaintyScore * 100;
 
             // Skorları hesapla - Titan Gezegeni
-            const hiAnswers = data.answers.filter(answer => 
-                answer.answerSubCategory === 'HI'
+            const ieAnswers = data.answers.filter(answer => 
+                answer.answerSubCategory === 'IE'
             );
-            const twAnswers = data.answers.filter(answer => 
-                answer.answerSubCategory === 'TW'
+            const idikAnswers = data.answers.filter(answer => 
+                answer.answerSubCategory === 'IDIK'
             );
 
-            // HI skorunu hesapla (Titan - Yeni yetenek)
-            let hiScore = 0;
-            if (hiAnswers.length > 0) {
-                hiScore = hiAnswers.reduce((acc, answer) => {
+            // IE skorunu hesapla (Titan - İnsanları Etkileme)
+            let ieScore = 0;
+            if (ieAnswers.length > 0) {
+                ieScore = ieAnswers.reduce((acc, answer) => {
                     const multiplier1 = answerMultipliers[answer.answerType1] || 0;
                     const multiplier2 = answerMultipliers[answer.answerType2] || 0;
                     return acc + ((multiplier1 + (multiplier2 / 2)) * 2) / 3;
-                }, 0) / hiAnswers.length;
+                }, 0) / ieAnswers.length;
             }
-            hiScore = hiScore * 100;
+            ieScore = ieScore * 100;
 
-            // TW skorunu hesapla (Titan - Yeni yetenek)
-            let twScore = 0;
-            if (twAnswers.length > 0) {
-                twScore = twAnswers.reduce((acc, answer) => {
+            // IDIK skorunu hesapla (Titan - Güven Veren İşbirlikçi ve Sinerji)
+            let idikScore = 0;
+            if (idikAnswers.length > 0) {
+                idikScore = idikAnswers.reduce((acc, answer) => {
                     const multiplier1 = answerMultipliers[answer.answerType1] || 0;
                     const multiplier2 = answerMultipliers[answer.answerType2] || 0;
                     return acc + ((multiplier1 + (multiplier2 / 2)) * 2) / 3;
-                }, 0) / twAnswers.length;
+                }, 0) / idikAnswers.length;
             }
-            twScore = twScore * 100;
+            idikScore = idikScore * 100;
             // Değerlendirme sonuçlarını getir
             const evaluationResult = await this.getReportsByAnswerType(data.answers);
 
@@ -183,8 +191,8 @@ class GameController {
                     evaluationResult: evaluationResult,
                     customerFocusScore: Math.round(customerFocusScore),
                     uncertaintyScore: Math.round(uncertaintyScore),
-                    hiScore: Math.round(hiScore),
-                    twScore: Math.round(twScore)
+                    ieScore: Math.round(ieScore),
+                    idikScore: Math.round(idikScore)
                 }
             );
 
@@ -199,8 +207,8 @@ class GameController {
                 evaluationResult: evaluationResult,
                 customerFocusScore: Math.round(customerFocusScore),
                 uncertaintyScore: Math.round(uncertaintyScore),
-                hiScore: Math.round(hiScore),
-                twScore: Math.round(twScore)
+                ieScore: Math.round(ieScore),
+                idikScore: Math.round(idikScore)
             };
 
             // Dummy datayı Game modeline ekle
@@ -212,8 +220,8 @@ class GameController {
                 evaluationResult: evaluationResult,
                 customerFocusScore: Math.round(customerFocusScore),
                 uncertaintyScore: Math.round(uncertaintyScore),
-                hiScore: Math.round(hiScore),
-                twScore: Math.round(twScore)
+                ieScore: Math.round(ieScore),
+                idikScore: Math.round(idikScore)
             });
 
             await newGame.save();
@@ -269,26 +277,26 @@ class GameController {
             // Tüm yetenek türlerini gruplandır
             const byAnswers = answers.filter(answer => answer.answerSubCategory === 'BY');
             const moAnswers = answers.filter(answer => answer.answerSubCategory === 'MO');
-            const hiAnswers = answers.filter(answer => answer.answerSubCategory === 'IE');
-            const twAnswers = answers.filter(answer => answer.answerSubCategory === 'IDIK');
+            const ieAnswers = answers.filter(answer => answer.answerSubCategory === 'IE');
+            const idikAnswers = answers.filter(answer => answer.answerSubCategory === 'IDIK');
             
             // Cevapları answerType1 değerlerini al
             const byAnswerTypes = byAnswers.map(answer => answer.answerType1);
             const moAnswerTypes = moAnswers.map(answer => answer.answerType1);
-            const hiAnswerTypes = hiAnswers.map(answer => answer.answerType1);
-            const twAnswerTypes = twAnswers.map(answer => answer.answerType1);
+            const ieAnswerTypes = ieAnswers.map(answer => answer.answerType1);
+            const idikAnswerTypes = idikAnswers.map(answer => answer.answerType1);
 
             // Boş olmayan cevapları filtrele
             const validByAnswerTypes = byAnswerTypes.filter(type => type && type !== '-');
             const validMoAnswerTypes = moAnswerTypes.filter(type => type && type !== '-');
-            const validHiAnswerTypes = hiAnswerTypes.filter(type => type && type !== '-');
-            const validTwAnswerTypes = twAnswerTypes.filter(type => type && type !== '-');
+            const validIeAnswerTypes = ieAnswerTypes.filter(type => type && type !== '-');
+            const validIdikAnswerTypes = idikAnswerTypes.filter(type => type && type !== '-');
 
             // Cevapları string formatına çevir
             const byAnswerString = validByAnswerTypes.join(', ');
             const moAnswerString = validMoAnswerTypes.join(', ');
-            const hiAnswerString = validHiAnswerTypes.join(', ');
-            const twAnswerString = validTwAnswerTypes.join(', ');
+            const ieAnswerString = validIeAnswerTypes.join(', ');
+            const idikAnswerString = validIdikAnswerTypes.join(', ');
 
             let results = [];
 
@@ -325,38 +333,38 @@ class GameController {
                 }
             }
 
-            // HI raporlarını kontrol et (Titan - Yeni yetenek)
-            if (hiAnswerString) {
-                const matchedHI = await mongoose.connection.collection('evaluationanswersHI').findOne({
+            // IE raporlarını kontrol et (Titan - İnsanları Etkileme)
+            if (ieAnswerString) {
+                const matchedIE = await mongoose.connection.collection('evaluationanswersIE').findOne({
                     $or: [
-                        { Cevaplar: { $regex: new RegExp(hiAnswerString, 'i') } },
-                        { Cevaplar: { $regex: new RegExp(hiAnswerString.replace(/, /g, ','), 'i') } }
+                        { Cevaplar: { $regex: new RegExp(ieAnswerString, 'i') } },
+                        { Cevaplar: { $regex: new RegExp(ieAnswerString.replace(/, /g, ','), 'i') } }
                     ]
                 });
 
-                if (matchedHI) {
-                    const hiResult = await mongoose.connection.collection('evaluationresultsHI').findOne({ ID: matchedHI.ID });
+                if (matchedIE) {
+                    const ieResult = await mongoose.connection.collection('evaluationresultsIE').findOne({ ID: matchedIE.ID });
                     
-                    if (hiResult) {
-                        results.push({ type: 'HI', data: hiResult });
+                    if (ieResult) {
+                        results.push({ type: 'IE', data: ieResult });
                     }
                 }
             }
 
-            // TW raporlarını kontrol et (Titan - Yeni yetenek)
-            if (twAnswerString) {
-                const matchedTW = await mongoose.connection.collection('evaluationanswersTW').findOne({
+            // IDIK raporlarını kontrol et (Titan - Güven Veren İşbirlikçi ve Sinerji)
+            if (idikAnswerString) {
+                const matchedIDIK = await mongoose.connection.collection('evaluationanswersIDIK').findOne({
                     $or: [
-                        { Cevaplar: { $regex: new RegExp(twAnswerString, 'i') } },
-                        { Cevaplar: { $regex: new RegExp(twAnswerString.replace(/, /g, ','), 'i') } }
+                        { Cevaplar: { $regex: new RegExp(idikAnswerString, 'i') } },
+                        { Cevaplar: { $regex: new RegExp(idikAnswerString.replace(/, /g, ','), 'i') } }
                     ]
                 });
 
-                if (matchedTW) {
-                    const twResult = await mongoose.connection.collection('evaluationresultsTW').findOne({ ID: matchedTW.ID });
+                if (matchedIDIK) {
+                    const idikResult = await mongoose.connection.collection('evaluationresultsIDIK').findOne({ ID: matchedIDIK.ID });
                     
-                    if (twResult) {
-                        results.push({ type: 'TW', data: twResult });
+                    if (idikResult) {
+                        results.push({ type: 'IDIK', data: idikResult });
                     }
                 }
             }

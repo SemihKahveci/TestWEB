@@ -7,6 +7,7 @@ const Admin = require('../models/Admin');
 const bcrypt = require('bcryptjs');
 const UserCode = require('../models/userCode');
 const Game = require('../models/game');
+const { answerMultipliers } = require('../config/constants');
 
 const adminController = {
     login: async (req, res) => {
@@ -307,9 +308,35 @@ const adminController = {
             } else {
                 results = await UserCode.find().sort({ sentDate: -1 });
             }
-            res.json({
-                success: true,
-                results: results.map(result => ({
+            
+
+            
+            // Her sonuç için Game modelinden de veri al
+            const mappedResults = await Promise.all(results.map(async (result) => {
+                // Game modelinden ilgili oyunu bul
+                const game = await Game.findOne({ playerCode: result.code });
+                
+
+                
+                // Game'den Venus skorlarını al ve UserCode'a kopyala
+                if (game && (game.customerFocusScore || game.uncertaintyScore)) {
+                    let updateData = {};
+                    
+                    if (game.customerFocusScore && (!result.customerFocusScore || result.customerFocusScore === '-' || result.customerFocusScore === null)) {
+                        updateData.customerFocusScore = game.customerFocusScore;
+                    }
+                    
+                    if (game.uncertaintyScore && (!result.uncertaintyScore || result.uncertaintyScore === '-' || result.uncertaintyScore === null)) {
+                        updateData.uncertaintyScore = game.uncertaintyScore;
+                    }
+                    
+                    // UserCode'u güncelle
+                    if (Object.keys(updateData).length > 0) {
+                        await UserCode.findByIdAndUpdate(result._id, updateData);
+                    }
+                }
+                
+                return {
                     code: result.code,
                     name: result.name,
                     email: result.email,
@@ -317,11 +344,17 @@ const adminController = {
                     sentDate: result.sentDate,
                     completionDate: result.completionDate,
                     expiryDate: result.expiryDate,
-                    customerFocusScore: result.customerFocusScore,
-                    uncertaintyScore: result.uncertaintyScore,
-                    ieScore: result.ieScore,
-                    idikScore: result.idikScore
-                }))
+                    // Venus skorları Game'den al, Titan skorları UserCode'dan al
+                    customerFocusScore: (game ? game.customerFocusScore : null) || result.customerFocusScore || '-',
+                    uncertaintyScore: (game ? game.uncertaintyScore : null) || result.uncertaintyScore || '-',
+                    ieScore: result.ieScore || (game ? game.ieScore : null) || '-',
+                    idikScore: result.idikScore || (game ? game.idikScore : null) || '-'
+                };
+            }));
+            
+            res.json({
+                success: true,
+                results: mappedResults
             });
         } catch (error) {
             console.error('Sonuçları getirme hatası:', error);
@@ -331,6 +364,8 @@ const adminController = {
             });
         }
     },
+
+
 
     updateResultStatus: async (req, res) => {
         try {

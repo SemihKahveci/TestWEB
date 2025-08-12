@@ -46,20 +46,41 @@ async function loadData(resetFilters = false) {
         
         if (data.success) {
             console.log('Yüklenen veri:', data.results);
+            console.log('İlk sonuç örneği:', data.results[0]);
             allData = data.results;
             
-            if (resetFilters) {
-                document.getElementById('customerFocusMin').value = '0';
-                document.getElementById('customerFocusMax').value = '100';
-                document.getElementById('uncertaintyMin').value = '0';
-                document.getElementById('uncertaintyMax').value = '100';
-                document.getElementById('nameSearch').value = '';
-                document.getElementById('customerFocusMinValue').textContent = '0';
-                document.getElementById('customerFocusMaxValue').textContent = '100';
-                document.getElementById('uncertaintyMinValue').textContent = '0';
-                document.getElementById('uncertaintyMaxValue').textContent = '100';
-                filteredData = [...allData];
-            } else {
+                         if (resetFilters) {
+                 document.getElementById('customerFocusMin').value = '0';
+                 document.getElementById('customerFocusMax').value = '100';
+                 document.getElementById('uncertaintyMin').value = '0';
+                 document.getElementById('uncertaintyMax').value = '100';
+                 document.getElementById('nameSearch').value = '';
+                 document.getElementById('customerFocusMinValue').textContent = '0';
+                 document.getElementById('customerFocusMaxValue').textContent = '100';
+                 document.getElementById('uncertaintyMinValue').textContent = '0';
+                 document.getElementById('uncertaintyMaxValue').textContent = '100';
+                 
+                 // IE ve IDIK elementlerini sıfırla (eğer varsa)
+                 const ieMinElement = document.getElementById('ieMin');
+                 const ieMaxElement = document.getElementById('ieMax');
+                 const idikMinElement = document.getElementById('idikMin');
+                 const idikMaxElement = document.getElementById('idikMax');
+                 const ieMinValueElement = document.getElementById('ieMinValue');
+                 const ieMaxValueElement = document.getElementById('ieMaxValue');
+                 const idikMinValueElement = document.getElementById('idikMinValue');
+                 const idikMaxValueElement = document.getElementById('idikMaxValue');
+                 
+                 if (ieMinElement) ieMinElement.value = '0';
+                 if (ieMaxElement) ieMaxElement.value = '100';
+                 if (idikMinElement) idikMinElement.value = '0';
+                 if (idikMaxElement) idikMaxElement.value = '100';
+                 if (ieMinValueElement) ieMinValueElement.textContent = '0';
+                 if (ieMaxValueElement) ieMaxValueElement.textContent = '100';
+                 if (idikMinValueElement) idikMinValueElement.textContent = '0';
+                 if (idikMaxValueElement) idikMaxValueElement.textContent = '100';
+                 
+                 filteredData = [...allData];
+             } else {
                 // Mevcut filtreleri koru
                 const customerFocusMin = document.getElementById('customerFocusMin').value;
                 const customerFocusMax = document.getElementById('customerFocusMax').value;
@@ -102,21 +123,25 @@ async function loadData(resetFilters = false) {
                             uncertaintyMatch = uncertaintyScore >= min && uncertaintyScore <= max;
                         }
 
-                        // IE Skoru filtresi
-                        let ieMatch = true;
-                        if (ieScore !== null) {
-                            const min = parseFloat(document.getElementById('ieMin').value);
-                            const max = parseFloat(document.getElementById('ieMax').value);
-                            ieMatch = ieScore >= min && ieScore <= max;
-                        }
+                                                 // IE Skoru filtresi
+                         let ieMatch = true;
+                         const ieMinElement = document.getElementById('ieMin');
+                         const ieMaxElement = document.getElementById('ieMax');
+                         if (ieScore !== null && ieMinElement && ieMaxElement) {
+                             const min = parseFloat(ieMinElement.value);
+                             const max = parseFloat(ieMaxElement.value);
+                             ieMatch = ieScore >= min && ieScore <= max;
+                         }
 
-                        // IDIK Skoru filtresi
-                        let idikMatch = true;
-                        if (idikScore !== null) {
-                            const min = parseFloat(document.getElementById('idikMin').value);
-                            const max = parseFloat(document.getElementById('idikMax').value);
-                            idikMatch = idikScore >= min && idikScore <= max;
-                        }
+                         // IDIK Skoru filtresi
+                         let idikMatch = true;
+                         const idikMinElement = document.getElementById('idikMin');
+                         const idikMaxElement = document.getElementById('idikMax');
+                         if (idikScore !== null && idikMinElement && idikMaxElement) {
+                             const min = parseFloat(idikMinElement.value);
+                             const max = parseFloat(idikMaxElement.value);
+                             idikMatch = idikScore >= min && idikScore <= max;
+                         }
 
                         return nameMatch && customerFocusMatch && uncertaintyMatch && ieMatch && idikMatch;
                     } catch (error) {
@@ -396,30 +421,57 @@ function clearFilters() {
         document.getElementById('customerFocusMax').value = '100';
         document.getElementById('uncertaintyMin').value = '0';
         document.getElementById('uncertaintyMax').value = '100';
-        document.getElementById('ieMin').value = '0';
-        document.getElementById('ieMax').value = '100';
-        document.getElementById('idikMin').value = '0';
-        document.getElementById('idikMax').value = '100';
-        document.getElementById('customerFocusMinValue').textContent = '0';
-        document.getElementById('customerFocusMaxValue').textContent = '100';
-        document.getElementById('uncertaintyMinValue').textContent = '0';
-        document.getElementById('uncertaintyMaxValue').textContent = '100';
-        document.getElementById('ieMinValue').textContent = '0';
-        document.getElementById('ieMaxValue').textContent = '100';
-        document.getElementById('idikMinValue').textContent = '0';
-        document.getElementById('idikMaxValue').textContent = '100';
+                 const ieMinElement = document.getElementById('ieMin');
+         const ieMaxElement = document.getElementById('ieMax');
+         const idikMinElement = document.getElementById('idikMin');
+         const idikMaxElement = document.getElementById('idikMax');
+         const ieMinValueElement = document.getElementById('ieMinValue');
+         const ieMaxValueElement = document.getElementById('ieMaxValue');
+         const idikMinValueElement = document.getElementById('idikMinValue');
+         const idikMaxValueElement = document.getElementById('idikMaxValue');
+         
+         if (ieMinElement) ieMinElement.value = '0';
+         if (ieMaxElement) ieMaxElement.value = '100';
+         if (idikMinElement) idikMinElement.value = '0';
+         if (idikMaxElement) idikMaxElement.value = '100';
+         document.getElementById('customerFocusMinValue').textContent = '0';
+         document.getElementById('customerFocusMaxValue').textContent = '100';
+         document.getElementById('uncertaintyMinValue').textContent = '0';
+         document.getElementById('uncertaintyMaxValue').textContent = '100';
+         if (ieMinValueElement) ieMinValueElement.textContent = '0';
+         if (ieMaxValueElement) ieMaxValueElement.textContent = '100';
+         if (idikMinValueElement) idikMinValueElement.textContent = '0';
+         if (idikMaxValueElement) idikMaxValueElement.textContent = '100';
 
-        // Range görünümünü güncelle
-        ['customerFocus', 'uncertainty', 'ie', 'idik'].forEach(prefix => {
-            const range = document.querySelector(`#${prefix}Min`).parentElement.querySelector('.range');
-            const leftThumb = document.querySelector(`#${prefix}Min`).parentElement.querySelector('.thumb.left');
-            const rightThumb = document.querySelector(`#${prefix}Min`).parentElement.querySelector('.thumb.right');
+                 // Range görünümünü güncelle
+         ['customerFocus', 'uncertainty'].forEach(prefix => {
+             const minElement = document.querySelector(`#${prefix}Min`);
+             if (minElement && minElement.parentElement) {
+                 const range = minElement.parentElement.querySelector('.range');
+                 const leftThumb = minElement.parentElement.querySelector('.thumb.left');
+                 const rightThumb = minElement.parentElement.querySelector('.thumb.right');
 
-            range.style.left = '0%';
-            range.style.right = '0%';
-            leftThumb.style.left = '0%';
-            rightThumb.style.right = '0%';
-        });
+                 if (range) range.style.left = '0%';
+                 if (range) range.style.right = '0%';
+                 if (leftThumb) leftThumb.style.left = '0%';
+                 if (rightThumb) rightThumb.style.right = '0%';
+             }
+         });
+         
+         // IE ve IDIK range'lerini güncelle (eğer varsa)
+         ['ie', 'idik'].forEach(prefix => {
+             const minElement = document.querySelector(`#${prefix}Min`);
+             if (minElement && minElement.parentElement) {
+                 const range = minElement.parentElement.querySelector('.range');
+                 const leftThumb = minElement.parentElement.querySelector('.thumb.left');
+                 const rightThumb = minElement.parentElement.querySelector('.thumb.right');
+
+                 if (range) range.style.left = '0%';
+                 if (range) range.style.right = '0%';
+                 if (leftThumb) leftThumb.style.left = '0%';
+                 if (rightThumb) rightThumb.style.right = '0%';
+             }
+         });
 
         // Filtrelenmiş veriyi orijinal veriye eşitle
         filteredData = [...allData];
@@ -440,11 +492,17 @@ function clearFilters() {
 document.addEventListener('DOMContentLoaded', () => {
     loadData(true);
     
-    // Multi-range input'ları başlat
-    initMultiRange('customerFocus');
-    initMultiRange('uncertainty');
-    initMultiRange('ie');
-    initMultiRange('idik');
+         // Multi-range input'ları başlat
+     initMultiRange('customerFocus');
+     initMultiRange('uncertainty');
+     
+     // IE ve IDIK elementleri varsa başlat
+     if (document.getElementById('ieMin')) {
+         initMultiRange('ie');
+     }
+     if (document.getElementById('idikMin')) {
+         initMultiRange('idik');
+     }
 });
 
 // Multi-range input'ları başlat
@@ -527,6 +585,39 @@ function filterResults() {
     // Tabloyu güncelle
     displayData();
     updatePagination();
+}
+
+// Eksik skorları güncelle
+async function updateMissingScores() {
+    try {
+        console.log('Eksik skorlar güncelleniyor...');
+        
+        const response = await fetch('/api/update-missing-scores', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        });
+
+        if (!response.ok) {
+            throw new Error('Skor güncelleme hatası');
+        }
+
+        const data = await response.json();
+        
+        if (data.success) {
+            console.log('Skorlar güncellendi:', data.message);
+            alert(`Skorlar başarıyla güncellendi! ${data.updatedCount} kayıt güncellendi.`);
+            
+            // Verileri yeniden yükle
+            await loadData(true);
+        } else {
+            alert('Skorlar güncellenirken bir hata oluştu!');
+        }
+    } catch (error) {
+        console.error('Skor güncelleme hatası:', error);
+        alert('Skorlar güncellenirken bir hata oluştu!');
+    }
 }
 
 // Excel indirme fonksiyonu

@@ -59,6 +59,8 @@ apiRouter.get('/user-results', adminController.getUserResults.bind(adminControll
 apiRouter.post('/update-result-status', adminController.updateResultStatus.bind(adminController));
 apiRouter.delete('/delete-result', adminController.deleteResult.bind(adminController));
 
+
+
 // Oyun sonuçları
 apiRouter.post('/register-result', wsService.getGameController().registerGameResult.bind(wsService.getGameController()));
 apiRouter.get('/results', wsService.getGameController().getResults.bind(wsService.getGameController()));
