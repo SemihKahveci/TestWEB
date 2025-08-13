@@ -126,8 +126,8 @@ function getReportTitle(type) {
     switch (type) {
         case 'BY': return 'Belirsizlik Yönetimi Raporu';
         case 'MO': return 'Müşteri Odaklılık Raporu';
-        case 'HI': return 'İnsanları Etkileme Raporu';
-        case 'TW': return 'Güven Veren İşbirligi ve Sinerji Raporu';
+        case 'IE': return 'İnsanları Etkileme Raporu';
+        case 'IDIK': return 'Güven Veren İşbirlikçi ve Sinerji Raporu';
         default: return 'Bilinmeyen Yetenek Raporu';
     }
 }
@@ -147,7 +147,7 @@ async function sortReportsByPlanetOrder(evaluation, userCode) {
         // Gezegen-yetenek eşleştirmesi
         const planetToSkills = {
             'venus': ['BY', 'MO'],
-            'titan': ['HI', 'TW']
+            'titan': ['IE', 'IDIK']
         };
         
         // Gezegen sırasına göre yetenekleri sırala

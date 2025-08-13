@@ -178,7 +178,7 @@ class GameController {
                     return acc + ((multiplier1 + (multiplier2 / 2)) * 2) / 3;
                 }, 0) / idikAnswers.length;
             }
-            idikScore = idikScore * 100;
+            idikScore = idikScore * 100; 
             // Değerlendirme sonuçlarını getir
             const evaluationResult = await this.getReportsByAnswerType(data.answers);
 
@@ -335,7 +335,7 @@ class GameController {
 
             // IE raporlarını kontrol et (Titan - İnsanları Etkileme)
             if (ieAnswerString) {
-                const matchedIE = await mongoose.connection.collection('evaluationanswersIE').findOne({
+                const matchedIE = await mongoose.connection.collection('evaluationanswersHI').findOne({
                     $or: [
                         { Cevaplar: { $regex: new RegExp(ieAnswerString, 'i') } },
                         { Cevaplar: { $regex: new RegExp(ieAnswerString.replace(/, /g, ','), 'i') } }
@@ -343,7 +343,7 @@ class GameController {
                 });
 
                 if (matchedIE) {
-                    const ieResult = await mongoose.connection.collection('evaluationresultsIE').findOne({ ID: matchedIE.ID });
+                    const ieResult = await mongoose.connection.collection('evaluationresultsHI').findOne({ ID: matchedIE.ID });
                     
                     if (ieResult) {
                         results.push({ type: 'IE', data: ieResult });
@@ -353,7 +353,7 @@ class GameController {
 
             // IDIK raporlarını kontrol et (Titan - Güven Veren İşbirlikçi ve Sinerji)
             if (idikAnswerString) {
-                const matchedIDIK = await mongoose.connection.collection('evaluationanswersIDIK').findOne({
+                const matchedIDIK = await mongoose.connection.collection('evaluationanswersTW').findOne({
                     $or: [
                         { Cevaplar: { $regex: new RegExp(idikAnswerString, 'i') } },
                         { Cevaplar: { $regex: new RegExp(idikAnswerString.replace(/, /g, ','), 'i') } }
@@ -361,7 +361,7 @@ class GameController {
                 });
 
                 if (matchedIDIK) {
-                    const idikResult = await mongoose.connection.collection('evaluationresultsIDIK').findOne({ ID: matchedIDIK.ID });
+                    const idikResult = await mongoose.connection.collection('evaluationresultsTW').findOne({ ID: matchedIDIK.ID });
                     
                     if (idikResult) {
                         results.push({ type: 'IDIK', data: idikResult });
@@ -379,7 +379,6 @@ class GameController {
 
         } catch (error) {
             console.error('Rapor sorgulama hatası:', error);
-            console.error('Hata detayı:', error.stack);
             return null;
         }
     }
@@ -416,6 +415,7 @@ class GameController {
             }
         });
     }
+
 }
 
 module.exports = GameController; 
