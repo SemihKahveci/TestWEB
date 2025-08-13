@@ -155,6 +155,9 @@ function displayData() {
             <td>${formatDate(item.expiryDate)}</td>
             <td>${formatDate(reportExpiryDate)}</td>
             <td class="action-buttons">
+                <div class="action-button" onclick="showAnswersPopup('${item.code}')">
+                    <i class="fas fa-info-circle" style="color: #17A2B8;"></i>
+                </div>
                 <div class="action-button ${isPDFDisabled ? 'disabled' : ''}" ${isPDFDisabled ? '' : `onclick="showPDFPopup('${item.code}')"`}>
                     <i class="fas fa-file-pdf" style="color: #0286F7;"></i>
                 </div>
@@ -197,6 +200,9 @@ function displayData() {
                     <td>${formatDate(groupItem.expiryDate)}</td>
                     <td>${formatDate(subReportExpiryDate)}</td>
                     <td class="action-buttons">
+                        <div class="action-button" onclick="showAnswersPopup('${groupItem.code}')">
+                            <i class="fas fa-info-circle" style="color: #17A2B8;"></i>
+                        </div>
                         <div class="action-button ${subIsPDFDisabled ? 'disabled' : ''}" ${subIsPDFDisabled ? '' : `onclick="showPDFPopup('${groupItem.code}')"`}>
                             <i class="fas fa-file-pdf" style="color: #0286F7;"></i>
                         </div>
@@ -212,6 +218,78 @@ function displayData() {
     
     // Açık olan grupları tekrar aç
     restoreExpandedGroups();
+}
+
+// Cevaplar popup'ını aç
+async function showAnswersPopup(code) {
+    try {
+        console.log('Cevaplar popup açılıyor, kod:', code);
+        
+        // Mevcut veriyi kullan - zaten yüklenmiş olan allData'dan bul
+        const existingData = allData.find(item => item.code === code);
+        
+        if (!existingData) {
+            alert('Bu kod için veri bulunamadı.');
+            return;
+        }
+        
+        const answersContent = document.getElementById('answersContent');
+        
+        let html = `
+            <div style="margin-bottom: 20px; padding: 16px; background: #E3F2FD; border-radius: 8px; border-left: 4px solid #0286F7;">
+                <div style="font-weight: 600; color: #0286F7; margin-bottom: 8px;">Oyun Bilgileri</div>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; font-size: 14px;">
+                    <div><strong>Kod:</strong> ${existingData.code}</div>
+                    <div><strong>Ad Soyad:</strong> ${existingData.name}</div>
+                    <div><strong>Email:</strong> ${existingData.email}</div>
+                    <div><strong>Durum:</strong> ${existingData.status}</div>
+                    <div><strong>Rapor ID:</strong> ${existingData.reportId || 'Rapor oluşturulmamış'}</div>
+                </div>
+            </div>
+        `;
+        
+        if (existingData.answers && existingData.answers.length > 0) {
+            existingData.answers.forEach((answer, index) => {
+                html += `
+                    <div class="answer-item">
+                        <div class="answer-question">Soru ${index + 1} (${answer.questionId || `Soru ${index + 1}`})</div>
+                        <div class="answer-details">
+                            <div class="answer-detail">
+                                <div class="answer-detail-label">Seçilen Cevap 1:</div>
+                                <div class="answer-detail-value">${answer.selectedAnswer1 || answer.answerType1 || '-'}</div>
+                            </div>
+                            <div class="answer-detail">
+                                <div class="answer-detail-label">Seçilen Cevap 2:</div>
+                                <div class="answer-detail-value">${answer.selectedAnswer2 || answer.answerType2 || '-'}</div>
+                            </div>
+                            <div class="answer-detail">
+                                <div class="answer-detail-label">Alt Kategori:</div>
+                                <div class="answer-detail-value">${answer.answerSubCategory || '-'}</div>
+                            </div>
+                            <div class="answer-detail">
+                                <div class="answer-detail-label">Gezegen:</div>
+                                <div class="answer-detail-value">${answer.planetName || '-'}</div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+        } else {
+            html += '<div style="text-align: center; color: #6C757D; padding: 40px;">Bu oyun için cevap bulunamadı.</div>';
+        }
+        
+        answersContent.innerHTML = html;
+        document.getElementById('answersPopup').style.display = 'flex';
+        
+    } catch (error) {
+        console.error('Cevaplar getirme hatası:', error);
+        alert('Cevaplar getirilirken bir hata oluştu: ' + error.message);
+    }
+}
+
+// Cevaplar popup'ını kapat
+function closeAnswersPopup() {
+    document.getElementById('answersPopup').style.display = 'none';
 }
 
 // Sayfalama kontrollerini güncelle

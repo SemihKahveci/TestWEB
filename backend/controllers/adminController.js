@@ -313,21 +313,36 @@ const adminController = {
             
             // Her sonuç için Game modelinden de veri al
             const mappedResults = await Promise.all(results.map(async (result) => {
-                // Game modelinden ilgili oyunu bul
-                const game = await Game.findOne({ playerCode: result.code });
+                // Game modelinden ilgili tüm oyunları bul (Venus ve Titan için)
+                const games = await Game.find({ playerCode: result.code });
+                
+                // Tüm oyunlardaki evaluationResult array'lerinden rapor ID'lerini bul
+                let reportIds = [];
+                for (const game of games) {
+                    if (game.evaluationResult && game.evaluationResult.length > 0) {
+                        // evaluationResult array'inde tüm data.ID'leri topla
+                        for (const evalResult of game.evaluationResult) {
+                            if (evalResult.data && evalResult.data.ID) {
+                                reportIds.push(evalResult.data.ID);
+                            }
+                        }
+                    }
+                }
+                const reportId = reportIds.length > 0 ? reportIds.join(', ') : null;
                 
 
                 
                 // Game'den Venus skorlarını al ve UserCode'a kopyala
-                if (game && (game.customerFocusScore || game.uncertaintyScore)) {
+                const venusGame = games.find(g => g.section === '0' || g.section === 0);
+                if (venusGame && (venusGame.customerFocusScore || venusGame.uncertaintyScore)) {
                     let updateData = {};
                     
-                    if (game.customerFocusScore && (!result.customerFocusScore || result.customerFocusScore === '-' || result.customerFocusScore === null)) {
-                        updateData.customerFocusScore = game.customerFocusScore;
+                    if (venusGame.customerFocusScore && (!result.customerFocusScore || result.customerFocusScore === '-' || result.customerFocusScore === null)) {
+                        updateData.customerFocusScore = venusGame.customerFocusScore;
                     }
                     
-                    if (game.uncertaintyScore && (!result.uncertaintyScore || result.uncertaintyScore === '-' || result.uncertaintyScore === null)) {
-                        updateData.uncertaintyScore = game.uncertaintyScore;
+                    if (venusGame.uncertaintyScore && (!result.uncertaintyScore || result.uncertaintyScore === '-' || result.uncertaintyScore === null)) {
+                        updateData.uncertaintyScore = venusGame.uncertaintyScore;
                     }
                     
                     // UserCode'u güncelle
@@ -335,6 +350,9 @@ const adminController = {
                         await UserCode.findByIdAndUpdate(result._id, updateData);
                     }
                 }
+                
+                // Titan oyununu bul
+                const titanGame = games.find(g => g.section === '1' || g.section === 1);
                 
                 return {
                     code: result.code,
@@ -344,11 +362,15 @@ const adminController = {
                     sentDate: result.sentDate,
                     completionDate: result.completionDate,
                     expiryDate: result.expiryDate,
-                    // Venus skorları Game'den al, Titan skorları UserCode'dan al
-                    customerFocusScore: (game ? game.customerFocusScore : null) || result.customerFocusScore || '-',
-                    uncertaintyScore: (game ? game.uncertaintyScore : null) || result.uncertaintyScore || '-',
-                    ieScore: result.ieScore || (game ? game.ieScore : null) || '-',
-                    idikScore: result.idikScore || (game ? game.idikScore : null) || '-'
+                    // Venus skorları Game'den al, Titan skorları Game'den al
+                    customerFocusScore: (venusGame ? venusGame.customerFocusScore : null) || result.customerFocusScore || '-',
+                    uncertaintyScore: (venusGame ? venusGame.uncertaintyScore : null) || result.uncertaintyScore || '-',
+                    ieScore: (titanGame ? titanGame.ieScore : null) || result.ieScore || '-',
+                    idikScore: (titanGame ? titanGame.idikScore : null) || result.idikScore || '-',
+                    // Oyun cevaplarını da ekle (tüm oyunların cevaplarını birleştir)
+                    answers: games.length > 0 ? games.flatMap(g => g.answers || []) : null,
+                    // Rapor ID'sini ekle
+                    reportId: reportId
                 };
             }));
             

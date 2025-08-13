@@ -736,6 +736,96 @@
             cursor: pointer;
             user-select: none;
         }
+
+        /* Oyun Cevapları Popup Stilleri */
+        .answers-popup {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+
+        .answers-popup-content {
+            width: 80%;
+            max-width: 800px;
+            max-height: 80%;
+            background: white;
+            border-radius: 10px;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .answers-popup-header {
+            padding: 20px;
+            border-bottom: 1px solid #E9ECEF;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: #F8F9FA;
+        }
+
+        .answers-popup-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: #232D42;
+        }
+
+        .answers-popup-close {
+            cursor: pointer;
+            font-size: 24px;
+            color: #666;
+        }
+
+        .answers-popup-body {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+        }
+
+        .answer-item {
+            background: #F8F9FA;
+            border: 1px solid #E9ECEF;
+            border-radius: 8px;
+            padding: 16px;
+            margin-bottom: 12px;
+        }
+
+        .answer-question {
+            font-weight: 600;
+            color: #232D42;
+            margin-bottom: 8px;
+        }
+
+        .answer-details {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            font-size: 14px;
+        }
+
+        .answer-detail {
+            background: white;
+            padding: 8px 12px;
+            border-radius: 4px;
+            border: 1px solid #E9ECEF;
+        }
+
+        .answer-detail-label {
+            font-weight: 500;
+            color: #6C757D;
+            margin-bottom: 4px;
+        }
+
+        .answer-detail-value {
+            color: #232D42;
+        }
     </style>
 </head>
 <body>
@@ -869,6 +959,21 @@
                     </div>
                     <div class="pdf-preview-body">
                         <iframe id="pdfPreviewFrame" width="100%" height="100%" frameborder="0" style="border: none;"></iframe>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Oyun Cevapları Popup -->
+            <div id="answersPopup" class="answers-popup" style="display: none;">
+                <div class="answers-popup-content">
+                    <div class="answers-popup-header">
+                        <div class="answers-popup-title">Oyun Cevapları</div>
+                        <div class="answers-popup-close" onclick="closeAnswersPopup()">×</div>
+                    </div>
+                    <div class="answers-popup-body">
+                        <div id="answersContent">
+                            <!-- Cevaplar buraya yüklenecek -->
+                        </div>
                     </div>
                 </div>
             </div>

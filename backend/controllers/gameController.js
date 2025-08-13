@@ -432,6 +432,77 @@ class GameController {
         });
     }
 
+    // Oyun cevaplarını getir
+    async getGameAnswers(req, res) {
+        try {
+            const { code } = req.params;
+            console.log('Oyun cevapları getiriliyor, kod:', code);
+            
+            // Game modelinden oyunu bul
+            const game = await Game.findOne({ playerCode: code });
+            
+            if (!game) {
+                console.log('Oyun bulunamadı, kod:', code);
+                return res.status(404).json({
+                    success: false,
+                    message: 'Oyun bulunamadı'
+                });
+            }
+
+            console.log('Oyun bulundu:', {
+                playerCode: game.playerCode,
+                section: game.section,
+                answersCount: game.answers ? game.answers.length : 0,
+                gameKeys: Object.keys(game.toObject())
+            });
+
+            // Eğer answers alanı yoksa, oyun verilerini kontrol et
+            if (!game.answers || game.answers.length === 0) {
+                console.log('Answers alanı bulunamadı, oyun verisi:', JSON.stringify(game.toObject(), null, 2));
+                return res.status(200).json({
+                    success: true,
+                    data: {
+                        playerCode: game.playerCode,
+                        section: game.section,
+                        answers: [],
+                        message: 'Bu oyun için cevap verisi bulunamadı'
+                    }
+                });
+            }
+
+            // Cevapları formatla - Game modelindeki doğru alan isimlerini kullan
+            const formattedAnswers = game.answers.map((answer, index) => {
+                console.log(`Cevap ${index + 1}:`, answer);
+                return {
+                    questionNumber: index + 1,
+                    questionID: answer.questionId || `Soru ${index + 1}`,
+                    selectedAnswer1: answer.selectedAnswer1 || answer.answerType1 || '-',
+                    selectedAnswer2: answer.selectedAnswer2 || answer.answerType2 || '-',
+                    answerSubCategory: answer.answerSubCategory || '-',
+                    section: answer.planetName || game.section || '-'
+                };
+            });
+
+            console.log('Formatlanmış cevaplar:', formattedAnswers.length, 'cevap');
+
+            res.status(200).json({
+                success: true,
+                data: {
+                    playerCode: game.playerCode,
+                    section: game.section,
+                    answers: formattedAnswers
+                }
+            });
+
+        } catch (error) {
+            console.error('Oyun cevapları getirme hatası:', error);
+            res.status(500).json({
+                success: false,
+                message: this.errorMessages.serverError
+            });
+        }
+    }
+
 }
 
 module.exports = GameController; 

@@ -20,5 +20,8 @@ module.exports = (gameController) => {
     // Cevap tiplerini ekle
     router.post('/add-answer-types', gameController.addAnswerTypes.bind(gameController));
     
+    // Oyun cevaplarını getir
+    router.get('/answers/:code', gameController.getGameAnswers.bind(gameController));
+    
     return router;
 }; 
