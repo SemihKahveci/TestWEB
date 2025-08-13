@@ -7,7 +7,7 @@ function checkResults() {
                 if (results.length > 0) {
                     results.forEach(result => {
                         if (result.status === 'Beklemede') {
-                            // Kod süresi kontrolü
+                            // Kod süresi kontrolü (72 saat sonra süresi dolmuş sayılır)
                             const now = new Date();
                             const expiryDate = new Date(result.expiryDate);
                             

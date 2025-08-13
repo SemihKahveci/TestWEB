@@ -36,6 +36,24 @@ const server = app.listen(port, () => {
 // WebSocket servisi
 const wsService = new WebSocketService(server);
 
+// Otomatik kod geçerlilik kontrolü - Her saat başı çalışır
+setInterval(async () => {
+    try {
+        await wsService.getCodeController().checkExpiredCodes();
+    } catch (error) {
+        console.error('Otomatik kod kontrolü hatası:', error);
+    }
+}, 60 * 60 * 1000); // Her saat (60 dakika * 60 saniye * 1000 milisaniye)
+
+// İlk kontrolü hemen yap
+setTimeout(async () => {
+    try {
+        await wsService.getCodeController().checkExpiredCodes();
+    } catch (error) {
+        console.error('İlk kod kontrolü hatası:', error);
+    }
+}, 5000); // 5 saniye sonra ilk kontrolü yap
+
 // API Routes
 const apiRouter = express.Router();
 

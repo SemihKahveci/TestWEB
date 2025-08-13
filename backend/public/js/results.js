@@ -56,7 +56,7 @@ async function loadData() {
             // Sonuçları kontrol et ve durumları güncelle (sadece görüntüleme için)
             allData.forEach(result => {
                 if (result.status === 'Beklemede') {
-                    // Kod süresi kontrolü (sadece görüntüleme için, güncelleme yapma)
+                    // Kod süresi kontrolü (72 saat sonra süresi dolmuş sayılır, sadece görüntüleme için)
                     const now = new Date();
                     const expiryDate = new Date(result.expiryDate);
                     

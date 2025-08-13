@@ -84,6 +84,22 @@ class GameController {
                 });
             }
 
+            // Kod geçerlilik süresini kontrol et (71 saat sonra süresi dolmuş sayılır)
+            const now = new Date();
+            const earlyExpiryDate = new Date(userCode.expiryDate);
+            earlyExpiryDate.setHours(earlyExpiryDate.getHours() - 1); // 1 saat önce süresi dolmuş sayılır
+            
+            if (now > earlyExpiryDate) {
+                // Süresi dolmuşsa durumu güncelle
+                userCode.status = 'Süresi Doldu';
+                await userCode.save();
+                
+                return res.status(400).json({
+                    success: false,
+                    message: 'Kodun geçerlilik süresi dolmuş. Lütfen yeni bir kod talep edin.'
+                });
+            }
+
             // Skorları hesapla - Venus Gezegeni
             const customerFocusAnswers = data.answers.filter(answer => 
                 answer.answerSubCategory === 'MO'

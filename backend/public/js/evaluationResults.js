@@ -626,10 +626,10 @@ function downloadExcel() {
         // Tüm filtrelenmiş verileri al
         const dataToExport = filteredData.map(item => ({
             'Ad Soyad': item.name || '-',
-            'Venus - MO': item.customerFocusScore || '-',
-            'Venus - BY': item.uncertaintyScore || '-',
-            'Titan - HI': item.ieScore || '-',
-            'Titan - TW': item.idikScore || '-'
+            'Venus - Müşteri Odaklılık': item.customerFocusScore || '-',
+            'Venus - Belirsizlik Yönetimi': item.uncertaintyScore || '-',
+            'Titan - İnsanları Etkileme': item.ieScore || '-',
+            'Titan - Güven Veren İşbirlikçi ve Sinerji': item.idikScore || '-'
         }));
 
         if (dataToExport.length === 0) {

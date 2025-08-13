@@ -105,6 +105,22 @@ class CodeController {
                 });
             }
 
+            // Kod geçerlilik süresini kontrol et (71 saat sonra süresi dolmuş sayılır)
+            const now = new Date();
+            const earlyExpiryDate = new Date(userCode.expiryDate);
+            earlyExpiryDate.setHours(earlyExpiryDate.getHours() - 1); // 1 saat önce süresi dolmuş sayılır
+            
+            if (now > earlyExpiryDate) {
+                // Süresi dolmuşsa durumu güncelle
+                userCode.status = 'Süresi Doldu';
+                await userCode.save();
+                
+                return res.status(400).json({
+                    success: false,
+                    message: 'Kodun geçerlilik süresi dolmuş. Lütfen yeni bir kod talep edin.'
+                });
+            }
+
             if (userCode.isUsed) {
                 return res.status(400).json({
                     success: false,
@@ -147,6 +163,40 @@ class CodeController {
             });
         }
     }
+
+    // Kod geçerlilik süresini otomatik kontrol et (71 saat sonra süresi dolmuş sayılır)
+    async checkExpiredCodes() {
+        try {
+            const now = new Date();
+            const earlyExpiryDate = new Date(now);
+            earlyExpiryDate.setHours(earlyExpiryDate.getHours() - 1); // 1 saat önce süresi dolmuş sayılır
+            
+            // Süresi dolmuş ama hala "Beklemede" veya "Oyun Devam Ediyor" durumunda olan kodları bul
+            const expiredCodes = await UserCode.find({
+                expiryDate: { $lt: earlyExpiryDate },
+                status: { $in: ['Beklemede', 'Oyun Devam Ediyor'] }
+            });
+
+            // Bu kodları "Süresi Doldu" durumuna güncelle
+            if (expiredCodes.length > 0) {
+                await UserCode.updateMany(
+                    {
+                        expiryDate: { $lt: earlyExpiryDate },
+                        status: { $in: ['Beklemede', 'Oyun Devam Ediyor'] }
+                    },
+                    {
+                        $set: { status: 'Süresi Doldu' }
+                    }
+                );
+
+                console.log(`${expiredCodes.length} adet kod süresi doldu ve güncellendi.`);
+            }
+        } catch (error) {
+            console.error('Süresi dolan kodları kontrol etme hatası:', error);
+        }
+    }
+
+    // WebSocket üzerinden güncelleme gönder
 
     // Tüm kodları sil
     async deleteAllCodes(req, res) {
