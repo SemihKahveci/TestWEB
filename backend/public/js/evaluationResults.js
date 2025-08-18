@@ -12,7 +12,7 @@ function showLoadingIndicator() {
     if (tbody) {
         tbody.innerHTML = `
             <tr>
-                <td colspan="5" style="text-align: center; padding: 40px;">
+                <td colspan="6" style="text-align: center; padding: 40px;">
                     <div style="display: flex; flex-direction: column; align-items: center; gap: 16px;">
                         <div class="loading-spinner"></div>
                         <div style="color: #666; font-size: 14px;">Veriler yükleniyor...</div>
@@ -48,7 +48,9 @@ async function loadData(resetFilters = false) {
         if (data.success) {
             console.log('Yüklenen veri:', data.results);
             console.log('İlk sonuç örneği:', data.results[0]);
-            allData = data.results;
+            
+            // Sadece oynanmış oyunların sonuçlarını al (status === 'Tamamlandı' olanlar)
+            allData = data.results.filter(item => item.status === 'Tamamlandı');
             
                          if (resetFilters) {
                  document.getElementById('customerFocusMin').value = '0';
@@ -217,35 +219,40 @@ function displayData() {
             const isExpanded = expandedGroups.has(item.email);
             const expandIcon = isExpanded ? '-' : '+';
             
-            row.innerHTML = `
-                <td>
-                    <span class="expand-icon" onclick="toggleGroup('${item.email}')">${expandIcon}</span>
-                    <a href="/admin-panel.html" style="color: #0286F7; text-decoration: none; font-weight: 500;">
-                        ${item.name}
-                    </a>
-                    <span class="group-count">(${item.groupCount} sonuç)</span>
-                </td>
-                <td>
-                    <span class="score-badge ${getScoreColorClass(customerFocusScore)}">
-                        ${customerFocusScore}
-                    </span>
-                </td>
-                <td>
-                    <span class="score-badge ${getScoreColorClass(uncertaintyScore)}">
-                        ${uncertaintyScore}
-                    </span>
-                </td>
-                <td>
-                    <span class="score-badge ${getScoreColorClass(ieScore)}">
-                        ${ieScore}
-                    </span>
-                </td>
-                <td>
-                    <span class="score-badge ${getScoreColorClass(idikScore)}">
-                        ${idikScore}
-                    </span>
-                </td>
-            `;
+                         row.innerHTML = `
+                 <td>
+                     <span class="expand-icon" onclick="toggleGroup('${item.email}')">${expandIcon}</span>
+                     <a href="/admin-panel.html" style="color: #0286F7; text-decoration: none; font-weight: 500;">
+                         ${item.name}
+                     </a>
+                     <span class="group-count">(${item.groupCount} sonuç)</span>
+                 </td>
+                 <td>
+                     <span style="color: #666; font-size: 12px;">
+                         ${formatDate(item.sentDate)}
+                     </span>
+                 </td>
+                 <td>
+                     <span class="score-badge ${getScoreColorClass(customerFocusScore)}">
+                         ${customerFocusScore}
+                     </span>
+                 </td>
+                 <td>
+                     <span class="score-badge ${getScoreColorClass(uncertaintyScore)}">
+                         ${uncertaintyScore}
+                     </span>
+                 </td>
+                 <td>
+                     <span class="score-badge ${getScoreColorClass(ieScore)}">
+                         ${ieScore}
+                     </span>
+                 </td>
+                 <td>
+                     <span class="score-badge ${getScoreColorClass(idikScore)}">
+                         ${idikScore}
+                     </span>
+                 </td>
+             `;
             tbody.appendChild(row);
 
             // Alt satırları oluştur
@@ -269,33 +276,38 @@ function displayData() {
                     const subIdikScore = (groupItem.idikScore && !isNaN(groupItem.idikScore)) ? 
                         Math.round(parseFloat(groupItem.idikScore)) : '-';
                     
-                    subRow.innerHTML = `
-                        <td style="padding-left: 30px;">
-                            <a href="/admin-panel.html" style="color: #0286F7; text-decoration: none; font-weight: 500;">
-                                ${groupItem.name}
-                            </a>
-                        </td>
-                        <td>
-                            <span class="score-badge ${getScoreColorClass(subCustomerFocusScore)}">
-                                ${subCustomerFocusScore}
-                            </span>
-                        </td>
-                        <td>
-                            <span class="score-badge ${getScoreColorClass(subUncertaintyScore)}">
-                                ${subUncertaintyScore}
-                            </span>
-                        </td>
-                        <td>
-                            <span class="score-badge ${getScoreColorClass(subIeScore)}">
-                                ${subIeScore}
-                            </span>
-                        </td>
-                        <td>
-                            <span class="score-badge ${getScoreColorClass(subIdikScore)}">
-                                ${subIdikScore}
-                            </span>
-                        </td>
-                    `;
+                                         subRow.innerHTML = `
+                         <td style="padding-left: 30px;">
+                             <a href="/admin-panel.html" style="color: #0286F7; text-decoration: none; font-weight: 500;">
+                                 ${groupItem.name}
+                             </a>
+                         </td>
+                         <td>
+                             <span style="color: #666; font-size: 12px;">
+                                 ${formatDate(groupItem.sentDate)}
+                             </span>
+                         </td>
+                         <td>
+                             <span class="score-badge ${getScoreColorClass(subCustomerFocusScore)}">
+                                 ${subCustomerFocusScore}
+                             </span>
+                         </td>
+                         <td>
+                             <span class="score-badge ${getScoreColorClass(subUncertaintyScore)}">
+                                 ${subUncertaintyScore}
+                             </span>
+                         </td>
+                         <td>
+                             <span class="score-badge ${getScoreColorClass(subIeScore)}">
+                                 ${subIeScore}
+                             </span>
+                         </td>
+                         <td>
+                             <span class="score-badge ${getScoreColorClass(subIdikScore)}">
+                                 ${subIdikScore}
+                             </span>
+                         </td>
+                     `;
                     tbody.appendChild(subRow);
                 });
             }
@@ -312,33 +324,38 @@ function displayData() {
             const idikScore = (item.idikScore && !isNaN(item.idikScore)) ? 
                 Math.round(parseFloat(item.idikScore)) : '-';
             
-            row.innerHTML = `
-                <td>
-                    <a href="/admin-panel.html" style="color: #0286F7; text-decoration: none; font-weight: 500;">
-                        ${item.name}
-                    </a>
-                </td>
-                <td>
-                    <span class="score-badge ${getScoreColorClass(customerFocusScore)}">
-                        ${customerFocusScore}
-                    </span>
-                </td>
-                <td>
-                    <span class="score-badge ${getScoreColorClass(uncertaintyScore)}">
-                        ${uncertaintyScore}
-                    </span>
-                </td>
-                <td>
-                    <span class="score-badge ${getScoreColorClass(ieScore)}">
-                        ${ieScore}
-                    </span>
-                </td>
-                <td>
-                    <span class="score-badge ${getScoreColorClass(idikScore)}">
-                        ${idikScore}
-                    </span>
-                </td>
-            `;
+                         row.innerHTML = `
+                 <td>
+                     <a href="/admin-panel.html" style="color: #0286F7; text-decoration: none; font-weight: 500;">
+                         ${item.name}
+                     </a>
+                 </td>
+                 <td>
+                     <span style="color: #666; font-size: 12px;">
+                         ${formatDate(item.sentDate)}
+                     </span>
+                 </td>
+                 <td>
+                     <span class="score-badge ${getScoreColorClass(customerFocusScore)}">
+                         ${customerFocusScore}
+                     </span>
+                 </td>
+                 <td>
+                     <span class="score-badge ${getScoreColorClass(uncertaintyScore)}">
+                         ${uncertaintyScore}
+                     </span>
+                 </td>
+                 <td>
+                     <span class="score-badge ${getScoreColorClass(ieScore)}">
+                         ${ieScore}
+                     </span>
+                 </td>
+                 <td>
+                     <span class="score-badge ${getScoreColorClass(idikScore)}">
+                         ${idikScore}
+                     </span>
+                 </td>
+             `;
             tbody.appendChild(row);
         }
     });
@@ -772,14 +789,18 @@ async function updateMissingScores() {
 // Excel indirme fonksiyonu
 function downloadExcel() {
     try {
-        // Tüm filtrelenmiş verileri al
-        const dataToExport = filteredData.map(item => ({
-            'Ad Soyad': item.name || '-',
-            'Venus - Müşteri Odaklılık': item.customerFocusScore || '-',
-            'Venus - Belirsizlik Yönetimi': item.uncertaintyScore || '-',
-            'Titan - İnsanları Etkileme': item.ieScore || '-',
-            'Titan - Güven Veren İşbirlikçi ve Sinerji': item.idikScore || '-'
-        }));
+        // Sadece oynanmış oyunların sonuçlarını al (status === 'Tamamlandı' olanlar)
+        const dataToExport = filteredData
+            .filter(item => item.status === 'Tamamlandı')
+            .map(item => ({
+                'Ad Soyad': item.name || '-',
+                'E-posta': item.email || '-',
+                'Tamamlanma Tarihi': formatDate(item.sentDate) || '-',
+                'Venus - Müşteri Odaklılık': item.customerFocusScore || '-',
+                'Venus - Belirsizlik Yönetimi': item.uncertaintyScore || '-',
+                'Titan - İnsanları Etkileme': item.ieScore || '-',
+                'Titan - Güven Veren İşbirlikçi ve Sinerji': item.idikScore || '-'
+            }));
 
         if (dataToExport.length === 0) {
             alert('İndirilecek veri bulunamadı!');
@@ -793,10 +814,12 @@ function downloadExcel() {
         // Sütun genişliklerini ayarla
         const columnWidths = [
             { wch: 20 }, // Ad Soyad
-            { wch: 15 }, // Venus - MO
-            { wch: 15 }, // Venus - BY
-            { wch: 15 }, // Titan - HI
-            { wch: 15 }  // Titan - TW
+            { wch: 30 }, // E-posta
+            { wch: 20 }, // Tamamlanma Tarihi
+            { wch: 25 }, // Venus - Müşteri Odaklılık
+            { wch: 25 }, // Venus - Belirsizlik Yönetimi
+            { wch: 25 }, // Titan - İnsanları Etkileme
+            { wch: 35 }  // Titan - Güven Veren İşbirlikçi ve Sinerji
         ];
         worksheet['!cols'] = columnWidths;
 
