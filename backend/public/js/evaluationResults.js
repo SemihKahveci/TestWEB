@@ -4,6 +4,7 @@ const itemsPerPage = 10; // Her sayfada 10 kişi gösterilecek
 let totalItems = 0;
 let allData = [];
 let filteredData = [];
+let expandedGroups = new Set(); // Açık olan grupları takip et
 
 // Yükleme göstergesi göster
 function showLoadingIndicator() {
@@ -79,7 +80,9 @@ async function loadData(resetFilters = false) {
                  if (idikMinValueElement) idikMinValueElement.textContent = '0';
                  if (idikMaxValueElement) idikMaxValueElement.textContent = '100';
                  
-                 filteredData = [...allData];
+                 // Gruplandırılmış verileri oluştur
+                 const groupedData = groupByEmail(allData);
+                 filteredData = groupedData;
              } else {
                 // Mevcut filtreleri koru
                 const customerFocusMin = document.getElementById('customerFocusMin').value;
@@ -149,11 +152,16 @@ async function loadData(resetFilters = false) {
                         return false;
                     }
                 });
+                
+                // Filtrelenmiş verileri gruplandır
+                const groupedData = groupByEmail(filteredData);
+                filteredData = groupedData;
             }
             
             totalItems = filteredData.length;
             displayData();
             updatePagination();
+            
             // Yükleme göstergesini gizle
             hideLoadingIndicator();
         } else {
@@ -190,46 +198,153 @@ function displayData() {
             return;
         }
 
-        const row = document.createElement('tr');
-        
-        const customerFocusScore = (item.customerFocusScore && !isNaN(item.customerFocusScore)) ? 
-            Math.round(parseFloat(item.customerFocusScore)) : '-';
-        const uncertaintyScore = (item.uncertaintyScore && !isNaN(item.uncertaintyScore)) ? 
-            Math.round(parseFloat(item.uncertaintyScore)) : '-';
-        const ieScore = (item.ieScore && !isNaN(item.ieScore)) ? 
-            Math.round(parseFloat(item.ieScore)) : '-';
-        const idikScore = (item.idikScore && !isNaN(item.idikScore)) ? 
-            Math.round(parseFloat(item.idikScore)) : '-';
-        
-        row.innerHTML = `
-            <td>
-                <a href="/admin-panel.html" style="color: #0286F7; text-decoration: none; font-weight: 500;">
-                    ${item.name}
-                </a>
-            </td>
-            <td>
-                <span class="score-badge ${getScoreColorClass(customerFocusScore)}">
-                    ${customerFocusScore}
-                </span>
-            </td>
-            <td>
-                <span class="score-badge ${getScoreColorClass(uncertaintyScore)}">
-                    ${uncertaintyScore}
-                </span>
-            </td>
-            <td>
-                <span class="score-badge ${getScoreColorClass(ieScore)}">
-                    ${ieScore}
-                </span>
-            </td>
-            <td>
-                <span class="score-badge ${getScoreColorClass(idikScore)}">
-                    ${idikScore}
-                </span>
-            </td>
-        `;
-        tbody.appendChild(row);
+        // Gruplandırılmış satır için özel stil
+        if (item.isGrouped && item.groupCount > 1) {
+            const row = document.createElement('tr');
+            row.classList.add('grouped-row');
+            row.setAttribute('data-email', item.email);
+            
+            const customerFocusScore = (item.customerFocusScore && !isNaN(item.customerFocusScore)) ? 
+                Math.round(parseFloat(item.customerFocusScore)) : '-';
+            const uncertaintyScore = (item.uncertaintyScore && !isNaN(item.uncertaintyScore)) ? 
+                Math.round(parseFloat(item.uncertaintyScore)) : '-';
+            const ieScore = (item.ieScore && !isNaN(item.ieScore)) ? 
+                Math.round(parseFloat(item.ieScore)) : '-';
+            const idikScore = (item.idikScore && !isNaN(item.idikScore)) ? 
+                Math.round(parseFloat(item.idikScore)) : '-';
+            
+            // Eğer grup açıksa - işareti göster, değilse + işareti göster
+            const isExpanded = expandedGroups.has(item.email);
+            const expandIcon = isExpanded ? '-' : '+';
+            
+            row.innerHTML = `
+                <td>
+                    <span class="expand-icon" onclick="toggleGroup('${item.email}')">${expandIcon}</span>
+                    <a href="/admin-panel.html" style="color: #0286F7; text-decoration: none; font-weight: 500;">
+                        ${item.name}
+                    </a>
+                    <span class="group-count">(${item.groupCount} sonuç)</span>
+                </td>
+                <td>
+                    <span class="score-badge ${getScoreColorClass(customerFocusScore)}">
+                        ${customerFocusScore}
+                    </span>
+                </td>
+                <td>
+                    <span class="score-badge ${getScoreColorClass(uncertaintyScore)}">
+                        ${uncertaintyScore}
+                    </span>
+                </td>
+                <td>
+                    <span class="score-badge ${getScoreColorClass(ieScore)}">
+                        ${ieScore}
+                    </span>
+                </td>
+                <td>
+                    <span class="score-badge ${getScoreColorClass(idikScore)}">
+                        ${idikScore}
+                    </span>
+                </td>
+            `;
+            tbody.appendChild(row);
+
+            // Alt satırları oluştur
+            if (item.isGrouped && item.groupCount > 1) {
+                item.allGroupItems.slice(1).forEach(groupItem => {
+                    const subRow = document.createElement('tr');
+                    subRow.classList.add('sub-row');
+                    subRow.setAttribute('data-parent-email', item.email);
+                    
+                    // Eğer grup açıksa alt satırları göster, değilse gizle
+                    if (!isExpanded) {
+                        subRow.classList.add('hidden');
+                    }
+                    
+                    const subCustomerFocusScore = (groupItem.customerFocusScore && !isNaN(groupItem.customerFocusScore)) ? 
+                        Math.round(parseFloat(groupItem.customerFocusScore)) : '-';
+                    const subUncertaintyScore = (groupItem.uncertaintyScore && !isNaN(groupItem.uncertaintyScore)) ? 
+                        Math.round(parseFloat(groupItem.uncertaintyScore)) : '-';
+                    const subIeScore = (groupItem.ieScore && !isNaN(groupItem.ieScore)) ? 
+                        Math.round(parseFloat(groupItem.ieScore)) : '-';
+                    const subIdikScore = (groupItem.idikScore && !isNaN(groupItem.idikScore)) ? 
+                        Math.round(parseFloat(groupItem.idikScore)) : '-';
+                    
+                    subRow.innerHTML = `
+                        <td style="padding-left: 30px;">
+                            <a href="/admin-panel.html" style="color: #0286F7; text-decoration: none; font-weight: 500;">
+                                ${groupItem.name}
+                            </a>
+                        </td>
+                        <td>
+                            <span class="score-badge ${getScoreColorClass(subCustomerFocusScore)}">
+                                ${subCustomerFocusScore}
+                            </span>
+                        </td>
+                        <td>
+                            <span class="score-badge ${getScoreColorClass(subUncertaintyScore)}">
+                                ${subUncertaintyScore}
+                            </span>
+                        </td>
+                        <td>
+                            <span class="score-badge ${getScoreColorClass(subIeScore)}">
+                                ${subIeScore}
+                            </span>
+                        </td>
+                        <td>
+                            <span class="score-badge ${getScoreColorClass(subIdikScore)}">
+                                ${subIdikScore}
+                            </span>
+                        </td>
+                    `;
+                    tbody.appendChild(subRow);
+                });
+            }
+        } else {
+            // Normal satır
+            const row = document.createElement('tr');
+            
+            const customerFocusScore = (item.customerFocusScore && !isNaN(item.customerFocusScore)) ? 
+                Math.round(parseFloat(item.customerFocusScore)) : '-';
+            const uncertaintyScore = (item.uncertaintyScore && !isNaN(item.uncertaintyScore)) ? 
+                Math.round(parseFloat(item.uncertaintyScore)) : '-';
+            const ieScore = (item.ieScore && !isNaN(item.ieScore)) ? 
+                Math.round(parseFloat(item.ieScore)) : '-';
+            const idikScore = (item.idikScore && !isNaN(item.idikScore)) ? 
+                Math.round(parseFloat(item.idikScore)) : '-';
+            
+            row.innerHTML = `
+                <td>
+                    <a href="/admin-panel.html" style="color: #0286F7; text-decoration: none; font-weight: 500;">
+                        ${item.name}
+                    </a>
+                </td>
+                <td>
+                    <span class="score-badge ${getScoreColorClass(customerFocusScore)}">
+                        ${customerFocusScore}
+                    </span>
+                </td>
+                <td>
+                    <span class="score-badge ${getScoreColorClass(uncertaintyScore)}">
+                        ${uncertaintyScore}
+                    </span>
+                </td>
+                <td>
+                    <span class="score-badge ${getScoreColorClass(ieScore)}">
+                        ${ieScore}
+                    </span>
+                </td>
+                <td>
+                    <span class="score-badge ${getScoreColorClass(idikScore)}">
+                        ${idikScore}
+                    </span>
+                </td>
+            `;
+            tbody.appendChild(row);
+        }
     });
+    
+    // Açık olan grupları tekrar aç
+    restoreExpandedGroups();
 }
 
 
@@ -361,7 +476,7 @@ function applyFilters() {
             uncertaintyMax
         });
 
-        filteredData = allData.filter(item => {
+        const filteredItems = allData.filter(item => {
             try {
                 if (!item || !item.name) {
                     console.log('Name özelliği eksik:', item);
@@ -371,6 +486,8 @@ function applyFilters() {
                 const itemName = item.name.toString().toLowerCase();
                 const customerFocusScore = item.customerFocusScore === '-' ? null : parseFloat(item.customerFocusScore);
                 const uncertaintyScore = item.uncertaintyScore === '-' ? null : parseFloat(item.uncertaintyScore);
+                const ieScore = item.ieScore === '-' ? null : parseFloat(item.ieScore);
+                const idikScore = item.idikScore === '-' ? null : parseFloat(item.idikScore);
 
                 // İsim araması
                 let nameMatch = true;
@@ -394,18 +511,43 @@ function applyFilters() {
                     uncertaintyMatch = uncertaintyScore >= min && uncertaintyScore <= max;
                 }
 
-                return nameMatch && customerFocusMatch && uncertaintyMatch;
+                // IE Skoru filtresi
+                let ieMatch = true;
+                const ieMinElement = document.getElementById('ieMin');
+                const ieMaxElement = document.getElementById('ieMax');
+                if (ieScore !== null && ieMinElement && ieMaxElement) {
+                    const min = parseFloat(ieMinElement.value);
+                    const max = parseFloat(ieMaxElement.value);
+                    ieMatch = ieScore >= min && ieScore <= max;
+                }
+
+                // IDIK Skoru filtresi
+                let idikMatch = true;
+                const idikMinElement = document.getElementById('idikMin');
+                const idikMaxElement = document.getElementById('idikMax');
+                if (idikScore !== null && idikMinElement && idikMaxElement) {
+                    const min = parseFloat(idikMinElement.value);
+                    const max = parseFloat(idikMaxElement.value);
+                    idikMatch = idikScore >= min && idikScore <= max;
+                }
+
+                return nameMatch && customerFocusMatch && uncertaintyMatch && ieMatch && idikMatch;
             } catch (error) {
                 console.error('Öğe filtreleme hatası:', error, item);
                 return false;
             }
         });
 
+        // Filtrelenmiş verileri gruplandır
+        const groupedData = groupByEmail(filteredItems);
+        filteredData = groupedData;
+
         console.log('Filtrelenmiş veri sayısı:', filteredData.length);
         totalItems = filteredData.length;
         currentPage = 1;
         displayData();
         updatePagination();
+        
         closeFilterPopup();
     } catch (error) {
         console.error('Filtreleme hatası:', error);
@@ -421,27 +563,30 @@ function clearFilters() {
         document.getElementById('customerFocusMax').value = '100';
         document.getElementById('uncertaintyMin').value = '0';
         document.getElementById('uncertaintyMax').value = '100';
-                 const ieMinElement = document.getElementById('ieMin');
-         const ieMaxElement = document.getElementById('ieMax');
-         const idikMinElement = document.getElementById('idikMin');
-         const idikMaxElement = document.getElementById('idikMax');
-         const ieMinValueElement = document.getElementById('ieMinValue');
-         const ieMaxValueElement = document.getElementById('ieMaxValue');
-         const idikMinValueElement = document.getElementById('idikMinValue');
-         const idikMaxValueElement = document.getElementById('idikMaxValue');
-         
-         if (ieMinElement) ieMinElement.value = '0';
-         if (ieMaxElement) ieMaxElement.value = '100';
-         if (idikMinElement) idikMinElement.value = '0';
-         if (idikMaxElement) idikMaxElement.value = '100';
-         document.getElementById('customerFocusMinValue').textContent = '0';
-         document.getElementById('customerFocusMaxValue').textContent = '100';
-         document.getElementById('uncertaintyMinValue').textContent = '0';
-         document.getElementById('uncertaintyMaxValue').textContent = '100';
-         if (ieMinValueElement) ieMinValueElement.textContent = '0';
-         if (ieMaxValueElement) ieMaxValueElement.textContent = '100';
-         if (idikMinValueElement) idikMinValueElement.textContent = '0';
-         if (idikMaxValueElement) idikMaxValueElement.textContent = '100';
+        
+        const ieMinElement = document.getElementById('ieMin');
+        const ieMaxElement = document.getElementById('ieMax');
+        const idikMinElement = document.getElementById('idikMin');
+        const idikMaxElement = document.getElementById('idikMax');
+        const ieMinValueElement = document.getElementById('ieMinValue');
+        const ieMaxValueElement = document.getElementById('ieMaxValue');
+        const idikMinValueElement = document.getElementById('idikMinValue');
+        const idikMaxValueElement = document.getElementById('idikMaxValue');
+        
+        if (ieMinElement) ieMinElement.value = '0';
+        if (ieMaxElement) ieMaxElement.value = '100';
+        if (idikMinElement) idikMinElement.value = '0';
+        if (idikMaxElement) idikMaxElement.value = '100';
+        
+        document.getElementById('customerFocusMinValue').textContent = '0';
+        document.getElementById('customerFocusMaxValue').textContent = '100';
+        document.getElementById('uncertaintyMinValue').textContent = '0';
+        document.getElementById('uncertaintyMaxValue').textContent = '100';
+        
+        if (ieMinValueElement) ieMinValueElement.textContent = '0';
+        if (ieMaxValueElement) ieMaxValueElement.textContent = '100';
+        if (idikMinValueElement) idikMinValueElement.textContent = '0';
+        if (idikMaxValueElement) idikMaxValueElement.textContent = '100';
 
                  // Range görünümünü güncelle
          ['customerFocus', 'uncertainty'].forEach(prefix => {
@@ -473,8 +618,9 @@ function clearFilters() {
              }
          });
 
-        // Filtrelenmiş veriyi orijinal veriye eşitle
-        filteredData = [...allData];
+        // Filtrelenmiş veriyi orijinal veriye eşitle ve gruplandır
+        const groupedData = groupByEmail(allData);
+        filteredData = groupedData;
         
         // Sayfalama ve görüntülemeyi güncelle
         totalItems = filteredData.length;
@@ -569,13 +715,16 @@ function filterResults() {
     
     if (searchTerm === '') {
         // Arama boşsa tüm verileri göster
-        filteredData = [...allData];
+        const groupedData = groupByEmail(allData);
+        filteredData = groupedData;
     } else {
         // Arama terimini ad soyad sütununda ara
-        filteredData = allData.filter(item => {
+        const filteredItems = allData.filter(item => {
             const name = (item.name || '').toLowerCase();
             return name.includes(searchTerm);
         });
+        const groupedData = groupByEmail(filteredItems);
+        filteredData = groupedData;
     }
     
     // Sayfalama sıfırla
@@ -666,5 +815,85 @@ function downloadExcel() {
     } catch (error) {
         console.error('Excel indirme hatası:', error);
         alert('Excel dosyası indirilirken bir hata oluştu!');
+    }
+}
+
+// Aynı e-posta adresine sahip kişileri grupla
+function groupByEmail(data) {
+    const emailGroups = {};
+    
+    // Verileri e-posta adresine göre grupla
+    data.forEach(item => {
+        const email = item.email || 'no-email';
+        if (!emailGroups[email]) {
+            emailGroups[email] = [];
+        }
+        emailGroups[email].push(item);
+    });
+    
+    // Her grup içindeki verileri tarihe göre sırala (en yeni üstte)
+    Object.keys(emailGroups).forEach(email => {
+        emailGroups[email].sort((a, b) => new Date(b.sentDate || 0) - new Date(a.sentDate || 0));
+    });
+    
+    // Gruplandırılmış verileri düzleştir
+    const groupedData = [];
+    Object.keys(emailGroups).forEach(email => {
+        const group = emailGroups[email];
+        if (group.length === 1) {
+            // Tek sonuç varsa normal göster
+            groupedData.push({
+                ...group[0],
+                isGrouped: false,
+                groupCount: 1
+            });
+        } else {
+            // Birden fazla sonuç varsa gruplandır
+            const latestItem = group[0]; // En yeni olan
+            
+            groupedData.push({
+                ...latestItem,
+                isGrouped: true,
+                groupCount: group.length,
+                allGroupItems: group
+            });
+        }
+    });
+    
+    return groupedData;
+}
+
+// Açık olan grupları tekrar aç
+function restoreExpandedGroups() {
+    expandedGroups.forEach(email => {
+        const expandIcon = document.querySelector(`tr[data-email="${email}"] .expand-icon`);
+        const subRows = document.querySelectorAll(`tr[data-parent-email="${email}"]`);
+        
+        if (expandIcon && subRows.length > 0) {
+            subRows.forEach(row => {
+                row.classList.remove('hidden');
+                row.style.display = ''; // CSS display özelliğini de sıfırla
+            });
+            expandIcon.textContent = '-';
+        }
+    });
+}
+
+// Grup açma/kapama fonksiyonu
+function toggleGroup(email) {
+    const expandIcon = event.target;
+    const subRows = document.querySelectorAll(`tr[data-parent-email="${email}"]`);
+    const isExpanded = !subRows[0].classList.contains('hidden');
+    
+    if (isExpanded) {
+        // Grubu kapat
+        subRows.forEach(row => row.classList.add('hidden'));
+        expandIcon.textContent = '+';
+        expandedGroups.delete(email);
+    } else {
+        // Grubu aç
+        subRows.forEach(row => row.classList.remove('hidden'));
+        expandIcon.textContent = '-';
+        expandedGroups.add(email);
     }
 } 
