@@ -203,6 +203,7 @@ class GameController {
                 { code: data.playerCode },
                 { 
                     status: 'Tamamlandı',
+                    isUsed: true, // Kodu kullanılmış olarak işaretle
                     completionDate: new Date(),
                     evaluationResult: evaluationResult,
                     customerFocusScore: Math.round(customerFocusScore),

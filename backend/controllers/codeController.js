@@ -55,7 +55,8 @@ class CodeController {
     // Kodları listele
     async listCodes(req, res) {
         try {
-            const codes = await UserCode.find({ isUsed: false })
+            // Tüm kodları listele (kullanılmış ve kullanılmamış)
+            const codes = await UserCode.find({})
                 .sort({ createdAt: -1 });
 
             res.status(200).json({
@@ -129,6 +130,7 @@ class CodeController {
             }
 
             userCode.status = 'Oyun Devam Ediyor';
+            userCode.isUsed = true; // Kodu kullanılmış olarak işaretle
             await userCode.save();
 
             const allPlanets = userCode.allPlanets || [userCode.planet];
