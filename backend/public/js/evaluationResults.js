@@ -50,7 +50,13 @@ async function loadData(resetFilters = false) {
             console.log('İlk sonuç örneği:', data.results[0]);
             
             // Sadece oynanmış oyunların sonuçlarını al (status === 'Tamamlandı' olanlar)
-            allData = data.results.filter(item => item.status === 'Tamamlandı');
+            // E-posta adreslerini küçük harfe çevir
+            allData = data.results
+                .filter(item => item.status === 'Tamamlandı')
+                .map(item => ({
+                    ...item,
+                    email: item.email ? item.email.toLowerCase() : 'no-email'
+                }));
             
                          if (resetFilters) {
                  document.getElementById('customerFocusMin').value = '0';
@@ -204,7 +210,8 @@ function displayData() {
         if (item.isGrouped && item.groupCount > 1) {
             const row = document.createElement('tr');
             row.classList.add('grouped-row');
-            row.setAttribute('data-email', item.email);
+            const normalizedEmail = item.email.toLowerCase();
+            row.setAttribute('data-email', normalizedEmail);
             
             const customerFocusScore = (item.customerFocusScore && !isNaN(item.customerFocusScore)) ? 
                 Math.round(parseFloat(item.customerFocusScore)) : '-';
@@ -216,12 +223,12 @@ function displayData() {
                 Math.round(parseFloat(item.idikScore)) : '-';
             
             // Eğer grup açıksa - işareti göster, değilse + işareti göster
-            const isExpanded = expandedGroups.has(item.email);
+            const isExpanded = expandedGroups.has(normalizedEmail);
             const expandIcon = isExpanded ? '-' : '+';
             
                          row.innerHTML = `
                  <td>
-                     <span class="expand-icon" onclick="toggleGroup('${item.email}')">${expandIcon}</span>
+                     <span class="expand-icon" onclick="toggleGroup('${normalizedEmail}')">${expandIcon}</span>
                      <a href="/admin-panel.html" style="color: #0286F7; text-decoration: none; font-weight: 500;">
                          ${item.name}
                      </a>
@@ -257,10 +264,10 @@ function displayData() {
 
             // Alt satırları oluştur
             if (item.isGrouped && item.groupCount > 1) {
-                item.allGroupItems.slice(1).forEach(groupItem => {
-                    const subRow = document.createElement('tr');
-                    subRow.classList.add('sub-row');
-                    subRow.setAttribute('data-parent-email', item.email);
+                                 item.allGroupItems.slice(1).forEach(groupItem => {
+                     const subRow = document.createElement('tr');
+                     subRow.classList.add('sub-row');
+                     subRow.setAttribute('data-parent-email', normalizedEmail);
                     
                     // Eğer grup açıksa alt satırları göster, değilse gizle
                     if (!isExpanded) {
@@ -789,8 +796,8 @@ async function updateMissingScores() {
 // Excel indirme fonksiyonu
 function downloadExcel() {
     try {
-        // Sadece oynanmış oyunların sonuçlarını al (status === 'Tamamlandı' olanlar)
-        const dataToExport = filteredData
+        // Tüm sonuçları al (gruplandırılmamış, sadece tamamlanmış oyunlar)
+        let dataToExport = allData
             .filter(item => item.status === 'Tamamlandı')
             .map(item => ({
                 'Ad Soyad': item.name || '-',
@@ -802,10 +809,46 @@ function downloadExcel() {
                 'Titan - Güven Veren İşbirlikçi ve Sinerji': item.idikScore || '-'
             }));
 
+        // Eğer filtreler uygulanmışsa, filtrelenmiş verileri kullan
+        if (filteredData.length !== allData.length) {
+            // Filtrelenmiş verilerden tüm sonuçları al
+            const filteredEmails = new Set();
+            filteredData.forEach(item => {
+                if (item.isGrouped && item.allGroupItems) {
+                    // Gruplandırılmış veriler için tüm alt öğeleri ekle
+                    item.allGroupItems.forEach(groupItem => {
+                        filteredEmails.add(groupItem.email.toLowerCase());
+                    });
+                } else {
+                    filteredEmails.add(item.email.toLowerCase());
+                }
+            });
+
+            // Sadece filtrelenmiş e-posta adreslerine ait sonuçları al
+            dataToExport = allData
+                .filter(item => item.status === 'Tamamlandı' && filteredEmails.has(item.email.toLowerCase()))
+                .map(item => ({
+                    'Ad Soyad': item.name || '-',
+                    'E-posta': item.email || '-',
+                    'Tamamlanma Tarihi': formatDate(item.sentDate) || '-',
+                    'Venus - Müşteri Odaklılık': item.customerFocusScore || '-',
+                    'Venus - Belirsizlik Yönetimi': item.uncertaintyScore || '-',
+                    'Titan - İnsanları Etkileme': item.ieScore || '-',
+                    'Titan - Güven Veren İşbirlikçi ve Sinerji': item.idikScore || '-'
+                }));
+        }
+
         if (dataToExport.length === 0) {
             alert('İndirilecek veri bulunamadı!');
             return;
         }
+
+        // Verileri tarihe göre sırala (en yeni üstte)
+        dataToExport.sort((a, b) => {
+            const dateA = new Date(a['Tamamlanma Tarihi'] === '-' ? 0 : a['Tamamlanma Tarihi']);
+            const dateB = new Date(b['Tamamlanma Tarihi'] === '-' ? 0 : b['Tamamlanma Tarihi']);
+            return dateB - dateA;
+        });
 
         // SheetJS ile Excel dosyası oluştur
         const workbook = XLSX.utils.book_new();
@@ -835,6 +878,8 @@ function downloadExcel() {
         // Excel dosyasını indir
         XLSX.writeFile(workbook, fileName);
 
+        console.log(`Excel dosyası indirildi. Toplam ${dataToExport.length} sonuç eklendi.`);
+
     } catch (error) {
         console.error('Excel indirme hatası:', error);
         alert('Excel dosyası indirilirken bir hata oluştu!');
@@ -845,9 +890,9 @@ function downloadExcel() {
 function groupByEmail(data) {
     const emailGroups = {};
     
-    // Verileri e-posta adresine göre grupla
+    // Verileri e-posta adresine göre grupla (e-posta adresleri zaten küçük harf)
     data.forEach(item => {
-        const email = item.email || 'no-email';
+        const email = (item.email || 'no-email').toLowerCase();
         if (!emailGroups[email]) {
             emailGroups[email] = [];
         }
@@ -889,8 +934,9 @@ function groupByEmail(data) {
 // Açık olan grupları tekrar aç
 function restoreExpandedGroups() {
     expandedGroups.forEach(email => {
-        const expandIcon = document.querySelector(`tr[data-email="${email}"] .expand-icon`);
-        const subRows = document.querySelectorAll(`tr[data-parent-email="${email}"]`);
+        const normalizedEmail = email.toLowerCase();
+        const expandIcon = document.querySelector(`tr[data-email="${normalizedEmail}"] .expand-icon`);
+        const subRows = document.querySelectorAll(`tr[data-parent-email="${normalizedEmail}"]`);
         
         if (expandIcon && subRows.length > 0) {
             subRows.forEach(row => {
@@ -905,18 +951,19 @@ function restoreExpandedGroups() {
 // Grup açma/kapama fonksiyonu
 function toggleGroup(email) {
     const expandIcon = event.target;
-    const subRows = document.querySelectorAll(`tr[data-parent-email="${email}"]`);
+    const normalizedEmail = email.toLowerCase();
+    const subRows = document.querySelectorAll(`tr[data-parent-email="${normalizedEmail}"]`);
     const isExpanded = !subRows[0].classList.contains('hidden');
     
     if (isExpanded) {
         // Grubu kapat
         subRows.forEach(row => row.classList.add('hidden'));
         expandIcon.textContent = '+';
-        expandedGroups.delete(email);
+        expandedGroups.delete(normalizedEmail);
     } else {
         // Grubu aç
         subRows.forEach(row => row.classList.remove('hidden'));
         expandIcon.textContent = '-';
-        expandedGroups.add(email);
+        expandedGroups.add(normalizedEmail);
     }
 } 
