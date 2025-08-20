@@ -8,24 +8,12 @@ let expandedGroups = new Set(); // Açık olan grupları takip et
 
 // Yükleme göstergesi göster
 function showLoadingIndicator() {
-    const tbody = document.getElementById('resultsBody');
-    if (tbody) {
-        tbody.innerHTML = `
-            <tr>
-                <td colspan="6" style="text-align: center; padding: 40px;">
-                    <div style="display: flex; flex-direction: column; align-items: center; gap: 16px;">
-                        <div class="loading-spinner"></div>
-                        <div style="color: #666; font-size: 14px;">Veriler yükleniyor...</div>
-                    </div>
-                </td>
-            </tr>
-        `;
-    }
+    UIUtils.showLoading('resultsBody', 'Veriler yükleniyor...');
 }
 
 // Yükleme göstergesini gizle
 function hideLoadingIndicator() {
-    // Bu fonksiyon displayData() tarafından otomatik olarak çağrılır
+    UIUtils.hideLoading('resultsBody');
 }
 
 // Yenileme fonksiyonu
@@ -40,23 +28,30 @@ async function loadData(resetFilters = false) {
     
     try {
         const response = await fetch('/api/user-results');
-        if (!response.ok) {
-            throw new Error('Veri çekme hatası');
-        }
         const data = await response.json();
         
-        if (data.success) {
-            console.log('Yüklenen veri:', data.results);
-            console.log('İlk sonuç örneği:', data.results[0]);
-            
-            // Sadece oynanmış oyunların sonuçlarını al (status === 'Tamamlandı' olanlar)
-            // E-posta adreslerini küçük harfe çevir
-            allData = data.results
-                .filter(item => item.status === 'Tamamlandı')
-                .map(item => ({
-                    ...item,
-                    email: item.email ? item.email.toLowerCase() : 'no-email'
-                }));
+        // API response formatını kontrol et
+        let results = [];
+        if (data.success && data.results) {
+            results = data.results;
+        } else if (data.data && data.data.results) {
+            results = data.data.results;
+        } else {
+            console.error('Beklenmeyen API response formatı:', data);
+            results = [];
+        }
+        
+        console.log('Yüklenen veri:', results);
+        console.log('İlk sonuç örneği:', results[0]);
+        
+        // Sadece oynanmış oyunların sonuçlarını al (status === 'Tamamlandı' olanlar)
+        // E-posta adreslerini küçük harfe çevir
+        allData = results
+            .filter(item => item.status === 'Tamamlandı')
+            .map(item => ({
+                ...item,
+                email: item.email ? item.email.toLowerCase() : 'no-email'
+            }));
             
                          if (resetFilters) {
                  document.getElementById('customerFocusMin').value = '0';
@@ -89,7 +84,7 @@ async function loadData(resetFilters = false) {
                  if (idikMaxValueElement) idikMaxValueElement.textContent = '100';
                  
                  // Gruplandırılmış verileri oluştur
-                 const groupedData = groupByEmail(allData);
+                 const groupedData = DataUtils.groupByEmail(allData);
                  filteredData = groupedData;
              } else {
                 // Mevcut filtreleri koru
@@ -162,7 +157,7 @@ async function loadData(resetFilters = false) {
                 });
                 
                 // Filtrelenmiş verileri gruplandır
-                const groupedData = groupByEmail(filteredData);
+                const groupedData = DataUtils.groupByEmail(filteredData);
                 filteredData = groupedData;
             }
             
@@ -172,16 +167,11 @@ async function loadData(resetFilters = false) {
             
             // Yükleme göstergesini gizle
             hideLoadingIndicator();
-        } else {
-            console.error('Veri çekme başarısız:', data.error);
-            // Hata durumunda da yükleme göstergesini gizle
+        } catch (error) {
+            const errorResult = ApiResponseHandler.handleError(error, 'Veri yükleme hatası');
+            console.error('Veri yükleme hatası:', errorResult.message);
             hideLoadingIndicator();
         }
-    } catch (error) {
-        console.error('Veri yükleme hatası:', error);
-        // Hata durumunda da yükleme göstergesini gizle
-        hideLoadingIndicator();
-    }
 }
 
 // Verileri görüntüle
@@ -234,11 +224,11 @@ function displayData() {
                      </a>
                      <span class="group-count">(${item.groupCount} sonuç)</span>
                  </td>
-                 <td>
-                     <span style="color: #666; font-size: 12px;">
-                         ${formatDate(item.sentDate)}
-                     </span>
-                 </td>
+                                 <td>
+                    <span style="color: #666; font-size: 12px;">
+                        ${UIUtils.formatDate(item.sentDate)}
+                    </span>
+                </td>
                  <td>
                      <span class="score-badge ${getScoreColorClass(customerFocusScore)}">
                          ${customerFocusScore}
@@ -291,7 +281,7 @@ function displayData() {
                          </td>
                          <td>
                              <span style="color: #666; font-size: 12px;">
-                                 ${formatDate(groupItem.sentDate)}
+                                 ${UIUtils.formatDate(groupItem.sentDate)}
                              </span>
                          </td>
                          <td>
@@ -339,7 +329,7 @@ function displayData() {
                  </td>
                  <td>
                      <span style="color: #666; font-size: 12px;">
-                         ${formatDate(item.sentDate)}
+                         ${UIUtils.formatDate(item.sentDate)}
                      </span>
                  </td>
                  <td>
@@ -412,18 +402,7 @@ function changePage(page) {
     updatePagination();
 }
 
-// Tarih formatla
-function formatDate(dateString) {
-    if (!dateString) return '-';
-    const date = new Date(dateString);
-    return date.toLocaleDateString('tr-TR', {
-        year: 'numeric',
-        month: 'long',
-        day: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit'
-    });
-}
+
 
 // Silme popup'ını göster
 function showDeletePopup(code) {
@@ -563,7 +542,7 @@ function applyFilters() {
         });
 
         // Filtrelenmiş verileri gruplandır
-        const groupedData = groupByEmail(filteredItems);
+        const groupedData = DataUtils.groupByEmail(filteredItems);
         filteredData = groupedData;
 
         console.log('Filtrelenmiş veri sayısı:', filteredData.length);
@@ -643,7 +622,7 @@ function clearFilters() {
          });
 
         // Filtrelenmiş veriyi orijinal veriye eşitle ve gruplandır
-        const groupedData = groupByEmail(allData);
+        const groupedData = DataUtils.groupByEmail(allData);
         filteredData = groupedData;
         
         // Sayfalama ve görüntülemeyi güncelle
@@ -739,7 +718,7 @@ function filterResults() {
     
     if (searchTerm === '') {
         // Arama boşsa tüm verileri göster
-        const groupedData = groupByEmail(allData);
+        const groupedData = DataUtils.groupByEmail(allData);
         filteredData = groupedData;
     } else {
         // Arama terimini ad soyad sütununda ara
@@ -747,7 +726,7 @@ function filterResults() {
             const name = (item.name || '').toLowerCase();
             return name.includes(searchTerm);
         });
-        const groupedData = groupByEmail(filteredItems);
+        const groupedData = DataUtils.groupByEmail(filteredItems);
         filteredData = groupedData;
     }
     
@@ -802,7 +781,7 @@ function downloadExcel() {
             .map(item => ({
                 'Ad Soyad': item.name || '-',
                 'E-posta': item.email || '-',
-                'Tamamlanma Tarihi': formatDate(item.sentDate) || '-',
+                'Tamamlanma Tarihi': UIUtils.formatDate(item.sentDate) || '-',
                 'Venus - Müşteri Odaklılık': item.customerFocusScore || '-',
                 'Venus - Belirsizlik Yönetimi': item.uncertaintyScore || '-',
                 'Titan - İnsanları Etkileme': item.ieScore || '-',
@@ -830,7 +809,7 @@ function downloadExcel() {
                 .map(item => ({
                     'Ad Soyad': item.name || '-',
                     'E-posta': item.email || '-',
-                    'Tamamlanma Tarihi': formatDate(item.sentDate) || '-',
+                    'Tamamlanma Tarihi': UIUtils.formatDate(item.sentDate) || '-',
                     'Venus - Müşteri Odaklılık': item.customerFocusScore || '-',
                     'Venus - Belirsizlik Yönetimi': item.uncertaintyScore || '-',
                     'Titan - İnsanları Etkileme': item.ieScore || '-',
@@ -886,50 +865,7 @@ function downloadExcel() {
     }
 }
 
-// Aynı e-posta adresine sahip kişileri grupla
-function groupByEmail(data) {
-    const emailGroups = {};
-    
-    // Verileri e-posta adresine göre grupla (e-posta adresleri zaten küçük harf)
-    data.forEach(item => {
-        const email = (item.email || 'no-email').toLowerCase();
-        if (!emailGroups[email]) {
-            emailGroups[email] = [];
-        }
-        emailGroups[email].push(item);
-    });
-    
-    // Her grup içindeki verileri tarihe göre sırala (en yeni üstte)
-    Object.keys(emailGroups).forEach(email => {
-        emailGroups[email].sort((a, b) => new Date(b.sentDate || 0) - new Date(a.sentDate || 0));
-    });
-    
-    // Gruplandırılmış verileri düzleştir
-    const groupedData = [];
-    Object.keys(emailGroups).forEach(email => {
-        const group = emailGroups[email];
-        if (group.length === 1) {
-            // Tek sonuç varsa normal göster
-            groupedData.push({
-                ...group[0],
-                isGrouped: false,
-                groupCount: 1
-            });
-        } else {
-            // Birden fazla sonuç varsa gruplandır
-            const latestItem = group[0]; // En yeni olan
-            
-            groupedData.push({
-                ...latestItem,
-                isGrouped: true,
-                groupCount: group.length,
-                allGroupItems: group
-            });
-        }
-    });
-    
-    return groupedData;
-}
+
 
 // Açık olan grupları tekrar aç
 function restoreExpandedGroups() {

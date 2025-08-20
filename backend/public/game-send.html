@@ -6,6 +6,7 @@
     <title>Andron Games - Mülakat Gönderme</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="/css/common.css">
     <style>
         * {
             margin: 0;
@@ -18,6 +19,7 @@
             background: #F8F9FA;
             min-height: 100vh;
             overflow-x: hidden;
+            margin-left: 257px; /* Sidebar genişliği kadar margin */
         }
 
         .container {
@@ -350,6 +352,7 @@
 
 <body>
     <script src="/js/sidebar.js"></script>
+    <script src="/js/frontendUtils.js"></script>
     <script>
         document.addEventListener('DOMContentLoaded', () => {
             createSidebar();
@@ -358,7 +361,15 @@
                 window.location.href = 'admin.html';
                 return;
             }
-            // Token varsa sayfada kal
+
+            // Form submit event listener
+            const form = document.getElementById('interviewForm');
+            if (form) {
+                form.addEventListener('submit', (e) => {
+                    e.preventDefault();
+                    sendInterview();
+                });
+            }
         });
     </script>
 
@@ -385,7 +396,7 @@
             </div>
         </div>
 
-        <div class="interview-form">
+        <form id="interviewForm" class="interview-form">
             <div class="form-group">
                 <label>Ad Soyad</label>
                 <input type="text" id="interviewName" placeholder="Lütfen Ad Soyad Giriniz">
@@ -412,12 +423,11 @@
                     </div>
                 </div>
             </div>
-            <button class="submit-btn" onclick="sendInterview()">
+            <button type="submit" class="submit-btn">
                 <i class="fas fa-paper-plane"></i>
                 Gönder
             </button>
-            <div id="interviewAlert" class="alert" style="display: none;"></div>
-        </div>
+        </form>
     </div>
 
     <script>
@@ -577,81 +587,72 @@
             }
         }
 
-        function sendInterview() {
+        async function sendInterview() {
             const name = document.getElementById('interviewName').value;
             const email = document.getElementById('interviewEmail').value;
-            const alert = document.getElementById('interviewAlert');
 
-            if (!name || !email || selectedPlanets.length === 0) {
-                alert.style.display = 'block';
-                alert.className = 'alert alert-error';
-                alert.textContent = 'Lütfen tüm alanları doldurun ve en az bir gezegen seçin.';
+            // Form validasyonu
+            const validation = FormUtils.validateForm('interviewForm', {
+                interviewName: { required: true, label: 'Ad Soyad' },
+                interviewEmail: { required: true, email: true, label: 'E-posta' }
+            });
+
+            if (!validation.isValid) {
+                UIUtils.showAlert(validation.errors[0], 'error');
                 return;
             }
 
-            // Tüm seçilen gezegenleri gönder
-            const primaryPlanet = selectedPlanets[0]; // İlk seçilen gezegen
+            if (selectedPlanets.length === 0) {
+                UIUtils.showAlert('Lütfen en az bir gezegen seçin.', 'error');
+                return;
+            }
 
-            // Kod üretme ve gönderme işlemi
-            fetch('/api/generate-code', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                    name: name,
-                    email: email,
-                    planet: primaryPlanet, // İlk gezegen (geriye uyumluluk için)
-                    allPlanets: selectedPlanets // Tüm gezegenlerin sırası
-                })
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success && data.code) {
-                    // Üretilen kodu kullanarak e-posta gönder
-                    return fetch('/api/send-code', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json'
-                        },
-                        body: JSON.stringify({ 
-                            code: data.code,
-                            name: name,
-                            email: email,
-                            planet: primaryPlanet, // İlk gezegen (geriye uyumluluk için)
-                            allPlanets: selectedPlanets // Tüm gezegenlerin sırası
-                        })
-                    });
-                } else {
-                    throw new Error('Kod üretilemedi veya geçersiz kod döndü');
+            try {
+                // Kod üretme
+                const generateResponse = await fetch('/api/generate-code', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        name, email,
+                        planet: selectedPlanets[0],
+                        allPlanets: selectedPlanets
+                    })
+                });
+
+                const generateData = await ApiResponseHandler.handleResponse(generateResponse, 'Kod üretilemedi');
+                const result = ApiResponseHandler.handleSuccess(generateData, 'Kod başarıyla üretildi');
+
+                if (!result.data.code) {
+                    throw new Error('Geçersiz kod döndü');
                 }
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    alert.style.display = 'block';
-                    alert.className = 'alert alert-success';
-                    alert.textContent = 'Kod başarıyla gönderildi!';
-                    document.getElementById('interviewName').value = '';
-                    document.getElementById('interviewEmail').value = '';
-                    document.getElementById('planetSelect').value = '';
-                    selectedPlanets = [];
-                    updatePlanetUI();
-                    setTimeout(() => {
-                        alert.style.display = 'none';
-                    }, 3000);
-                } else {
-                    alert.style.display = 'block';
-                    alert.className = 'alert alert-error';
-                    alert.textContent = 'Gönderilemedi: ' + data.message;
-                }
-            })
-            .catch(error => {
-                console.error('Kod gönderme hatası:', error);
-                alert.style.display = 'block';
-                alert.className = 'alert alert-error';
-                alert.textContent = 'Gönderilemedi: Bir hata oluştu';
-            });
+
+                // E-posta gönderme
+                const sendResponse = await fetch('/api/send-code', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        code: result.data.code,
+                        name, email,
+                        planet: selectedPlanets[0],
+                        allPlanets: selectedPlanets
+                    })
+                });
+
+                const sendData = await ApiResponseHandler.handleResponse(sendResponse, 'E-posta gönderilemedi');
+                const sendResult = ApiResponseHandler.handleSuccess(sendData, 'Kod başarıyla gönderildi');
+
+                // Başarı durumunda formu temizle
+                FormUtils.clearForm('interviewForm');
+                document.getElementById('planetSelect').value = '';
+                selectedPlanets = [];
+                updatePlanetUI();
+
+                UIUtils.showAlert(sendResult.message, 'success');
+
+            } catch (error) {
+                const errorResult = ApiResponseHandler.handleError(error, 'Kod gönderme işlemi başarısız');
+                UIUtils.showAlert(errorResult.message, 'error');
+            }
         }
     </script>
 </body>

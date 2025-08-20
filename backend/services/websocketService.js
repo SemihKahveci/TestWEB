@@ -1,15 +1,14 @@
 const WebSocket = require('ws');
 const GameController = require('../controllers/gameController');
 const CodeController = require('../controllers/codeController');
-const WebSocketManager = require('./websocket');
 
 class WebSocketService {
     constructor(server) {
         // WebSocket sunucusunu oluştur
         this.wss = new WebSocket.Server({ server });
         
-        // WebSocket yöneticisini başlat
-        this.wsManager = new WebSocketManager();
+        // Bağlantıları takip et
+        this.connections = new Map();
         
         // Controller'ları başlat
         this.gameController = new GameController(this.wss);
@@ -21,15 +20,27 @@ class WebSocketService {
 
     initialize() {
         this.wss.on('connection', (ws) => {
-            this.wsManager.addConnection(ws);
+            this.addConnection(ws);
             
             ws.on('message', (message) => {
+                // Mesaj işleme (gerekirse)
             });
             
             ws.on('close', () => {
-                this.wsManager.removeConnection(ws);
+                this.removeConnection(ws);
             });
         });
+    }
+
+    addConnection(ws) {
+        this.connections.set(ws, {
+            connectedAt: new Date(),
+            isActive: true
+        });
+    }
+
+    removeConnection(ws) {
+        this.connections.delete(ws);
     }
 
     getGameController() {
@@ -42,11 +53,21 @@ class WebSocketService {
 
     // WebSocket durumunu kontrol etmek için metodlar
     isConnected() {
-        return this.wsManager.isConnected();
+        return this.connections.size > 0;
     }
 
     getConnectionCount() {
-        return this.wsManager.getConnectionCount();
+        return this.connections.size;
+    }
+
+    // Tüm bağlantılara mesaj gönder
+    broadcast(message) {
+        const messageStr = typeof message === 'string' ? message : JSON.stringify(message);
+        this.connections.forEach((connection, ws) => {
+            if (ws.readyState === WebSocket.OPEN) {
+                ws.send(messageStr);
+            }
+        });
     }
 }
 

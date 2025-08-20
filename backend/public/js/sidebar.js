@@ -1,5 +1,27 @@
+// Sidebar durumunu localStorage'da sakla
+const SIDEBAR_STATE_KEY = 'sidebar_state';
+
+// Sidebar durumunu kaydet
+function saveSidebarState(state) {
+    localStorage.setItem(SIDEBAR_STATE_KEY, JSON.stringify(state));
+}
+
+// Sidebar durumunu yükle
+function loadSidebarState() {
+    const state = localStorage.getItem(SIDEBAR_STATE_KEY);
+    return state ? JSON.parse(state) : null;
+}
+
+
+
 // Sidebar'ı oluştur
 async function createSidebar() {
+    // Eğer sidebar zaten varsa, yeniden oluşturma
+    if (document.querySelector('.sidebar')) {
+        console.log('Sidebar zaten mevcut, yeniden oluşturulmuyor');
+        return;
+    }
+
     const sidebar = document.createElement('div');
     sidebar.className = 'sidebar';
     
@@ -139,191 +161,211 @@ async function createSidebar() {
         </div>
     `;
 
-    // Sidebar stillerini ekle
-    const style = document.createElement('style');
-    style.textContent = `
-        .sidebar {
-            position: fixed;
-            left: 0;
-            top: 0;
-            width: 257px;
-            height: 100vh;
-            background-color: #fff;
-            box-shadow: 2px 0 5px rgba(0,0,0,0.1);
-            display: flex;
-            flex-direction: column;
-            z-index: 1000;
+    // Sidebar stillerini ekle (eğer daha önce eklenmemişse)
+    if (!document.querySelector('#sidebar-styles')) {
+        const style = document.createElement('style');
+        style.id = 'sidebar-styles';
+        style.textContent = `
+            .sidebar {
+                position: fixed;
+                left: 0;
+                top: 0;
+                width: 257px;
+                height: 100vh;
+                background-color: #fff;
+                box-shadow: 2px 0 5px rgba(0,0,0,0.1);
+                display: flex;
+                flex-direction: column;
+                z-index: 1000;
+                transition: transform 0.3s ease;
+            }
+
+            .sidebar-header {
+                padding: 20px;
+                border-bottom: 1px solid #eee;
+            }
+
+            .logo {
+                width: 150px;
+                height: auto;
+            }
+
+            .sidebar-menu {
+                flex: 1;
+                padding: 20px 0;
+                overflow-y: auto;
+            }
+
+            .menu-section {
+                margin-bottom: 30px;
+            }
+
+            .menu-title {
+                padding: 0 20px;
+                color: #8A92A6;
+                font-size: 12px;
+                font-weight: 600;
+                text-transform: uppercase;
+                margin-bottom: 10px;
+            }
+
+            .menu-items {
+                display: flex;
+                flex-direction: column;
+            }
+
+            .menu-item {
+                display: flex;
+                align-items: center;
+                padding: 12px 20px;
+                color: #232D42;
+                text-decoration: none;
+                cursor: pointer;
+                transition: all 0.3s ease;
+            }
+
+            .menu-item:hover {
+                background-color: #f5f5f5;
+            }
+
+            .menu-item.active {
+                background-color: #3A57E8;
+                color: white;
+            }
+
+            .menu-item i {
+                margin-right: 10px;
+                width: 20px;
+                text-align: center;
+            }
+
+            .menu-item span {
+                flex: 1;
+            }
+
+            .menu-item .fa-chevron-right {
+                font-size: 12px;
+                margin-left: 10px;
+            }
+
+            .menu-item.expandable {
+                position: relative;
+            }
+
+            .expand-icon {
+                font-size: 12px;
+                margin-left: 10px;
+                transition: transform 0.3s ease;
+            }
+
+
+            .menu-item.expandable.expanded .expand-icon {
+                transform: rotate(45deg);
+            }
+
+            .menu-item.expandable .expand-icon {
+                font-size: 12px;
+                margin-left: 10px;
+                transition: transform 0.3s ease;
+                color: #232D42;
+                background: none !important;
+                border: none !important;
+                padding: 0 !important;
+            }
+
+            .menu-item.active .expand-icon {
+                color: white;
+                background-color: transparent !important;
+            }
+
+            .submenu {
+                background-color: #f8f9fa;
+                border-left: 3px solid #3A57E8;
+                transition: all 0.3s ease;
+            }
+
+            .submenu-item {
+                display: flex;
+                align-items: center;
+                padding: 10px 20px 10px 50px;
+                color: #232D42;
+                text-decoration: none;
+                cursor: pointer;
+                transition: all 0.3s ease;
+                font-size: 14px;
+            }
+
+            .submenu-item:hover {
+                background-color: #e9ecef;
+            }
+
+            .submenu-item.active {
+                background-color: #3A57E8;
+                color: white;
+            }
+
+            .submenu-item i {
+                margin-right: 10px;
+                width: 20px;
+                text-align: center;
+            }
+
+            .sidebar-footer {
+                padding: 20px;
+                border-top: 1px solid #eee;
+            }
+
+            .logout-button {
+                width: 100%;
+                padding: 12px;
+                background-color: #f8f9fa;
+                border: none;
+                border-radius: 5px;
+                color: #dc3545;
+                font-weight: 600;
+                cursor: pointer;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                gap: 10px;
+                transition: all 0.3s ease;
+            }
+
+            .logout-button:hover {
+                background-color: #dc3545;
+                color: white;
+            }
+
+            /* Ana içerik alanını sidebar'a göre ayarla */
+            body {
+                transition: margin-left 0.3s ease;
+            }
+
+            /* Sayfa geçiş animasyonu */
+            .page-transition {
+                opacity: 0;
+                transition: opacity 0.2s ease;
+            }
+
+            .page-transition.loaded {
+                opacity: 1;
+            }
+
+
+        `;
+
+        // Font Awesome'ı ekle (eğer daha önce eklenmemişse)
+        if (!document.querySelector('link[href*="font-awesome"]')) {
+            const fontAwesome = document.createElement('link');
+            fontAwesome.rel = 'stylesheet';
+            fontAwesome.href = 'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css';
+            document.head.appendChild(fontAwesome);
         }
 
-        .sidebar-header {
-            padding: 20px;
-            border-bottom: 1px solid #eee;
-        }
+        document.head.appendChild(style);
+    }
 
-        .logo {
-            width: 150px;
-            height: auto;
-        }
-
-        .sidebar-menu {
-            flex: 1;
-            padding: 20px 0;
-            overflow-y: auto;
-        }
-
-        .menu-section {
-            margin-bottom: 30px;
-        }
-
-        .menu-title {
-            padding: 0 20px;
-            color: #8A92A6;
-            font-size: 12px;
-            font-weight: 600;
-            text-transform: uppercase;
-            margin-bottom: 10px;
-        }
-
-        .menu-items {
-            display: flex;
-            flex-direction: column;
-        }
-
-        .menu-item {
-            display: flex;
-            align-items: center;
-            padding: 12px 20px;
-            color: #232D42;
-            text-decoration: none;
-            cursor: pointer;
-            transition: all 0.3s ease;
-        }
-
-        .menu-item:hover {
-            background-color: #f5f5f5;
-        }
-
-        .menu-item.active {
-            background-color: #3A57E8;
-            color: white;
-        }
-
-        .menu-item i {
-            margin-right: 10px;
-            width: 20px;
-            text-align: center;
-        }
-
-        .menu-item span {
-            flex: 1;
-        }
-
-        .menu-item .fa-chevron-right {
-            font-size: 12px;
-            margin-left: 10px;
-        }
-
-        .menu-item.expandable {
-            position: relative;
-        }
-
-        .expand-icon {
-            font-size: 12px;
-            margin-left: 10px;
-            transition: transform 0.3s ease;
-        }
-
-
-        .menu-item.expandable.expanded .expand-icon {
-            transform: rotate(45deg);
-        }
-
-        .menu-item.expandable .expand-icon {
-            font-size: 12px;
-            margin-left: 10px;
-            transition: transform 0.3s ease;
-            color: #232D42;
-            background: none !important;
-            border: none !important;
-            padding: 0 !important;
-        }
-
-        .menu-item.active .expand-icon {
-            color: white;
-            background-color: transparent !important;
-        }
-
-        .submenu {
-            background-color: #f8f9fa;
-            border-left: 3px solid #3A57E8;
-        }
-
-        .submenu-item {
-            display: flex;
-            align-items: center;
-            padding: 10px 20px 10px 50px;
-            color: #232D42;
-            text-decoration: none;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            font-size: 14px;
-        }
-
-        .submenu-item:hover {
-            background-color: #e9ecef;
-        }
-
-        .submenu-item.active {
-            background-color: #3A57E8;
-            color: white;
-        }
-
-        .submenu-item i {
-            margin-right: 10px;
-            width: 20px;
-            text-align: center;
-        }
-
-        .sidebar-footer {
-            padding: 20px;
-            border-top: 1px solid #eee;
-        }
-
-        .logout-button {
-            width: 100%;
-            padding: 12px;
-            background-color: #f8f9fa;
-            border: none;
-            border-radius: 5px;
-            color: #dc3545;
-            font-weight: 600;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 10px;
-            transition: all 0.3s ease;
-        }
-
-        .logout-button:hover {
-            background-color: #dc3545;
-            color: white;
-        }
-
-        /* Ana içerik alanını sidebar'a göre ayarla */
-        body {
-            margin-left: 257px;
-        }
-    `;
-
-    // Font Awesome'ı ekle
-    const fontAwesome = document.createElement('link');
-    fontAwesome.rel = 'stylesheet';
-    fontAwesome.href = 'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css';
-
-    // Sidebar'ı ve stilleri sayfaya ekle
-    document.head.appendChild(fontAwesome);
-    document.head.appendChild(style);
+    // Sidebar'ı sayfaya ekle
     document.body.insertBefore(sidebar, document.body.firstChild);
 
     // Menü öğelerine tıklama olayı ekle
@@ -348,6 +390,13 @@ async function createSidebar() {
                     item.classList.add('expanded');
                     submenu.style.display = 'block';
                 }
+                
+                // Durumu kaydet
+                saveSidebarState({
+                    expandedMenus: Array.from(sidebar.querySelectorAll('.menu-item.expandable[data-expanded="true"]'))
+                        .map(item => item.querySelector('span').textContent)
+                });
+                
                 return; // Yönlendirme yapma
             }
             
@@ -358,42 +407,48 @@ async function createSidebar() {
             // Tıklanan öğeye active sınıfını ekle
             item.classList.add('active');
             
+            // Sayfa geçişini yumuşak hale getir
+            const currentPage = document.body;
+            currentPage.classList.add('page-transition');
+            
             // Menü öğesine göre yönlendirme yap
-            switch(menuText) {
-                case 'Genel Takip Sistemi':
-                    window.location.href = '/admin-panel.html';
-                    break;
-                case 'Şirket Çalışanları Sayfası':
-                    //window.location.href = '/employees.html';
-                    break;
-                case 'Aday Sonuçları Sayfası':
-                    window.location.href = '/results.html';
-                    break;
-                case 'Oyun Gönder':
-                    window.location.href = '/game-send.html';
-                    break;
-                case 'Oyun Kullanım Özeti':
-                    window.location.href = '/subscriptionSettings.html';
-                    break;
-                case 'Firma Ayarları':
-                   // window.location.href = '/authorization.html';
-                    break;
-                case 'Yetkilendirme':
-                    window.location.href = '/authorization.html';
-                    break;
-                case 'Organizasyon Yapısı':
-                    //window.location.href = '/organization-structure.html';
-                    break;
-                case 'Organizasyon Tanımlama':
-                    window.location.href = '/addGroup.html';
-                    break;
-                case 'Sistem Ayarları':
-                    window.location.href = '/admin-management.html';
-                    break;
-                case 'Bildirimler':
-                    //window.location.href = '/notifications.html';
-                    break;
-            }
+            setTimeout(() => {
+                switch(menuText) {
+                    case 'Genel Takip Sistemi':
+                        window.location.href = '/admin-panel.html';
+                        break;
+                    case 'Şirket Çalışanları Sayfası':
+                        //window.location.href = '/employees.html';
+                        break;
+                    case 'Aday Sonuçları Sayfası':
+                        window.location.href = '/results.html';
+                        break;
+                    case 'Oyun Gönder':
+                        window.location.href = '/game-send.html';
+                        break;
+                    case 'Oyun Kullanım Özeti':
+                        window.location.href = '/subscriptionSettings.html';
+                        break;
+                    case 'Firma Ayarları':
+                       // window.location.href = '/authorization.html';
+                        break;
+                    case 'Yetkilendirme':
+                        window.location.href = '/authorization.html';
+                        break;
+                    case 'Organizasyon Yapısı':
+                        //window.location.href = '/organization-structure.html';
+                        break;
+                    case 'Organizasyon Tanımlama':
+                        window.location.href = '/addGroup.html';
+                        break;
+                    case 'Sistem Ayarları':
+                        window.location.href = '/admin-management.html';
+                        break;
+                    case 'Bildirimler':
+                        //window.location.href = '/notifications.html';
+                        break;
+                }
+            }, 150);
         });
     });
 
@@ -408,25 +463,50 @@ async function createSidebar() {
             // Tıklanan öğeye active sınıfını ekle
             item.classList.add('active');
             
+            // Sayfa geçişini yumuşak hale getir
+            const currentPage = document.body;
+            currentPage.classList.add('page-transition');
+            
             // Menü öğesinin metnini al
             const menuText = item.querySelector('span').textContent;
             
             // Menü öğesine göre yönlendirme yap
-            switch(menuText) {
-                case 'Firma Tanımlama':
-                    window.location.href = '/companyIdentification.html';
-                    break;
-                case 'Firma Admini Tanımlama':
-                    window.location.href = '/defineCompanyAdmin.html';
-                    break;
-                case 'Oyun Tanımlama':
-                    if (isSuperAdmin) {
-                        window.location.href = '/gamemanagement.html';
-                    }
-                    break;
-            }
+            setTimeout(() => {
+                switch(menuText) {
+                    case 'Firma Tanımlama':
+                        window.location.href = '/companyIdentification.html';
+                        break;
+                    case 'Firma Admini Tanımlama':
+                        window.location.href = '/defineCompanyAdmin.html';
+                        break;
+                    case 'Oyun Tanımlama':
+                        if (isSuperAdmin) {
+                            window.location.href = '/gamemanagement.html';
+                        }
+                        break;
+                }
+            }, 150);
         });
     });
+
+    // Kaydedilmiş sidebar durumunu yükle
+    const savedState = loadSidebarState();
+    if (savedState && savedState.expandedMenus) {
+        savedState.expandedMenus.forEach(menuText => {
+            const menuItem = Array.from(menuItems).find(item => 
+                item.querySelector('span').textContent === menuText && 
+                item.classList.contains('expandable')
+            );
+            if (menuItem) {
+                menuItem.setAttribute('data-expanded', 'true');
+                menuItem.classList.add('expanded');
+                const submenu = menuItem.nextElementSibling;
+                if (submenu) {
+                    submenu.style.display = 'block';
+                }
+            }
+        });
+    }
 }
 
 // Çıkış işlemi
@@ -468,9 +548,30 @@ setInterval(checkToken, 5 * 60 * 1000);
 
 // Sayfa yüklendiğinde sidebar'ı oluştur
 document.addEventListener('DOMContentLoaded', () => {
-    // Login sayfasında sidebar'ı gösterme
-    if (!window.location.pathname.includes('admin.html')) {
+    // Login sayfasında sidebar'ı gösterme ve margin'i sıfırla
+    if (window.location.pathname.includes('admin.html')) {
+        document.body.style.marginLeft = '0';
+    } else {
         createSidebar();
         checkToken(); // Sayfa yüklendiğinde token kontrolü yap
+        
+        // Sayfa geçiş animasyonunu tamamla
+        setTimeout(() => {
+            document.body.classList.remove('page-transition');
+            document.body.classList.add('loaded');
+        }, 200);
+    }
+});
+
+
+
+// Sayfa geçişlerinde sidebar'ı koru
+window.addEventListener('beforeunload', () => {
+    // Sidebar durumunu kaydet
+    const sidebar = document.querySelector('.sidebar');
+    if (sidebar) {
+        const expandedMenus = Array.from(sidebar.querySelectorAll('.menu-item.expandable[data-expanded="true"]'))
+            .map(item => item.querySelector('span').textContent);
+        saveSidebarState({ expandedMenus });
     }
 }); 

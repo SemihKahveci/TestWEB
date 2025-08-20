@@ -301,8 +301,8 @@
             .then(response => response.json())
             .then(data => {
                 if (data.success) {
-                    localStorage.setItem('token', data.token);
-                    sessionStorage.setItem('token', data.token);
+                    localStorage.setItem('token', data.data.token);
+                    sessionStorage.setItem('token', data.data.token);
                     window.location.href = '/admin-panel.html';
                 } else {
                     showAlert(data.message || 'Giriş başarısız');

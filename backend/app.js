@@ -1,15 +1,20 @@
 require('dotenv').config();
 const express = require('express');
-const cors = require('cors');
 const mongoose = require('mongoose');
 const path = require('path');
 const WebSocketService = require('./services/websocketService');
 const evaluationController = require('./controllers/evaluationController');
 const adminRoutes = require('./routes/adminRoutes');
 const gameManagementRoutes = require('./routes/gameManagementRoutes');
-const codeController = require('./controllers/codeController');
 const adminController = require('./controllers/adminController');
 const companyManagementRoutes = require('./routes/companyManagementRoutes');
+const { 
+    errorHandler, 
+    notFoundHandler, 
+    requestLogger, 
+    corsHandler, 
+    rateLimiter 
+} = require('./middleware/errorHandler');
 
 const app = express();
 const port = process.env.PORT || 5000;
@@ -23,7 +28,9 @@ mongoose.connect(process.env.MONGODB_URI, {
 .catch(err => console.error('MongoDB bağlantı hatası:', err));
 
 // Middleware
-app.use(cors());
+app.use(corsHandler);
+app.use(requestLogger);
+app.use(rateLimiter);
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ limit: '50mb', extended: true }));
 app.use(express.static(path.join(__dirname, 'public')));
@@ -102,7 +109,7 @@ apiRouter.use('/game-management', gameManagementRoutes);
 // Company Management işlemleri
 apiRouter.use('/company-management', companyManagementRoutes);
 
-// API route'larını uygula
+// API router'ı kullan
 app.use('/api', apiRouter);
 
 // Ana sayfa
@@ -111,13 +118,8 @@ app.get('/', (req, res) => {
 });
 
 // 404 handler
-app.use((req, res) => {
-    res.status(404).json({ message: 'Sayfa bulunamadı' });
-});
+app.use(notFoundHandler);
 
-// Hata yönetimi
-app.use((err, req, res, next) => {
-    console.error(err.stack);
-    res.status(500).json({ message: 'Bir hata oluştu' });
-});
+// Global error handler
+app.use(errorHandler);
 

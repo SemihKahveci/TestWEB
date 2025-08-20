@@ -1,5 +1,6 @@
 const jwt = require('jsonwebtoken');
 const Admin = require('../models/Admin');
+const errorMessages = require('../utils/errorMessages');
 
 // Admin kimlik doğrulama middleware'i
 exports.authenticateAdmin = async (req, res, next) => {
@@ -7,7 +8,9 @@ exports.authenticateAdmin = async (req, res, next) => {
         // Token'ı al
         const token = req.headers.authorization?.split(' ')[1];
         if (!token) {
-            return res.status(401).json({ message: 'Yetkilendirme token\'ı bulunamadı' });
+            return res.status(401).json(
+                errorMessages.create('Yetkilendirme token\'ı bulunamadı', 'unauthorized')
+            );
         }
 
         // Token'ı doğrula
@@ -16,12 +19,16 @@ exports.authenticateAdmin = async (req, res, next) => {
         // Admin'i bul
         const admin = await Admin.findById(decoded.id);
         if (!admin) {
-            return res.status(401).json({ message: 'Geçersiz token' });
+            return res.status(401).json(
+                errorMessages.create('Geçersiz token', 'unauthorized')
+            );
         }
 
         // Admin aktif değilse
         if (!admin.isActive) {
-            return res.status(401).json({ message: 'Hesabınız aktif değil' });
+            return res.status(401).json(
+                errorMessages.create('Hesabınız aktif değil', 'unauthorized')
+            );
         }
 
         // Admin bilgilerini request'e ekle
@@ -29,7 +36,9 @@ exports.authenticateAdmin = async (req, res, next) => {
         next();
     } catch (error) {
         console.error('Token doğrulama hatası:', error);
-        res.status(401).json({ message: 'Geçersiz token' });
+        res.status(401).json(
+            errorMessages.create('Geçersiz token', 'unauthorized')
+        );
     }
 };
 
@@ -37,16 +46,22 @@ exports.authenticateAdmin = async (req, res, next) => {
 exports.isSuperAdmin = async (req, res, next) => {
     try {
         if (!req.admin) {
-            return res.status(401).json({ message: 'Yetkilendirme gerekli' });
+            return res.status(401).json(
+                errorMessages.create('Yetkilendirme gerekli', 'unauthorized')
+            );
         }
 
         if (req.admin.role !== 'superadmin') {
-            return res.status(403).json({ message: 'Bu işlem için süper admin yetkisi gerekli' });
+            return res.status(403).json(
+                errorMessages.create('Bu işlem için süper admin yetkisi gerekli', 'forbidden')
+            );
         }
 
         next();
     } catch (error) {
         console.error('Yetki kontrolü hatası:', error);
-        res.status(500).json({ message: 'Sunucu hatası' });
+        res.status(500).json(
+            errorMessages.create('Sunucu hatası', 'server_error')
+        );
     }
 }; 

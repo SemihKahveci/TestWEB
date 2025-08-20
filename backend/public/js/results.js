@@ -9,24 +9,12 @@ let expandedGroups = new Set(); // Açık olan grupları takip et
 
 // Yükleme göstergesi göster
 function showLoadingIndicator() {
-    const tbody = document.getElementById('resultsBody');
-    if (tbody) {
-        tbody.innerHTML = `
-            <tr>
-                <td colspan="8" style="text-align: center; padding: 40px;">
-                    <div style="display: flex; flex-direction: column; align-items: center; gap: 16px;">
-                        <div class="loading-spinner"></div>
-                        <div style="color: #666; font-size: 14px;">Veriler yükleniyor...</div>
-                    </div>
-                </td>
-            </tr>
-        `;
-    }
+    UIUtils.showLoading('resultsBody', 'Veriler yükleniyor...');
 }
 
 // Yükleme göstergesini gizle
 function hideLoadingIndicator() {
-    // Bu fonksiyon displayData() tarafından otomatik olarak çağrılır
+    UIUtils.hideLoading('resultsBody');
 }
 
 // Sayfa yüklendiğinde verileri yükle
@@ -41,46 +29,48 @@ async function loadData() {
     
     try {
         const response = await fetch('/api/user-results');
-        if (!response.ok) {
-            throw new Error('Veri çekme hatası');
-        }
         const data = await response.json();
         
-        if (data.success) {
+        // API response formatını kontrol et
+        if (data.success && data.results) {
             allData = data.results;
-            // Aynı e-posta adresine sahip kişileri grupla
-            const groupedData = groupByEmail(allData);
-            filteredData = groupedData; // Gruplandırılmış veriler
-            totalItems = filteredData.length;
-            
-            // Sonuçları kontrol et ve durumları güncelle (sadece görüntüleme için)
-            allData.forEach(result => {
-                if (result.status === 'Beklemede') {
-                    // Kod süresi kontrolü (72 saat sonra süresi dolmuş sayılır, sadece görüntüleme için)
-                    const now = new Date();
-                    const expiryDate = new Date(result.expiryDate);
-                    
-                    if (now > expiryDate) {
-                        // Süresi dolmuşsa sadece görüntüleme için işaretle
-                        result.status = 'Süresi Doldu';
-                    } else if (result.completionDate) {
-                        // Sonuç geldiğinde sadece görüntüleme için işaretle
-                        result.status = 'Tamamlandı';
-                    }
-                }
-            });
-            
-            displayData();
-            updatePagination();
-            // Yükleme göstergesini gizle
-            hideLoadingIndicator();
+        } else if (data.data && data.data.results) {
+            allData = data.data.results;
+        } else {
+            console.error('Beklenmeyen API response formatı:', data);
+            allData = [];
         }
+        
+        // Aynı e-posta adresine sahip kişileri grupla
+        const groupedData = DataUtils.groupByEmail(allData);
+        filteredData = groupedData;
+        totalItems = filteredData.length;
+        
+        // Sonuçları kontrol et ve durumları güncelle (sadece görüntüleme için)
+        allData.forEach(result => {
+            if (result.status === 'Beklemede') {
+                const now = new Date();
+                const expiryDate = new Date(result.expiryDate);
+                
+                if (now > expiryDate) {
+                    result.status = 'Süresi Doldu';
+                } else if (result.completionDate) {
+                    result.status = 'Tamamlandı';
+                }
+            }
+        });
+        
+        displayData();
+        updatePagination();
+        hideLoadingIndicator();
+        
     } catch (error) {
         console.error('Veri yükleme hatası:', error);
-        // Hata durumunda da yükleme göstergesini gizle
         hideLoadingIndicator();
     }
 }
+
+
 
 // Süresi doldu uyarılarını göster/gizle kontrolü
 function isShowExpiredWarning() {
@@ -109,64 +99,71 @@ function displayData() {
 
     tbody.innerHTML = '';
 
-    pageData.forEach(item => {
-        // Eğer ana satır grupluysa ve alt grupta sadece 'Süresi Doldu' olanlar varsa, onları da gizle
-        if (!showExpired && item.status === 'Süresi Doldu') {
-            return; // Ana satırı hiç ekleme
+    pageData.forEach((item, index) => {
+        try {
+            // Eğer ana satır grupluysa ve alt grupta sadece 'Süresi Doldu' olanlar varsa, onları da gizle
+            if (!showExpired && item.status === 'Süresi Doldu') {
+                return; // Ana satırı hiç ekleme
+            }
+            
+            // Aktif (gözüken) alt grup sayısını hesapla
+            let visibleGroupCount = 1;
+            if (item.isGrouped && item.groupCount > 1 && item.allGroupItems) {
+                visibleGroupCount = 1 + item.allGroupItems.slice(1).filter(sub => showExpired || sub.status !== 'Süresi Doldu').length;
+            }
+            const showExpandIcon = item.isGrouped && visibleGroupCount > 1;
+            const row = document.createElement('tr');
+            const isPDFDisabled = item.status !== 'Tamamlandı';
+            const isInactive = item.status === 'Beklemede' || item.status === 'Oyun Devam Ediyor';
+            
+            if (isInactive) {
+                row.classList.add('inactive');
+            }
+            
+            // Rapor geçerlilik tarihini hesapla (Gönderim tarihi + 6 ay)
+            const sentDate = new Date(item.sentDate);
+            const reportExpiryDate = new Date(sentDate);
+            reportExpiryDate.setMonth(reportExpiryDate.getMonth() + 6);
+            
+            // Gruplandırılmış satır için özel stil
+            if (item.isGrouped && item.groupCount > 1) {
+                row.classList.add('grouped-row');
+                row.setAttribute('data-email', item.email);
+            }
+            
+            row.innerHTML = `
+                <td>
+                    ${showExpandIcon ? `<span class="expand-icon" onclick="toggleGroup('${item.email}')">+</span> ` : ''}
+                    ${item.name}
+                    ${showExpired && item.hasExpiredCode ? `<span class="expired-warning" title="Oynanmamış oyun var"><i class="fas fa-exclamation-triangle"></i></span> ` : ''}
+                    ${showExpandIcon ? `<span class="group-count">(${visibleGroupCount} sonuç)</span>` : ''}
+                </td>
+                <td>${item.email || '-'}</td>
+                <td>
+                    <span class="status-badge ${getStatusClass(item.status)}">${item.status}</span>
+                </td>
+                <td>${UIUtils.formatDate(item.sentDate)}</td>
+                <td>${item.completionDate ? UIUtils.formatDate(item.completionDate) : '-'}</td>
+                <td>${UIUtils.formatDate(item.expiryDate)}</td>
+                <td>${UIUtils.formatDate(reportExpiryDate)}</td>
+                <td class="action-buttons">
+                    <div class="action-button" onclick="showAnswersPopup('${item.code}')">
+                        <i class="fas fa-info-circle" style="color: #17A2B8;"></i>
+                    </div>
+                    <div class="action-button ${isPDFDisabled ? 'disabled' : ''}" ${isPDFDisabled ? '' : `onclick="showPDFPopup('${item.code}')"`}>
+                        <i class="fas fa-file-pdf" style="color: #0286F7;"></i>
+                    </div>
+                    <div class="action-button" onclick="showDeletePopup('${item.code}')">
+                        <i class="fas fa-trash" style="color: #FF0000;"></i>
+                    </div>
+                </td>
+            `;
+            
+            tbody.appendChild(row);
+            
+        } catch (error) {
+            console.error(`Error processing item ${index}:`, error, item);
         }
-        // Aktif (gözüken) alt grup sayısını hesapla
-        let visibleGroupCount = 1;
-        if (item.isGrouped && item.groupCount > 1 && item.allGroupItems) {
-            visibleGroupCount = 1 + item.allGroupItems.slice(1).filter(sub => showExpired || sub.status !== 'Süresi Doldu').length;
-        }
-        const showExpandIcon = item.isGrouped && visibleGroupCount > 1;
-        const row = document.createElement('tr');
-        const isPDFDisabled = item.status !== 'Tamamlandı';
-        const isInactive = item.status === 'Beklemede' || item.status === 'Oyun Devam Ediyor';
-        
-        if (isInactive) {
-            row.classList.add('inactive');
-        }
-        
-        // Rapor geçerlilik tarihini hesapla (Gönderim tarihi + 6 ay)
-        const sentDate = new Date(item.sentDate);
-        const reportExpiryDate = new Date(sentDate);
-        reportExpiryDate.setMonth(reportExpiryDate.getMonth() + 6);
-        
-        // Gruplandırılmış satır için özel stil
-        if (item.isGrouped && item.groupCount > 1) {
-            row.classList.add('grouped-row');
-            row.setAttribute('data-email', item.email);
-        }
-        
-        row.innerHTML = `
-            <td>
-                ${showExpandIcon ? `<span class="expand-icon" onclick="toggleGroup('${item.email}')">+</span> ` : ''}
-                ${item.name}
-                ${showExpired && item.hasExpiredCode ? `<span class="expired-warning" title="Oynanmamış oyun var"><i class="fas fa-exclamation-triangle"></i></span> ` : ''}
-                ${showExpandIcon ? `<span class="group-count">(${visibleGroupCount} sonuç)</span>` : ''}
-            </td>
-            <td>${item.email || '-'}</td>
-            <td>
-                <span class="status-badge ${getStatusClass(item.status)}">${item.status}</span>
-            </td>
-            <td>${formatDate(item.sentDate)}</td>
-            <td>${item.completionDate ? formatDate(item.completionDate) : '-'}</td>
-            <td>${formatDate(item.expiryDate)}</td>
-            <td>${formatDate(reportExpiryDate)}</td>
-            <td class="action-buttons">
-                <div class="action-button" onclick="showAnswersPopup('${item.code}')">
-                    <i class="fas fa-info-circle" style="color: #17A2B8;"></i>
-                </div>
-                <div class="action-button ${isPDFDisabled ? 'disabled' : ''}" ${isPDFDisabled ? '' : `onclick="showPDFPopup('${item.code}')"`}>
-                    <i class="fas fa-file-pdf" style="color: #0286F7;"></i>
-                </div>
-                <div class="action-button" onclick="showDeletePopup('${item.code}')">
-                    <i class="fas fa-trash" style="color: #FF0000;"></i>
-                </div>
-            </td>
-        `;
-        tbody.appendChild(row);
         
         // Gruplandırılmış satırlar için alt satırları ekle (başlangıçta gizli)
         if (item.isGrouped && item.groupCount > 1) {
@@ -195,10 +192,10 @@ function displayData() {
                     <td>
                         <span class="status-badge ${getStatusClass(groupItem.status)}">${groupItem.status}</span>
                     </td>
-                    <td>${formatDate(groupItem.sentDate)}</td>
-                    <td>${groupItem.completionDate ? formatDate(groupItem.completionDate) : '-'}</td>
-                    <td>${formatDate(groupItem.expiryDate)}</td>
-                    <td>${formatDate(subReportExpiryDate)}</td>
+                                            <td>${UIUtils.formatDate(groupItem.sentDate)}</td>
+                        <td>${groupItem.completionDate ? UIUtils.formatDate(groupItem.completionDate) : '-'}</td>
+                        <td>${UIUtils.formatDate(groupItem.expiryDate)}</td>
+                        <td>${UIUtils.formatDate(subReportExpiryDate)}</td>
                     <td class="action-buttons">
                         <div class="action-button" onclick="showAnswersPopup('${groupItem.code}')">
                             <i class="fas fa-info-circle" style="color: #17A2B8;"></i>
@@ -216,9 +213,9 @@ function displayData() {
         }
     });
     
-    // Açık olan grupları tekrar aç
-    restoreExpandedGroups();
-}
+            // Açık olan grupları tekrar aç
+        restoreExpandedGroups();
+    }
 
 // Cevaplar popup'ını aç
 async function showAnswersPopup(code) {
@@ -331,56 +328,7 @@ function changePage(page) {
     }
 }
 
-// Aynı e-posta adresine sahip kişileri grupla
-function groupByEmail(data) {
-    const emailGroups = {};
-    
-    // Verileri e-posta adresine göre grupla
-    data.forEach(item => {
-        const email = item.email || 'no-email';
-        if (!emailGroups[email]) {
-            emailGroups[email] = [];
-        }
-        emailGroups[email].push(item);
-    });
-    
-    // Her grup içindeki verileri tarihe göre sırala (en yeni üstte)
-    Object.keys(emailGroups).forEach(email => {
-        emailGroups[email].sort((a, b) => new Date(b.sentDate) - new Date(a.sentDate));
-    });
-    
-    // Gruplandırılmış verileri düzleştir
-    const groupedData = [];
-    Object.keys(emailGroups).forEach(email => {
-        const group = emailGroups[email];
-        if (group.length === 1) {
-            // Tek sonuç varsa normal göster
-            const hasExpiredCode = group[0].status === 'Süresi Doldu';
-            groupedData.push({
-                ...group[0],
-                isGrouped: false,
-                groupCount: 1,
-                hasExpiredCode: hasExpiredCode
-            });
-        } else {
-            // Birden fazla sonuç varsa gruplandır
-            const latestItem = group[0]; // En yeni olan
-            
-            // Grupta süresi dolmuş kod var mı kontrol et
-            const hasExpiredCode = group.some(item => item.status === 'Süresi Doldu');
-            
-            groupedData.push({
-                ...latestItem,
-                isGrouped: true,
-                groupCount: group.length,
-                allGroupItems: group,
-                hasExpiredCode: hasExpiredCode
-            });
-        }
-    });
-    
-    return groupedData;
-}
+
 
 // Status badge CSS sınıfını belirle
 function getStatusClass(status) {
@@ -398,17 +346,7 @@ function getStatusClass(status) {
     }
 }
 
-// Tarih formatla
-function formatDate(dateString) {
-    const date = new Date(dateString);
-    return date.toLocaleDateString('tr-TR', {
-        year: 'numeric',
-        month: 'long',
-        day: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit'
-    });
-}
+
 
 // CRUD işlemleri
 async function viewItem(id) {

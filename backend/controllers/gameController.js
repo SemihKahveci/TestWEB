@@ -1,21 +1,18 @@
-const { answerMultipliers } = require('../config/constants');
 const Game = require('../models/game');
 const UserCode = require('../models/userCode');
 const AnswerType = require('../models/answerType');
-const Section = require('../models/section');
-const EvaluationController = require('./evaluationController');
 const mongoose = require('mongoose');
 const { sendEmail } = require('../services/emailService');
+const CodeValidationUtils = require('../utils/codeValidation');
+const CommonUtils = require('../utils/commonUtils');
+const errorMessages = require('../utils/errorMessages');
+const ScoreCalculator = require('../utils/scoreCalculator');
 
 class GameController {
     constructor(wss) {
         this.wss = wss;
         this.clients = new Set();
-        this.errorMessages = {
-            invalidCode: 'Geçersiz veya kullanılmış kod',
-            invalidData: 'Geçersiz veri formatı',
-            serverError: 'Sunucu hatası',
-        };
+        // Error messages artık merkezi sistemden geliyor
     }
 
    
@@ -58,7 +55,9 @@ class GameController {
             res.status(200).json(formattedData);
         } catch (error) {
             console.error('Sonuçlar alınırken hata:', error);
-            res.status(500).json({ error: this.errorMessages.serverError });
+            res.status(500).json(
+                errorMessages.create('Sonuçlar alınırken hata oluştu')
+            );
         }
     }
 
@@ -69,132 +68,41 @@ class GameController {
 
 
             if (!data?.playerCode || !data?.section || !Array.isArray(data?.answers)) {
-                return res.status(400).json({
-                    success: false,
-                    message: this.errorMessages.invalidData,
-                    receivedData: data
-                });
+                return res.status(400).json(
+                    errorMessages.create('Geçersiz veri formatı')
+                );
             }
 
-            const userCode = await UserCode.findOne({ code: data.playerCode });
-            if (!userCode) {
-                return res.status(400).json({
-                    success: false,
-                    message: this.errorMessages.invalidCode
-                });
-            }
-
-            // Kod geçerlilik süresini kontrol et (71 saat sonra süresi dolmuş sayılır)
-            const now = new Date();
-            const earlyExpiryDate = new Date(userCode.expiryDate);
-            earlyExpiryDate.setHours(earlyExpiryDate.getHours() - 1); // 1 saat önce süresi dolmuş sayılır
-            
-            if (now > earlyExpiryDate) {
-                // Süresi dolmuşsa durumu güncelle
-                userCode.status = 'Süresi Doldu';
-                await userCode.save();
-                
-                return res.status(400).json({
-                    success: false,
-                    message: 'Kodun geçerlilik süresi dolmuş. Lütfen yeni bir kod talep edin.'
-                });
-            }
-
-            // Skorları hesapla - Venus Gezegeni
-            const customerFocusAnswers = data.answers.filter(answer => 
-                answer.answerSubCategory === 'MO'
-            );
-            const uncertaintyAnswers = data.answers.filter(answer => 
-                answer.answerSubCategory === 'BY'
-            );
-
-            // MO skorunu hesapla (Venus - Müşteri Odaklılık)
-            let customerFocusScore = 0;
-            if (customerFocusAnswers.length > 0) {
-                customerFocusScore = customerFocusAnswers.reduce((acc, answer) => {
-                    const multiplier1 = answerMultipliers[answer.answerType1] || 0;
-                    const multiplier2 = answerMultipliers[answer.answerType2] || 0;
-                    return acc + ((multiplier1 + (multiplier2 / 2)) * 2) / 3;
-                }, 0) / customerFocusAnswers.length;
-            }
-            customerFocusScore = customerFocusScore * 100;
-
-            // BY skorunu hesapla (Venus - Belirsizlik Yönetimi)
-            let uncertaintyScore = 0;
-            if (uncertaintyAnswers.length > 0) {
-                // 4. sorunun cevabı A ise özel hesaplama yap
-                const question3Answer = uncertaintyAnswers.find(answer => answer.questionNumber === 3);
-                const question4Answer = uncertaintyAnswers.find(answer => answer.questionNumber === 4);
-                const question5Answer = uncertaintyAnswers.find(answer => answer.questionNumber === 5);
-                
-                // Özel hesaplama koşulları: 3. soru A, 4. soru A veya B, 5. soru var
-                const isSpecialCalculation = question3Answer && 
-                    question4Answer && 
-                    question5Answer &&
-                    question3Answer.answerType1 === 'A' && 
-                    (question4Answer.answerType1 === 'A' || question4Answer.answerType1 === 'B');
-                
-                if (isSpecialCalculation) {
-                    // 4. ve 5. sorunun puanlarının ortalamasını al
-                    const score4 = ((answerMultipliers[question4Answer.answerType1] || 0) + (answerMultipliers[question4Answer.answerType2] || 0) / 2) * 2 / 3;
-                    const score5 = ((answerMultipliers[question5Answer.answerType1] || 0) + (answerMultipliers[question5Answer.answerType2] || 0) / 2) * 2 / 3;
-                    const combinedScore = (score4 + score5) / 2;
-                    
-                    // Diğer soruları normal hesapla
-                    const otherAnswers = uncertaintyAnswers.filter(answer => answer.questionNumber !== 4 && answer.questionNumber !== 5);
-                    let otherScores = 0;
-                    
-                    if (otherAnswers.length > 0) {
-                        otherScores = otherAnswers.reduce((acc, answer) => {
-                            const multiplier1 = answerMultipliers[answer.answerType1] || 0;
-                            const multiplier2 = answerMultipliers[answer.answerType2] || 0;
-                            return acc + ((multiplier1 + (multiplier2 / 2)) * 2) / 3;
-                        }, 0);
-                    }
-                    
-                    // Toplam skoru hesapla (4-5 kombinasyonu + diğer sorular)
-                    const totalScore = combinedScore + otherScores;
-                    uncertaintyScore = totalScore / (otherAnswers.length + 1); // +1 çünkü 4-5 kombinasyonu tek soru sayılıyor
-                } else {
-                    // Normal hesaplama (4. soru A değilse veya 5. soru yoksa)
-                    uncertaintyScore = uncertaintyAnswers.reduce((acc, answer) => {
-                        const multiplier1 = answerMultipliers[answer.answerType1] || 0;
-                        const multiplier2 = answerMultipliers[answer.answerType2] || 0;
-                        return acc + ((multiplier1 + (multiplier2 / 2)) * 2) / 3;
-                    }, 0) / uncertaintyAnswers.length;
+            // Ortak doğrulama fonksiyonunu kullan (isUsed kontrolü yapmaz çünkü oyun zaten başlamış)
+            let userCode;
+            try {
+                userCode = await UserCode.findOne({ code: data.playerCode });
+                if (!userCode) {
+                    return res.status(400).json(
+                        errorMessages.create('Geçersiz kod')
+                    );
                 }
-            }
-            uncertaintyScore = uncertaintyScore * 100;
 
-            // Skorları hesapla - Titan Gezegeni
-            const ieAnswers = data.answers.filter(answer => 
-                answer.answerSubCategory === 'IE'
-            );
-            const idikAnswers = data.answers.filter(answer => 
-                answer.answerSubCategory === 'IDIK'
-            );
+                // Sadece süre kontrolü yap (isUsed kontrolü yapma çünkü oyun zaten başlamış)
+                const expiryCheck = CodeValidationUtils.checkCodeExpiry(userCode.expiryDate);
+                if (expiryCheck.isExpired) {
+                    userCode.status = 'Süresi Doldu';
+                    await userCode.save();
+                    
+                    return res.status(400).json({
+                        success: false,
+                        message: 'Kodun geçerlilik süresi dolmuş. Lütfen yeni bir kod talep edin.'
+                    });
+                }
+                            } catch (error) {
+                    return res.status(400).json(
+                        errorMessages.create(error.message || 'Geçersiz kod')
+                    );
+                }
 
-            // IE skorunu hesapla (Titan - İnsanları Etkileme)
-            let ieScore = 0;
-            if (ieAnswers.length > 0) {
-                ieScore = ieAnswers.reduce((acc, answer) => {
-                    const multiplier1 = answerMultipliers[answer.answerType1] || 0;
-                    const multiplier2 = answerMultipliers[answer.answerType2] || 0;
-                    return acc + ((multiplier1 + (multiplier2 / 2)) * 2) / 3;
-                }, 0) / ieAnswers.length;
-            }
-            ieScore = ieScore * 100;
-
-            // IDIK skorunu hesapla (Titan - Güven Veren İşbirlikçi ve Sinerji)
-            let idikScore = 0;
-            if (idikAnswers.length > 0) {
-                idikScore = idikAnswers.reduce((acc, answer) => {
-                    const multiplier1 = answerMultipliers[answer.answerType1] || 0;
-                    const multiplier2 = answerMultipliers[answer.answerType2] || 0;
-                    return acc + ((multiplier1 + (multiplier2 / 2)) * 2) / 3;
-                }, 0) / idikAnswers.length;
-            }
-            idikScore = idikScore * 100; 
+            // Tüm skorları hesapla
+            const scores = ScoreCalculator.calculateAllScores(data.answers);
+            const { customerFocusScore, uncertaintyScore, ieScore, idikScore } = scores; 
             // Değerlendirme sonuçlarını getir
             const evaluationResult = await this.getReportsByAnswerType(data.answers);
 
@@ -282,10 +190,9 @@ class GameController {
 
         } catch (error) {
             console.error('Oyun sonucu kaydetme hatası:', error);
-            res.status(500).json({
-                success: false,
-                message: this.errorMessages.serverError
-            });
+            res.status(500).json(
+                errorMessages.create('Oyun sonucu kaydetme hatası')
+            );
         }
     }
 
@@ -497,10 +404,9 @@ class GameController {
 
         } catch (error) {
             console.error('Oyun cevapları getirme hatası:', error);
-            res.status(500).json({
-                success: false,
-                message: this.errorMessages.serverError
-            });
+            res.status(500).json(
+                errorMessages.create('Oyun cevapları getirme hatası')
+            );
         }
     }
 
