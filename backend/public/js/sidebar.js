@@ -12,18 +12,21 @@ function loadSidebarState() {
     return state ? JSON.parse(state) : null;
 }
 
-
+// Global sidebar referansı
+let globalSidebar = null;
 
 // Sidebar'ı oluştur
 async function createSidebar() {
-    // Eğer sidebar zaten varsa, yeniden oluşturma
+    // Eğer sidebar zaten varsa, sadece aktif menüyü güncelle
     if (document.querySelector('.sidebar')) {
-        console.log('Sidebar zaten mevcut, yeniden oluşturulmuyor');
+        console.log('Sidebar zaten mevcut, sadece aktif menü güncelleniyor');
+        updateActiveMenuItem();
         return;
     }
 
     const sidebar = document.createElement('div');
     sidebar.className = 'sidebar';
+    globalSidebar = sidebar;
     
     // Mevcut sayfanın yolunu al
     const currentPath = window.location.pathname;
@@ -39,6 +42,8 @@ async function createSidebar() {
         '/grouping.html': 'Yetkilendirme', 
         '/organization.html': 'Yetkilendirme',
         '/subscriptionSettings.html': 'Oyun Kullanım Özeti',
+        '/companyIdentification.html': 'Firma Tanımlama',
+        '/defineCompanyAdmin.html': 'Firma Admini Tanımlama',
     };
     
     // Aktif menü öğesini belirle
@@ -57,7 +62,6 @@ async function createSidebar() {
             }
         });
         const data = await response.json();
-        console.log('Süper admin kontrolü:', data);
         isSuperAdmin = data.isSuperAdmin;
     } catch (error) {
         console.error('Rol kontrolü hatası:', error);
@@ -71,26 +75,26 @@ async function createSidebar() {
             <div class="menu-section">
                 <div class="menu-title">Ana Menü</div>
                 <div class="menu-items">
-                    <div class="menu-item ${activeMenuItem === 'Genel Takip Sistemi' ? 'active' : ''}">
+                    <div class="menu-item" data-menu="Genel Takip Sistemi">
                         <i class="fas fa-home"></i>
                         <span>Genel Takip Sistemi</span>
                     </div>
-                     <div class="menu-item ${activeMenuItem === 'Şirket Çalışanları Sayfası' ? 'active' : ''}">
+                     <div class="menu-item" data-menu="Şirket Çalışanları Sayfası">
                         <i class="fas fa-building"></i>
                         <span>Şirket Çalışanları Sayfası</span>
                         <i class="fas fa-chevron-right"></i>
                     </div>
-                       <div class="menu-item ${activeMenuItem === 'Aday Sonuçları Sayfası' ? 'active' : ''}">
+                        <div class="menu-item" data-menu="Aday Sonuçları Sayfası">
                         <i class="fas fa-chart-bar"></i>
                         <span>Aday Sonuçları Sayfası</span>
                         <i class="fas fa-chevron-right"></i>
                     </div>            
-                    <div class="menu-item ${activeMenuItem === 'Oyun Gönder' ? 'active' : ''}">
+                    <div class="menu-item" data-menu="Oyun Gönder">
                         <i class="fas fa-comments"></i>
                         <span>Oyun Gönder</span>
                         <i class="fas fa-chevron-right"></i>
                     </div>
-                     <div class="menu-item ${activeMenuItem === 'Oyun Kullanım Özeti' ? 'active' : ''}">
+                     <div class="menu-item" data-menu="Oyun Kullanım Özeti">
                         <i class="fas fa-comments"></i>
                         <span>Oyun Kullanım Özeti</span>
                         <i class="fas fa-chevron-right"></i>
@@ -99,53 +103,53 @@ async function createSidebar() {
             <div class="menu-section">
                 <div class="menu-title">Ayarlar</div>
                 <div class="menu-items">
-                    <div class="menu-item expandable" data-expanded="${activeMenuItem === 'Firma Tanımlama' || activeMenuItem === 'Oyun Tanımlama' ? 'true' : 'false'}${isFirmaAdminiActive ? ' true' : ''}${isFirmaTanimlamaActive ? ' true' : ''}" ${isFirmaTanimlamaActive ? 'class="active"' : ''}>
+                    <div class="menu-item expandable" data-menu="Firma Ayarları" data-expanded="${activeMenuItem === 'Firma Tanımlama' || activeMenuItem === 'Oyun Tanımlama' || isFirmaAdminiActive || isFirmaTanimlamaActive ? 'true' : 'false'}">
                         <i class="fas fa-user-shield"></i>
                         <span>Firma Ayarları</span>
                         <i class="fas fa-plus expand-icon"></i>
                     </div>
                     <div class="submenu" style="display: ${activeMenuItem === 'Firma Tanımlama' || activeMenuItem === 'Oyun Tanımlama' || isFirmaAdminiActive || isFirmaTanimlamaActive ? 'block' : 'none'};">
                         ${isSuperAdmin ? `
-                        <div class="submenu-item ${isFirmaTanimlamaActive ? 'active' : ''}">
+                        <div class="submenu-item" data-menu="Firma Tanımlama">
                             <i class="fas fa-building"></i>
                             <span>Firma Tanımlama</span>
                         </div>
                         ` : ''}
                                                  ${isSuperAdmin ? `
-                         <div class="submenu-item ${isFirmaAdminiActive ? 'active' : ''}">
+                         <div class="submenu-item" data-menu="Firma Admini Tanımlama">
                              <i class="fas fa-user-cog"></i>
                              <span>Firma Admini Tanımlama</span>
                          </div>
                          ` : ''}
                         ${isSuperAdmin ? `
-                        <div class="submenu-item ${activeMenuItem === 'Oyun Tanımlama' ? 'active' : ''}">
+                        <div class="submenu-item" data-menu="Oyun Tanımlama">
                             <i class="fas fa-gamepad"></i>
                             <span>Oyun Tanımlama</span>
                         </div>
                         ` : ''}
                     </div>
-                   <div class="menu-item ${activeMenuItem === 'Yetkilendirme' ? 'active' : ''}">
+                   <div class="menu-item" data-menu="Yetkilendirme">
                         <i class="fas fa-user-shield"></i>
                         <span>Yetkilendirme</span>
                         <i class="fas fa-chevron-right"></i>
                     </div>
-                       <div class="menu-item ${activeMenuItem === 'Organizasyon Yapısı' ? 'active' : ''}">
+                        <div class="menu-item" data-menu="Organizasyon Yapısı">
                         <i class="fas fa-user-shield"></i>
                         <span>Organizasyon Yapısı</span>
                         <i class="fas fa-chevron-right"></i>
                     </div>
 
-                    <div class="menu-item ${activeMenuItem === 'Organizasyon Tanımlama' ? 'active' : ''}">
+                    <div class="menu-item" data-menu="Organizasyon Tanımlama">
                         <i class="fas fa-user-plus"></i>
                         <span>Organizasyon Tanımlama</span>
                         <i class="fas fa-chevron-right"></i>
                     </div>
-                    <div class="menu-item ${activeMenuItem === 'Sistem Ayarları' ? 'active' : ''}">
+                    <div class="menu-item" data-menu="Sistem Ayarları">
                         <i class="fas fa-cog"></i>
                         <span>Sistem Ayarları</span>
                         <i class="fas fa-chevron-right"></i>
                     </div>
-                    <div class="menu-item ${activeMenuItem === 'Bildirimler' ? 'active' : ''}">
+                    <div class="menu-item" data-menu="Bildirimler">
                         <i class="fas fa-bell"></i>
                         <span>Bildirimler</span>
                         <i class="fas fa-chevron-right"></i>
@@ -166,19 +170,7 @@ async function createSidebar() {
         const style = document.createElement('style');
         style.id = 'sidebar-styles';
         style.textContent = `
-            .sidebar {
-                position: fixed;
-                left: 0;
-                top: 0;
-                width: 257px;
-                height: 100vh;
-                background-color: #fff;
-                box-shadow: 2px 0 5px rgba(0,0,0,0.1);
-                display: flex;
-                flex-direction: column;
-                z-index: 1000;
-                transition: transform 0.3s ease;
-            }
+            /* Sidebar stilleri yukarıda tanımlandı */
 
             .sidebar-header {
                 padding: 20px;
@@ -338,19 +330,73 @@ async function createSidebar() {
 
             /* Ana içerik alanını sidebar'a göre ayarla */
             body {
-                transition: margin-left 0.3s ease;
+                margin-left: 257px;
+                transition: none;
             }
 
             /* Sayfa geçiş animasyonu */
             .page-transition {
                 opacity: 0;
-                transition: opacity 0.2s ease;
+                transition: opacity 0.1s ease;
             }
 
             .page-transition.loaded {
                 opacity: 1;
             }
 
+            /* Sidebar için daha smooth transition */
+            .sidebar {
+                position: fixed;
+                left: 0;
+                top: 0;
+                width: 257px;
+                height: 100vh;
+                background-color: #fff;
+                box-shadow: 2px 0 5px rgba(0,0,0,0.1);
+                display: flex;
+                flex-direction: column;
+                z-index: 1000;
+                transition: none;
+                transform: translateZ(0);
+                will-change: transform;
+            }
+
+            /* Loading animasyonu */
+            .page-loading {
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                background: rgba(255, 255, 255, 0.6);
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                z-index: 9999;
+                opacity: 0;
+                visibility: hidden;
+                transition: all 0.1s ease;
+                backdrop-filter: blur(1px);
+            }
+
+            .page-loading.show {
+                opacity: 1;
+                visibility: visible;
+            }
+
+            .loading-spinner {
+                width: 40px;
+                height: 40px;
+                border: 4px solid #f3f3f3;
+                border-top: 4px solid #3A57E8;
+                border-radius: 50%;
+                animation: spin 1s linear infinite;
+            }
+
+            @keyframes spin {
+                0% { transform: rotate(0deg); }
+                100% { transform: rotate(360deg); }
+            }
 
         `;
 
@@ -368,6 +414,79 @@ async function createSidebar() {
     // Sidebar'ı sayfaya ekle
     document.body.insertBefore(sidebar, document.body.firstChild);
 
+    // Event listener'ları ekle
+    setupSidebarEventListeners(sidebar);
+
+    // Aktif menüyü güncelle
+    updateActiveMenuItem();
+
+    // Kaydedilmiş sidebar durumunu yükle
+    loadSavedSidebarState();
+}
+
+// Aktif menü öğesini güncelle
+function updateActiveMenuItem() {
+    const currentPath = window.location.pathname;
+    const pageToMenuItem = {
+        '/admin-panel.html': 'Genel Takip Sistemi',
+        '/results.html': 'Aday Sonuçları Sayfası',
+        '/game-send.html': 'Oyun Gönder',
+        '/gamemanagement.html': 'Oyun Tanımlama',
+        '/addGroup.html': 'Organizasyon Tanımlama',
+        '/authorization.html': 'Yetkilendirme',
+        '/grouping.html': 'Yetkilendirme', 
+        '/organization.html': 'Yetkilendirme',
+        '/subscriptionSettings.html': 'Oyun Kullanım Özeti',
+        '/companyIdentification.html': 'Firma Tanımlama',
+        '/defineCompanyAdmin.html': 'Firma Admini Tanımlama',
+    };
+    
+    const activeMenuItem = pageToMenuItem[currentPath] || 'Genel Takip Sistemi';
+    const isFirmaAdminiActive = currentPath === '/defineCompanyAdmin.html';
+    const isFirmaTanimlamaActive = currentPath === '/companyIdentification.html';
+
+    // Tüm active sınıflarını kaldır
+    const sidebar = document.querySelector('.sidebar');
+    if (!sidebar) return;
+
+    sidebar.querySelectorAll('.menu-item').forEach(item => item.classList.remove('active'));
+    sidebar.querySelectorAll('.submenu-item').forEach(item => item.classList.remove('active'));
+
+    // Aktif menü öğesini bul ve active yap
+    const activeMenuElement = sidebar.querySelector(`[data-menu="${activeMenuItem}"]`);
+    if (activeMenuElement) {
+        activeMenuElement.classList.add('active');
+    }
+
+    // Submenu öğeleri için özel kontrol
+    if (isFirmaTanimlamaActive) {
+        const firmaTanimlamaElement = sidebar.querySelector('[data-menu="Firma Tanımlama"]');
+        if (firmaTanimlamaElement) {
+            firmaTanimlamaElement.classList.add('active');
+        }
+    }
+
+    if (isFirmaAdminiActive) {
+        const firmaAdminiElement = sidebar.querySelector('[data-menu="Firma Admini Tanımlama"]');
+        if (firmaAdminiElement) {
+            firmaAdminiElement.classList.add('active');
+        }
+    }
+
+    // Firma Ayarları submenu'sünü genişlet
+    const firmaAyarlariElement = sidebar.querySelector('[data-menu="Firma Ayarları"]');
+    if (firmaAyarlariElement && (activeMenuItem === 'Firma Tanımlama' || activeMenuItem === 'Oyun Tanımlama' || isFirmaAdminiActive || isFirmaTanimlamaActive)) {
+        firmaAyarlariElement.setAttribute('data-expanded', 'true');
+        firmaAyarlariElement.classList.add('expanded');
+        const submenu = firmaAyarlariElement.nextElementSibling;
+        if (submenu) {
+            submenu.style.display = 'block';
+        }
+    }
+}
+
+// Sidebar event listener'larını kur
+function setupSidebarEventListeners(sidebar) {
     // Menü öğelerine tıklama olayı ekle
     const menuItems = sidebar.querySelectorAll('.menu-item');
     menuItems.forEach(item => {
@@ -400,55 +519,13 @@ async function createSidebar() {
                 return; // Yönlendirme yapma
             }
             
-            // Önce tüm active sınıflarını kaldır
-            menuItems.forEach(i => i.classList.remove('active'));
-            sidebar.querySelectorAll('.submenu-item').forEach(i => i.classList.remove('active'));
-            
-            // Tıklanan öğeye active sınıfını ekle
-            item.classList.add('active');
-            
             // Sayfa geçişini yumuşak hale getir
-            const currentPage = document.body;
-            currentPage.classList.add('page-transition');
+            showPageLoading();
             
             // Menü öğesine göre yönlendirme yap
             setTimeout(() => {
-                switch(menuText) {
-                    case 'Genel Takip Sistemi':
-                        window.location.href = '/admin-panel.html';
-                        break;
-                    case 'Şirket Çalışanları Sayfası':
-                        //window.location.href = '/employees.html';
-                        break;
-                    case 'Aday Sonuçları Sayfası':
-                        window.location.href = '/results.html';
-                        break;
-                    case 'Oyun Gönder':
-                        window.location.href = '/game-send.html';
-                        break;
-                    case 'Oyun Kullanım Özeti':
-                        window.location.href = '/subscriptionSettings.html';
-                        break;
-                    case 'Firma Ayarları':
-                       // window.location.href = '/authorization.html';
-                        break;
-                    case 'Yetkilendirme':
-                        window.location.href = '/authorization.html';
-                        break;
-                    case 'Organizasyon Yapısı':
-                        //window.location.href = '/organization-structure.html';
-                        break;
-                    case 'Organizasyon Tanımlama':
-                        window.location.href = '/addGroup.html';
-                        break;
-                    case 'Sistem Ayarları':
-                        window.location.href = '/admin-management.html';
-                        break;
-                    case 'Bildirimler':
-                        //window.location.href = '/notifications.html';
-                        break;
-                }
-            }, 150);
+                navigateToPage(menuText);
+            }, 50);
         });
     });
 
@@ -456,42 +533,91 @@ async function createSidebar() {
     const submenuItems = sidebar.querySelectorAll('.submenu-item');
     submenuItems.forEach(item => {
         item.addEventListener('click', () => {
-            // Önce tüm active sınıflarını kaldır
-            menuItems.forEach(i => i.classList.remove('active'));
-            submenuItems.forEach(i => i.classList.remove('active'));
-            
-            // Tıklanan öğeye active sınıfını ekle
-            item.classList.add('active');
-            
             // Sayfa geçişini yumuşak hale getir
-            const currentPage = document.body;
-            currentPage.classList.add('page-transition');
+            showPageLoading();
             
             // Menü öğesinin metnini al
             const menuText = item.querySelector('span').textContent;
             
             // Menü öğesine göre yönlendirme yap
             setTimeout(() => {
-                switch(menuText) {
-                    case 'Firma Tanımlama':
-                        window.location.href = '/companyIdentification.html';
-                        break;
-                    case 'Firma Admini Tanımlama':
-                        window.location.href = '/defineCompanyAdmin.html';
-                        break;
-                    case 'Oyun Tanımlama':
-                        if (isSuperAdmin) {
-                            window.location.href = '/gamemanagement.html';
-                        }
-                        break;
-                }
-            }, 150);
+                navigateToPage(menuText);
+            }, 50);
         });
     });
+}
 
-    // Kaydedilmiş sidebar durumunu yükle
+// Sayfa yönlendirme fonksiyonu
+function navigateToPage(menuText) {
+    let targetUrl = '';
+    
+    switch(menuText) {
+        case 'Genel Takip Sistemi':
+            targetUrl = '/admin-panel.html';
+            break;
+        case 'Aday Sonuçları Sayfası':
+            targetUrl = '/results.html';
+            break;
+        case 'Oyun Gönder':
+            targetUrl = '/game-send.html';
+            break;
+        case 'Oyun Kullanım Özeti':
+            targetUrl = '/subscriptionSettings.html';
+            break;
+        case 'Yetkilendirme':
+            targetUrl = '/authorization.html';
+            break;
+        case 'Organizasyon Tanımlama':
+            targetUrl = '/addGroup.html';
+            break;
+        case 'Sistem Ayarları':
+            targetUrl = '/admin-management.html';
+            break;
+        case 'Firma Tanımlama':
+            targetUrl = '/companyIdentification.html';
+            break;
+        case 'Firma Admini Tanımlama':
+            targetUrl = '/defineCompanyAdmin.html';
+            break;
+        case 'Oyun Tanımlama':
+            targetUrl = '/gamemanagement.html';
+            break;
+    }
+    
+    if (targetUrl && targetUrl !== window.location.pathname) {
+        window.location.href = targetUrl;
+    } else {
+        hidePageLoading();
+    }
+}
+
+// Loading göstergesi
+function showPageLoading() {
+    let loading = document.querySelector('.page-loading');
+    if (!loading) {
+        loading = document.createElement('div');
+        loading.className = 'page-loading';
+        loading.innerHTML = '<div class="loading-spinner"></div>';
+        document.body.appendChild(loading);
+    }
+    loading.classList.add('show');
+}
+
+function hidePageLoading() {
+    const loading = document.querySelector('.page-loading');
+    if (loading) {
+        loading.classList.remove('show');
+    }
+}
+
+// Kaydedilmiş sidebar durumunu yükle
+function loadSavedSidebarState() {
     const savedState = loadSidebarState();
     if (savedState && savedState.expandedMenus) {
+        const sidebar = document.querySelector('.sidebar');
+        if (!sidebar) return;
+        
+        const menuItems = sidebar.querySelectorAll('.menu-item');
         savedState.expandedMenus.forEach(menuText => {
             const menuItem = Array.from(menuItems).find(item => 
                 item.querySelector('span').textContent === menuText && 
@@ -552,18 +678,18 @@ document.addEventListener('DOMContentLoaded', () => {
     if (window.location.pathname.includes('admin.html')) {
         document.body.style.marginLeft = '0';
     } else {
+        // Sidebar'ı hemen oluştur
         createSidebar();
         checkToken(); // Sayfa yüklendiğinde token kontrolü yap
         
-        // Sayfa geçiş animasyonunu tamamla
+        // Sayfa geçiş animasyonunu daha hızlı tamamla
         setTimeout(() => {
             document.body.classList.remove('page-transition');
             document.body.classList.add('loaded');
-        }, 200);
+            hidePageLoading();
+        }, 50);
     }
 });
-
-
 
 // Sayfa geçişlerinde sidebar'ı koru
 window.addEventListener('beforeunload', () => {

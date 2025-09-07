@@ -223,6 +223,16 @@
         .results-table tr:hover {
             background: rgba(2, 134, 247, 0.10);
         }
+
+        /* Zebra striping - bir beyaz bir mavi satır */
+        .results-table tr:nth-child(even) {
+            background: rgba(2, 134, 247, 0.10);
+        }
+
+        .results-table tr:nth-child(even):hover {
+            background: rgba(2, 134, 247, 0.20);
+        }
+
         .results-table tr:last-child td {
             border-bottom: none;
         }

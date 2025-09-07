@@ -41,9 +41,6 @@ async function loadData(resetFilters = false) {
             results = [];
         }
         
-        console.log('Yüklenen veri:', results);
-        console.log('İlk sonuç örneği:', results[0]);
-        
         // Sadece oynanmış oyunların sonuçlarını al (status === 'Tamamlandı' olanlar)
         // E-posta adreslerini küçük harfe çevir
         allData = results
@@ -97,7 +94,6 @@ async function loadData(resetFilters = false) {
                 filteredData = allData.filter(item => {
                     try {
                         if (!item || !item.name) {
-                            console.log('Name özelliği eksik:', item);
                             return false;
                         }
 
@@ -186,13 +182,10 @@ function displayData() {
     const endIndex = startIndex + itemsPerPage;
     const pageData = filteredData.slice(startIndex, endIndex);
 
-    console.log('Görüntülenecek veri:', pageData);
-
     tbody.innerHTML = '';
 
     pageData.forEach(item => {
         if (!item || !item.name) {
-            console.log('Geçersiz öğe:', item);
             return;
         }
 
@@ -471,18 +464,9 @@ function applyFilters() {
         const uncertaintyMax = document.getElementById('uncertaintyMax').value;
         const nameSearch = document.getElementById('nameSearch').value.toLowerCase();
 
-        console.log('Filtreler:', {
-            nameSearch,
-            customerFocusMin,
-            customerFocusMax,
-            uncertaintyMin,
-            uncertaintyMax
-        });
-
         const filteredItems = allData.filter(item => {
             try {
                 if (!item || !item.name) {
-                    console.log('Name özelliği eksik:', item);
                     return false;
                 }
 
@@ -545,7 +529,6 @@ function applyFilters() {
         const groupedData = DataUtils.groupByEmail(filteredItems);
         filteredData = groupedData;
 
-        console.log('Filtrelenmiş veri sayısı:', filteredData.length);
         totalItems = filteredData.length;
         currentPage = 1;
         displayData();
@@ -630,8 +613,7 @@ function clearFilters() {
         currentPage = 1;
         displayData();
         updatePagination();
-        
-        console.log('Filtreler temizlendi');
+
     } catch (error) {
         console.error('Filtre temizleme hatası:', error);
     }
@@ -742,7 +724,6 @@ function filterResults() {
 // Eksik skorları güncelle
 async function updateMissingScores() {
     try {
-        console.log('Eksik skorlar güncelleniyor...');
         
         const response = await fetch('/api/update-missing-scores', {
             method: 'POST',
@@ -758,7 +739,6 @@ async function updateMissingScores() {
         const data = await response.json();
         
         if (data.success) {
-            console.log('Skorlar güncellendi:', data.message);
             alert(`Skorlar başarıyla güncellendi! ${data.updatedCount} kayıt güncellendi.`);
             
             // Verileri yeniden yükle
@@ -856,8 +836,6 @@ function downloadExcel() {
 
         // Excel dosyasını indir
         XLSX.writeFile(workbook, fileName);
-
-        console.log(`Excel dosyası indirildi. Toplam ${dataToExport.length} sonuç eklendi.`);
 
     } catch (error) {
         console.error('Excel indirme hatası:', error);

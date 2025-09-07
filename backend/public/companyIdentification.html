@@ -225,6 +225,15 @@
             background: rgba(2, 134, 247, 0.10);
         }
 
+        /* Zebra striping - bir beyaz bir mavi satır */
+        .results-table tr:nth-child(even) {
+            background: rgba(2, 134, 247, 0.10);
+        }
+
+        .results-table tr:nth-child(even):hover {
+            background: rgba(2, 134, 247, 0.20);
+        }
+
         .results-table tr.inactive {
             background-color: #f8f9fa;
             color: #adb5bd;
@@ -575,27 +584,7 @@
             border: none;
         }
 
-        .btn-refresh {
-            background: #0286F7;
-            color: white;
-            border: none;
-            padding: 8px 16px;
-            border-radius: 8px;
-            cursor: pointer;
-            font-weight: 500;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            transition: background-color 0.3s;
-        }
 
-        .btn-refresh:hover {
-            background: #0275D8;
-        }
-
-        .btn-refresh i {
-            font-size: 14px;
-        }
 
         /* Gruplandırma stilleri */
         .expand-icon {
@@ -674,20 +663,7 @@
             margin-bottom: -5px;
         }
 
-        /* Loading spinner */
-        .loading-spinner {
-            width: 40px;
-            height: 40px;
-            border: 4px solid #f3f3f3;
-            border-top: 4px solid #0286F7;
-            border-radius: 50%;
-            animation: spin 1s linear infinite;
-        }
 
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
 
         /* Ekle butonu stilleri */
         .btn-add {

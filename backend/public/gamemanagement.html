@@ -574,27 +574,7 @@
             border: none;
         }
 
-        .btn-refresh {
-            background: #0286F7;
-            color: white;
-            border: none;
-            padding: 8px 16px;
-            border-radius: 8px;
-            cursor: pointer;
-            font-weight: 500;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            transition: background-color 0.3s;
-        }
 
-        .btn-refresh:hover {
-            background: #0275D8;
-        }
-
-        .btn-refresh i {
-            font-size: 14px;
-        }
 
         /* Gruplandırma stilleri */
         .expand-icon {
@@ -673,20 +653,7 @@
             margin-bottom: -5px;
         }
 
-        /* Loading spinner */
-        .loading-spinner {
-            width: 40px;
-            height: 40px;
-            border: 4px solid #f3f3f3;
-            border-top: 4px solid #0286F7;
-            border-radius: 50%;
-            animation: spin 1s linear infinite;
-        }
 
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
 
         /* Ekle butonu stilleri */
         .btn-add {
@@ -1095,6 +1062,16 @@
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
         }
+
+        /* Loading spinner stilleri */
+        .loading-spinner {
+            width: 40px;
+            height: 40px;
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #0286F7;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
     </style>
 </head>
 <body>
@@ -1290,6 +1267,7 @@
     </div>
 
     <script src="/js/sidebar.js"></script>
+    <script src="/js/frontendUtils.js"></script>
     <script>
         // Fetch iptali için global AbortController
         let gameDataAbortController = null;
@@ -1332,40 +1310,47 @@
         let allGames = [];
         let isLoading = false;
 
-        // Yükleme göstergesi göster
-        function showLoadingIndicator() {
-            const gridContainer = document.getElementById('gameDataContainer');
-            if (gridContainer) {
-                gridContainer.innerHTML = `
-                    <div style="grid-column: 1 / -1; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 200px; gap: 16px;">
-                        <div class="loading-spinner"></div>
-                        <div style="color: #666; font-size: 14px;">Veriler yükleniyor...</div>
-                    </div>
-                `;
-            }
-        }
+
 
         // Verileri yükle
         async function loadGameData() {
             if (isLoading) return;
             isLoading = true;
             
-            showLoadingIndicator();
+            // Özel loading gösterimi için
+            const gridContainer = document.getElementById('gameDataContainer');
+            gridContainer.innerHTML = `
+                <div style="grid-column: 1 / -1; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 200px; gap: 16px;">
+                    <div class="loading-spinner"></div>
+                    <div style="color: #666; font-size: 14px; text-align: center;">Veriler yükleniyor...</div>
+                </div>
+            `;
             
             try {
                 const response = await fetch('/api/game-management/games');
                 if (!response.ok) throw new Error('Veriler yüklenemedi');
                 
                 const data = await response.json();
+                console.log('API Response:', data); // Debug için
+                
                 allGames = data.games || [];
-                totalGames = allGames.length;
+                totalGames = data.total || allGames.length;
+                
+                console.log('Loaded games:', allGames); // Debug için
+                console.log('Total games:', totalGames); // Debug için
                 
                 displayData();
                 updatePagination();
             } catch (error) {
-                const gridContainer = document.getElementById('gameDataContainer');
-                gridContainer.innerHTML = '<div style="color: #dc3545; text-align:center; padding:40px;">Veriler yüklenemedi. Lütfen tekrar deneyin.</div>';
                 console.error('Veri yükleme hatası:', error);
+                const gridContainer = document.getElementById('gameDataContainer');
+                gridContainer.innerHTML = `
+                    <div style="grid-column: 1 / -1; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 200px; gap: 16px;">
+                        <div style="color: #dc3545; font-size: 16px; text-align: center;">Veriler yüklenemedi</div>
+                        <div style="color: #666; font-size: 14px; text-align: center;">${error.message}</div>
+                        <button onclick="loadGameData()" style="background: #0286F7; color: white; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer;">Tekrar Dene</button>
+                    </div>
+                `;
             } finally {
                 isLoading = false;
             }
@@ -1374,31 +1359,36 @@
         // Verileri görüntüle
         function displayData() {
             const gridContainer = document.getElementById('gameDataContainer');
-                    gridContainer.innerHTML = '';
+            gridContainer.innerHTML = '';
             
             // Başlık satırını oluştur
-                    const headers = ['Firma Adı', 'Fatura No', 'Kredi', 'Tarih', 'İşlemler'];
-                    headers.forEach(headerText => {
-                        const headerDiv = document.createElement('div');
-                        headerDiv.style.cssText = 'padding: 16px; background: #F8F9FA; color: #232D42; font-size: 14px; font-family: Montserrat; font-weight: 700; text-align: center;';
-                        headerDiv.textContent = headerText;
-                        gridContainer.appendChild(headerDiv);
-                    });
-
-            // Game data rows container'ı ekle
-            const gameDataRows = document.createElement('div');
-                    gameDataRows.id = 'gameDataRows';
-                    gameDataRows.style.cssText = 'grid-column: 1 / -1; display: contents;';
-                    gridContainer.appendChild(gameDataRows);
+            const headers = ['Firma Adı', 'Fatura No', 'Kredi', 'Tarih', 'İşlemler'];
+            headers.forEach(headerText => {
+                const headerDiv = document.createElement('div');
+                headerDiv.style.cssText = 'padding: 16px; background: #F8F9FA; color: #232D42; font-size: 14px; font-family: Montserrat; font-weight: 700; text-align: center; border-bottom: 1px solid #E9ECEF;';
+                headerDiv.textContent = headerText;
+                gridContainer.appendChild(headerDiv);
+            });
 
             // Mevcut sayfa için verileri göster
             const startIndex = (currentPage - 1) * itemsPerPage;
             const endIndex = startIndex + itemsPerPage;
             const currentPageGames = allGames.slice(startIndex, endIndex);
 
-            currentPageGames.forEach(game => {
+            console.log('Current page games:', currentPageGames); // Debug için
+
+            if (currentPageGames.length === 0) {
+                // Veri yoksa mesaj göster
+                const noDataDiv = document.createElement('div');
+                noDataDiv.style.cssText = 'grid-column: 1 / -1; padding: 40px; text-align: center; color: #8A92A6; font-size: 16px; background: white;';
+                noDataDiv.textContent = 'Henüz oyun verisi bulunmuyor';
+                gridContainer.appendChild(noDataDiv);
+            } else {
+                // Verileri göster
+                currentPageGames.forEach(game => {
                     addGameData(game.firmName, game.invoiceNo, game.credit, new Date(game.date).toLocaleDateString('tr-TR'), game._id);
                 });
+            }
         }
 
         // Sayfalama kontrollerini güncelle
@@ -1507,37 +1497,37 @@
             }
         }
 
-        // Dinamik veri ekleme fonksiyonu (örnek)
+        // Dinamik veri ekleme fonksiyonu
         function addGameData(firmName, invoiceNo, credit, date, _id) {
-            const container = document.getElementById('gameDataRows');
-            const isEven = Math.floor(container.children.length / 5) % 2 === 0;
-            const backgroundColor = isEven ? 'white' : 'rgba(2, 134, 247, 0.10)';
+            const gridContainer = document.getElementById('gameDataContainer');
+            const rowIndex = Math.floor((gridContainer.children.length - 5) / 5); // 5 header'ı çıkar
+            const backgroundColor = rowIndex % 2 === 0 ? 'white' : 'rgba(2, 134, 247, 0.10)';
 
             // Her veri için ayrı div oluştur
             const firmDiv = document.createElement('div');
             firmDiv.className = 'data-row';
-            firmDiv.style.cssText = `padding: 16px; background: ${backgroundColor}; text-align: center; color: black; font-size: 14px; font-family: Montserrat; font-weight: 500;`;
-            firmDiv.textContent = firmName;
+            firmDiv.style.cssText = `padding: 16px; background: ${backgroundColor}; text-align: center; color: #232D42; font-size: 14px; font-family: Montserrat; font-weight: 500; border-bottom: 1px solid #E9ECEF;`;
+            firmDiv.textContent = firmName || '-';
             firmDiv.setAttribute('data-id', _id);
 
             const invoiceDiv = document.createElement('div');
             invoiceDiv.className = 'data-row';
-            invoiceDiv.style.cssText = `padding: 16px; background: ${backgroundColor}; text-align: center; color: black; font-size: 14px; font-family: Montserrat; font-weight: 500;`;
-            invoiceDiv.textContent = invoiceNo;
+            invoiceDiv.style.cssText = `padding: 16px; background: ${backgroundColor}; text-align: center; color: #232D42; font-size: 14px; font-family: Montserrat; font-weight: 500; border-bottom: 1px solid #E9ECEF;`;
+            invoiceDiv.textContent = invoiceNo || '-';
 
             const creditDiv = document.createElement('div');
             creditDiv.className = 'data-row';
-            creditDiv.style.cssText = `padding: 16px; background: ${backgroundColor}; text-align: center; color: black; font-size: 14px; font-family: Montserrat; font-weight: 500;`;
-            creditDiv.textContent = credit;
+            creditDiv.style.cssText = `padding: 16px; background: ${backgroundColor}; text-align: center; color: #232D42; font-size: 14px; font-family: Montserrat; font-weight: 500; border-bottom: 1px solid #E9ECEF;`;
+            creditDiv.textContent = credit || '-';
 
             const dateDiv = document.createElement('div');
             dateDiv.className = 'data-row';
-            dateDiv.style.cssText = `padding: 16px; background: ${backgroundColor}; text-align: center; color: black; font-size: 14px; font-family: Montserrat; font-weight: 500;`;
-            dateDiv.textContent = date;
+            dateDiv.style.cssText = `padding: 16px; background: ${backgroundColor}; text-align: center; color: #232D42; font-size: 14px; font-family: Montserrat; font-weight: 500; border-bottom: 1px solid #E9ECEF;`;
+            dateDiv.textContent = date || '-';
 
             const actionsDiv = document.createElement('div');
             actionsDiv.className = 'data-row';
-            actionsDiv.style.cssText = `padding: 16px; background: ${backgroundColor}; text-align: center; display: flex; justify-content: center; align-items: center; gap: 16px;`;
+            actionsDiv.style.cssText = `padding: 16px; background: ${backgroundColor}; text-align: center; display: flex; justify-content: center; align-items: center; gap: 16px; border-bottom: 1px solid #E9ECEF;`;
             actionsDiv.innerHTML = `
                 <img src="/images/edit.svg" alt="Düzenle" style="width: 24px; height: 24px; cursor: pointer;" onclick="editGame(this)" data-id="${_id}">
                 <i class="fas fa-eye" style="color: #0286F7; font-size: 18px; cursor: pointer;" onclick="viewInvoice(this)" title="Faturayı Görüntüle"></i>
@@ -1545,7 +1535,6 @@
             `;
 
             // Grid container'a ekle
-            const gridContainer = document.getElementById('gameDataContainer');
             gridContainer.appendChild(firmDiv);
             gridContainer.appendChild(invoiceDiv);
             gridContainer.appendChild(creditDiv);
@@ -2069,6 +2058,13 @@
 
         // Sayfa yüklendiğinde verileri yükle
         document.addEventListener('DOMContentLoaded', () => {
+            // UIUtils'in yüklenip yüklenmediğini kontrol et
+            if (typeof UIUtils === 'undefined') {
+                console.error('UIUtils yüklenemedi!');
+                alert('Sayfa yüklenirken bir hata oluştu. Lütfen sayfayı yenileyin.');
+                return;
+            }
+            
             loadGameData();
             document.getElementById('invoiceFile').addEventListener('change', handleFileSelect);
             loadCompanyOptions(); // Sadece bir defa fetch edecek, cache'leyecek

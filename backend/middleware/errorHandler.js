@@ -100,7 +100,7 @@ const corsHandler = (req, res, next) => {
 const rateLimiter = (() => {
     const requests = new Map();
     const WINDOW_MS = 15 * 60 * 1000; // 15 dakika
-    const MAX_REQUESTS = 100; // 15 dakikada maksimum 100 istek
+    const MAX_REQUESTS = 1000; // 15 dakikada maksimum 100 istek
 
     return (req, res, next) => {
         const ip = req.ip;

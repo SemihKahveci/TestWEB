@@ -218,7 +218,7 @@ const adminController = {
 
             // 72 saat sonrasını hesapla
             const expiryDate = new Date();
-            expiryDate.setHours(expiryDate.getHours() + 72);
+            expiryDate.setHours(expiryDate.getHours() + 240);
             const formattedExpiryDate = expiryDate.toLocaleDateString('tr-TR');
 
             // Kodu veritabanına kaydet
