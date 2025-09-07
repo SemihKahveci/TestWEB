@@ -8,8 +8,6 @@ const bcrypt = require('bcryptjs');
 const UserCode = require('../models/userCode');
 const Game = require('../models/game');
 const { answerMultipliers } = require('../config/constants');
-const CommonUtils = require('../utils/commonUtils');
-const errorMessages = require('../utils/errorMessages');
 
 const adminController = {
     login: async (req, res) => {
@@ -17,32 +15,27 @@ const adminController = {
             const { email, password } = req.body;
 
             if (!email || !password) {
-                return res.status(400).json(
-                    errorMessages.create('Email ve şifre gereklidir')
-                );
+                return res.status(400).json({ message: 'Email ve şifre gereklidir' });
             }
 
             // Admin'i bul
             const admin = await Admin.findOne({ email });
             if (!admin) {
-                return res.status(401).json(
-                    errorMessages.create('Geçersiz email veya şifre')
-                );
+              
+                return res.status(401).json({ message: 'Geçersiz email veya şifre' });
             }
 
             // Şifreyi kontrol et
             const isMatch = await admin.comparePassword(password);
             if (!isMatch) {
-                return res.status(401).json(
-                    errorMessages.create('Geçersiz email veya şifre')
-                );
+          
+                return res.status(401).json({ message: 'Geçersiz email veya şifre' });
             }
 
             // Admin aktif değilse
             if (!admin.isActive) {
-                return res.status(401).json(
-                    errorMessages.create('Hesabınız aktif değil')
-                );
+       
+                return res.status(401).json({ message: 'Hesabınız aktif değil' });
             }
 
             // Token oluştur
@@ -57,22 +50,19 @@ const adminController = {
                 { expiresIn: '7d' }
             );
 
-            res.json(
-                CommonUtils.createSuccessResponse('Giriş başarılı', {
-                    token,
-                    admin: {
-                        id: admin._id,
-                        email: admin.email,
-                        name: admin.name,
-                        role: admin.role
-                    }
-                })
-            );
+            res.json({
+                success: true,
+                token,
+                admin: {
+                    id: admin._id,
+                    email: admin.email,
+                    name: admin.name,
+                    role: admin.role
+                }
+            });
         } catch (error) {
             console.error('Login hatası:', error);
-            res.status(500).json(
-                errorMessages.create('Sunucu hatası')
-            );
+            res.status(500).json({ message: 'Sunucu hatası', error: error.message });
         }
     },
 
@@ -103,19 +93,13 @@ const adminController = {
             const evaluation = await EvaluationResult.findOneAndDelete({ id: id });
             
             if (!evaluation) {
-                return res.status(404).json(
-                    errorMessages.create('Değerlendirme bulunamadı')
-                );
+                return res.status(404).json({ message: 'Değerlendirme bulunamadı' });
             }
 
-            res.json(
-                CommonUtils.createSuccessResponse('Değerlendirme başarıyla silindi')
-            );
+            res.json({ message: 'Değerlendirme başarıyla silindi' });
         } catch (error) {
             console.error('Değerlendirme silme hatası:', error);
-            res.status(500).json(
-                errorMessages.create('Değerlendirme silinirken bir hata oluştu')
-            );
+            res.status(500).json({ message: 'Değerlendirme silinirken bir hata oluştu' });
         }
     },
 
@@ -126,17 +110,15 @@ const adminController = {
             // Kullanıcı kodunu bul
             const userCode = await UserCode.findOne({ code });
             if (!userCode) {
-                return res.status(404).json(
-                    errorMessages.create('Kod bulunamadı')
-                );
+      
+                return res.status(404).json({ message: 'Kod bulunamadı' });
             }
 
             // Oyun sonuçlarını bul
             const game = await Game.findOne({ playerCode: code });
             if (!game) {
-                return res.status(404).json(
-                    errorMessages.create('Oyun sonuçları bulunamadı')
-                );
+          
+                return res.status(404).json({ message: 'Oyun sonuçları bulunamadı' });
             }
            
 
@@ -159,9 +141,11 @@ const adminController = {
                 stack: error.stack,
                 name: error.name
             });
-            res.status(500).json(
-                errorMessages.create('PDF oluşturulurken bir hata oluştu')
-            );
+            res.status(500).json({ 
+                message: 'PDF oluşturulurken bir hata oluştu', 
+                error: error.message,
+                details: error.stack
+            });
         }
     },
 
@@ -172,17 +156,13 @@ const adminController = {
             // Kullanıcı kodunu bul
             const userCode = await UserCode.findOne({ code });
             if (!userCode) {
-                return res.status(404).json(
-                    errorMessages.create('Kod bulunamadı')
-                );
+                return res.status(404).json({ message: 'Kod bulunamadı' });
             }
 
             // Oyun sonuçlarını bul
             const game = await Game.findOne({ playerCode: code });
             if (!game) {
-                return res.status(404).json(
-                    errorMessages.create('Oyun sonuçları bulunamadı')
-                );
+                return res.status(404).json({ message: 'Oyun sonuçları bulunamadı' });
             }
 
             // PDF oluştur
@@ -199,9 +179,7 @@ const adminController = {
 
         } catch (error) {
             console.error('PDF önizleme hatası:', error);
-            res.status(500).json(
-                errorMessages.create('PDF önizlenirken bir hata oluştu')
-            );
+            res.status(500).json({ message: 'PDF önizlenirken bir hata oluştu', error: error.message });
         }
     },
 
@@ -211,12 +189,10 @@ const adminController = {
             const { code, email, name, planet } = req.body;
 
             if (!code) {
-                return res.status(400).json(
-                    errorMessages.create('Kod bulunamadı')
-                );
+                return res.status(400).json({ success: false, message: 'Kod bulunamadı' });
             }
 
-            // 240 saat (10 gün) sonrasını hesapla
+            // 72 saat sonrasını hesapla
             const expiryDate = new Date();
             expiryDate.setHours(expiryDate.getHours() + 240);
             const formattedExpiryDate = expiryDate.toLocaleDateString('tr-TR');
@@ -236,9 +212,7 @@ const adminController = {
             );
 
             if (!userCode) {
-                return res.status(400).json(
-                    errorMessages.create('Kod bulunamadı')
-                );
+                return res.status(400).json({ success: false, message: 'Kod bulunamadı' });
             }
 
             // E-posta içeriği
@@ -285,19 +259,13 @@ const adminController = {
                 //     }
                 // }, 72 * 60 * 60 * 1000); // 72 saat
 
-                res.json(
-                    CommonUtils.createSuccessResponse('Kod başarıyla gönderildi')
-                );
+                res.json({ success: true, message: 'Kod başarıyla gönderildi' });
             } else {
-                res.status(500).json(
-                    errorMessages.create('E-posta gönderilirken bir hata oluştu')
-                );
+                res.status(500).json({ success: false, message: 'E-posta gönderilirken bir hata oluştu' });
             }
         } catch (error) {
-            console.error('Kod gönderme hatası:', error);
-            res.status(500).json(
-                errorMessages.create('Kod gönderilirken bir hata oluştu')
-            );
+ 
+            res.status(500).json({ success: false, message: 'Kod gönderilirken bir hata oluştu' });
         }
     },
 
@@ -307,9 +275,7 @@ const adminController = {
             const { code } = req.body;
 
             if (!code) {
-                return res.status(400).json(
-                    errorMessages.create('Kod gerekli')
-                );
+                return res.status(400).json({ success: false, message: 'Kod gerekli' });
             }
 
             const userCode = await UserCode.findOneAndUpdate(
@@ -322,19 +288,13 @@ const adminController = {
             );
 
             if (!userCode) {
-                return res.status(404).json(
-                    errorMessages.create('Kod bulunamadı')
-                );
+                return res.status(404).json({ success: false, message: 'Kod bulunamadı' });
             }
 
-            res.json(
-                CommonUtils.createSuccessResponse('Durum başarıyla güncellendi')
-            );
+            res.json({ success: true, message: 'Durum başarıyla güncellendi' });
         } catch (error) {
             console.error('Durum güncelleme hatası:', error);
-            res.status(500).json(
-                errorMessages.create('Durum güncellenirken bir hata oluştu')
-            );
+            res.status(500).json({ success: false, message: 'Durum güncellenirken bir hata oluştu' });
         }
     },
 
@@ -414,14 +374,16 @@ const adminController = {
                 };
             }));
             
-            res.json(
-                CommonUtils.createSuccessResponse('Sonuçlar başarıyla getirildi', { results: mappedResults })
-            );
+            res.json({
+                success: true,
+                results: mappedResults
+            });
         } catch (error) {
             console.error('Sonuçları getirme hatası:', error);
-            res.status(500).json(
-                errorMessages.create('Sonuçlar alınırken bir hata oluştu')
-            );
+            res.status(500).json({
+                success: false,
+                message: 'Sonuçlar alınırken bir hata oluştu'
+            });
         }
     },
 
@@ -432,9 +394,10 @@ const adminController = {
             const { code, status } = req.body;
     
             if (!code || !status) {
-                return res.status(400).json(
-                    errorMessages.create('Kod ve durum bilgisi gereklidir')
-                );
+                return res.status(400).json({
+                    success: false,
+                    message: 'Kod ve durum bilgisi gereklidir'
+                });
             }
 
             const result = await UserCode.findOneAndUpdate(
@@ -447,19 +410,23 @@ const adminController = {
             );
 
             if (!result) {
-                return res.status(404).json(
-                    errorMessages.create('Sonuç bulunamadı')
-                );
+                return res.status(404).json({
+                    success: false,
+                    message: 'Sonuç bulunamadı'
+                });
             }
 
-            res.json(
-                CommonUtils.createSuccessResponse('Durum başarıyla güncellendi', { result })
-            );
+            res.json({
+                success: true,
+                message: 'Durum başarıyla güncellendi',
+                result
+            });
         } catch (error) {
             console.error('Durum güncelleme hatası:', error);
-            res.status(500).json(
-                errorMessages.create('Durum güncellenirken bir hata oluştu')
-            );
+            res.status(500).json({
+                success: false,
+                message: 'Durum güncellenirken bir hata oluştu'
+            });
         }
     },
 
@@ -471,9 +438,7 @@ const adminController = {
             // Email kontrolü
             const existingAdmin = await Admin.findOne({ email });
             if (existingAdmin) {
-                return res.status(400).json(
-                    errorMessages.create('Bu email adresi zaten kullanımda')
-                );
+                return res.status(400).json({ message: 'Bu email adresi zaten kullanımda' });
             }
 
             // Yeni admin oluştur
@@ -487,22 +452,24 @@ const adminController = {
 
             await admin.save();
 
-            res.status(201).json(
-                CommonUtils.createSuccessResponse('Admin başarıyla oluşturuldu', {
-                    admin: {
-                        id: admin._id,
-                        email: admin.email,
-                        name: admin.name,
-                        company: admin.company,
-                        role: admin.role
-                    }
-                })
-            );
+            res.status(201).json({
+                success: true,
+                message: 'Admin başarıyla oluşturuldu',
+                admin: {
+                    id: admin._id,
+                    email: admin.email,
+                    name: admin.name,
+                    company: admin.company,
+                    role: admin.role
+                }
+            });
         } catch (error) {
             console.error('Admin oluşturma hatası:', error);
-            res.status(500).json(
-                errorMessages.create('Admin oluşturulurken bir hata oluştu')
-            );
+            res.status(500).json({ 
+                success: false,
+                message: 'Admin oluşturulurken bir hata oluştu',
+                error: error.message 
+            });
         }
     },
 
@@ -515,9 +482,10 @@ const adminController = {
             // Admin'i bul
             const admin = await Admin.findById(id);
             if (!admin) {
-                return res.status(404).json(
-                    errorMessages.create('Admin bulunamadı')
-                );
+                return res.status(404).json({ 
+                    success: false,
+                    message: 'Admin bulunamadı' 
+                });
             }
 
             // Güncelleme
@@ -530,23 +498,25 @@ const adminController = {
 
             await admin.save();
 
-            res.json(
-                CommonUtils.createSuccessResponse('Admin başarıyla güncellendi', {
-                    admin: {
-                        id: admin._id,
-                        email: admin.email,
-                        name: admin.name,
-                        company: admin.company,
-                        role: admin.role,
-                        isActive: admin.isActive
-                    }
-                })
-            );
+            res.json({
+                success: true,
+                message: 'Admin başarıyla güncellendi',
+                admin: {
+                    id: admin._id,
+                    email: admin.email,
+                    name: admin.name,
+                    company: admin.company,
+                    role: admin.role,
+                    isActive: admin.isActive
+                }
+            });
         } catch (error) {
             console.error('Admin güncelleme hatası:', error);
-            res.status(500).json(
-                errorMessages.create('Admin güncellenirken bir hata oluştu')
-            );
+            res.status(500).json({ 
+                success: false,
+                message: 'Admin güncellenirken bir hata oluştu',
+                error: error.message 
+            });
         }
     },
 
@@ -554,14 +524,17 @@ const adminController = {
     getAdmins: async (req, res) => {
         try {
             const admins = await Admin.find().select('-password');
-            res.json(
-                CommonUtils.createSuccessResponse('Admin listesi başarıyla getirildi', { admins })
-            );
+            res.json({
+                success: true,
+                admins: admins
+            });
         } catch (error) {
             console.error('Admin listesi alma hatası:', error);
-            res.status(500).json(
-                errorMessages.create('Admin listesi alınırken bir hata oluştu')
-            );
+            res.status(500).json({ 
+                success: false,
+                message: 'Admin listesi alınırken bir hata oluştu',
+                error: error.message 
+            });
         }
     },
 
@@ -572,19 +545,23 @@ const adminController = {
             
             const admin = await Admin.findById(id).select('-password');
             if (!admin) {
-                return res.status(404).json(
-                    errorMessages.create('Admin bulunamadı')
-                );
+                return res.status(404).json({ 
+                    success: false,
+                    message: 'Admin bulunamadı' 
+                });
             }
 
-            res.json(
-                CommonUtils.createSuccessResponse('Admin bilgileri başarıyla getirildi', { admin })
-            );
+            res.json({
+                success: true,
+                admin: admin
+            });
         } catch (error) {
             console.error('Admin getirme hatası:', error);
-            res.status(500).json(
-                errorMessages.create('Admin bilgileri alınırken bir hata oluştu')
-            );
+            res.status(500).json({ 
+                success: false,
+                message: 'Admin bilgileri alınırken bir hata oluştu',
+                error: error.message 
+            });
         }
     },
 
@@ -594,9 +571,7 @@ const adminController = {
             const { code } = req.body;
             
             if (!code) {
-                return res.status(400).json(
-                    errorMessages.create('Kod gereklidir')
-                );
+                return res.status(400).json({ message: 'Kod gereklidir' });
             }
 
             // Game modelinden sil
@@ -605,14 +580,10 @@ const adminController = {
             // UserCode modelinden tamamen sil
             await mongoose.model('UserCode').findOneAndDelete({ code });
 
-            res.json(
-                CommonUtils.createSuccessResponse('Sonuç başarıyla silindi')
-            );
+            res.json({ message: 'Sonuç başarıyla silindi' });
         } catch (error) {
             console.error('Sonuç silme hatası:', error);
-            res.status(500).json(
-                errorMessages.create('Sonuç silinirken bir hata oluştu')
-            );
+            res.status(500).json({ message: 'Sonuç silinirken bir hata oluştu' });
         }
     },
 
@@ -625,19 +596,23 @@ const adminController = {
             const admin = await Admin.findByIdAndDelete(id);
             
             if (!admin) {
-                return res.status(404).json(
-                    errorMessages.create('Admin bulunamadı')
-                );
+                return res.status(404).json({ 
+                    success: false,
+                    message: 'Admin bulunamadı' 
+                });
             }
 
-            res.json(
-                CommonUtils.createSuccessResponse('Admin başarıyla silindi')
-            );
+            res.json({ 
+                success: true,
+                message: 'Admin başarıyla silindi' 
+            });
         } catch (error) {
             console.error('Admin silme hatası:', error);
-            res.status(500).json(
-                errorMessages.create('Admin silinirken bir hata oluştu')
-            );
+            res.status(500).json({ 
+                success: false,
+                message: 'Admin silinirken bir hata oluştu',
+                error: error.message 
+            });
         }
     },
 
@@ -647,9 +622,10 @@ const adminController = {
             const { code, email, name } = req.body;
 
             if (!code || !email || !name) {
-                return res.status(400).json(
-                    errorMessages.create('Kod, e-posta ve isim gereklidir')
-                );
+                return res.status(400).json({ 
+                    success: false, 
+                    message: 'Kod, e-posta ve isim gereklidir' 
+                });
             }
 
             const completionEmailHtml = `
@@ -672,20 +648,25 @@ const adminController = {
             );
 
             if (emailResult.success) {
-                res.json(
-                    CommonUtils.createSuccessResponse('Tamamlanma e-postası başarıyla gönderildi')
-                );
+                res.json({
+                    success: true,
+                    message: 'Tamamlanma e-postası başarıyla gönderildi'
+                });
             } else {
-                res.status(500).json(
-                    errorMessages.create('E-posta gönderilirken bir hata oluştu')
-                );
+                res.status(500).json({
+                    success: false,
+                    message: 'E-posta gönderilirken bir hata oluştu',
+                    error: emailResult.error
+                });
             }
 
         } catch (error) {
             console.error('Tamamlanma e-postası gönderme hatası:', error);
-            res.status(500).json(
-                errorMessages.create('E-posta gönderilirken bir hata oluştu')
-            );
+            res.status(500).json({
+                success: false,
+                message: 'E-posta gönderilirken bir hata oluştu',
+                error: error.message
+            });
         }
     }
 };
