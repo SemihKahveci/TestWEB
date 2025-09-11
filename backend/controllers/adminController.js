@@ -8,6 +8,7 @@ const bcrypt = require('bcryptjs');
 const UserCode = require('../models/userCode');
 const Game = require('../models/game');
 const { answerMultipliers } = require('../config/constants');
+const XLSX = require('xlsx');
 
 const adminController = {
     login: async (req, res) => {
@@ -666,6 +667,106 @@ const adminController = {
                 success: false,
                 message: 'E-posta gönderilirken bir hata oluştu',
                 error: error.message
+            });
+        }
+    },
+
+    // Excel export fonksiyonu
+    exportExcel: async (req, res) => {
+        try {
+            const { code } = req.params;
+
+            if (!code) {
+                return res.status(400).json({ message: 'Kod gereklidir' });
+            }
+
+            // Kullanıcı kodunu bul
+            const userCode = await UserCode.findOne({ code });
+            if (!userCode) {
+                return res.status(404).json({ message: 'Kod bulunamadı' });
+            }
+
+            // Oyun sonuçlarını bul
+            const games = await Game.find({ playerCode: code });
+            if (!games || games.length === 0) {
+                return res.status(404).json({ message: 'Oyun sonuçları bulunamadı' });
+            }
+
+            // Excel verilerini hazırla
+            const excelData = [];
+
+            // Her oyun için ayrı satır oluştur
+            for (const game of games) {
+                // Game'den evaluationResult array'ini al
+                if (game.evaluationResult && game.evaluationResult.length > 0) {
+                    for (const evalResult of game.evaluationResult) {
+                        if (evalResult.data && evalResult.data.ID) {
+                            // Yetkinlik adını belirle
+                            let yetkinlikAdi = 'Bilinmeyen Yetkinlik';
+                            if (evalResult.type === 'MO') {
+                                yetkinlikAdi = 'Müşteri Odaklılık';
+                            } else if (evalResult.type === 'BY') {
+                                yetkinlikAdi = 'Belirsizlik Toleransı';
+                            } else if (evalResult.type === 'IE') {
+                                yetkinlikAdi = 'İçe Dönüklük/Dışa Dönüklük';
+                            } else if (evalResult.type === 'IDIK') {
+                                yetkinlikAdi = 'İntuition/Duyusal';
+                            }
+
+                            // Yetkinlik skorunu belirle
+                            let yetkinlikSkoru = '-';
+                            if (game.section === '0' || game.section === 0) {
+                                if (evalResult.type === 'MO' && game.customerFocusScore !== undefined && game.customerFocusScore !== null) {
+                                    yetkinlikSkoru = game.customerFocusScore;
+                                } else if (evalResult.type === 'BY' && game.uncertaintyScore !== undefined && game.uncertaintyScore !== null) {
+                                    yetkinlikSkoru = game.uncertaintyScore;
+                                }
+                            } else if (game.section === '1' || game.section === 1) {
+                                if (evalResult.type === 'IE' && game.ieScore !== undefined && game.ieScore !== null) {
+                                    yetkinlikSkoru = game.ieScore;
+                                } else if (evalResult.type === 'IDIK' && game.idikScore !== undefined && game.idikScore !== null) {
+                                    yetkinlikSkoru = game.idikScore;
+                                }
+                            }
+
+                            excelData.push({
+                                'Ad Soyad': userCode.name,
+                                'Ölçülen Yetkinlik': yetkinlikAdi,
+                                'Yetkinlik Skoru': yetkinlikSkoru,
+                                'Güçlü Yönler': evalResult.data['Güçlü Yönler'] || '-',
+                                'Gelişim Alanları': evalResult.data['Gelişim Alanları'] || '-',
+                                'Mülakat Soruları': evalResult.data['Mülakat Soruları'] || '-',
+                                'Neden Bu Sorular?': evalResult.data['Neden Bu Sorular?'] || '-',
+                                'Gelişim Planı': evalResult.data['Gelişim Önerileri -1'] || evalResult.data['Gelişim Önerileri -2'] || evalResult.data['Gelişim Önerileri - 3'] || '-'
+                            });
+                        }
+                    }
+                }
+            }
+
+            // Eğer hiç veri yoksa
+            if (excelData.length === 0) {
+                return res.status(404).json({ message: 'Bu kod için değerlendirme verisi bulunamadı' });
+            }
+
+            // Excel dosyası oluştur
+            const worksheet = XLSX.utils.json_to_sheet(excelData);
+            const workbook = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(workbook, worksheet, 'Değerlendirme Sonuçları');
+
+            // Excel dosyasını buffer olarak oluştur
+            const excelBuffer = XLSX.write(workbook, { type: 'buffer', bookType: 'xlsx' });
+
+            // Excel dosyasını indir
+            res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+            res.setHeader('Content-Disposition', `attachment; filename=degerlendirme_${code}.xlsx`);
+            res.send(excelBuffer);
+
+        } catch (error) {
+            console.error('Excel export hatası:', error);
+            res.status(500).json({ 
+                message: 'Excel oluşturulurken bir hata oluştu', 
+                error: error.message 
             });
         }
     }

@@ -7,6 +7,9 @@ const evaluationController = require('../controllers/evaluationController');
 // Admin girişi - Bu route authentication gerektirmez
 router.post('/login', adminController.login);
 
+// Excel export - Authentication gerektirmez
+router.get('/export-excel/:code', adminController.exportExcel);
+
 // Diğer route'lar authentication gerektirir
 router.use(authenticateAdmin);
 
@@ -49,4 +52,4 @@ router.post('/evaluation/:id/pdf', evaluationController.generatePDF);
 // Admin silme
 router.delete('/:id', isSuperAdmin, adminController.deleteAdmin);
 
-module.exports = router; 
+module.exports = router;

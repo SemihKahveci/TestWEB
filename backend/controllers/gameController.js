@@ -319,16 +319,31 @@ class GameController {
 
             // BY raporlarını kontrol et (Venus - Belirsizlik Yönetimi)
             if (byAnswerString) {
+                console.log('BY raporları aranıyor, cevap string:', byAnswerString);
+                
+                // Virgülden sonra boşluk olan ve olmayan formatları dene
+                const byAnswerStringNoSpace = byAnswerString.replace(/, /g, ',');
+                console.log('BY raporları aranıyor (boşluksuz), cevap string:', byAnswerStringNoSpace);
+                
                 const matchedBY = await mongoose.connection.collection('evaluationanswers').findOne({
-                    Cevaplar: { $regex: new RegExp(byAnswerString, 'i') }
+                    $or: [
+                        { Cevaplar: { $regex: new RegExp(byAnswerString, 'i') } },
+                        { Cevaplar: { $regex: new RegExp(byAnswerStringNoSpace, 'i') } }
+                    ]
                 });
 
                 if (matchedBY) {
+                    console.log('BY cevapları bulundu, ID:', matchedBY.ID);
                     const byResult = await mongoose.connection.collection('evaluationresults').findOne({ ID: matchedBY.ID });
                     
                     if (byResult) {
+                        console.log('BY raporu bulundu ve eklendi');
                         results.push({ type: 'BY', data: byResult });
+                    } else {
+                        console.log('BY raporu bulunamadı, ID:', matchedBY.ID);
                     }
+                } else {
+                    console.log('BY cevapları bulunamadı, aranan string:', byAnswerString, 've', byAnswerStringNoSpace);
                 }
             }
 

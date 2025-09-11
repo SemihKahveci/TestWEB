@@ -161,6 +161,9 @@ function displayData() {
                 <div class="action-button ${isPDFDisabled ? 'disabled' : ''}" ${isPDFDisabled ? '' : `onclick="showPDFPopup('${item.code}')"`}>
                     <i class="fas fa-file-pdf" style="color: #0286F7;"></i>
                 </div>
+                <div class="action-button ${isPDFDisabled ? 'disabled' : ''}" ${isPDFDisabled ? '' : `onclick="downloadExcel('${item.code}')"`}>
+                    <i class="fas fa-file-excel" style="color: #1D6F42;"></i>
+                </div>
                 <div class="action-button" onclick="showDeletePopup('${item.code}')">
                     <i class="fas fa-trash" style="color: #FF0000;"></i>
                 </div>
@@ -205,6 +208,9 @@ function displayData() {
                         </div>
                         <div class="action-button ${subIsPDFDisabled ? 'disabled' : ''}" ${subIsPDFDisabled ? '' : `onclick="showPDFPopup('${groupItem.code}')"`}>
                             <i class="fas fa-file-pdf" style="color: #0286F7;"></i>
+                        </div>
+                        <div class="action-button ${subIsPDFDisabled ? 'disabled' : ''}" ${subIsPDFDisabled ? '' : `onclick="downloadExcel('${groupItem.code}')"`}>
+                            <i class="fas fa-file-excel" style="color: #1D6F42;"></i>
                         </div>
                         <div class="action-button" onclick="showDeletePopup('${groupItem.code}')">
                             <i class="fas fa-trash" style="color: #FF0000;"></i>
@@ -626,6 +632,32 @@ function filterResults() {
     // Tabloyu güncelle
     displayData();
     updatePagination();
+}
+
+// Excel indirme fonksiyonu
+async function downloadExcel(code) {
+    try {
+        const response = await fetch(`/api/admin/export-excel/${code}`, {
+            method: 'GET'
+        });
+        
+        if (!response.ok) {
+            throw new Error('Excel indirme işlemi başarısız oldu');
+        }
+        
+        const blob = await response.blob();
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `degerlendirme_${code}.xlsx`;
+        document.body.appendChild(a);
+        a.click();
+        window.URL.revokeObjectURL(url);
+        document.body.removeChild(a);
+    } catch (error) {
+        console.error('Excel indirme hatası:', error);
+        alert('Excel indirilirken bir hata oluştu: ' + error.message);
+    }
 }
 
 // Sayfa yüklendiğinde
