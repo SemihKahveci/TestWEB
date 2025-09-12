@@ -375,28 +375,82 @@ function displayData() {
 
 // Sayfalama kontrollerini güncelle
 function updatePagination() {
-    const paginationContent = document.querySelector('.pagination-content');
+    const paginationContent = document.querySelector('.pagination-container');
     if (!paginationContent) {
         console.error('Sayfalama içeriği bulunamadı');
         return;
     }
 
     const totalPages = Math.ceil(totalItems / itemsPerPage);
+    const startItem = (currentPage - 1) * itemsPerPage + 1;
+    const endItem = Math.min(currentPage * itemsPerPage, totalItems);
     
     let paginationHTML = `
-        <div class="page-nav" ${currentPage === 1 ? 'style="opacity: 0.5; pointer-events: none;"' : ''} onclick="changePage(${currentPage - 1})">Önceki Sayfa</div>
+        <div class="pagination-info">
+            ${startItem}-${endItem} arası, toplam ${totalItems} kayıt
+        </div>
     `;
 
-    for (let i = 1; i <= totalPages; i++) {
+    // İlk sayfa butonu
+    paginationHTML += `
+        <div class="page-nav ${currentPage === 1 ? 'disabled' : ''}" onclick="changePage(1)">
+            <i class="fas fa-angle-double-left"></i>
+        </div>
+    `;
+
+    // Önceki sayfa butonu
+    paginationHTML += `
+        <div class="page-nav ${currentPage === 1 ? 'disabled' : ''}" onclick="changePage(${currentPage - 1})">
+            <i class="fas fa-angle-left"></i>
+        </div>
+    `;
+
+    // Sayfa numaraları
+    const maxVisiblePages = 5;
+    let startPage = Math.max(1, currentPage - Math.floor(maxVisiblePages / 2));
+    let endPage = Math.min(totalPages, startPage + maxVisiblePages - 1);
+    
+    if (endPage - startPage + 1 < maxVisiblePages) {
+        startPage = Math.max(1, endPage - maxVisiblePages + 1);
+    }
+
+    // Başlangıçta ellipsis
+    if (startPage > 1) {
+        paginationHTML += `<div class="page-button" onclick="changePage(1)">1</div>`;
+        if (startPage > 2) {
+            paginationHTML += `<div class="page-ellipsis">...</div>`;
+        }
+    }
+
+    // Sayfa numaraları
+    for (let i = startPage; i <= endPage; i++) {
         paginationHTML += `
             <div class="page-button ${currentPage === i ? 'active' : ''}" onclick="changePage(${i})">
-                <div class="page-text">${i}</div>
+                ${i}
             </div>
         `;
     }
 
+    // Sonda ellipsis
+    if (endPage < totalPages) {
+        if (endPage < totalPages - 1) {
+            paginationHTML += `<div class="page-ellipsis">...</div>`;
+        }
+        paginationHTML += `<div class="page-button" onclick="changePage(${totalPages})">${totalPages}</div>`;
+    }
+
+    // Sonraki sayfa butonu
     paginationHTML += `
-        <div class="page-nav" ${currentPage === totalPages ? 'style="opacity: 0.5; pointer-events: none;"' : ''} onclick="changePage(${currentPage + 1})">Sonraki Sayfa</div>
+        <div class="page-nav ${currentPage === totalPages ? 'disabled' : ''}" onclick="changePage(${currentPage + 1})">
+            <i class="fas fa-angle-right"></i>
+        </div>
+    `;
+
+    // Son sayfa butonu
+    paginationHTML += `
+        <div class="page-nav ${currentPage === totalPages ? 'disabled' : ''}" onclick="changePage(${totalPages})">
+            <i class="fas fa-angle-double-right"></i>
+        </div>
     `;
 
     paginationContent.innerHTML = paginationHTML;
@@ -404,12 +458,18 @@ function updatePagination() {
 
 // Sayfa değiştir
 function changePage(page) {
-    if (page < 1 || page > Math.ceil(totalItems / itemsPerPage)) {
-        return;
+    const totalPages = Math.ceil(totalItems / itemsPerPage);
+    if (page >= 1 && page <= totalPages && page !== currentPage) {
+        currentPage = page;
+        displayData();
+        updatePagination();
+        
+        // Sayfa başına scroll
+        const table = document.querySelector('.results-table');
+        if (table) {
+            table.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
     }
-    currentPage = page;
-    displayData();
-    updatePagination();
 }
 
 // Tarih formatla
