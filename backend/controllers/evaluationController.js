@@ -37,9 +37,9 @@ const evaluationController = {
                 developmentSuggestions: selectedOptions.developmentSuggestions === true || selectedOptions.developmentSuggestions === 'true'
             };
 
-            // Önce Game koleksiyonunda ara
-            let game = await Game.findOne({ playerCode: userCode });
-            if (!game) {
+            // Tüm oyunları bul (2 gezegen için 2 farklı Game kaydı olabilir)
+            const games = await Game.find({ playerCode: userCode });
+            if (!games || games.length === 0) {
                 // Game bulunamazsa EvaluationResult koleksiyonunda ara
                 const evaluation = await EvaluationResult.findOne({ ID: userCode });
                 if (!evaluation) {
@@ -47,23 +47,44 @@ const evaluationController = {
                 }
                 return generateAndSendPDF(evaluation, options, res, userCode);
             }
+            
+            // Tüm oyunlardaki evaluationResult'ları birleştir
+            let allEvaluationResults = [];
+            for (const game of games) {
+                if (game.evaluationResult) {
+                    // Eğer evaluationResult bir dizi ise (çoklu rapor)
+                    if (Array.isArray(game.evaluationResult)) {
+                        allEvaluationResults = allEvaluationResults.concat(game.evaluationResult);
+                    } else {
+                        // Eğer tek rapor ise diziye çevir
+                        allEvaluationResults.push(game.evaluationResult);
+                    }
+                }
+            }
 
-            // Game içindeki evaluationResult'u kontrol et
-            if (!game.evaluationResult || Object.keys(game.evaluationResult).length === 0) {
+            // Eğer hiç evaluationResult bulunamadıysa, EvaluationResult koleksiyonunda ara
+            if (allEvaluationResults.length === 0) {
                 const evaluation = await EvaluationResult.findOne({ ID: userCode });
                 if (!evaluation) {
                     return res.status(404).json({ message: 'Değerlendirme bulunamadı' });
                 }
-                
-                // Game modelini güncelle
-                game.evaluationResult = evaluation;
-                await game.save();
-                
                 return generateAndSendPDF(evaluation, options, res, userCode);
             }
 
-            return generateAndSendPDF(game.evaluationResult, options, res, userCode);
+            // Benzersiz raporları filtrele (aynı ID'li raporları tekrarlama)
+            const uniqueResults = [];
+            const seenIds = new Set();
+            
+            for (const result of allEvaluationResults) {
+                if (result.data && result.data.ID && !seenIds.has(result.data.ID)) {
+                    seenIds.add(result.data.ID);
+                    uniqueResults.push(result);
+                }
+            }
+
+            return generateAndSendPDF(uniqueResults, options, res, userCode);
         } catch (error) {
+            console.error('PDF oluşturma hatası:', error);
             res.status(500).json({ message: 'PDF oluşturulurken bir hata oluştu' });
         }
     },
@@ -78,9 +99,9 @@ const evaluationController = {
                 developmentSuggestions: req.query.developmentSuggestions === 'true'
             };
 
-            // Önce Game koleksiyonunda ara
-            let game = await Game.findOne({ playerCode: code });
-            if (!game) {
+            // Tüm oyunları bul (2 gezegen için 2 farklı Game kaydı olabilir)
+            const games = await Game.find({ playerCode: code });
+            if (!games || games.length === 0) {
                 // Game bulunamazsa EvaluationResult koleksiyonunda ara
                 const evaluation = await EvaluationResult.findOne({ ID: code });
                 if (!evaluation) {
@@ -89,22 +110,43 @@ const evaluationController = {
                 return generateAndSendPreview(evaluation, options, res, code);
             }
             
-            // Game içindeki evaluationResult'u kontrol et
-            if (!game.evaluationResult || Object.keys(game.evaluationResult).length === 0) {
+            // Tüm oyunlardaki evaluationResult'ları birleştir
+            let allEvaluationResults = [];
+            for (const game of games) {
+                if (game.evaluationResult) {
+                    // Eğer evaluationResult bir dizi ise (çoklu rapor)
+                    if (Array.isArray(game.evaluationResult)) {
+                        allEvaluationResults = allEvaluationResults.concat(game.evaluationResult);
+                    } else {
+                        // Eğer tek rapor ise diziye çevir
+                        allEvaluationResults.push(game.evaluationResult);
+                    }
+                }
+            }
+
+            // Eğer hiç evaluationResult bulunamadıysa, EvaluationResult koleksiyonunda ara
+            if (allEvaluationResults.length === 0) {
                 const evaluation = await EvaluationResult.findOne({ ID: code });
                 if (!evaluation) {
                     return res.status(404).json({ message: 'Değerlendirme bulunamadı' });
                 }
-                
-                // Game modelini güncelle
-                game.evaluationResult = evaluation;
-                await game.save();
-                
                 return generateAndSendPreview(evaluation, options, res, code);
             }
 
-            return generateAndSendPreview(game.evaluationResult, options, res, code);
+            // Benzersiz raporları filtrele (aynı ID'li raporları tekrarlama)
+            const uniqueResults = [];
+            const seenIds = new Set();
+            
+            for (const result of allEvaluationResults) {
+                if (result.data && result.data.ID && !seenIds.has(result.data.ID)) {
+                    seenIds.add(result.data.ID);
+                    uniqueResults.push(result);
+                }
+            }
+
+            return generateAndSendPreview(uniqueResults, options, res, code);
         } catch (error) {
+            console.error('PDF önizleme hatası:', error);
             res.status(500).json({ message: 'PDF oluşturulurken bir hata oluştu' });
         }
     },

@@ -111,22 +111,44 @@ const adminController = {
             // Kullanıcı kodunu bul
             const userCode = await UserCode.findOne({ code });
             if (!userCode) {
-      
                 return res.status(404).json({ message: 'Kod bulunamadı' });
             }
 
-            // Oyun sonuçlarını bul
-            const game = await Game.findOne({ playerCode: code });
-            if (!game) {
-          
+            // Tüm oyunları bul (2 gezegen için 2 farklı Game kaydı olabilir)
+            const games = await Game.find({ playerCode: code });
+            if (!games || games.length === 0) {
                 return res.status(404).json({ message: 'Oyun sonuçları bulunamadı' });
             }
-           
+            
+            // Tüm oyunlardaki evaluationResult'ları birleştir
+            let allEvaluationResults = [];
+            for (const game of games) {
+                if (game.evaluationResult) {
+                    // Eğer evaluationResult bir dizi ise (çoklu rapor)
+                    if (Array.isArray(game.evaluationResult)) {
+                        allEvaluationResults = allEvaluationResults.concat(game.evaluationResult);
+                    } else {
+                        // Eğer tek rapor ise diziye çevir
+                        allEvaluationResults.push(game.evaluationResult);
+                    }
+                }
+            }
+
+            // Benzersiz raporları filtrele (aynı ID'li raporları tekrarlama)
+            const uniqueResults = [];
+            const seenIds = new Set();
+            
+            for (const result of allEvaluationResults) {
+                if (result.data && result.data.ID && !seenIds.has(result.data.ID)) {
+                    seenIds.add(result.data.ID);
+                    uniqueResults.push(result);
+                }
+            }
 
             // PDF oluştur
             const pdfBuffer = await generatePDF({
                 userCode,
-                game,
+                game: { evaluationResult: uniqueResults },
                 options
             });
 
@@ -160,16 +182,41 @@ const adminController = {
                 return res.status(404).json({ message: 'Kod bulunamadı' });
             }
 
-            // Oyun sonuçlarını bul
-            const game = await Game.findOne({ playerCode: code });
-            if (!game) {
+            // Tüm oyunları bul (2 gezegen için 2 farklı Game kaydı olabilir)
+            const games = await Game.find({ playerCode: code });
+            if (!games || games.length === 0) {
                 return res.status(404).json({ message: 'Oyun sonuçları bulunamadı' });
+            }
+            
+            // Tüm oyunlardaki evaluationResult'ları birleştir
+            let allEvaluationResults = [];
+            for (const game of games) {
+                if (game.evaluationResult) {
+                    // Eğer evaluationResult bir dizi ise (çoklu rapor)
+                    if (Array.isArray(game.evaluationResult)) {
+                        allEvaluationResults = allEvaluationResults.concat(game.evaluationResult);
+                    } else {
+                        // Eğer tek rapor ise diziye çevir
+                        allEvaluationResults.push(game.evaluationResult);
+                    }
+                }
+            }
+
+            // Benzersiz raporları filtrele (aynı ID'li raporları tekrarlama)
+            const uniqueResults = [];
+            const seenIds = new Set();
+            
+            for (const result of allEvaluationResults) {
+                if (result.data && result.data.ID && !seenIds.has(result.data.ID)) {
+                    seenIds.add(result.data.ID);
+                    uniqueResults.push(result);
+                }
             }
 
             // PDF oluştur
             const pdfBuffer = await generatePDF({
                 userCode,
-                game,
+                game: { evaluationResult: uniqueResults },
                 options
             });
 
