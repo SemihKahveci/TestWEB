@@ -327,8 +327,8 @@ class GameController {
                 
                 const matchedBY = await mongoose.connection.collection('evaluationanswers').findOne({
                     $or: [
-                        { Cevaplar: { $regex: new RegExp(byAnswerString, 'i') } },
-                        { Cevaplar: { $regex: new RegExp(byAnswerStringNoSpace, 'i') } }
+                        { Cevaplar: byAnswerString },
+                        { Cevaplar: byAnswerStringNoSpace }
                     ]
                 });
 
@@ -349,55 +349,91 @@ class GameController {
 
             // MO raporlarını kontrol et (Venus - Müşteri Odaklılık)
             if (moAnswerString) {
+                console.log('MO raporları aranıyor, cevap string:', moAnswerString);
+                
+                // Virgülden sonra boşluk olan ve olmayan formatları dene
+                const moAnswerStringNoSpace = moAnswerString.replace(/, /g, ',');
+                console.log('MO raporları aranıyor (boşluksuz), cevap string:', moAnswerStringNoSpace);
+                
                 const matchedMO = await mongoose.connection.collection('evaluationanswersMY').findOne({
                     $or: [
-                        { Cevaplar: { $regex: new RegExp(moAnswerString, 'i') } },
-                        { Cevaplar: { $regex: new RegExp(moAnswerString.replace(/, /g, ','), 'i') } }
+                        { Cevaplar: moAnswerString },
+                        { Cevaplar: moAnswerStringNoSpace }
                     ]
                 });
 
                 if (matchedMO) {
+                    console.log('MO cevapları bulundu, ID:', matchedMO.ID);
                     const moResult = await mongoose.connection.collection('evaluationresultsMY').findOne({ ID: matchedMO.ID });
                     
                     if (moResult) {
+                        console.log('MO raporu bulundu ve eklendi');
                         results.push({ type: 'MO', data: moResult });
+                    } else {
+                        console.log('MO raporu bulunamadı, ID:', matchedMO.ID);
                     }
+                } else {
+                    console.log('MO cevapları bulunamadı, aranan string:', moAnswerString, 've', moAnswerStringNoSpace);
                 }
             }
 
             // IE raporlarını kontrol et (Titan - İnsanları Etkileme)
             if (ieAnswerString) {
+                console.log('IE raporları aranıyor, cevap string:', ieAnswerString);
+                
+                // Virgülden sonra boşluk olan ve olmayan formatları dene
+                const ieAnswerStringNoSpace = ieAnswerString.replace(/, /g, ',');
+                console.log('IE raporları aranıyor (boşluksuz), cevap string:', ieAnswerStringNoSpace);
+                
                 const matchedIE = await mongoose.connection.collection('evaluationanswersHI').findOne({
                     $or: [
-                        { Cevaplar: { $regex: new RegExp(ieAnswerString, 'i') } },
-                        { Cevaplar: { $regex: new RegExp(ieAnswerString.replace(/, /g, ','), 'i') } }
+                        { Cevaplar: ieAnswerString },
+                        { Cevaplar: ieAnswerStringNoSpace }
                     ]
                 });
 
                 if (matchedIE) {
+                    console.log('IE cevapları bulundu, ID:', matchedIE.ID);
                     const ieResult = await mongoose.connection.collection('evaluationresultsHI').findOne({ ID: matchedIE.ID });
                     
                     if (ieResult) {
+                        console.log('IE raporu bulundu ve eklendi');
                         results.push({ type: 'IE', data: ieResult });
+                    } else {
+                        console.log('IE raporu bulunamadı, ID:', matchedIE.ID);
                     }
+                } else {
+                    console.log('IE cevapları bulunamadı, aranan string:', ieAnswerString, 've', ieAnswerStringNoSpace);
                 }
             }
 
             // IDIK raporlarını kontrol et (Titan - Güven Veren İşbirlikçi ve Sinerji)
             if (idikAnswerString) {
+                console.log('IDIK raporları aranıyor, cevap string:', idikAnswerString);
+                
+                // Virgülden sonra boşluk olan ve olmayan formatları dene
+                const idikAnswerStringNoSpace = idikAnswerString.replace(/, /g, ',');
+                console.log('IDIK raporları aranıyor (boşluksuz), cevap string:', idikAnswerStringNoSpace);
+                
                 const matchedIDIK = await mongoose.connection.collection('evaluationanswersTW').findOne({
                     $or: [
-                        { Cevaplar: { $regex: new RegExp(idikAnswerString, 'i') } },
-                        { Cevaplar: { $regex: new RegExp(idikAnswerString.replace(/, /g, ','), 'i') } }
+                        { Cevaplar: idikAnswerString },
+                        { Cevaplar: idikAnswerStringNoSpace }
                     ]
                 });
 
                 if (matchedIDIK) {
+                    console.log('IDIK cevapları bulundu, ID:', matchedIDIK.ID);
                     const idikResult = await mongoose.connection.collection('evaluationresultsTW').findOne({ ID: matchedIDIK.ID });
                     
                     if (idikResult) {
+                        console.log('IDIK raporu bulundu ve eklendi');
                         results.push({ type: 'IDIK', data: idikResult });
+                    } else {
+                        console.log('IDIK raporu bulunamadı, ID:', matchedIDIK.ID);
                     }
+                } else {
+                    console.log('IDIK cevapları bulunamadı, aranan string:', idikAnswerString, 've', idikAnswerStringNoSpace);
                 }
             }
 
