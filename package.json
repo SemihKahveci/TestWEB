@@ -21,6 +21,8 @@
     "npm": "9.x"
   },
   "scripts": {
-    "start": "node ./backend/app.js"
+    "start": "node ./backend/app.js",
+    "update-reports": "node ./backend/scripts/updateGameReports.js",
+    "update-reports-code": "node ./backend/scripts/updateGameReports.js"
   }
 }
