@@ -262,11 +262,11 @@ async function showAnswersPopup(code) {
                         <div class="answer-details">
                             <div class="answer-detail">
                                 <div class="answer-detail-label">Seçilen Cevap 1:</div>
-                                <div class="answer-detail-value">${answer.selectedAnswer1 || answer.answerType1 || '-'}</div>
+                                <div class="answer-detail-value">${answer.answerType1 || answer.selectedAnswer1 || '-'}</div>
                             </div>
                             <div class="answer-detail">
                                 <div class="answer-detail-label">Seçilen Cevap 2:</div>
-                                <div class="answer-detail-value">${answer.selectedAnswer2 || answer.answerType2 || '-'}</div>
+                                <div class="answer-detail-value">${answer.answerType2 || answer.selectedAnswer2 || '-'}</div>
                             </div>
                             <div class="answer-detail">
                                 <div class="answer-detail-label">Alt Kategori:</div>
