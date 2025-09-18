@@ -1,12 +1,12 @@
-// Cevap tiplerine göre çarpanlar
-const answerMultipliers = {
-    "AKY": 1,
-    "CY": 0.75,
-    "Y": 0.45,
-    "AY": 0
+// Cevap tiplerine göre puanlar (yeni sistem)
+const answerScores = {
+    "AY": 0,
+    "AKY": 30,
+    "Y": 65,
+    "CY": 100
 };
 
 module.exports = {
-    answerMultipliers,
+    answerScores,
     PORT: process.env.PORT || 5000
 }; 

@@ -1,4 +1,4 @@
-const { answerMultipliers } = require('../config/constants');
+const { answerScores } = require('../config/constants');
 const Game = require('../models/game');
 const UserCode = require('../models/userCode');
 const AnswerType = require('../models/answerType');
@@ -16,6 +16,28 @@ class GameController {
             invalidData: 'Geçersiz veri formatı',
             serverError: 'Sunucu hatası',
         };
+    }
+
+    // Yeni skor hesaplama fonksiyonu
+    calculateQuestionScore(answer) {
+        const score1 = answerScores[answer.answerType1] || 0;
+        const score2 = answerScores[answer.answerType2] || 0;
+        
+        // Formül: (1. Soru puanı + (2.soru puanı*0,2))/1,2
+        return (score1 + (score2 * 0.2)) / 1.2;
+    }
+
+    // Kategori skorunu hesapla (tüm soruların aritmetik ortalaması)
+    calculateCategoryScore(answers) {
+        if (!answers || answers.length === 0) {
+            return 0;
+        }
+        
+        const totalScore = answers.reduce((acc, answer) => {
+            return acc + this.calculateQuestionScore(answer);
+        }, 0);
+
+        return totalScore / answers.length;
     }
 
    
@@ -100,73 +122,13 @@ class GameController {
                 });
             }
 
-            // Skorları hesapla - Venus Gezegeni
+            // Skorları hesapla - Yeni sistem
             const customerFocusAnswers = data.answers.filter(answer => 
                 answer.answerSubCategory === 'MO'
             );
             const uncertaintyAnswers = data.answers.filter(answer => 
                 answer.answerSubCategory === 'BY'
             );
-
-            // MO skorunu hesapla (Venus - Müşteri Odaklılık)
-            let customerFocusScore = 0;
-            if (customerFocusAnswers.length > 0) {
-                customerFocusScore = customerFocusAnswers.reduce((acc, answer) => {
-                    const multiplier1 = answerMultipliers[answer.answerType1] || 0;
-                    const multiplier2 = answerMultipliers[answer.answerType2] || 0;
-                    return acc + ((multiplier1 + (multiplier2 / 2)) * 2) / 3;
-                }, 0) / customerFocusAnswers.length;
-            }
-            customerFocusScore = customerFocusScore * 100;
-
-            // BY skorunu hesapla (Venus - Belirsizlik Yönetimi)
-            let uncertaintyScore = 0;
-            if (uncertaintyAnswers.length > 0) {
-                // 4. sorunun cevabı A ise özel hesaplama yap
-                const question3Answer = uncertaintyAnswers.find(answer => answer.questionNumber === 3);
-                const question4Answer = uncertaintyAnswers.find(answer => answer.questionNumber === 4);
-                const question5Answer = uncertaintyAnswers.find(answer => answer.questionNumber === 5);
-                
-                // Özel hesaplama koşulları: 3. soru A, 4. soru A veya B, 5. soru var
-                const isSpecialCalculation = question3Answer && 
-                    question4Answer && 
-                    question5Answer &&
-                    question3Answer.answerType1 === 'A' && 
-                    (question4Answer.answerType1 === 'A' || question4Answer.answerType1 === 'B');
-                
-                if (isSpecialCalculation) {
-                    // 4. ve 5. sorunun puanlarının ortalamasını al
-                    const score4 = ((answerMultipliers[question4Answer.answerType1] || 0) + (answerMultipliers[question4Answer.answerType2] || 0) / 2) * 2 / 3;
-                    const score5 = ((answerMultipliers[question5Answer.answerType1] || 0) + (answerMultipliers[question5Answer.answerType2] || 0) / 2) * 2 / 3;
-                    const combinedScore = (score4 + score5) / 2;
-                    
-                    // Diğer soruları normal hesapla
-                    const otherAnswers = uncertaintyAnswers.filter(answer => answer.questionNumber !== 4 && answer.questionNumber !== 5);
-                    let otherScores = 0;
-                    
-                    if (otherAnswers.length > 0) {
-                        otherScores = otherAnswers.reduce((acc, answer) => {
-                            const multiplier1 = answerMultipliers[answer.answerType1] || 0;
-                            const multiplier2 = answerMultipliers[answer.answerType2] || 0;
-                            return acc + ((multiplier1 + (multiplier2 / 2)) * 2) / 3;
-                        }, 0);
-                    }
-                    
-                    // Toplam skoru hesapla (4-5 kombinasyonu + diğer sorular)
-                    const totalScore = combinedScore + otherScores;
-                    uncertaintyScore = totalScore / (otherAnswers.length + 1); // +1 çünkü 4-5 kombinasyonu tek soru sayılıyor
-                } else {
-                    // Normal hesaplama (4. soru A değilse veya 5. soru yoksa)
-                    uncertaintyScore = uncertaintyAnswers.reduce((acc, answer) => {
-                        const multiplier1 = answerMultipliers[answer.answerType1] || 0;
-                        const multiplier2 = answerMultipliers[answer.answerType2] || 0;
-                        return acc + ((multiplier1 + (multiplier2 / 2)) * 2) / 3;
-                    }, 0) / uncertaintyAnswers.length;
-                }
-            }
-            uncertaintyScore = uncertaintyScore * 100;
-
-            // Skorları hesapla - Titan Gezegeni
             const ieAnswers = data.answers.filter(answer => 
                 answer.answerSubCategory === 'IE'
             );
@@ -174,27 +136,11 @@ class GameController {
                 answer.answerSubCategory === 'IDIK'
             );
 
-            // IE skorunu hesapla (Titan - İnsanları Etkileme)
-            let ieScore = 0;
-            if (ieAnswers.length > 0) {
-                ieScore = ieAnswers.reduce((acc, answer) => {
-                    const multiplier1 = answerMultipliers[answer.answerType1] || 0;
-                    const multiplier2 = answerMultipliers[answer.answerType2] || 0;
-                    return acc + ((multiplier1 + (multiplier2 / 2)) * 2) / 3;
-                }, 0) / ieAnswers.length;
-            }
-            ieScore = ieScore * 100;
-
-            // IDIK skorunu hesapla (Titan - Güven Veren İşbirlikçi ve Sinerji)
-            let idikScore = 0;
-            if (idikAnswers.length > 0) {
-                idikScore = idikAnswers.reduce((acc, answer) => {
-                    const multiplier1 = answerMultipliers[answer.answerType1] || 0;
-                    const multiplier2 = answerMultipliers[answer.answerType2] || 0;
-                    return acc + ((multiplier1 + (multiplier2 / 2)) * 2) / 3;
-                }, 0) / idikAnswers.length;
-            }
-            idikScore = idikScore * 100; 
+            // Yeni sistemle skorları hesapla
+            const customerFocusScore = this.calculateCategoryScore(customerFocusAnswers);
+            const uncertaintyScore = this.calculateCategoryScore(uncertaintyAnswers);
+            const ieScore = this.calculateCategoryScore(ieAnswers);
+            const idikScore = this.calculateCategoryScore(idikAnswers); 
             // Değerlendirme sonuçlarını getir
             const evaluationResult = await this.getReportsByAnswerType(data.answers);
 
