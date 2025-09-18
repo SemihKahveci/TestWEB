@@ -742,6 +742,30 @@ const adminController = {
             // Excel verilerini hazırla
             const excelData = [];
 
+            // Tüm oyunlardan skorları topla
+            let allScores = {
+                customerFocusScore: '-',
+                uncertaintyScore: '-',
+                ieScore: '-',
+                idikScore: '-'
+            };
+
+            // Her oyundan skorları al
+            for (const game of games) {
+                if (game.customerFocusScore !== undefined && game.customerFocusScore !== null && game.customerFocusScore !== '-') {
+                    allScores.customerFocusScore = game.customerFocusScore;
+                }
+                if (game.uncertaintyScore !== undefined && game.uncertaintyScore !== null && game.uncertaintyScore !== '-') {
+                    allScores.uncertaintyScore = game.uncertaintyScore;
+                }
+                if (game.ieScore !== undefined && game.ieScore !== null && game.ieScore !== '-') {
+                    allScores.ieScore = game.ieScore;
+                }
+                if (game.idikScore !== undefined && game.idikScore !== null && game.idikScore !== '-') {
+                    allScores.idikScore = game.idikScore;
+                }
+            }
+
             // Her oyun için ayrı satır oluştur
             for (const game of games) {
                 // Game'den evaluationResult array'ini al
@@ -753,27 +777,23 @@ const adminController = {
                             if (evalResult.type === 'MO') {
                                 yetkinlikAdi = 'Müşteri Odaklılık';
                             } else if (evalResult.type === 'BY') {
-                                yetkinlikAdi = 'Belirsizlik Toleransı';
+                                yetkinlikAdi = 'Belirsizlik Yönetimi';
                             } else if (evalResult.type === 'IE') {
-                                yetkinlikAdi = 'İçe Dönüklük/Dışa Dönüklük';
+                                yetkinlikAdi = 'İnsanları Etkileme';
                             } else if (evalResult.type === 'IDIK') {
-                                yetkinlikAdi = 'İntuition/Duyusal';
+                                yetkinlikAdi = 'Güven Veren İşbirlikçi ve Sinerji';
                             }
 
-                            // Yetkinlik skorunu belirle
+                            // Yetkinlik skorunu belirle - tüm skorlardan al
                             let yetkinlikSkoru = '-';
-                            if (game.section === '0' || game.section === 0) {
-                                if (evalResult.type === 'MO' && game.customerFocusScore !== undefined && game.customerFocusScore !== null) {
-                                    yetkinlikSkoru = game.customerFocusScore;
-                                } else if (evalResult.type === 'BY' && game.uncertaintyScore !== undefined && game.uncertaintyScore !== null) {
-                                    yetkinlikSkoru = game.uncertaintyScore;
-                                }
-                            } else if (game.section === '1' || game.section === 1) {
-                                if (evalResult.type === 'IE' && game.ieScore !== undefined && game.ieScore !== null) {
-                                    yetkinlikSkoru = game.ieScore;
-                                } else if (evalResult.type === 'IDIK' && game.idikScore !== undefined && game.idikScore !== null) {
-                                    yetkinlikSkoru = game.idikScore;
-                                }
+                            if (evalResult.type === 'MO') {
+                                yetkinlikSkoru = allScores.customerFocusScore;
+                            } else if (evalResult.type === 'BY') {
+                                yetkinlikSkoru = allScores.uncertaintyScore;
+                            } else if (evalResult.type === 'IE') {
+                                yetkinlikSkoru = allScores.ieScore;
+                            } else if (evalResult.type === 'IDIK') {
+                                yetkinlikSkoru = allScores.idikScore;
                             }
 
                             excelData.push({
