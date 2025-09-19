@@ -742,29 +742,48 @@ const adminController = {
             // Excel verilerini hazırla
             const excelData = [];
 
+            // Game modelinden skorları al
+            const venusGame = games.find(g => g.section === '0' || g.section === 0);
+            const titanGame = games.find(g => g.section === '1' || g.section === 1);
+            
+            // Skorları belirle - spesifik kaynaklardan al
+            // Belirsizlik Yönetimi ve Müşteri Odaklılık -> UserCode'dan al
+            let customerFocusScore = userCode.customerFocusScore;
+            let uncertaintyScore = userCode.uncertaintyScore;
+            
+            // İnsanları Etkileme ve Güven Verme -> Game'den al
+            let ieScore = titanGame ? titanGame.ieScore : null;
+            let idikScore = titanGame ? titanGame.idikScore : null;
+            
+            // Eğer UserCode'da Venus skorları yoksa, Game'den al (fallback)
+            if (!customerFocusScore || customerFocusScore === '-' || customerFocusScore === null) {
+                customerFocusScore = venusGame ? venusGame.customerFocusScore : null;
+            }
+            if (!uncertaintyScore || uncertaintyScore === '-' || uncertaintyScore === null) {
+                uncertaintyScore = venusGame ? venusGame.uncertaintyScore : null;
+            }
+            
+            // Eğer Game'de Titan skorları yoksa, UserCode'dan al (fallback)
+            if (!ieScore || ieScore === '-' || ieScore === null) {
+                ieScore = userCode.ieScore;
+            }
+            if (!idikScore || idikScore === '-' || idikScore === null) {
+                idikScore = userCode.idikScore;
+            }
+            
+            // Son olarak '-' olarak ayarla eğer hala skor yoksa
+            customerFocusScore = customerFocusScore || '-';
+            uncertaintyScore = uncertaintyScore || '-';
+            ieScore = ieScore || '-';
+            idikScore = idikScore || '-';
+            
             // Tüm oyunlardan skorları topla
             let allScores = {
-                customerFocusScore: '-',
-                uncertaintyScore: '-',
-                ieScore: '-',
-                idikScore: '-'
+                customerFocusScore: customerFocusScore,
+                uncertaintyScore: uncertaintyScore,
+                ieScore: ieScore,
+                idikScore: idikScore
             };
-
-            // Her oyundan skorları al
-            for (const game of games) {
-                if (game.customerFocusScore !== undefined && game.customerFocusScore !== null && game.customerFocusScore !== '-') {
-                    allScores.customerFocusScore = game.customerFocusScore;
-                }
-                if (game.uncertaintyScore !== undefined && game.uncertaintyScore !== null && game.uncertaintyScore !== '-') {
-                    allScores.uncertaintyScore = game.uncertaintyScore;
-                }
-                if (game.ieScore !== undefined && game.ieScore !== null && game.ieScore !== '-') {
-                    allScores.ieScore = game.ieScore;
-                }
-                if (game.idikScore !== undefined && game.idikScore !== null && game.idikScore !== '-') {
-                    allScores.idikScore = game.idikScore;
-                }
-            }
 
             // Her oyun için ayrı satır oluştur
             for (const game of games) {
