@@ -14,38 +14,70 @@ const companyManagementRoutes = require('./routes/companyManagementRoutes');
 const app = express();
 const port = process.env.PORT || 5000;
 
-// MongoDB bağlantısı
-mongoose.connect(process.env.MONGODB_URI, {
-    useNewUrlParser: true,
-    useUnifiedTopology: true,
-    serverSelectionTimeoutMS: 10000, // 10 saniye
-    socketTimeoutMS: 45000, // 45 saniye
-    connectTimeoutMS: 10000, // 10 saniye
-    maxPoolSize: 10, // Maksimum bağlantı sayısı
-    minPoolSize: 2, // Minimum bağlantı sayısı
-    maxIdleTimeMS: 30000, // 30 saniye idle time
-    retryWrites: true,
-    retryReads: true,
-    family: 4 // IPv4 kullan
-})
-.then(() => console.log('MongoDB bağlantısı başarılı'))
-.catch(err => {
-    console.error('MongoDB bağlantı hatası:', err);
-    // Bağlantı hatası durumunda uygulamayı kapat
-    process.exit(1);
-});
+// MongoDB bağlantısı - Güncellenmiş ayarlar ve yeniden deneme mekanizması
+const connectWithRetry = async (retryCount = 0, maxRetries = 5) => {
+    try {
+        await mongoose.connect(process.env.MONGODB_URI, {
+            serverSelectionTimeoutMS: 30000, // 30 saniye - daha uzun timeout
+            socketTimeoutMS: 60000, // 60 saniye - daha uzun socket timeout
+            connectTimeoutMS: 30000, // 30 saniye - daha uzun bağlantı timeout
+            maxPoolSize: 20, // Daha fazla bağlantı havuzu
+            minPoolSize: 5, // Daha fazla minimum bağlantı
+            maxIdleTimeMS: 60000, // 60 saniye idle time
+            retryWrites: true,
+            retryReads: true,
+            family: 4, // IPv4 kullan
+            heartbeatFrequencyMS: 10000, // Daha sık heartbeat
+            maxStalenessSeconds: 90, // Stale okuma toleransı
+        });
+        console.log('✅ MongoDB bağlantısı başarılı');
+    } catch (err) {
+        console.error(`❌ MongoDB bağlantı hatası (Deneme ${retryCount + 1}/${maxRetries}):`, err.message);
+        
+        if (retryCount < maxRetries - 1) {
+            const delay = Math.pow(2, retryCount) * 1000; // Exponential backoff: 1s, 2s, 4s, 8s, 16s
+            console.log(`⏳ ${delay/1000} saniye sonra tekrar denenecek...`);
+            setTimeout(() => connectWithRetry(retryCount + 1, maxRetries), delay);
+        } else {
+            console.error('💥 MongoDB bağlantısı kurulamadı, maksimum deneme sayısına ulaşıldı');
+            process.exit(1);
+        }
+    }
+};
 
-// MongoDB bağlantı olaylarını dinle
+// Bağlantıyı başlat
+connectWithRetry();
+
+// MongoDB bağlantı olaylarını dinle - Geliştirilmiş hata yönetimi
 mongoose.connection.on('connected', () => {
-    console.log('MongoDB bağlantısı aktif');
+    console.log('✅ MongoDB bağlantısı aktif');
 });
 
 mongoose.connection.on('error', (err) => {
-    console.error('MongoDB bağlantı hatası:', err);
+    console.error('❌ MongoDB bağlantı hatası:', err);
+    console.error('Hata detayları:', {
+        name: err.name,
+        message: err.message,
+        code: err.code,
+        codeName: err.codeName
+    });
 });
 
 mongoose.connection.on('disconnected', () => {
-    console.log('MongoDB bağlantısı kesildi');
+    console.log('⚠️ MongoDB bağlantısı kesildi');
+});
+
+mongoose.connection.on('reconnected', () => {
+    console.log('🔄 MongoDB bağlantısı yeniden kuruldu');
+});
+
+mongoose.connection.on('close', () => {
+    console.log('🔒 MongoDB bağlantısı kapatıldı');
+});
+
+// Bağlantı durumu kontrolü
+mongoose.connection.on('open', () => {
+    console.log('🚀 MongoDB bağlantısı açık ve hazır');
 });
 
 // Graceful shutdown
@@ -96,6 +128,44 @@ apiRouter.get('/ws-status', (req, res) => {
         isConnected: wsService.isConnected(),
         connectionCount: wsService.getConnectionCount()
     });
+});
+
+// MongoDB sağlık kontrolü
+apiRouter.get('/health', async (req, res) => {
+    try {
+        const dbState = mongoose.connection.readyState;
+        const states = {
+            0: 'disconnected',
+            1: 'connected',
+            2: 'connecting',
+            3: 'disconnecting'
+        };
+        
+        // Basit bir ping testi
+        await mongoose.connection.db.admin().ping();
+        
+        res.json({
+            status: 'healthy',
+            mongodb: {
+                state: states[dbState],
+                readyState: dbState,
+                host: mongoose.connection.host,
+                port: mongoose.connection.port,
+                name: mongoose.connection.name
+            },
+            timestamp: new Date().toISOString()
+        });
+    } catch (error) {
+        res.status(503).json({
+            status: 'unhealthy',
+            mongodb: {
+                state: 'error',
+                readyState: mongoose.connection.readyState,
+                error: error.message
+            },
+            timestamp: new Date().toISOString()
+        });
+    }
 });
 
 // Kod işlemleri

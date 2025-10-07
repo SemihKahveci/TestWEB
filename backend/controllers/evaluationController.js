@@ -279,6 +279,8 @@ async function buildEvaluationHTML(evaluation, options, userCode, isPreview = fa
                     margin: 20px 0;
                     padding-left: 10px;
                     position: relative;
+                    margin-left: 2.5cm;
+                    margin-right: 2.5cm;
                 }
 
                 /* Her alt başlık yeni sayfada başlasın ama ilkinden sonra */
@@ -336,29 +338,34 @@ async function buildEvaluationHTML(evaluation, options, userCode, isPreview = fa
                     justify-content: space-between;
                     align-items: center;
                     margin-bottom: 10px;
-                    margin-top: 5px;
+                    margin-top: 3px;
                     page-break-inside: avoid;
                 }
 
-                /* Sol tarafta bar */
-                .competency-header-bar .bar {
-                    width: 150px;
-                    height: 22px;
-                    background-color: #d3d3d3; /* düz gri */
-                    border-radius: 6px;
-                    overflow: hidden;
-                    box-shadow: inset 0 0 3px rgba(0,0,0,0.3), 0 0 2px rgba(0,0,0,0.15);
-                    border: 1px solid #999;);
-                }
+                 /* Sol tarafta bar */
+                 .competency-header-bar .bar {
+                     width: 150px;
+                     height: 22px;
+                     background-color: #d3d3d3; /* düz gri */
+                     border-radius: 6px;
+                     overflow: hidden;
+                     box-shadow: inset 0 0 3px rgba(0,0,0,0.3), 0 0 2px rgba(0,0,0,0.15);
+                     border: 1px solid #999;
+                 }
 
-                /* Mavi dolu kısım */
-                .competency-header-bar .bar .filled {
-                    height: 100%;
-                    width: 60%; /* şimdilik sabit */
-                    background: linear-gradient(90deg, #4169E1 0%, #3154C4 100%); /* ✅ canlı mavi degrade */
-                    border-right: 1px solid rgba(0,0,0,0.2); /* kenar çizgisi */
-                    box-shadow: inset 0 0 2px rgba(255,255,255,0.4);
-                }
+                 /* Dolu kısım - renk dinamik olarak ayarlanacak */
+                 .competency-header-bar .bar .filled {
+                     height: 100%;
+                     border-right: 1px solid rgba(0,0,0,0.2); /* kenar çizgisi */
+                     box-shadow: inset 0 0 2px rgba(255,255,255,0.4);
+                     display: flex;
+                     align-items: center;
+                     justify-content: center;
+                     color: white;
+                     font-size: 11px;
+                     font-weight: bold;
+                     text-shadow: 0 1px 2px rgba(0,0,0,0.5);
+                 }
 
                 /* Sağ taraftaki yetkinlik ismi */
                 .competency-header-bar .competency-name {
@@ -367,6 +374,20 @@ async function buildEvaluationHTML(evaluation, options, userCode, isPreview = fa
                     font-size: 16px;
                     text-shadow: 0 1px 1px rgba(0,0,0,0.1);
                 }
+
+                 .score-label {
+                     font-size: 12px;
+                     font-weight: bold;
+                     color: #666;
+                     margin-bottom: 12px;
+                     font-family: serif;
+                 }
+
+                 .score-label .large-letter {
+                     font-size: 24px;
+                     color: #999;
+                 }
+
 
                 /* Sabit Footer */
                 .page-footer {
@@ -414,7 +435,7 @@ async function buildEvaluationHTML(evaluation, options, userCode, isPreview = fa
 
         // Başlık sayfası
         htmlContent += `
-            <div style="${i === 0 ? 'page-break-before:auto;' : 'page-break-before:always;'}
+            <div style="${'page-break-before:always;'}
                         text-align:center; 
                         padding:200px 20px; 
                         min-height:700px; 
@@ -428,29 +449,89 @@ async function buildEvaluationHTML(evaluation, options, userCode, isPreview = fa
             </div>
         `;
 
-        // Bölüm ekleme fonksiyonu
-        const addSection = (title, content) => `
-            <div class="subsection">
-                <div class="competency-header-bar">
-                    <div class="bar"><div class="filled"></div></div>
-                    <div class="competency-name">${competencyName}</div>
-                </div>
-                <h3>${title}</h3>
-                <p>${content}</p>
-            </div>
-        `;
+         // Bölüm ekleme fonksiyonu
+         const addSection = async (title, content) => {
+             // Skor değerini yetkinlik tipine göre belirle
+             let score = 0; // Varsayılan değer
+             
+             // Game modelinden skorları al
+             const games = await Game.find({ playerCode: userCode });
+             
+             // Skor değerini yetkinlik tipine göre al
+             switch (report.type) {
+                 case 'MO': // Müşteri Odaklılık
+                     const venusGame = games.find(g => g.section === '0' || g.section === 0);
+                     score = venusGame ? venusGame.customerFocusScore : 0;
+                     break;
+                 case 'BY': // Belirsizlik Yönetimi
+                     const venusGame2 = games.find(g => g.section === '0' || g.section === 0);
+                     score = venusGame2 ? venusGame2.uncertaintyScore : 0;
+                     break;
+                 case 'IE': // İnsanları Etkileme
+                     const titanGame = games.find(g => g.section === '1' || g.section === 1);
+                     score = titanGame ? titanGame.ieScore : 0;
+                     break;
+                 case 'IDIK': // Güven Veren İşbirliği ve Sinerji
+                     const titanGame2 = games.find(g => g.section === '1' || g.section === 1);
+                     score = titanGame2 ? titanGame2.idikScore : 0;
+                     break;
+                 default:
+                     score = 0;
+             }
+             
+             // Skor değerini sayıya çevir ve yuvarla
+             if (score === '-' || score === null || score === undefined) {
+                 score = 0;
+             } else {
+                 score = Math.round(parseFloat(score));
+             }
+             
+             // Skor rengini belirle
+             let barColor = '#0286F7'; // Varsayılan mavi
+             if (score <= 37) {
+                 barColor = '#FF0000'; // Kırmızı
+             } else if (score <= 65) {
+                 barColor = '#FFD700'; // Sarı
+             } else if (score <= 89.99) {
+                 barColor = '#00FF00'; // Yeşil
+             } else {
+                 barColor = '#FF0000'; // Kırmızı (90+)
+             }
+             
+             console.log(`Yetkinlik: ${report.type}, Skor: ${score}, Renk: ${barColor}`);
+             
+             return `
+             <div class="subsection">
+                 <div class="competency-header-bar">
+                     <div style="display:flex; flex-direction:column;">
+                         <div class="score-label"><span class="large-letter">Y</span>ETKİNLİK <span class="large-letter">S</span>KORU</div>
+                         <div class="bar"><div class="filled" style="width: ${score}%; background-color: ${barColor};">${score}</div></div>
+                     </div>
+                     <div class="competency-name">${competencyName}</div>
+                 </div>
+                 <h3>${title}</h3>
+                 <p>${content}</p>
+             </div>
+         `;
+         };
 
         // İçerikler
-        if (options.generalEvaluation && data['Genel Değerlendirme'])
-            htmlContent += addSection('Genel Değerlendirme', data['Genel Değerlendirme']);
-        if (options.strengths && data['Güçlü Yönler'])
-            htmlContent += addSection('Güçlü Yönler', data['Güçlü Yönler']);
-        if (options.strengths && data['Gelişim Alanları'])
-            htmlContent += addSection('Gelişim Alanları', data['Gelişim Alanları']);
-        if (options.interviewQuestions && data['Mülakat Soruları'])
-            htmlContent += addSection('Mülakat Soruları', data['Mülakat Soruları']);
-        if (options.whyTheseQuestions && data['Neden Bu Sorular?'])
-            htmlContent += addSection('Neden Bu Sorular?', data['Neden Bu Sorular?']);
+        if (options.generalEvaluation && data['Genel Değerlendirme']) {
+            htmlContent += await addSection('Genel Değerlendirme', data['Genel Değerlendirme']);
+        }
+        if (options.strengths && data['Güçlü Yönler']) {
+            htmlContent += await addSection('Güçlü Yönler', data['Güçlü Yönler']);
+        }
+        if (options.strengths && data['Gelişim Alanları']) {
+            htmlContent += await addSection('Gelişim Alanları', data['Gelişim Alanları']);
+
+        }
+        if (options.interviewQuestions && data['Mülakat Soruları']) {
+            htmlContent += await addSection('Mülakat Soruları', data['Mülakat Soruları']);
+        }
+        if (options.whyTheseQuestions && data['Neden Bu Sorular?']) {
+            htmlContent += await addSection('Neden Bu Sorular?', data['Neden Bu Sorular?']);
+        }
 
         if (options.developmentSuggestions) {
             const suggestionKeys = [
@@ -459,10 +540,12 @@ async function buildEvaluationHTML(evaluation, options, userCode, isPreview = fa
                 { key: 'Gelişim Önerileri - 3', title: 'Gelişim Önerisi 3' },
                 { key: 'Gelişim Önerileri -4', title: 'Gelişim Önerisi 4' }
             ];
-            suggestionKeys.forEach(item => {
-                if (data[item.key])
-                    htmlContent += addSection(item.title, data[item.key]);
-            });
+            for (const item of suggestionKeys) {
+                if (data[item.key]) {
+                    htmlContent += await addSection(item.title, data[item.key]);
+
+                }
+            }
         }
     }
 
