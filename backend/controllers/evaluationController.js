@@ -470,8 +470,8 @@ async function buildEvaluationHTML(evaluation, options, userCode, isPreview = fa
             <div class="section-start" style="
                 page-break-before: always;
                 text-align:center; 
-                padding:200px 20px; 
-                min-height:700px; 
+                padding:180px 20px; 
+                min-height:682px; 
                 display:flex; 
                 align-items:center; 
                 justify-content:center;">
@@ -483,7 +483,7 @@ async function buildEvaluationHTML(evaluation, options, userCode, isPreview = fa
         `;
 
          // Bölüm ekleme fonksiyonu
-         const addSection = async (title, content) => {
+         const addSection = async (title, content, isLastSection) => {
             let score = 0;
         
             // Game modelinden skorları al
@@ -518,50 +518,55 @@ async function buildEvaluationHTML(evaluation, options, userCode, isPreview = fa
             else if (score <= 65) barColor = '#FFD700';
             else if (score <= 89.99) barColor = '#00FF00';
             else barColor = '#FF0000';
-        
-            // ❗ Eğer başlık "Neden Bu Sorular?" ise sayfa kırılmasını önle
-            const avoidBreak = title.includes("Neden Bu Sorular?") ? 'page-break-before: auto;' : '';
-        
+                
+            const isDevelopmentSuggestion = title.includes("Gelişim Önerisi");
+
+            // 🔹 Eğer bu son Gelişim Önerisi ise, page-break ekleme
+            let sectionStyle = '';
+            if (!(isDevelopmentSuggestion && isLastSection)) {
+                sectionStyle = 'page-break-before: always;';
+            }
+            
+            // 🔹 Ek güvenlik için: son Gelişim Önerisinden sonra yapay boş blok koyma
+            const afterSectionSpacer = (isDevelopmentSuggestion && isLastSection)
+                ? '<div style="height: 0;"></div>'
+                : '';
+            
             return `
-            <div class="subsection">
-              <table class="section-table">
-                <thead>
-                  <tr>
-                    <td>
-                      <div class="competency-header-bar">
-                        <div style="display:flex; flex-direction:column;">
-                          <div class="score-label">
-                            <span class="large-letter">Y</span>ETKİNLİK <span class="large-letter">S</span>KORU
+              <div class="subsection" style="${sectionStyle}">
+                <table class="section-table">
+                  <thead>
+                    <tr>
+                      <td>
+                        <div class="competency-header-bar">
+                          <div style="display:flex; flex-direction:column;">
+                            <div class="score-label">
+                              <span class="large-letter">Y</span>ETKİNLİK <span class="large-letter">S</span>KORU
+                            </div>
+                            <div class="bar">
+                              <div class="filled" style="width: ${score}%; background-color: ${barColor};">${score}</div>
+                            </div>
                           </div>
-                          <div class="bar">
-                            <div class="filled" style="width: ${score}%; background-color: ${barColor};">${score}</div>
-                          </div>
+                          <div class="competency-name">${competencyName}</div>
                         </div>
-                        <div class="competency-name">${competencyName}</div>
-                      </div>
-                    </td>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr>
-                    <td>
-                      <h3>${title}</h3>
-                      <p>${content}</p>
-                    </td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
+                      </td>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td>
+                        <h3>${title}</h3>
+                        <p>${content}</p>
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+              ${afterSectionSpacer}
             `;
             
         };
-        
-
-        // Debug: data objesini kontrol et
-        console.log('Data objesi keys:', Object.keys(data));
-        console.log('whyTheseQuestions option:', options.whyTheseQuestions);
-        console.log('Neden Bu Sorular? data:', data['Neden Bu Sorular?']);
-        
+                
         // İçerikler
         if (options.generalEvaluation && data['Genel Değerlendirme']) {
             htmlContent += await addSection('Genel Değerlendirme', data['Genel Değerlendirme']);
@@ -587,11 +592,12 @@ async function buildEvaluationHTML(evaluation, options, userCode, isPreview = fa
                 { key: 'Gelişim Önerileri - 3', title: 'Gelişim Önerisi 3' },
                 { key: 'Gelişim Önerileri -4', title: 'Gelişim Önerisi 4' }
             ];
-            for (const item of suggestionKeys) {
-                if (data[item.key]) {
-                    htmlContent += await addSection(item.title, data[item.key]);
+            const validSuggestions = suggestionKeys.filter(item => data[item.key]);
 
-                }
+            for (let i = 0; i < validSuggestions.length; i++) {
+                const item = validSuggestions[i];
+                const isLastSuggestion = (i === validSuggestions.length - 1); // sonuncu mu?
+                htmlContent += await addSection(item.title, data[item.key], isLastSuggestion);
             }
         }
     }
