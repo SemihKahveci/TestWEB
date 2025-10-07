@@ -96,6 +96,7 @@ const evaluationController = {
                 generalEvaluation: req.query.generalEvaluation === 'true',
                 strengths: req.query.strengths === 'true',
                 interviewQuestions: req.query.interviewQuestions === 'true',
+                whyTheseQuestions: req.query.whyTheseQuestions === 'true',
                 developmentSuggestions: req.query.developmentSuggestions === 'true'
             };
 
@@ -258,7 +259,7 @@ async function buildEvaluationHTML(evaluation, options, userCode, isPreview = fa
                     font-family: Arial, sans-serif; 
                     line-height: 1.6;
                     margin: 0;
-                    padding-bottom: 50px;
+                    padding: 0;
                 }
 
                 h1, h2, h3, h4 {
@@ -276,21 +277,50 @@ async function buildEvaluationHTML(evaluation, options, userCode, isPreview = fa
                 }
 
                 .subsection {
-                    margin: 20px 0;
+                    margin: 20px 0 70px 0;
                     padding-left: 10px;
+                    padding-bottom: 90px;
                     position: relative;
-                    margin-left: 2.5cm;
-                    margin-right: 2.5cm;
+                    margin-bottom: 90px;
+                    margin-left: 0;
+                    margin-right: 0;
+                    page-break-inside: avoid;
+                }
+
+                .subsection + .subsection {
+                    page-break-before: always;
+                }
+
+                .section-start + .subsection {
+                    page-break-before: auto !important;
                 }
 
                 /* Her alt başlık yeni sayfada başlasın ama ilkinden sonra */
-                .subsection:not(:first-child) {
-                    page-break-before: always;
+                .subsection:not(:first-child){
+                    page-break-before: avoid;
                 }
 
                 .sub-subsection {
                     margin: 8px 0;
                     padding-left: 20px;
+                }
+
+                .section-table {
+                    width: 100%;
+                    border-collapse: collapse;
+                    page-break-inside: auto;
+                }
+
+                .section-table thead {
+                    display: table-header-group;
+                }
+
+                .section-table tbody {
+                    display: table-row-group;
+                }
+
+                .section-table td {
+                    vertical-align: top;
                 }
 
                 /* Kapak Sayfası */
@@ -392,9 +422,10 @@ async function buildEvaluationHTML(evaluation, options, userCode, isPreview = fa
                 /* Sabit Footer */
                 .page-footer {
                     position: fixed;
-                    bottom: ${isPreview ? '20px' : '15px'};
+                    bottom: 0;
                     right: ${isPreview ? '20px' : '2.5cm'};
                     left: ${isPreview ? '20px' : '2.5cm'};
+                    height: 50px;
                     font-size: 10px;
                     color: #666;
                     text-align: right;
@@ -405,6 +436,7 @@ async function buildEvaluationHTML(evaluation, options, userCode, isPreview = fa
                     background-color: white;
                     z-index: 1000;
                 }
+                    
 
                 .page-footer .company-name { font-weight: bold; color: #2c3e50; }
                 .page-footer .copyright { color: #888; font-size: 9px; }
@@ -435,15 +467,16 @@ async function buildEvaluationHTML(evaluation, options, userCode, isPreview = fa
 
         // Başlık sayfası
         htmlContent += `
-            <div style="${'page-break-before:always;'}
-                        text-align:center; 
-                        padding:200px 20px; 
-                        min-height:700px; 
-                        display:flex; 
-                        align-items:center; 
-                        justify-content:center;">
+            <div class="section-start" style="
+                page-break-before: always;
+                text-align:center; 
+                padding:200px 20px; 
+                min-height:700px; 
+                display:flex; 
+                align-items:center; 
+                justify-content:center;">
                 <h1 style="font-size:64px; font-weight:bold; color:#1e3a8a;
-                           text-shadow:4px 4px 8px rgba(0,0,0,0.3); font-family:sans-serif;">
+                        text-shadow:4px 4px 8px rgba(0,0,0,0.3); font-family:sans-serif;">
                     ${competencyName}
                 </h1>
             </div>
@@ -451,70 +484,84 @@ async function buildEvaluationHTML(evaluation, options, userCode, isPreview = fa
 
          // Bölüm ekleme fonksiyonu
          const addSection = async (title, content) => {
-             // Skor değerini yetkinlik tipine göre belirle
-             let score = 0; // Varsayılan değer
-             
-             // Game modelinden skorları al
-             const games = await Game.find({ playerCode: userCode });
-             
-             // Skor değerini yetkinlik tipine göre al
-             switch (report.type) {
-                 case 'MO': // Müşteri Odaklılık
-                     const venusGame = games.find(g => g.section === '0' || g.section === 0);
-                     score = venusGame ? venusGame.customerFocusScore : 0;
-                     break;
-                 case 'BY': // Belirsizlik Yönetimi
-                     const venusGame2 = games.find(g => g.section === '0' || g.section === 0);
-                     score = venusGame2 ? venusGame2.uncertaintyScore : 0;
-                     break;
-                 case 'IE': // İnsanları Etkileme
-                     const titanGame = games.find(g => g.section === '1' || g.section === 1);
-                     score = titanGame ? titanGame.ieScore : 0;
-                     break;
-                 case 'IDIK': // Güven Veren İşbirliği ve Sinerji
-                     const titanGame2 = games.find(g => g.section === '1' || g.section === 1);
-                     score = titanGame2 ? titanGame2.idikScore : 0;
-                     break;
-                 default:
-                     score = 0;
-             }
-             
-             // Skor değerini sayıya çevir ve yuvarla
-             if (score === '-' || score === null || score === undefined) {
-                 score = 0;
-             } else {
-                 score = Math.round(parseFloat(score));
-             }
-             
-             // Skor rengini belirle
-             let barColor = '#0286F7'; // Varsayılan mavi
-             if (score <= 37) {
-                 barColor = '#FF0000'; // Kırmızı
-             } else if (score <= 65) {
-                 barColor = '#FFD700'; // Sarı
-             } else if (score <= 89.99) {
-                 barColor = '#00FF00'; // Yeşil
-             } else {
-                 barColor = '#FF0000'; // Kırmızı (90+)
-             }
-             
-             console.log(`Yetkinlik: ${report.type}, Skor: ${score}, Renk: ${barColor}`);
-             
-             return `
-             <div class="subsection">
-                 <div class="competency-header-bar">
-                     <div style="display:flex; flex-direction:column;">
-                         <div class="score-label"><span class="large-letter">Y</span>ETKİNLİK <span class="large-letter">S</span>KORU</div>
-                         <div class="bar"><div class="filled" style="width: ${score}%; background-color: ${barColor};">${score}</div></div>
-                     </div>
-                     <div class="competency-name">${competencyName}</div>
-                 </div>
-                 <h3>${title}</h3>
-                 <p>${content}</p>
-             </div>
-         `;
-         };
+            let score = 0;
+        
+            // Game modelinden skorları al
+            const games = await Game.find({ playerCode: userCode });
+        
+            // Skor değerini yetkinlik tipine göre al
+            switch (report.type) {
+                case 'MO':
+                    const venusGame = games.find(g => g.section === '0' || g.section === 0);
+                    score = venusGame ? venusGame.customerFocusScore : 0;
+                    break;
+                case 'BY':
+                    const venusGame2 = games.find(g => g.section === '0' || g.section === 0);
+                    score = venusGame2 ? venusGame2.uncertaintyScore : 0;
+                    break;
+                case 'IE':
+                    const titanGame = games.find(g => g.section === '1' || g.section === 1);
+                    score = titanGame ? titanGame.ieScore : 0;
+                    break;
+                case 'IDIK':
+                    const titanGame2 = games.find(g => g.section === '1' || g.section === 1);
+                    score = titanGame2 ? titanGame2.idikScore : 0;
+                    break;
+                default:
+                    score = 0;
+            }
+        
+            score = (!score || score === '-') ? 0 : Math.round(parseFloat(score));
+        
+            let barColor = '#0286F7';
+            if (score <= 37) barColor = '#FF0000';
+            else if (score <= 65) barColor = '#FFD700';
+            else if (score <= 89.99) barColor = '#00FF00';
+            else barColor = '#FF0000';
+        
+            // ❗ Eğer başlık "Neden Bu Sorular?" ise sayfa kırılmasını önle
+            const avoidBreak = title.includes("Neden Bu Sorular?") ? 'page-break-before: auto;' : '';
+        
+            return `
+            <div class="subsection">
+              <table class="section-table">
+                <thead>
+                  <tr>
+                    <td>
+                      <div class="competency-header-bar">
+                        <div style="display:flex; flex-direction:column;">
+                          <div class="score-label">
+                            <span class="large-letter">Y</span>ETKİNLİK <span class="large-letter">S</span>KORU
+                          </div>
+                          <div class="bar">
+                            <div class="filled" style="width: ${score}%; background-color: ${barColor};">${score}</div>
+                          </div>
+                        </div>
+                        <div class="competency-name">${competencyName}</div>
+                      </div>
+                    </td>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td>
+                      <h3>${title}</h3>
+                      <p>${content}</p>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            `;
+            
+        };
+        
 
+        // Debug: data objesini kontrol et
+        console.log('Data objesi keys:', Object.keys(data));
+        console.log('whyTheseQuestions option:', options.whyTheseQuestions);
+        console.log('Neden Bu Sorular? data:', data['Neden Bu Sorular?']);
+        
         // İçerikler
         if (options.generalEvaluation && data['Genel Değerlendirme']) {
             htmlContent += await addSection('Genel Değerlendirme', data['Genel Değerlendirme']);
@@ -551,9 +598,6 @@ async function buildEvaluationHTML(evaluation, options, userCode, isPreview = fa
 
     // 📎 Footer
     htmlContent += `
-        <div class="page-footer">
-            <div class="company-name">ANDRON Game</div>
-            <div class="copyright">GİZLİ © ANDRON Game 2025, İzinsiz paylaşılamaz.</div>
         </div>
         </body>
         </html>
@@ -565,7 +609,22 @@ async function buildEvaluationHTML(evaluation, options, userCode, isPreview = fa
 
 async function generateAndSendPDF(evaluation, options, res, userCode) {
     const htmlContent = await buildEvaluationHTML(evaluation, options, userCode, false);
-    const pdfOptions = { format: 'A4', printBackground: true };
+    const pdfOptions = {
+        format: 'A4',
+        printBackground: true,
+        preferCSSPageSize: true,
+        displayHeaderFooter: true,
+        margin: { top: '2.5cm', right: '2.5cm', bottom: '2.2cm', left: '2.5cm' },
+        headerTemplate: '<div></div>', // başlık kullanmıyoruz
+        footerTemplate: `
+          <div style="font-size:10px; color:#666; width:100%;">
+            <div style="width: calc(100% - 5cm); margin: 0 auto; border-top:1px solid #ddd; padding-top:4px; text-align:right;">
+              <span style="font-weight:700; color:#2c3e50;">ANDRON Game</span>
+              <span style="margin-left:8px;">GİZLİ © ANDRON Game 2025, İzinsiz paylaşılamaz.</span>
+              <span style="margin-left:12px;"><span class="pageNumber"></span>/<span class="totalPages"></span></span>
+            </div>
+          </div>`
+      };
     const file = await htmlPdf.generatePdf({ content: htmlContent }, pdfOptions);
     res.setHeader('Content-Type', 'application/pdf');
     res.setHeader('Content-Disposition', `attachment; filename=evaluation_${evaluation[0].data.ID}.pdf`);
@@ -574,7 +633,22 @@ async function generateAndSendPDF(evaluation, options, res, userCode) {
 
 async function generateAndSendPreview(evaluation, options, res, userCode) {
     const htmlContent = await buildEvaluationHTML(evaluation, options, userCode, true);
-    const pdfOptions = { format: 'A4', printBackground: true };
+    const pdfOptions = { 
+        format: 'A4',
+        printBackground: true,
+        preferCSSPageSize: true,
+        displayHeaderFooter: true,
+        margin: {right: '2.5cm', bottom: '2.2cm', left: '2.5cm' },
+        headerTemplate: '<div></div>', // başlık kullanmıyoruz
+        footerTemplate: `
+          <div style="font-size:10px; color:#666; width:100%;">
+            <div style="width: calc(100% - 5cm); margin: 0 auto; border-top:1px solid #ddd; padding-top:4px; text-align:right;">
+              <span style="font-weight:700; color:#2c3e50;">ANDRON Game</span>
+              <span style="margin-left:8px;">GİZLİ © ANDRON Game 2025, İzinsiz paylaşılamaz.</span>
+              <span style="margin-left:12px;"><span class="pageNumber"></span>/<span class="totalPages"></span></span>
+            </div>
+          </div>`
+      };
     const file = await htmlPdf.generatePdf({ content: htmlContent }, pdfOptions);
     res.setHeader('Content-Type', 'application/pdf');
     res.setHeader('Content-Disposition', `inline; filename=evaluation_${evaluation[0].data.ID}.pdf`);
