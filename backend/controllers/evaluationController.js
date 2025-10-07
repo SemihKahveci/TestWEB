@@ -609,12 +609,12 @@ async function buildEvaluationHTML(evaluation, options, userCode, isPreview = fa
 
 async function generateAndSendPDF(evaluation, options, res, userCode) {
     const htmlContent = await buildEvaluationHTML(evaluation, options, userCode, false);
-    const pdfOptions = {
+    const pdfOptions = { 
         format: 'A4',
         printBackground: true,
         preferCSSPageSize: true,
         displayHeaderFooter: true,
-        margin: { top: '2.5cm', right: '2.5cm', bottom: '2.2cm', left: '2.5cm' },
+        margin: {right: '2.5cm', bottom: '2.2cm', left: '2.5cm' },
         headerTemplate: '<div></div>', // başlık kullanmıyoruz
         footerTemplate: `
           <div style="font-size:10px; color:#666; width:100%;">
