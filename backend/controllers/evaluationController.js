@@ -258,6 +258,7 @@ async function buildEvaluationHTML(evaluation, options, userCode, isPreview = fa
                     font-family: Arial, sans-serif; 
                     line-height: 1.6;
                     margin: 0;
+                    padding-bottom: 50px;
                 }
 
                 h1, h2, h3, h4 {
@@ -265,24 +266,24 @@ async function buildEvaluationHTML(evaluation, options, userCode, isPreview = fa
                     margin-bottom: 10px;
                 }
 
+                h3 {
+                    color: #001c55;
+                }
+
                 h2 { 
                     border-bottom: 2px solid #eee; 
                     padding-bottom: 5px; 
                 }
 
-                .section { 
-                    margin-bottom: 40px;
-                    padding: 15px;
-                    background-color: #f9f9f9;
-                    border-radius: 5px;
-                    page-break-inside: avoid;
+                .subsection {
+                    margin: 20px 0;
+                    padding-left: 10px;
+                    position: relative;
                 }
 
-                .subsection {
-                    margin: 10px 0;
-                    padding-left: 10px;
+                /* Her alt başlık yeni sayfada başlasın ama ilkinden sonra */
+                .subsection:not(:first-child) {
                     page-break-before: always;
-                    position: relative;
                 }
 
                 .sub-subsection {
@@ -329,14 +330,42 @@ async function buildEvaluationHTML(evaluation, options, userCode, isPreview = fa
                     max-width: 600px;
                 }
 
-                .competency-header-inline {
-                    text-align: right;
-                    font-size: 11px;
-                    color: #1e3a8a;
-                    font-weight: bold;
-                    text-transform: uppercase;
-                    margin-top: -4px;
-                    margin-bottom: 8px;
+                /* Üst Bar (Sol bar + Sağda Yetkinlik Adı) */
+                .competency-header-bar {
+                    display: flex;
+                    justify-content: space-between;
+                    align-items: center;
+                    margin-bottom: 10px;
+                    margin-top: 5px;
+                    page-break-inside: avoid;
+                }
+
+                /* Sol tarafta bar */
+                .competency-header-bar .bar {
+                    width: 150px;
+                    height: 22px;
+                    background-color: #d3d3d3; /* düz gri */
+                    border-radius: 6px;
+                    overflow: hidden;
+                    box-shadow: inset 0 0 3px rgba(0,0,0,0.3), 0 0 2px rgba(0,0,0,0.15);
+                    border: 1px solid #999;);
+                }
+
+                /* Mavi dolu kısım */
+                .competency-header-bar .bar .filled {
+                    height: 100%;
+                    width: 60%; /* şimdilik sabit */
+                    background: linear-gradient(90deg, #4169E1 0%, #3154C4 100%); /* ✅ canlı mavi degrade */
+                    border-right: 1px solid rgba(0,0,0,0.2); /* kenar çizgisi */
+                    box-shadow: inset 0 0 2px rgba(255,255,255,0.4);
+                }
+
+                /* Sağ taraftaki yetkinlik ismi */
+                .competency-header-bar .competency-name {
+                    font-weight: 700;
+                    color: #283c9b;
+                    font-size: 16px;
+                    text-shadow: 0 1px 1px rgba(0,0,0,0.1);
                 }
 
                 /* Sabit Footer */
@@ -354,11 +383,6 @@ async function buildEvaluationHTML(evaluation, options, userCode, isPreview = fa
                     height: 30px;
                     background-color: white;
                     z-index: 1000;
-                }
-
-                /* İçeriğin footer ile çakışmasını önle */
-                body {
-                    padding-bottom: 50px;
                 }
 
                 .page-footer .company-name { font-weight: bold; color: #2c3e50; }
@@ -379,7 +403,6 @@ async function buildEvaluationHTML(evaluation, options, userCode, isPreview = fa
                     <div>${formattedDate}</div>
                 </div>
             </div>
-            <div style="height: 10px;"></div>
     `;
 
     // 📘 Her yetkinlik için sayfa
@@ -389,6 +412,7 @@ async function buildEvaluationHTML(evaluation, options, userCode, isPreview = fa
         const reportTitle = getReportTitle(report.type);
         const competencyName = reportTitle.replace(' Raporu', '');
 
+        // Başlık sayfası
         htmlContent += `
             <div style="${i === 0 ? 'page-break-before:auto;' : 'page-break-before:always;'}
                         text-align:center; 
@@ -396,8 +420,7 @@ async function buildEvaluationHTML(evaluation, options, userCode, isPreview = fa
                         min-height:700px; 
                         display:flex; 
                         align-items:center; 
-                        justify-content:center; 
-                        position:relative;">
+                        justify-content:center;">
                 <h1 style="font-size:64px; font-weight:bold; color:#1e3a8a;
                            text-shadow:4px 4px 8px rgba(0,0,0,0.3); font-family:sans-serif;">
                     ${competencyName}
@@ -405,26 +428,29 @@ async function buildEvaluationHTML(evaluation, options, userCode, isPreview = fa
             </div>
         `;
 
-        htmlContent += `
-            <div class="section" style="page-break-before: avoid; page-break-after: auto;">
-                <h2>${reportTitle}</h2>
+        // Bölüm ekleme fonksiyonu
+        const addSection = (title, content) => `
+            <div class="subsection">
+                <div class="competency-header-bar">
+                    <div class="bar"><div class="filled"></div></div>
+                    <div class="competency-name">${competencyName}</div>
+                </div>
+                <h3>${title}</h3>
+                <p>${content}</p>
+            </div>
         `;
-        
-        if (options.generalEvaluation && data['Genel Değerlendirme']) {
-            htmlContent += `<div class="subsection"><div class="competency-header-inline">${competencyName}</div><h3>Genel Değerlendirme</h3><p>${data['Genel Değerlendirme']}</p></div>`;
-        }
-        if (options.strengths && data['Güçlü Yönler']) {
-            htmlContent += `<div class="subsection"><div class="competency-header-inline">${competencyName}</div><h3>Güçlü Yönler</h3><p>${data['Güçlü Yönler']}</p></div>`;
-        }
-        if (options.strengths && data['Gelişim Alanları']) {
-            htmlContent += `<div class="subsection"><div class="competency-header-inline">${competencyName}</div><h3>Gelişim Alanları</h3><p>${data['Gelişim Alanları']}</p></div>`;
-        }
-        if (options.interviewQuestions && data['Mülakat Soruları']) {
-            htmlContent += `<div class="subsection"><div class="competency-header-inline">${competencyName}</div><h3>Mülakat Soruları</h3><p>${data['Mülakat Soruları']}</p></div>`;
-        }
-        if (options.whyTheseQuestions && data['Neden Bu Sorular?']) {
-            htmlContent += `<div class="subsection"<div class="competency-header-inline">${competencyName}</div>><h3>Neden Bu Sorular?</h3><p>${data['Neden Bu Sorular?']}</p></div>`;
-        }
+
+        // İçerikler
+        if (options.generalEvaluation && data['Genel Değerlendirme'])
+            htmlContent += addSection('Genel Değerlendirme', data['Genel Değerlendirme']);
+        if (options.strengths && data['Güçlü Yönler'])
+            htmlContent += addSection('Güçlü Yönler', data['Güçlü Yönler']);
+        if (options.strengths && data['Gelişim Alanları'])
+            htmlContent += addSection('Gelişim Alanları', data['Gelişim Alanları']);
+        if (options.interviewQuestions && data['Mülakat Soruları'])
+            htmlContent += addSection('Mülakat Soruları', data['Mülakat Soruları']);
+        if (options.whyTheseQuestions && data['Neden Bu Sorular?'])
+            htmlContent += addSection('Neden Bu Sorular?', data['Neden Bu Sorular?']);
 
         if (options.developmentSuggestions) {
             const suggestionKeys = [
@@ -433,20 +459,14 @@ async function buildEvaluationHTML(evaluation, options, userCode, isPreview = fa
                 { key: 'Gelişim Önerileri - 3', title: 'Gelişim Önerisi 3' },
                 { key: 'Gelişim Önerileri -4', title: 'Gelişim Önerisi 4' }
             ];
-            let suggestions = '';
             suggestionKeys.forEach(item => {
                 if (data[item.key])
-                    suggestions += `<div class="sub-subsection"><h4>${item.title}</h4><p>${data[item.key]}</p></div>`;
+                    htmlContent += addSection(item.title, data[item.key]);
             });
-            if (suggestions) {
-                htmlContent += `<div class="subsection"><h3>Gelişim Önerileri</h3>${suggestions}</div>`;
-            }
         }
-
-        htmlContent += `</div>`;
     }
 
-    // 📎 Footer (tek, sabit)
+    // 📎 Footer
     htmlContent += `
         <div class="page-footer">
             <div class="company-name">ANDRON Game</div>
@@ -459,9 +479,10 @@ async function buildEvaluationHTML(evaluation, options, userCode, isPreview = fa
     return htmlContent;
 }
 
+
 async function generateAndSendPDF(evaluation, options, res, userCode) {
     const htmlContent = await buildEvaluationHTML(evaluation, options, userCode, false);
-    const pdfOptions = { format: 'A4' };
+    const pdfOptions = { format: 'A4', printBackground: true };
     const file = await htmlPdf.generatePdf({ content: htmlContent }, pdfOptions);
     res.setHeader('Content-Type', 'application/pdf');
     res.setHeader('Content-Disposition', `attachment; filename=evaluation_${evaluation[0].data.ID}.pdf`);
@@ -470,7 +491,7 @@ async function generateAndSendPDF(evaluation, options, res, userCode) {
 
 async function generateAndSendPreview(evaluation, options, res, userCode) {
     const htmlContent = await buildEvaluationHTML(evaluation, options, userCode, true);
-    const pdfOptions = { format: 'A4' };
+    const pdfOptions = { format: 'A4', printBackground: true };
     const file = await htmlPdf.generatePdf({ content: htmlContent }, pdfOptions);
     res.setHeader('Content-Type', 'application/pdf');
     res.setHeader('Content-Disposition', `inline; filename=evaluation_${evaluation[0].data.ID}.pdf`);
