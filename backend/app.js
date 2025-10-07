@@ -17,10 +17,43 @@ const port = process.env.PORT || 5000;
 // MongoDB bağlantısı
 mongoose.connect(process.env.MONGODB_URI, {
     useNewUrlParser: true,
-    useUnifiedTopology: true
+    useUnifiedTopology: true,
+    serverSelectionTimeoutMS: 10000, // 10 saniye
+    socketTimeoutMS: 45000, // 45 saniye
+    connectTimeoutMS: 10000, // 10 saniye
+    maxPoolSize: 10, // Maksimum bağlantı sayısı
+    minPoolSize: 2, // Minimum bağlantı sayısı
+    maxIdleTimeMS: 30000, // 30 saniye idle time
+    retryWrites: true,
+    retryReads: true,
+    family: 4 // IPv4 kullan
 })
 .then(() => console.log('MongoDB bağlantısı başarılı'))
-.catch(err => console.error('MongoDB bağlantı hatası:', err));
+.catch(err => {
+    console.error('MongoDB bağlantı hatası:', err);
+    // Bağlantı hatası durumunda uygulamayı kapat
+    process.exit(1);
+});
+
+// MongoDB bağlantı olaylarını dinle
+mongoose.connection.on('connected', () => {
+    console.log('MongoDB bağlantısı aktif');
+});
+
+mongoose.connection.on('error', (err) => {
+    console.error('MongoDB bağlantı hatası:', err);
+});
+
+mongoose.connection.on('disconnected', () => {
+    console.log('MongoDB bağlantısı kesildi');
+});
+
+// Graceful shutdown
+process.on('SIGINT', async () => {
+    console.log('Uygulama kapatılıyor...');
+    await mongoose.connection.close();
+    process.exit(0);
+});
 
 // Middleware
 app.use(cors());
