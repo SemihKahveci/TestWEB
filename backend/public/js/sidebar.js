@@ -12,7 +12,7 @@ async function createSidebar() {
         '/results.html': 'Kişi Sonuçları Sayfası',
         '/game-send.html': 'Oyun Gönder',
         '/gamemanagement.html': 'Oyun Tanımlama',
-        '/addGroup.html': 'Organizasyon Tanımlama',
+        '/addGroup.html': 'Organizasyon Ayarları',
         '/authorization.html': 'Yetkilendirme',
         '/grouping.html': 'Yetkilendirme', 
         '/organization.html': 'Yetkilendirme',
@@ -114,9 +114,9 @@ async function createSidebar() {
                         <span>Yetkilendirme</span>
                         <i class="fas fa-chevron-right"></i>
                     </div>
-                    <div class="menu-item ${activeMenuItem === 'Organizasyon Tanımlama' ? 'active' : ''}">
+                    <div class="menu-item ${activeMenuItem === 'Organizasyon Ayarları' ? 'active' : ''}">
                         <i class="fas fa-user-plus"></i>
-                        <span>Organizasyon Tanımlama</span>
+                        <span>Organizasyon Ayarları</span>
                         <i class="fas fa-chevron-right"></i>
                     </div>
                     <div class="menu-item ${activeMenuItem === 'Sistem Ayarları' ? 'active' : ''}">
@@ -384,7 +384,7 @@ async function createSidebar() {
                     window.location.href = '/competencySettings.html';
                     break;
 
-                case 'Organizasyon Tanımlama':
+                case 'Organizasyon Ayarları':
                     window.location.href = '/addGroup.html';
                     break;
                 case 'Sistem Ayarları':
