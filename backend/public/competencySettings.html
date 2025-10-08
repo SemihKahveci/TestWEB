@@ -687,6 +687,24 @@
             background: #218838;
         }
 
+        .btn-import {
+            background: #28A745;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.3s ease;
+        }
+
+        .btn-import:hover {
+            background: #218838;
+        }
+
         .btn-edit {
             background: #17A2B8;
             color: white;
@@ -705,7 +723,7 @@
             background: #C82333;
         }
 
-        .btn-add i, .btn-edit i, .btn-delete i {
+        .btn-add i, .btn-import i, .btn-edit i, .btn-delete i {
             font-size: 14px;
         }
 
@@ -812,6 +830,167 @@
 
         .btn-confirm:hover {
             background: #c82333;
+        }
+
+        /* Import Popup Stilleri */
+        .import-popup {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+
+        .import-popup-content {
+            width: 500px;
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .import-popup-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #0286F7;
+        }
+
+        .import-popup-title {
+            color: #0286F7;
+            font-size: 20px;
+            font-weight: 700;
+        }
+
+        .import-popup-close {
+            cursor: pointer;
+            font-size: 24px;
+            color: #666;
+        }
+
+        .import-popup-body {
+            padding: 20px 0;
+        }
+
+        .file-upload-area {
+            border: 2px dashed #0286F7;
+            border-radius: 8px;
+            padding: 40px 20px;
+            text-align: center;
+            background: #f8f9fa;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .file-upload-area:hover {
+            background: #e3f2fd;
+            border-color: #0275D8;
+        }
+
+        .file-upload-area.dragover {
+            background: #e3f2fd;
+            border-color: #0275D8;
+        }
+
+        .file-upload-icon {
+            font-size: 48px;
+            color: #0286F7;
+            margin-bottom: 16px;
+        }
+
+        .file-upload-text {
+            color: #232D42;
+            font-size: 16px;
+            font-weight: 500;
+            margin-bottom: 8px;
+        }
+
+        .file-upload-subtext {
+            color: #6C757D;
+            font-size: 14px;
+        }
+
+        .file-input {
+            display: none;
+        }
+
+        .selected-file {
+            background: #D4EDDA;
+            border: 1px solid #C3E6CB;
+            border-radius: 8px;
+            padding: 12px;
+            margin-top: 16px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .file-icon {
+            color: #28A745;
+            font-size: 24px;
+        }
+
+        .file-info {
+            flex: 1;
+        }
+
+        .file-name {
+            font-weight: 500;
+            color: #155724;
+        }
+
+        .file-size {
+            font-size: 12px;
+            color: #6C757D;
+        }
+
+        .remove-file {
+            color: #DC3545;
+            cursor: pointer;
+            font-size: 18px;
+        }
+
+        .import-popup-footer {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            padding-top: 20px;
+        }
+
+        .btn-import-excel {
+            background: #28A745;
+            color: white;
+            border: none;
+            padding: 8px 24px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-import-excel:hover {
+            background: #218838;
+        }
+
+        .btn-import-excel:disabled {
+            background: #6C757D;
+            cursor: not-allowed;
+        }
+
+        #importMessage {
+            white-space: pre-line;
+            max-height: 200px;
+            overflow-y: auto;
+            font-size: 14px;
+            line-height: 1.4;
         }
 
         /* Modern Checkbox Stilleri */
@@ -921,6 +1100,9 @@
                         <button class="btn-add" onclick="addItem()">
                             <i class="fas fa-plus"></i> Ekle
                         </button>
+                        <button class="btn-import" onclick="openImportPopup()">
+                            <i class="fas fa-file-excel"></i> Import
+                        </button>
                         <button class="btn-edit" id="editBtn" onclick="editItem()" disabled>
                             <i class="fas fa-edit"></i> Düzenle
                         </button>
@@ -1013,9 +1195,9 @@
 
             <div class="competency-popup-close" onclick="closeCompetencyPopup()">
                 <i class="fas fa-times competency-popup-close-icon"></i>
-            </div>
-        </div>
-    </div>
+                                </div>
+                                </div>
+                            </div>
 
     <!-- Silme Onay Popup -->
     <div id="deletePopup" class="delete-popup" style="display: none;">
@@ -1023,14 +1205,54 @@
             <div class="delete-popup-header">
                 <div class="delete-popup-title">Yetkinlik Sil</div>
                 <div class="delete-popup-close" onclick="closeDeletePopup()">×</div>
-            </div>
+                        </div>
             <div class="delete-popup-body">
                 <p id="deleteMessage">Bu yetkinlikleri silmek istediğinizden emin misiniz?</p>
                 <p class="delete-warning">Bu işlem geri alınamaz!</p>
-            </div>
+                                    </div>
             <div class="delete-popup-footer">
                 <button class="btn-cancel" onclick="closeDeletePopup()">İptal</button>
                 <button class="btn-confirm" onclick="confirmDelete()">Sil</button>
+                                </div>
+                                </div>
+                            </div>
+
+    <!-- Import Popup -->
+    <div id="importPopup" class="import-popup" style="display: none;">
+        <div class="import-popup-content">
+            <div class="import-popup-header">
+                <div class="import-popup-title">Excel Import</div>
+                <div class="import-popup-close" onclick="closeImportPopup()">×</div>
+                        </div>
+            <div class="import-popup-body">
+                <div class="file-upload-area" onclick="document.getElementById('excelFileInput').click()" 
+                     ondrop="handleFileDrop(event)" ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)">
+                    <div class="file-upload-icon">
+                        <i class="fas fa-file-excel"></i>
+                                    </div>
+                <div class="file-upload-text">Excel dosyasını seçin veya sürükleyin</div>
+                <div class="file-upload-subtext">.xlsx, .xls formatları desteklenir</div>
+                                </div>
+                <input type="file" id="excelFileInput" class="file-input" accept=".xlsx,.xls" onchange="handleFileSelect(event)">
+                <div id="selectedFileInfo" class="selected-file" style="display: none;">
+                    <div class="file-icon">
+                        <i class="fas fa-file-excel"></i>
+                                </div>
+                    <div class="file-info">
+                        <div class="file-name" id="fileName"></div>
+                        <div class="file-size" id="fileSize"></div>
+                            </div>
+                    <div class="remove-file" onclick="removeSelectedFile()">
+                        <i class="fas fa-times"></i>
+                        </div>
+                                    </div>
+                <div id="importMessage" class="competency-message" style="display: none; margin-top: 16px;"></div>
+                                </div>
+            <div class="import-popup-footer">
+                <button class="btn-cancel" onclick="closeImportPopup()">İptal</button>
+                <button class="btn-import-excel" id="importBtn" onclick="importExcel()" disabled>
+                    <i class="fas fa-upload"></i> Import Et
+                </button>
             </div>
         </div>
     </div>
@@ -1311,6 +1533,30 @@
                 return;
             }
 
+            // Değer aralığı kontrolü (1-100 arası)
+            const rangeErrors = [];
+            const competencyFields = [
+                { name: 'Müşteri Odaklılık', min: customerFocusMin, max: customerFocusMax },
+                { name: 'Belirsizlik Yönetimi', min: uncertaintyMin, max: uncertaintyMax },
+                { name: 'İnsanları Etkileme', min: influenceMin, max: influenceMax },
+                { name: 'Güven Veren İşbirlikçi ve Sinerji', min: collaborationMin, max: collaborationMax }
+            ];
+
+            competencyFields.forEach(field => {
+                if (parseInt(field.min) < 1 || parseInt(field.min) > 100 || 
+                    parseInt(field.max) < 1 || parseInt(field.max) > 100) {
+                    rangeErrors.push(field.name);
+                }
+            });
+
+            if (rangeErrors.length > 0) {
+                const errorText = rangeErrors.length === 1 
+                    ? `1 ile 100 arasında bir veri girmeniz gerekiyor! (${rangeErrors[0]})`
+                    : `1 ile 100 arasında bir veri girmeniz gerekiyor! (${rangeErrors.join(', ')})`;
+                showMessage(errorText, 'error');
+                return;
+            }
+
             // Min-Max değerlerini kontrol et ve hangi alanlarda hata olduğunu belirle
             const errors = [];
             
@@ -1397,6 +1643,151 @@
                 console.error('Yetkinlik işlemi hatası:', error);
                 const errorMessage = window.editingCompetencyId ? 'Yetkinlik güncellenirken bir hata oluştu: ' : 'Yetkinlik eklenirken bir hata oluştu: ';
                 showMessage(errorMessage + error.message, 'error');
+            }
+        }
+
+        // Import popup fonksiyonları
+        function openImportPopup() {
+            document.getElementById('importPopup').style.display = 'flex';
+            hideImportMessage();
+        }
+
+        function closeImportPopup() {
+            document.getElementById('importPopup').style.display = 'none';
+            removeSelectedFile();
+        }
+
+        function handleFileSelect(event) {
+            const file = event.target.files[0];
+            if (file) {
+                displaySelectedFile(file);
+            }
+        }
+
+        function handleFileDrop(event) {
+            event.preventDefault();
+            event.currentTarget.classList.remove('dragover');
+            
+            const files = event.dataTransfer.files;
+            if (files.length > 0) {
+                const file = files[0];
+                if (file.name.endsWith('.xlsx') || file.name.endsWith('.xls')) {
+                    displaySelectedFile(file);
+                    document.getElementById('excelFileInput').files = files;
+                } else {
+                    showImportMessage('Lütfen sadece Excel dosyası (.xlsx, .xls) seçin!', 'error');
+                }
+            }
+        }
+
+        function handleDragOver(event) {
+            event.preventDefault();
+            event.currentTarget.classList.add('dragover');
+        }
+
+        function handleDragLeave(event) {
+            event.preventDefault();
+            event.currentTarget.classList.remove('dragover');
+        }
+
+        function displaySelectedFile(file) {
+            document.getElementById('fileName').textContent = file.name;
+            document.getElementById('fileSize').textContent = formatFileSize(file.size);
+            document.getElementById('selectedFileInfo').style.display = 'flex';
+            document.getElementById('importBtn').disabled = false;
+            hideImportMessage();
+        }
+
+        function removeSelectedFile() {
+            document.getElementById('excelFileInput').value = '';
+            document.getElementById('selectedFileInfo').style.display = 'none';
+            document.getElementById('importBtn').disabled = true;
+            hideImportMessage();
+        }
+
+        function formatFileSize(bytes) {
+            if (bytes === 0) return '0 Bytes';
+            const k = 1024;
+            const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+        }
+
+        function showImportMessage(text, type) {
+            const messageDiv = document.getElementById('importMessage');
+            messageDiv.textContent = text;
+            messageDiv.className = `competency-message ${type}`;
+            messageDiv.style.display = 'block';
+        }
+
+        function hideImportMessage() {
+            const messageDiv = document.getElementById('importMessage');
+            messageDiv.style.display = 'none';
+        }
+
+        async function importExcel() {
+            const fileInput = document.getElementById('excelFileInput');
+            const file = fileInput.files[0];
+            
+            if (!file) {
+                showImportMessage('Lütfen bir Excel dosyası seçin!', 'error');
+                return;
+            }
+
+            try {
+                const token = localStorage.getItem('token');
+                const formData = new FormData();
+                formData.append('excelFile', file);
+
+                // Import butonunu disable et
+                const importBtn = document.getElementById('importBtn');
+                importBtn.disabled = true;
+                importBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Import Ediliyor...';
+
+                const response = await fetch('/api/competency/import', {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: formData
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    let message = `Başarıyla ${result.importedCount} yetkinlik import edildi!`;
+                    if (result.errors && result.errors.length > 0) {
+                        message += `\n\nHatalar:\n${result.errors.slice(0, 5).join('\n')}`;
+                        if (result.errors.length > 5) {
+                            message += `\n... ve ${result.errors.length - 5} hata daha`;
+                        }
+                    }
+                    showImportMessage(message, 'success');
+                    
+                    // 3 saniye sonra popup'ı kapat ve verileri yenile
+                    setTimeout(() => {
+                        closeImportPopup();
+                        loadCompetencies();
+                    }, 3000);
+                } else {
+                    let errorMessage = result.message || 'Import işlemi başarısız!';
+                    if (result.errors && result.errors.length > 0) {
+                        errorMessage += `\n\nHatalar:\n${result.errors.slice(0, 5).join('\n')}`;
+                        if (result.errors.length > 5) {
+                            errorMessage += `\n... ve ${result.errors.length - 5} hata daha`;
+                        }
+                    }
+                    showImportMessage(errorMessage, 'error');
+                }
+
+            } catch (error) {
+                console.error('Import hatası:', error);
+                showImportMessage('Import işlemi sırasında bir hata oluştu: ' + error.message, 'error');
+            } finally {
+                // Import butonunu tekrar aktif et
+                const importBtn = document.getElementById('importBtn');
+                importBtn.disabled = false;
+                importBtn.innerHTML = '<i class="fas fa-upload"></i> Import Et';
             }
         }
 
