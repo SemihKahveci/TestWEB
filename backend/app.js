@@ -10,6 +10,7 @@ const gameManagementRoutes = require('./routes/gameManagementRoutes');
 const codeController = require('./controllers/codeController');
 const adminController = require('./controllers/adminController');
 const companyManagementRoutes = require('./routes/companyManagementRoutes');
+const competencyRoutes = require('./routes/competencyRoutes');
 
 const app = express();
 const port = process.env.PORT || 5000;
@@ -204,6 +205,9 @@ apiRouter.use('/game-management', gameManagementRoutes);
 
 // Company Management işlemleri
 apiRouter.use('/company-management', companyManagementRoutes);
+
+// Competency işlemleri
+apiRouter.use('/competency', competencyRoutes);
 
 // API route'larını uygula
 app.use('/api', apiRouter);

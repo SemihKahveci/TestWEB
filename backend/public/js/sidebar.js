@@ -9,7 +9,7 @@ async function createSidebar() {
     // Sayfa yolu ile menü öğesi eşleştirmesi
     const pageToMenuItem = {
         '/admin-panel.html': 'Genel Takip Sistemi',
-        '/results.html': 'Aday Sonuçları Sayfası',
+        '/results.html': 'Kişi Sonuçları Sayfası',
         '/game-send.html': 'Oyun Gönder',
         '/gamemanagement.html': 'Oyun Tanımlama',
         '/addGroup.html': 'Organizasyon Tanımlama',
@@ -17,6 +17,7 @@ async function createSidebar() {
         '/grouping.html': 'Yetkilendirme', 
         '/organization.html': 'Yetkilendirme',
         '/subscriptionSettings.html': 'Oyun Kullanım Özeti',
+        '/competencySettings.html': 'Yetkinlik Ayarları',
     };
     
     // Aktif menü öğesini belirle
@@ -58,9 +59,9 @@ async function createSidebar() {
                         <span>Şirket Çalışanları Sayfası</span>
                         <i class="fas fa-chevron-right"></i>
                     </div>
-                       <div class="menu-item ${activeMenuItem === 'Aday Sonuçları Sayfası' ? 'active' : ''}">
+                       <div class="menu-item ${activeMenuItem === 'Kişi Sonuçları Sayfası' ? 'active' : ''}">
                         <i class="fas fa-chart-bar"></i>
-                        <span>Aday Sonuçları Sayfası</span>
+                        <span>Kişi Sonuçları Sayfası</span>
                         <i class="fas fa-chevron-right"></i>
                     </div>            
                     <div class="menu-item ${activeMenuItem === 'Oyun Gönder' ? 'active' : ''}">
@@ -82,6 +83,7 @@ async function createSidebar() {
                         <span>Firma Ayarları</span>
                         <i class="fas fa-plus expand-icon"></i>
                     </div>
+
                     <div class="submenu" style="display: ${activeMenuItem === 'Firma Tanımlama' || activeMenuItem === 'Oyun Tanımlama' || isFirmaAdminiActive || isFirmaTanimlamaActive ? 'block' : 'none'};">
                         ${isSuperAdmin ? `
                         <div class="submenu-item ${isFirmaTanimlamaActive ? 'active' : ''}">
@@ -102,17 +104,16 @@ async function createSidebar() {
                         </div>
                         ` : ''}
                     </div>
-                   <div class="menu-item ${activeMenuItem === 'Yetkilendirme' ? 'active' : ''}">
+                    <div class="menu-item ${activeMenuItem === 'Yetkinlik Ayarları' ? 'active' : ''}">
+                        <i class="fas fa-user-shield"></i>
+                        <span>Yetkinlik Ayarları</span>
+                        <i class="fas fa-chevron-right"></i>
+                    </div>
+                    <div class="menu-item ${activeMenuItem === 'Yetkilendirme' ? 'active' : ''}">
                         <i class="fas fa-user-shield"></i>
                         <span>Yetkilendirme</span>
                         <i class="fas fa-chevron-right"></i>
                     </div>
-                       <div class="menu-item ${activeMenuItem === 'Organizasyon Yapısı' ? 'active' : ''}">
-                        <i class="fas fa-user-shield"></i>
-                        <span>Organizasyon Yapısı</span>
-                        <i class="fas fa-chevron-right"></i>
-                    </div>
-
                     <div class="menu-item ${activeMenuItem === 'Organizasyon Tanımlama' ? 'active' : ''}">
                         <i class="fas fa-user-plus"></i>
                         <span>Organizasyon Tanımlama</span>
@@ -366,7 +367,7 @@ async function createSidebar() {
                 case 'Şirket Çalışanları Sayfası':
                     //window.location.href = '/employees.html';
                     break;
-                case 'Aday Sonuçları Sayfası':
+                case 'Kişi Sonuçları Sayfası':
                     window.location.href = '/results.html';
                     break;
                 case 'Oyun Gönder':
@@ -375,15 +376,14 @@ async function createSidebar() {
                 case 'Oyun Kullanım Özeti':
                     window.location.href = '/subscriptionSettings.html';
                     break;
-                case 'Firma Ayarları':
-                   // window.location.href = '/authorization.html';
-                    break;
+
                 case 'Yetkilendirme':
                     window.location.href = '/authorization.html';
                     break;
-                case 'Organizasyon Yapısı':
-                    //window.location.href = '/organization-structure.html';
+                case 'Yetkinlik Ayarları':
+                    window.location.href = '/competencySettings.html';
                     break;
+
                 case 'Organizasyon Tanımlama':
                     window.location.href = '/addGroup.html';
                     break;
