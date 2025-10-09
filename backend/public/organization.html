@@ -207,6 +207,11 @@
             border-bottom: 1px solid #E9ECEF;
         }
 
+        .results-table th:last-child,
+        .results-table td:last-child {
+            text-align: right;
+        }
+
         .results-table th {
             background: #F8F9FA;
             color: #232D42;
@@ -363,9 +368,9 @@
 
                 <div class="content-area">
                     <div class="tab-container">
-                        <div class="tab inactive" onclick="window.location.href='authorization.html'">Yetkiler</div>
-                        <div class="tab inactive" onclick="window.location.href='grouping.html'">Gruplama</div>
                         <div class="tab active">Organizasyon</div>
+                        <div class="tab inactive" onclick="window.location.href='grouping.html'">Gruplama</div>
+                        <div class="tab inactive" onclick="window.location.href='authorization.html'">Yetkiler</div>
                     </div>
 
                     <div style="padding: 16px; background: white; display: flex; justify-content: space-between; align-items: center;">
@@ -389,7 +394,6 @@
                         <thead>
                             <tr>
                                 <th>Seçim</th>
-                                <th>ID</th>
                                 <th>Şirketin Adı</th>
                                 <th>Eklenme Tarihi</th>
                                 <th>İşlemler</th>
@@ -398,7 +402,6 @@
                         <tbody>
                             <tr>
                                 <td><input type="checkbox" /></td>
-                                <td>1</td>
                                 <td>AAAA</td>
                                 <td>AAAA</td>
                                 <td>
@@ -408,7 +411,6 @@
                             </tr>
                             <tr>
                                 <td><input type="checkbox" /></td>
-                                <td>2</td>
                                 <td>BBBB</td>
                                 <td>BBBB</td>
                                 <td>
@@ -418,7 +420,6 @@
                             </tr>
                             <tr>
                                 <td><input type="checkbox" /></td>
-                                <td>3</td>
                                 <td>CCCC</td>
                                 <td>CCCC</td>
                                 <td>
@@ -428,7 +429,6 @@
                             </tr>
                             <tr>
                                 <td><input type="checkbox" /></td>
-                                <td>4</td>
                                 <td>DDDD</td>
                                 <td>DDDD</td>
                                 <td>

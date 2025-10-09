@@ -207,6 +207,11 @@
             border-bottom: 1px solid #E9ECEF;
         }
 
+        .results-table th:last-child,
+        .results-table td:last-child {
+            text-align: right;
+        }
+
         .results-table th {
             background: #F8F9FA;
             color: #232D42;
@@ -335,15 +340,14 @@
 
                 <div class="content-area">
                     <div class="tab-container">
-                        <div class="tab inactive" onclick="window.location.href='authorization.html'">Yetkiler</div>
-                        <div class="tab active">Gruplama</div>
                         <div class="tab inactive" onclick="window.location.href='organization.html'">Organizasyon</div>
+                        <div class="tab active">Gruplama</div>
+                        <div class="tab inactive" onclick="window.location.href='authorization.html'">Yetkiler</div>
                     </div>
                     <table class="results-table">
                         <thead>
                             <tr>
                                 <th>Seçim</th>
-                                <th>Grup ID</th>
                                 <th>Grup Adı</th>
                                 <th>Aktif / Pasif</th>
                                 <th>İşlemler</th>
@@ -352,7 +356,6 @@
                         <tbody>
                             <tr>
                                 <td><input type="checkbox" /></td>
-                                <td>1</td>
                                 <td>AAAA</td>
                                 <td><div class="toggle-switch"></div></td>
                                 <td>
@@ -362,7 +365,6 @@
                             </tr>
                             <tr>
                                 <td><input type="checkbox" /></td>
-                                <td>2</td>
                                 <td>BBBB</td>
                                 <td><div class="toggle-switch"></div></td>
                                 <td>
@@ -372,7 +374,6 @@
                             </tr>
                             <tr>
                                 <td><input type="checkbox" /></td>
-                                <td>3</td>
                                 <td>CCCC</td>
                                 <td><div class="toggle-switch"></div></td>
                                 <td>
@@ -382,7 +383,6 @@
                             </tr>
                             <tr>
                                 <td><input type="checkbox" /></td>
-                                <td>4</td>
                                 <td>DDDD</td>
                                 <td><div class="toggle-switch"></div></td>
                                 <td>

@@ -12,7 +12,7 @@ async function createSidebar() {
         '/results.html': 'Kişi Sonuçları Sayfası',
         '/game-send.html': 'Oyun Gönder',
         '/gamemanagement.html': 'Oyun Tanımlama',
-        '/addGroup.html': 'Organizasyon Ayarları',
+        '/authorization.html': 'Organizasyon Ayarları',
         '/authorization.html': 'Yetkilendirme',
         '/grouping.html': 'Yetkilendirme', 
         '/organization.html': 'Yetkilendirme',
@@ -383,9 +383,8 @@ async function createSidebar() {
                 case 'Yetkinlik Ayarları':
                     window.location.href = '/competencySettings.html';
                     break;
-
                 case 'Organizasyon Ayarları':
-                    window.location.href = '/addGroup.html';
+                    window.location.href = '/organization.html';
                     break;
                 case 'Sistem Ayarları':
                     window.location.href = '/admin-management.html';
