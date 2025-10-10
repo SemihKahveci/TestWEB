@@ -290,6 +290,239 @@
             font-weight: 500;
         }
 
+        .search-bar {
+            padding: 8px 16px;
+            background: white;
+            border: 1px solid #E9ECEF;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            width: 350px;
+        }
+
+        .search-bar input {
+            border: none;
+            outline: none;
+            width: 100%;
+            color: #ADB5BD;
+            font-size: 16px;
+            font-family: 'Inter', sans-serif;
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 20px;
+        }
+
+        .btn {
+            padding: 8px 16px;
+            border-radius: 8px;
+            font-family: 'Montserrat', sans-serif;
+            font-size: 12px;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
+            border: none;
+        }
+
+        .btn-excel {
+            background: #01A94D;
+            color: white;
+        }
+
+        .btn-add {
+            background: #0286F7;
+            color: white;
+        }
+
+        /* Modal Stilleri */
+        .modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+
+        .modal-content {
+            width: 100%;
+            max-width: 506px;
+            max-height: 90vh;
+            padding: 20px 25px;
+            background: white;
+            border-radius: 15px;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            overflow-y: auto;
+        }
+
+        .modal-header {
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-start;
+            align-items: flex-start;
+            gap: 13px;
+            position: relative;
+        }
+
+        .modal-title {
+            text-align: center;
+            color: black;
+            font-size: 20px;
+            font-family: Inter;
+            font-weight: 700;
+            word-wrap: break-word;
+            width: 100%;
+        }
+
+        .modal-divider {
+            width: 44px;
+            height: 3px;
+            background: black;
+            border-radius: 29px;
+            position: absolute;
+            top: 28px;
+            left: 50%;
+            transform: translateX(-50%);
+        }
+
+        .modal-close {
+            position: absolute;
+            top: 13px;
+            right: 13px;
+            width: 24px;
+            height: 24px;
+            padding: 4px;
+            background: #E5E5E5;
+            border-radius: 50%;
+            border: none;
+            cursor: pointer;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            transition: background-color 0.2s ease;
+            z-index: 1001;
+        }
+
+        .modal-close:hover {
+            background: #D0D0D0;
+        }
+
+        .modal-close img {
+            width: 16px;
+            height: 16px;
+            pointer-events: none;
+            display: block;
+        }
+
+        .modal-body {
+            padding: 19px 0;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-start;
+            align-items: flex-start;
+            gap: 15px;
+            flex: 1;
+            overflow-y: auto;
+        }
+
+        .form-group {
+            min-height: 65px;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            flex-shrink: 0;
+        }
+
+        .form-label {
+            color: #8A92A6;
+            font-size: 16px;
+            font-family: Inter;
+            font-weight: 400;
+            line-height: 28px;
+        }
+
+        .form-input {
+            width: 100%;
+            max-width: 436px;
+            padding: 6px 12px;
+            background: white;
+            border-radius: 4px;
+            border: 1px solid #3A57E8;
+            color: #8A92A6;
+            font-size: 14px;
+            font-family: Poppins;
+            font-style: italic;
+            font-weight: 500;
+            line-height: 24px;
+            outline: none;
+        }
+
+        .form-input::placeholder {
+            color: #8A92A6;
+        }
+
+        .modal-buttons {
+            display: flex;
+            gap: 15px;
+            justify-content: flex-start;
+            align-items: flex-start;
+            flex-shrink: 0;
+        }
+
+        .btn-cancel {
+            width: 143px;
+            height: 48px;
+            padding: 14px 20px;
+            background: white;
+            border-radius: 8px;
+            border: 1px solid #E02D3C;
+            color: #E02D3C;
+            font-size: 16px;
+            font-family: Inter;
+            font-weight: 500;
+            cursor: pointer;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .btn-save {
+            width: 145px;
+            height: 46px;
+            padding: 8px 12px;
+            background: #0286F7;
+            border-radius: 8px;
+            border: none;
+            color: white;
+            font-size: 14px;
+            font-family: Poppins;
+            font-weight: 700;
+            cursor: pointer;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-save:hover {
+            background: #0275D8;
+        }
+
+        .btn-cancel:hover {
+            background: #f8f9fa;
+        }
+
         .toggle-switch {
             width: 38px;
             height: 20px;
@@ -309,6 +542,119 @@
             top: 2.5px;
             left: 2.5px;
             transition: 0.3s;
+        }
+
+        /* Sayfalama Stilleri */
+        .pagination-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 8px;
+            margin-top: 20px;
+            flex-wrap: wrap;
+        }
+
+        .pagination-info {
+            color: #6C757D;
+            font-size: 14px;
+            font-weight: 500;
+            margin-right: 16px;
+        }
+
+        .page-nav {
+            padding: 8px 12px;
+            background: white;
+            border: 1px solid #DEE2E6;
+            border-radius: 6px;
+            cursor: pointer;
+            color: #495057;
+            font-size: 14px;
+            font-weight: 500;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 40px;
+            height: 40px;
+        }
+
+        .page-nav:hover:not(.disabled) {
+            background: #E9ECEF;
+            border-color: #ADB5BD;
+            color: #495057;
+        }
+
+        .page-nav.disabled {
+            background: #F8F9FA;
+            border-color: #E9ECEF;
+            color: #ADB5BD;
+            cursor: not-allowed;
+            opacity: 0.6;
+        }
+
+        .page-button {
+            padding: 8px 12px;
+            background: white;
+            border: 1px solid #DEE2E6;
+            border-radius: 6px;
+            cursor: pointer;
+            color: #495057;
+            font-size: 14px;
+            font-weight: 500;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 40px;
+            height: 40px;
+        }
+
+        .page-button:hover:not(.active) {
+            background: #E9ECEF;
+            border-color: #ADB5BD;
+            color: #495057;
+        }
+
+        .page-button.active {
+            background: #0286F7;
+            color: white;
+            border-color: #0286F7;
+            box-shadow: 0 2px 4px rgba(2, 134, 247, 0.2);
+        }
+
+        .page-button.active:hover {
+            background: #0275D8;
+            border-color: #0275D8;
+        }
+
+        .page-ellipsis {
+            padding: 8px 4px;
+            color: #6C757D;
+            font-size: 14px;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 40px;
+            height: 40px;
+        }
+
+        @media (max-width: 768px) {
+            .pagination-container {
+                gap: 4px;
+            }
+            
+            .pagination-info {
+                margin-right: 8px;
+                font-size: 12px;
+            }
+            
+            .page-nav, .page-button {
+                min-width: 36px;
+                height: 36px;
+                font-size: 12px;
+                padding: 6px 8px;
+            }
         }
     </style>
 </head>
@@ -344,6 +690,24 @@
                         <div class="tab active">Gruplama</div>
                         <div class="tab inactive" onclick="window.location.href='authorization.html'">Yetkiler</div>
                     </div>
+
+                    <div style="padding: 16px; background: white; display: flex; justify-content: space-between; align-items: center;">
+                        <div class="search-bar">
+                            <i class="fas fa-search" style="color: #ADB5BD;"></i>
+                            <input type="text" placeholder="Search...">
+                        </div>
+                        <div class="action-buttons">
+                            <button class="btn btn-excel">
+                                <i class="fas fa-file-excel"></i>
+                                Excel Yükle
+                            </button>
+                            <button class="btn btn-add" onclick="openGroupModal()">
+                                <i class="fas fa-plus"></i>
+                                EKLE
+                            </button>
+                        </div>
+                    </div>
+
                     <table class="results-table">
                         <thead>
                             <tr>
@@ -392,22 +756,56 @@
                             </tr>
                         </tbody>
                     </table>
-                    <div class="pagination-content" style="margin-top: 20px; display: flex; justify-content: center; gap: 10px;">
-                        <button class="page-nav" onclick="changePage('prev')">Önceki Sayfa</button>
-                        <div class="page-button active">1</div>
-                        <div class="page-button">2</div>
-                        <div class="page-button">3</div>
-                        <button class="page-nav" onclick="changePage('next')">Sonraki Sayfa</button>
+                    <div class="pagination-container">
+                        <!-- Sayfalama içeriği JavaScript ile doldurulacak -->
                     </div>
                 </div>
             </div>
         </div>
     </div>
 
+    <!-- Grup Ekleme/Düzenleme Modal -->
+    <div id="groupModal" class="modal">
+        <div class="modal-content">
+            <button class="modal-close" onclick="closeGroupModal()">
+                <img src="images/close-icon.svg" alt="Kapat">
+            </button>
+            <div class="modal-header">
+                <div class="modal-title">Grup Ekle</div>
+                <div class="modal-divider"></div>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <div class="form-label">Grup Adı</div>
+                    <input type="text" class="form-input" placeholder="Lütfen Grup Adını Giriniz" id="groupNameInput">
+                </div>
+                <div class="form-group">
+                    <div class="form-label">Durum</div>
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                        <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                            <input type="checkbox" id="groupStatusInput" style="width: 20px; height: 20px;">
+                            <span style="color: #8A92A6; font-size: 16px;">Aktif</span>
+                        </label>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-buttons">
+                <button class="btn-cancel" onclick="closeGroupModal()">İptal</button>
+                <button class="btn-save" onclick="saveGroup()">
+                    <div style="width: 18px; height: 18px; background: white; border-radius: 2px;"></div>
+                    <div>Kaydet</div>
+                </button>
+            </div>
+        </div>
+    </div>
+
     <script src="/js/sidebar.js"></script>
     <script>
+        // Sayfalama için gerekli değişkenler
         let currentPage = 1;
         const itemsPerPage = 10;
+        let totalItems = 0;
+        let allGroups = [];
 
         document.addEventListener('DOMContentLoaded', function() {
             createSidebar();
@@ -461,21 +859,255 @@
             });
         });
 
-        function changePage(pageNumber) {
-            const totalPages = 3;
+        // Sayfalama kontrollerini güncelle
+        function updatePagination() {
+            const paginationContent = document.querySelector('.pagination-container');
+            if (!paginationContent) {
+                console.error('Sayfalama içeriği bulunamadı');
+                return;
+            }
+
+            const totalPages = Math.ceil(totalItems / itemsPerPage);
+            const startItem = (currentPage - 1) * itemsPerPage + 1;
+            const endItem = Math.min(currentPage * itemsPerPage, totalItems);
             
-            if (pageNumber >= 1 && pageNumber <= totalPages) {
-                currentPage = pageNumber;
+            let paginationHTML = `
+                <div class="pagination-info">
+                    ${startItem}-${endItem} arası, toplam ${totalItems} kayıt
+                </div>
+            `;
+
+            // İlk sayfa butonu
+            paginationHTML += `
+                <div class="page-nav ${currentPage === 1 ? 'disabled' : ''}" onclick="changePage(1)">
+                    <i class="fas fa-angle-double-left"></i>
+                </div>
+            `;
+
+            // Önceki sayfa butonu
+            paginationHTML += `
+                <div class="page-nav ${currentPage === 1 ? 'disabled' : ''}" onclick="changePage(${currentPage - 1})">
+                    <i class="fas fa-angle-left"></i>
+                </div>
+            `;
+
+            // Sayfa numaraları
+            const maxVisiblePages = 5;
+            let startPage = Math.max(1, currentPage - Math.floor(maxVisiblePages / 2));
+            let endPage = Math.min(totalPages, startPage + maxVisiblePages - 1);
+            
+            if (endPage - startPage + 1 < maxVisiblePages) {
+                startPage = Math.max(1, endPage - maxVisiblePages + 1);
+            }
+
+            // Başlangıçta ellipsis
+            if (startPage > 1) {
+                paginationHTML += `<div class="page-button" onclick="changePage(1)">1</div>`;
+                if (startPage > 2) {
+                    paginationHTML += `<div class="page-ellipsis">...</div>`;
+                }
+            }
+
+            // Sayfa numaraları
+            for (let i = startPage; i <= endPage; i++) {
+                paginationHTML += `
+                    <div class="page-button ${currentPage === i ? 'active' : ''}" onclick="changePage(${i})">
+                        ${i}
+                    </div>
+                `;
+            }
+
+            // Sonda ellipsis
+            if (endPage < totalPages) {
+                if (endPage < totalPages - 1) {
+                    paginationHTML += `<div class="page-ellipsis">...</div>`;
+                }
+                paginationHTML += `<div class="page-button" onclick="changePage(${totalPages})">${totalPages}</div>`;
+            }
+
+            // Sonraki sayfa butonu
+            paginationHTML += `
+                <div class="page-nav ${currentPage === totalPages ? 'disabled' : ''}" onclick="changePage(${currentPage + 1})">
+                    <i class="fas fa-angle-right"></i>
+                </div>
+            `;
+
+            // Son sayfa butonu
+            paginationHTML += `
+                <div class="page-nav ${currentPage === totalPages ? 'disabled' : ''}" onclick="changePage(${totalPages})">
+                    <i class="fas fa-angle-double-right"></i>
+                </div>
+            `;
+
+            paginationContent.innerHTML = paginationHTML;
+        }
+
+        // Sayfa değiştir
+        function changePage(page) {
+            const totalPages = Math.ceil(totalItems / itemsPerPage);
+            if (page >= 1 && page <= totalPages && page !== currentPage) {
+                currentPage = page;
+                displayGroups();
+                updatePagination();
                 
-                // Aktif sayfa butonunu güncelle
-                const pageButtons = document.querySelectorAll('.page-button');
-                pageButtons.forEach(button => {
-                    if (parseInt(button.textContent) === currentPage) {
-                        button.classList.add('active');
-                    } else {
-                        button.classList.remove('active');
+                // Sayfa başına scroll
+                const table = document.querySelector('.results-table');
+                if (table) {
+                    table.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }
+            }
+        }
+
+        // Grupları tabloda göster
+        function displayGroups() {
+            const tableBody = document.querySelector('.results-table tbody');
+            tableBody.innerHTML = '';
+
+            if (allGroups.length === 0) {
+                tableBody.innerHTML = '<tr><td colspan="4" style="text-align: center; color: #8A92A6;">Henüz grup bulunmuyor</td></tr>';
+                return;
+            }
+
+            // Sayfalama için verileri dilimle
+            const startIndex = (currentPage - 1) * itemsPerPage;
+            const endIndex = startIndex + itemsPerPage;
+            const pageData = allGroups.slice(startIndex, endIndex);
+
+            pageData.forEach(group => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td><input type="checkbox" /></td>
+                    <td>${group.name}</td>
+                    <td><div class="toggle-switch ${group.isActive ? 'active' : ''}"></div></td>
+                    <td>
+                        <i class="fas fa-edit" style="color: #0286F7; margin-right: 16px; cursor: pointer;" onclick="editGroup('${group.id}')"></i>
+                        <i class="fas fa-trash" style="color: #A30D11; cursor: pointer;" onclick="deleteGroup('${group.id}')"></i>
+                    </td>
+                `;
+                tableBody.appendChild(row);
+            });
+        }
+
+        // Sayfa yüklendiğinde grupları yükle
+        document.addEventListener('DOMContentLoaded', function() {
+            loadGroups();
+        });
+
+        // Grupları yükle (örnek veri)
+        function loadGroups() {
+            // Örnek veri - gerçek uygulamada API'den gelecek
+            allGroups = [
+                { id: '1', name: 'AAAA', isActive: true },
+                { id: '2', name: 'BBBB', isActive: false },
+                { id: '3', name: 'CCCC', isActive: true },
+                { id: '4', name: 'DDDD', isActive: false },
+                { id: '5', name: 'EEEE', isActive: true },
+                { id: '6', name: 'FFFF', isActive: false },
+                { id: '7', name: 'GGGG', isActive: true },
+                { id: '8', name: 'HHHH', isActive: false },
+                { id: '9', name: 'IIII', isActive: true },
+                { id: '10', name: 'JJJJ', isActive: false },
+                { id: '11', name: 'KKKK', isActive: true },
+                { id: '12', name: 'LLLL', isActive: false }
+            ];
+            
+            totalItems = allGroups.length;
+            displayGroups();
+            updatePagination();
+        }
+
+        // Modal fonksiyonları
+        function openGroupModal() {
+            document.getElementById('groupModal').style.display = 'flex';
+        }
+
+        function closeGroupModal() {
+            document.getElementById('groupModal').style.display = 'none';
+            // Clear form inputs
+            document.getElementById('groupNameInput').value = '';
+            document.getElementById('groupStatusInput').checked = false;
+            // Reset edit mode
+            window.editingGroupId = null;
+            // Reset modal title
+            document.querySelector('.modal-title').textContent = 'Grup Ekle';
+        }
+
+        // Grup kaydet
+        function saveGroup() {
+            const groupName = document.getElementById('groupNameInput').value.trim();
+            const groupStatus = document.getElementById('groupStatusInput').checked;
+
+            if (!groupName) {
+                alert('Lütfen grup adını giriniz!');
+                return;
+            }
+
+            const isEditMode = window.editingGroupId;
+            
+            if (isEditMode) {
+                // Düzenleme modu
+                const groupIndex = allGroups.findIndex(g => g.id === window.editingGroupId);
+                if (groupIndex !== -1) {
+                    allGroups[groupIndex].name = groupName;
+                    allGroups[groupIndex].status = groupStatus ? 'Aktif' : 'Pasif';
+                    alert('Grup başarıyla güncellendi!');
+                }
+            } else {
+                // Ekleme modu
+                const newGroup = {
+                    id: Date.now().toString(),
+                    name: groupName,
+                    status: groupStatus ? 'Aktif' : 'Pasif'
+                };
+                allGroups.unshift(newGroup);
+                totalItems = allGroups.length;
+                currentPage = 1; // Yeni ekleme durumunda sayfalama sıfırla
+                alert('Grup başarıyla eklendi!');
+            }
+
+            closeGroupModal();
+            displayGroups();
+            updatePagination();
+        }
+
+        // Grup düzenle
+        function editGroup(id) {
+            const group = allGroups.find(g => g.id === id);
+            if (group) {
+                // Form alanlarını doldur
+                document.getElementById('groupNameInput').value = group.name;
+                document.getElementById('groupStatusInput').checked = group.status === 'Aktif';
+                
+                // Modal başlığını değiştir
+                document.querySelector('.modal-title').textContent = 'Grup Düzenle';
+                
+                // Global değişken olarak düzenlenen ID'yi sakla
+                window.editingGroupId = id;
+                
+                // Modal'ı aç
+                openGroupModal();
+            }
+        }
+
+        // Grup sil
+        function deleteGroup(id) {
+            const group = allGroups.find(g => g.id === id);
+            if (group) {
+                if (confirm(`"${group.name}" grubunu silmek istediğinizden emin misiniz?`)) {
+                    // Grubu listeden kaldır
+                    allGroups = allGroups.filter(g => g.id !== id);
+                    totalItems = allGroups.length;
+                    
+                    // Eğer mevcut sayfa boş kaldıysa önceki sayfaya git
+                    const totalPages = Math.ceil(totalItems / itemsPerPage);
+                    if (currentPage > totalPages && totalPages > 0) {
+                        currentPage = totalPages;
                     }
-                });
+                    
+                    displayGroups();
+                    updatePagination();
+                    alert('Grup başarıyla silindi!');
+                }
             }
         }
     </script>

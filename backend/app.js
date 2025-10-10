@@ -11,6 +11,7 @@ const codeController = require('./controllers/codeController');
 const adminController = require('./controllers/adminController');
 const companyManagementRoutes = require('./routes/companyManagementRoutes');
 const competencyRoutes = require('./routes/competencyRoutes');
+const organizationRoutes = require('./routes/organizationRoutes');
 
 const app = express();
 const port = process.env.PORT || 5000;
@@ -208,6 +209,9 @@ apiRouter.use('/company-management', companyManagementRoutes);
 
 // Competency işlemleri
 apiRouter.use('/competency', competencyRoutes);
+
+// Organization işlemleri
+apiRouter.use('/organization', organizationRoutes);
 
 // API route'larını uygula
 app.use('/api', apiRouter);

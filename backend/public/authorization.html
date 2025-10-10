@@ -280,6 +280,119 @@
             font-size: 14px;
             font-weight: 500;
         }
+
+        /* Sayfalama Stilleri */
+        .pagination-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 8px;
+            margin-top: 20px;
+            flex-wrap: wrap;
+        }
+
+        .pagination-info {
+            color: #6C757D;
+            font-size: 14px;
+            font-weight: 500;
+            margin-right: 16px;
+        }
+
+        .page-nav {
+            padding: 8px 12px;
+            background: white;
+            border: 1px solid #DEE2E6;
+            border-radius: 6px;
+            cursor: pointer;
+            color: #495057;
+            font-size: 14px;
+            font-weight: 500;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 40px;
+            height: 40px;
+        }
+
+        .page-nav:hover:not(.disabled) {
+            background: #E9ECEF;
+            border-color: #ADB5BD;
+            color: #495057;
+        }
+
+        .page-nav.disabled {
+            background: #F8F9FA;
+            border-color: #E9ECEF;
+            color: #ADB5BD;
+            cursor: not-allowed;
+            opacity: 0.6;
+        }
+
+        .page-button {
+            padding: 8px 12px;
+            background: white;
+            border: 1px solid #DEE2E6;
+            border-radius: 6px;
+            cursor: pointer;
+            color: #495057;
+            font-size: 14px;
+            font-weight: 500;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 40px;
+            height: 40px;
+        }
+
+        .page-button:hover:not(.active) {
+            background: #E9ECEF;
+            border-color: #ADB5BD;
+            color: #495057;
+        }
+
+        .page-button.active {
+            background: #0286F7;
+            color: white;
+            border-color: #0286F7;
+            box-shadow: 0 2px 4px rgba(2, 134, 247, 0.2);
+        }
+
+        .page-button.active:hover {
+            background: #0275D8;
+            border-color: #0275D8;
+        }
+
+        .page-ellipsis {
+            padding: 8px 4px;
+            color: #6C757D;
+            font-size: 14px;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 40px;
+            height: 40px;
+        }
+
+        @media (max-width: 768px) {
+            .pagination-container {
+                gap: 4px;
+            }
+            
+            .pagination-info {
+                margin-right: 8px;
+                font-size: 12px;
+            }
+            
+            .page-nav, .page-button {
+                min-width: 36px;
+                height: 36px;
+                font-size: 12px;
+                padding: 6px 8px;
+            }
+        }
     </style>
 </head>
 <body>
@@ -350,12 +463,8 @@
                             </tr>
                         </tbody>
                     </table>
-                    <div class="pagination-content" style="margin-top: 20px; display: flex; justify-content: center; gap: 10px;">
-                        <button class="page-nav" onclick="changePage('prev')">Önceki Sayfa</button>
-                        <div class="page-button active">1</div>
-                        <div class="page-button">2</div>
-                        <div class="page-button">3</div>
-                        <button class="page-nav" onclick="changePage('next')">Sonraki Sayfa</button>
+                    <div class="pagination-container">
+                        <!-- Sayfalama içeriği JavaScript ile doldurulacak -->
                     </div>
                 </div>
             </div>
@@ -364,8 +473,11 @@
 
     <script src="/js/sidebar.js"></script>
     <script>
+        // Sayfalama için gerekli değişkenler
         let currentPage = 1;
         const itemsPerPage = 10;
+        let totalItems = 0;
+        let allPersons = [];
 
         document.addEventListener('DOMContentLoaded', function() {
             createSidebar();
@@ -404,22 +516,158 @@
             });
         });
 
-        function changePage(pageNumber) {
-            const totalPages = 3;
-            
-            if (pageNumber >= 1 && pageNumber <= totalPages) {
-                currentPage = pageNumber;
-                
-                // Aktif sayfa butonunu güncelle
-                const pageButtons = document.querySelectorAll('.page-button');
-                pageButtons.forEach(button => {
-                    if (parseInt(button.textContent) === currentPage) {
-                        button.classList.add('active');
-                    } else {
-                        button.classList.remove('active');
-                    }
-                });
+        // Sayfalama kontrollerini güncelle
+        function updatePagination() {
+            const paginationContent = document.querySelector('.pagination-container');
+            if (!paginationContent) {
+                console.error('Sayfalama içeriği bulunamadı');
+                return;
             }
+
+            const totalPages = Math.ceil(totalItems / itemsPerPage);
+            const startItem = (currentPage - 1) * itemsPerPage + 1;
+            const endItem = Math.min(currentPage * itemsPerPage, totalItems);
+            
+            let paginationHTML = `
+                <div class="pagination-info">
+                    ${startItem}-${endItem} arası, toplam ${totalItems} kayıt
+                </div>
+            `;
+
+            // İlk sayfa butonu
+            paginationHTML += `
+                <div class="page-nav ${currentPage === 1 ? 'disabled' : ''}" onclick="changePage(1)">
+                    <i class="fas fa-angle-double-left"></i>
+                </div>
+            `;
+
+            // Önceki sayfa butonu
+            paginationHTML += `
+                <div class="page-nav ${currentPage === 1 ? 'disabled' : ''}" onclick="changePage(${currentPage - 1})">
+                    <i class="fas fa-angle-left"></i>
+                </div>
+            `;
+
+            // Sayfa numaraları
+            const maxVisiblePages = 5;
+            let startPage = Math.max(1, currentPage - Math.floor(maxVisiblePages / 2));
+            let endPage = Math.min(totalPages, startPage + maxVisiblePages - 1);
+            
+            if (endPage - startPage + 1 < maxVisiblePages) {
+                startPage = Math.max(1, endPage - maxVisiblePages + 1);
+            }
+
+            // Başlangıçta ellipsis
+            if (startPage > 1) {
+                paginationHTML += `<div class="page-button" onclick="changePage(1)">1</div>`;
+                if (startPage > 2) {
+                    paginationHTML += `<div class="page-ellipsis">...</div>`;
+                }
+            }
+
+            // Sayfa numaraları
+            for (let i = startPage; i <= endPage; i++) {
+                paginationHTML += `
+                    <div class="page-button ${currentPage === i ? 'active' : ''}" onclick="changePage(${i})">
+                        ${i}
+                    </div>
+                `;
+            }
+
+            // Sonda ellipsis
+            if (endPage < totalPages) {
+                if (endPage < totalPages - 1) {
+                    paginationHTML += `<div class="page-ellipsis">...</div>`;
+                }
+                paginationHTML += `<div class="page-button" onclick="changePage(${totalPages})">${totalPages}</div>`;
+            }
+
+            // Sonraki sayfa butonu
+            paginationHTML += `
+                <div class="page-nav ${currentPage === totalPages ? 'disabled' : ''}" onclick="changePage(${currentPage + 1})">
+                    <i class="fas fa-angle-right"></i>
+                </div>
+            `;
+
+            // Son sayfa butonu
+            paginationHTML += `
+                <div class="page-nav ${currentPage === totalPages ? 'disabled' : ''}" onclick="changePage(${totalPages})">
+                    <i class="fas fa-angle-double-right"></i>
+                </div>
+            `;
+
+            paginationContent.innerHTML = paginationHTML;
+        }
+
+        // Sayfa değiştir
+        function changePage(page) {
+            const totalPages = Math.ceil(totalItems / itemsPerPage);
+            if (page >= 1 && page <= totalPages && page !== currentPage) {
+                currentPage = page;
+                displayPersons();
+                updatePagination();
+                
+                // Sayfa başına scroll
+                const table = document.querySelector('.results-table');
+                if (table) {
+                    table.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }
+            }
+        }
+
+        // Kişileri tabloda göster
+        function displayPersons() {
+            const tableBody = document.querySelector('.results-table tbody');
+            tableBody.innerHTML = '';
+
+            if (allPersons.length === 0) {
+                tableBody.innerHTML = '<tr><td colspan="4" style="text-align: center; color: #8A92A6;">Henüz kişi bulunmuyor</td></tr>';
+                return;
+            }
+
+            // Sayfalama için verileri dilimle
+            const startIndex = (currentPage - 1) * itemsPerPage;
+            const endIndex = startIndex + itemsPerPage;
+            const pageData = allPersons.slice(startIndex, endIndex);
+
+            pageData.forEach(person => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td><input type="checkbox" /></td>
+                    <td>${person.sicilNo}</td>
+                    <td>${person.name}</td>
+                    <td>${person.title}</td>
+                `;
+                tableBody.appendChild(row);
+            });
+        }
+
+        // Sayfa yüklendiğinde kişileri yükle
+        document.addEventListener('DOMContentLoaded', function() {
+            loadPersons();
+        });
+
+        // Kişileri yükle (örnek veri)
+        function loadPersons() {
+            // Örnek veri - gerçek uygulamada API'den gelecek
+            allPersons = [
+                { sicilNo: '1', name: 'AAAA', title: 'Devam Ediyor' },
+                { sicilNo: '2', name: 'BBBB', title: 'Gönderilmedi' },
+                { sicilNo: '3', name: 'CCCC', title: 'Tamamlandı' },
+                { sicilNo: '4', name: 'DDDD', title: 'Süresi Doldu' },
+                { sicilNo: '5', name: 'EEEE', title: 'Devam Ediyor' },
+                { sicilNo: '6', name: 'FFFF', title: 'Gönderilmedi' },
+                { sicilNo: '7', name: 'GGGG', title: 'Tamamlandı' },
+                { sicilNo: '8', name: 'HHHH', title: 'Süresi Doldu' },
+                { sicilNo: '9', name: 'IIII', title: 'Devam Ediyor' },
+                { sicilNo: '10', name: 'JJJJ', title: 'Gönderilmedi' },
+                { sicilNo: '11', name: 'KKKK', title: 'Tamamlandı' },
+                { sicilNo: '12', name: 'LLLL', title: 'Süresi Doldu' }
+            ];
+            
+            totalItems = allPersons.length;
+            displayPersons();
+            updatePagination();
         }
     </script>
 </body>
