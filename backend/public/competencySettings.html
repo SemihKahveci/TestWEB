@@ -1101,7 +1101,7 @@
                             <i class="fas fa-plus"></i> Ekle
                         </button>
                         <button class="btn-import" onclick="openImportPopup()">
-                            <i class="fas fa-file-excel"></i> Import
+                            <i class="fas fa-file-excel"></i> Excel Yükle
                         </button>
                         <button class="btn-edit" id="editBtn" onclick="editItem()" disabled>
                             <i class="fas fa-edit"></i> Düzenle
@@ -1225,6 +1225,15 @@
                 <div class="import-popup-close" onclick="closeImportPopup()">×</div>
                         </div>
             <div class="import-popup-body">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                    <div style="display: flex; align-items: center; gap: 12px;">
+                        <i class="fas fa-info-circle" style="color: #1976D2; font-size: 18px;"></i>
+                        <strong style="color: #1976D2; font-size: 14px;">Excel Dosyası Yükle</strong>
+                    </div>
+                    <button class="btn-import" onclick="downloadTemplate()" style="background: #17A2B8; padding: 8px 16px; font-size: 13px;">
+                        <i class="fas fa-download"></i> Template İndir
+                    </button>
+                </div>
                 <div class="file-upload-area" onclick="document.getElementById('excelFileInput').click()" 
                      ondrop="handleFileDrop(event)" ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)">
                     <div class="file-upload-icon">
@@ -1258,6 +1267,7 @@
     </div>
 
     <script src="/js/sidebar.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <script>
         // İşlemler butonları için fonksiyonlar
         function addItem() {
@@ -1643,6 +1653,89 @@
                 console.error('Yetkinlik işlemi hatası:', error);
                 const errorMessage = window.editingCompetencyId ? 'Yetkinlik güncellenirken bir hata oluştu: ' : 'Yetkinlik eklenirken bir hata oluştu: ';
                 showMessage(errorMessage + error.message, 'error');
+            }
+        }
+
+        // Template indirme fonksiyonu - Gerçek Excel dosyası oluşturur
+        function downloadTemplate() {
+            try {
+                // Excel template verilerini oluştur - her biri ayrı sütun
+                const headers = [
+                    'Unvan',
+                    'Müş. Odak. Min Değer',
+                    'Müş. Odak. Max Değer',
+                    'Bel. Yönt. Min Değer',
+                    'Bel. Yönt. Max Değer',
+                    'İns. Etk. Min Değer',
+                    'İns. Etk. Max Değer',
+                    'Güv. Ver. İş ve Sinerji Min Değer',
+                    'Güv. Ver. İş ve Sinerji Max Değer'
+                ];
+
+                // Örnek veri satırı
+                const exampleRow = [
+                    'Örnek Unvan',
+                    10,
+                    30,
+                    20,
+                    40,
+                    15,
+                    35,
+                    25,
+                    45
+                ];
+
+                // Boş satırlar için veri
+                const emptyRows = [];
+                for (let i = 0; i < 10; i++) {
+                    emptyRows.push(['', '', '', '', '', '', '', '', '']);
+                }
+
+                // Tüm veriyi birleştir
+                const allData = [headers, exampleRow, ...emptyRows];
+
+                // Excel workbook oluştur
+                const wb = XLSX.utils.book_new();
+                
+                // Worksheet oluştur
+                const ws = XLSX.utils.aoa_to_sheet(allData);
+                
+                // Sütun genişliklerini ayarla
+                ws['!cols'] = [
+                    { wch: 20 }, // Unvan
+                    { wch: 18 }, // Müş. Odak. Min
+                    { wch: 18 }, // Müş. Odak. Max
+                    { wch: 18 }, // Bel. Yönt. Min
+                    { wch: 18 }, // Bel. Yönt. Max
+                    { wch: 18 }, // İns. Etk. Min
+                    { wch: 18 }, // İns. Etk. Max
+                    { wch: 25 }, // Güv. Ver. İş Min
+                    { wch: 25 }  // Güv. Ver. İş Max
+                ];
+
+                // Başlık satırını kalın yap
+                const headerRange = XLSX.utils.decode_range(ws['!ref']);
+                for (let col = headerRange.s.c; col <= headerRange.e.c; col++) {
+                    const cellAddress = XLSX.utils.encode_cell({ r: 0, c: col });
+                    if (!ws[cellAddress]) continue;
+                    ws[cellAddress].s = {
+                        font: { bold: true },
+                        fill: { fgColor: { rgb: "E3F2FD" } },
+                        alignment: { horizontal: "center" }
+                    };
+                }
+
+                // Worksheet'i workbook'a ekle
+                XLSX.utils.book_append_sheet(wb, ws, "Yetkinlik Template");
+
+                // Excel dosyasını indir
+                XLSX.writeFile(wb, 'yetkinlik_template.xlsx');
+                
+                showMessage('Excel template başarıyla indirildi! (.xlsx formatında)', 'success');
+                
+            } catch (error) {
+                console.error('Template indirme hatası:', error);
+                showMessage('Template indirilirken bir hata oluştu!', 'error');
             }
         }
 

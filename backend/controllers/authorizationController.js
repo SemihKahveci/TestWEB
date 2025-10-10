@@ -1,6 +1,6 @@
 const Authorization = require('../models/Authorization');
 
-// Tüm yetkilendirmeleri getir
+// Tüm kişileri getir
 const getAllAuthorizations = async (req, res) => {
     try {
         const { page = 1, limit = 10, search = '', status = '' } = req.query;
@@ -20,7 +20,7 @@ const getAllAuthorizations = async (req, res) => {
         // Sayfalama için skip hesapla
         const skip = (parseInt(page) - 1) * parseInt(limit);
 
-        // Yetkilendirmeleri getir
+        // Kişileri getir
         const authorizations = await Authorization.find(filter)
             .populate('createdBy', 'username email')
             .sort({ createdAt: -1 })
@@ -41,16 +41,16 @@ const getAllAuthorizations = async (req, res) => {
             }
         });
     } catch (error) {
-        console.error('Yetkilendirmeleri getirme hatası:', error);
+        console.error('Kişileri getirme hatası:', error);
         res.status(500).json({
             success: false,
-            message: 'Yetkilendirmeler getirilirken bir hata oluştu',
+            message: 'Kişiler getirilirken bir hata oluştu',
             error: error.message
         });
     }
 };
 
-// Tek yetkilendirme getir
+// Tek kişi getir
 const getAuthorizationById = async (req, res) => {
     try {
         const { id } = req.params;
@@ -60,7 +60,7 @@ const getAuthorizationById = async (req, res) => {
         if (!authorization) {
             return res.status(404).json({
                 success: false,
-                message: 'Yetkilendirme bulunamadı'
+                message: 'Kişi bulunamadı'
             });
         }
 
@@ -69,16 +69,16 @@ const getAuthorizationById = async (req, res) => {
             authorization
         });
     } catch (error) {
-        console.error('Yetkilendirme getirme hatası:', error);
+        console.error('Kişi getirme hatası:', error);
         res.status(500).json({
             success: false,
-            message: 'Yetkilendirme getirilirken bir hata oluştu',
+            message: 'Kişi getirilirken bir hata oluştu',
             error: error.message
         });
     }
 };
 
-// Yeni yetkilendirme oluştur
+// Yeni kişi oluştur
 const createAuthorization = async (req, res) => {
     try {
         const { sicilNo, personName, email, title } = req.body;
@@ -113,7 +113,7 @@ const createAuthorization = async (req, res) => {
             });
         }
 
-        // Aynı sicil numarasında yetkilendirme var mı kontrol et
+        // Aynı sicil numarasında kişi var mı kontrol et
         const existingAuthorization = await Authorization.findOne({ 
             sicilNo: sicilNo.trim()
         });
@@ -121,11 +121,11 @@ const createAuthorization = async (req, res) => {
         if (existingAuthorization) {
             return res.status(400).json({
                 success: false,
-                message: 'Bu sicil numarasında zaten bir yetkilendirme mevcut'
+                message: 'Bu sicil numarasında zaten bir kişi mevcut'
             });
         }
 
-        // Aynı email adresinde yetkilendirme var mı kontrol et
+        // Aynı email adresinde kişi var mı kontrol et
         const existingEmail = await Authorization.findOne({ 
             email: email.trim().toLowerCase()
         });
@@ -133,11 +133,11 @@ const createAuthorization = async (req, res) => {
         if (existingEmail) {
             return res.status(400).json({
                 success: false,
-                message: 'Bu email adresinde zaten bir yetkilendirme mevcut'
+                message: 'Bu email adresinde zaten bir kişi mevcut'
             });
         }
 
-        // Yeni yetkilendirme oluştur
+        // Yeni kişi oluştur
         const newAuthorization = new Authorization({
             sicilNo: sicilNo.trim(),
             personName: personName.trim(),
@@ -153,31 +153,31 @@ const createAuthorization = async (req, res) => {
 
         res.status(201).json({
             success: true,
-            message: 'Yetkilendirme başarıyla oluşturuldu',
+            message: 'Kişi başarıyla oluşturuldu',
             authorization: newAuthorization
         });
     } catch (error) {
-        console.error('Yetkilendirme oluşturma hatası:', error);
+        console.error('Kişi oluşturma hatası:', error);
         res.status(500).json({
             success: false,
-            message: 'Yetkilendirme oluşturulurken bir hata oluştu',
+            message: 'Kişi oluşturulurken bir hata oluştu',
             error: error.message
         });
     }
 };
 
-// Yetkilendirme güncelle
+// Kişi güncelle
 const updateAuthorization = async (req, res) => {
     try {
         const { id } = req.params;
         const { sicilNo, personName, email, title } = req.body;
 
-        // Yetkilendirme var mı kontrol et
+        // Kişi var mı kontrol et
         const authorization = await Authorization.findById(id);
         if (!authorization) {
             return res.status(404).json({
                 success: false,
-                message: 'Yetkilendirme bulunamadı'
+                message: 'Kişi bulunamadı'
             });
         }
 
@@ -185,7 +185,7 @@ const updateAuthorization = async (req, res) => {
         const updateData = {};
         
         if (sicilNo && sicilNo.trim()) {
-            // Aynı sicil numarasında başka yetkilendirme var mı kontrol et
+            // Aynı sicil numarasında başka kişi var mı kontrol et
             const existingAuthorization = await Authorization.findOne({ 
                 sicilNo: sicilNo.trim(),
                 _id: { $ne: id }
@@ -194,7 +194,7 @@ const updateAuthorization = async (req, res) => {
             if (existingAuthorization) {
                 return res.status(400).json({
                     success: false,
-                    message: 'Bu sicil numarasında başka bir yetkilendirme zaten mevcut'
+                    message: 'Bu sicil numarasında başka bir kişi zaten mevcut'
                 });
             }
             
@@ -206,7 +206,7 @@ const updateAuthorization = async (req, res) => {
         }
 
         if (email && email.trim()) {
-            // Aynı email adresinde başka yetkilendirme var mı kontrol et
+            // Aynı email adresinde başka kişi var mı kontrol et
             const existingEmail = await Authorization.findOne({ 
                 email: email.trim().toLowerCase(),
                 _id: { $ne: id }
@@ -215,7 +215,7 @@ const updateAuthorization = async (req, res) => {
             if (existingEmail) {
                 return res.status(400).json({
                     success: false,
-                    message: 'Bu email adresinde başka bir yetkilendirme zaten mevcut'
+                    message: 'Bu email adresinde başka bir kişi zaten mevcut'
                 });
             }
             
@@ -226,7 +226,7 @@ const updateAuthorization = async (req, res) => {
             updateData.title = title.trim();
         }
 
-        // Yetkilendirmeyi güncelle
+        // Kişiyi güncelle
         const updatedAuthorization = await Authorization.findByIdAndUpdate(
             id,
             updateData,
@@ -235,56 +235,239 @@ const updateAuthorization = async (req, res) => {
 
         res.json({
             success: true,
-            message: 'Yetkilendirme başarıyla güncellendi',
+            message: 'Kişi başarıyla güncellendi',
             authorization: updatedAuthorization
         });
     } catch (error) {
-        console.error('Yetkilendirme güncelleme hatası:', error);
+        console.error('Kişi güncelleme hatası:', error);
         res.status(500).json({
             success: false,
-            message: 'Yetkilendirme güncellenirken bir hata oluştu',
+            message: 'Kişi güncellenirken bir hata oluştu',
             error: error.message
         });
     }
 };
 
-// Yetkilendirme sil
+// Kişi sil
 const deleteAuthorization = async (req, res) => {
     try {
         const { id } = req.params;
 
-        // Yetkilendirme var mı kontrol et
+        // Kişi var mı kontrol et
         const authorization = await Authorization.findById(id);
         if (!authorization) {
             return res.status(404).json({
                 success: false,
-                message: 'Yetkilendirme bulunamadı'
+                message: 'Kişi bulunamadı'
             });
         }
 
-        // Yetkilendirmeyi sil
+        // Kişiyi sil
         await Authorization.findByIdAndDelete(id);
 
         res.json({
             success: true,
-            message: 'Yetkilendirme başarıyla silindi'
+            message: 'Kişi başarıyla silindi'
         });
     } catch (error) {
-        console.error('Yetkilendirme silme hatası:', error);
+        console.error('Kişi silme hatası:', error);
         res.status(500).json({
             success: false,
-            message: 'Yetkilendirme silinirken bir hata oluştu',
+            message: 'Kişi silinirken bir hata oluştu',
             error: error.message
         });
     }
 };
 
 
+
+// Bulk yetkilendirme ekleme (Excel import için)
+const bulkCreateAuthorizations = async (req, res) => {
+    try {
+        if (!req.file) {
+            return res.status(400).json({
+                success: false,
+                message: 'Excel dosyası seçilmedi. Lütfen .xlsx veya .xls formatında bir dosya seçin.'
+            });
+        }
+
+        // Memory'den Excel dosyasını oku
+        const XLSX = require('xlsx');
+        const workbook = XLSX.read(req.file.buffer, { type: 'buffer' });
+        const sheetName = workbook.SheetNames[0];
+        const worksheet = workbook.Sheets[sheetName];
+        
+        // İlk satırı header olarak ignore et, sadece veri satırlarını al
+        const range = XLSX.utils.decode_range(worksheet['!ref']);
+        const data = [];
+        
+        // 1. satır header (0), 2. satırdan itibaren veri (1'den başla)
+        for (let rowNum = 1; rowNum <= range.e.r; rowNum++) {
+            const row = [];
+            for (let colNum = range.s.c; colNum <= range.e.c; colNum++) {
+                const cellAddress = XLSX.utils.encode_cell({ r: rowNum, c: colNum });
+                const cell = worksheet[cellAddress];
+                row.push(cell ? cell.v : '');
+            }
+            data.push(row);
+        }
+
+        if (data.length === 0) {
+            return res.status(400).json({
+                success: false,
+                message: 'Excel dosyası boş veya okunamıyor. Lütfen geçerli bir Excel dosyası (.xlsx, .xls) seçin.'
+            });
+        }
+
+        const authorizations = [];
+        const errors = [];
+
+        // Sütun sırası: Sicil No, Ad Soyad, Email, Pozisyon
+        for (let i = 0; i < data.length; i++) {
+            const row = data[i];
+            const rowNumber = i + 2; // Excel'de satır numarası (header + 1)
+
+            try {
+                if (row.length < 4) {
+                    errors.push({
+                        row: rowNumber,
+                        message: 'Satırda yeterli sütun bulunmuyor. 4 sütun gerekli: Sicil No, Ad Soyad, Email, Pozisyon'
+                    });
+                    continue;
+                }
+
+                const [sicilNo, personName, email, title] = row;
+
+                // Boş alan kontrolü: null, undefined, boş string veya sadece '-' karakteri
+                const isEmpty = (value) => !value || value.toString().trim() === '' || value.toString().trim() === '-';
+                
+                if (isEmpty(sicilNo) || isEmpty(personName) || isEmpty(email) || isEmpty(title)) {
+                    const missingFields = [];
+                    if (isEmpty(sicilNo)) missingFields.push('Sicil No');
+                    if (isEmpty(personName)) missingFields.push('Ad Soyad');
+                    if (isEmpty(email)) missingFields.push('Email');
+                    if (isEmpty(title)) missingFields.push('Pozisyon');
+                    
+                    errors.push({
+                        row: rowNumber,
+                        message: `Eksik/geçersiz alanlar: ${missingFields.join(', ')}. Tüm alanlar dolu olmalıdır (boş veya '-' karakteri kabul edilmez).`
+                    });
+                    continue;
+                }
+
+                authorizations.push({
+                    sicilNo: sicilNo.toString().trim(),
+                    personName: personName.toString().trim(),
+                    email: email.toString().trim(),
+                    title: title.toString().trim()
+                });
+
+            } catch (error) {
+                errors.push({
+                    row: rowNumber,
+                    message: error.message || 'Bilinmeyen hata'
+                });
+            }
+        }
+
+        const results = {
+            success: [],
+            errors: errors // Excel parsing hatalarını ekle
+        };
+
+        for (let i = 0; i < authorizations.length; i++) {
+            const auth = authorizations[i];
+            const rowNumber = i + 2; // Excel'de satır numarası
+            
+            try {
+                // Sicil No duplicate kontrolü
+                const existingSicilNo = await Authorization.findOne({
+                    sicilNo: auth.sicilNo
+                });
+
+                if (existingSicilNo) {
+                    results.errors.push({
+                        row: rowNumber,
+                        message: 'Bu sicil numarası zaten mevcut! Farklı bir sicil numarası girin.'
+                    });
+                    continue;
+                }
+
+                // Email duplicate kontrolü
+                const existingEmail = await Authorization.findOne({
+                    email: auth.email
+                });
+
+                if (existingEmail) {
+                    results.errors.push({
+                        row: rowNumber,
+                        message: 'Bu email adresi zaten mevcut! Farklı bir email adresi girin.'
+                    });
+                    continue;
+                }
+
+                // Aynı yetkilendirme var mı kontrol et
+                const existingAuthorization = await Authorization.findOne({
+                    sicilNo: auth.sicilNo,
+                    personName: auth.personName,
+                    email: auth.email,
+                    title: auth.title
+                });
+
+                if (existingAuthorization) {
+                    results.errors.push({
+                        row: rowNumber,
+                        message: 'Bu yetkilendirme zaten mevcut!'
+                    });
+                    continue;
+                }
+
+                // Yeni yetkilendirme oluştur
+                const newAuthorization = new Authorization(auth);
+                await newAuthorization.save();
+                results.success.push({
+                    row: rowNumber,
+                    authorization: newAuthorization
+                });
+
+            } catch (error) {
+                results.errors.push({
+                    row: rowNumber,
+                    message: error.message || 'Bilinmeyen hata'
+                });
+            }
+        }
+
+        // Sonuçları döndür
+        if (results.success.length === 0) {
+            return res.status(400).json({
+                success: false,
+                message: 'Hiçbir yetkilendirme eklenemedi',
+                errors: results.errors
+            });
+        }
+
+        res.json({
+            success: true,
+            message: `${results.success.length} yetkilendirme başarıyla eklendi`,
+            count: results.success.length,
+            errors: results.errors.length > 0 ? results.errors : undefined
+        });
+
+    } catch (error) {
+        console.error('Bulk yetkilendirme ekleme hatası:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Yetkilendirmeler eklenirken bir hata oluştu'
+        });
+    }
+};
 
 module.exports = {
     getAllAuthorizations,
     getAuthorizationById,
     createAuthorization,
     updateAuthorization,
-    deleteAuthorization
+    deleteAuthorization,
+    bulkCreateAuthorizations
 };

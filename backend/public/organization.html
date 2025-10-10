@@ -854,6 +854,174 @@
                 font-size: 13px;
             }
         }
+
+        /* Excel Import Popup Styles */
+        .import-popup {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+
+        .import-popup-content {
+            background: white;
+            border-radius: 12px;
+            width: 90%;
+            max-width: 500px;
+            max-height: 80vh;
+            overflow-y: auto;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+        }
+
+        .import-popup-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px 24px;
+            border-bottom: 1px solid #E5E7EB;
+        }
+
+        .import-popup-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: #1F2937;
+        }
+
+        .import-popup-close {
+            font-size: 24px;
+            color: #6B7280;
+            cursor: pointer;
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 6px;
+            transition: all 0.2s;
+        }
+
+        .import-popup-close:hover {
+            background: #F3F4F6;
+            color: #374151;
+        }
+
+        .import-popup-body {
+            padding: 24px;
+        }
+
+        .file-upload-area {
+            border: 2px dashed #D1D5DB;
+            border-radius: 8px;
+            padding: 40px 20px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+            background: #FAFAFA;
+        }
+
+        .file-upload-area:hover {
+            border-color: #3B82F6;
+            background: #F8FAFF;
+        }
+
+        .file-upload-area.dragover {
+            border-color: #3B82F6;
+            background: #EFF6FF;
+        }
+
+        .file-upload-icon {
+            font-size: 48px;
+            color: #10B981;
+            margin-bottom: 16px;
+        }
+
+        .file-upload-text {
+            font-size: 16px;
+            font-weight: 500;
+            color: #374151;
+            margin-bottom: 8px;
+        }
+
+        .file-upload-subtext {
+            font-size: 14px;
+            color: #6B7280;
+        }
+
+        .file-input {
+            display: none;
+        }
+
+        .import-message {
+            margin-top: 16px;
+            padding: 12px 16px;
+            border-radius: 6px;
+            font-size: 14px;
+            display: none;
+        }
+
+        .import-message.success {
+            background: #D1FAE5;
+            color: #065F46;
+            border: 1px solid #A7F3D0;
+        }
+
+        .import-message.error {
+            background: #FEE2E2;
+            color: #991B1B;
+            border: 1px solid #FECACA;
+        }
+
+        .import-popup-footer {
+            display: flex;
+            justify-content: flex-end;
+            gap: 12px;
+            margin-top: 24px;
+            padding-top: 20px;
+            border-top: 1px solid #E5E7EB;
+        }
+
+        .btn-import {
+            background: #3B82F6;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn-import:hover:not(:disabled) {
+            background: #2563EB;
+        }
+
+        .btn-import:disabled {
+            background: #9CA3AF;
+            cursor: not-allowed;
+        }
+
+        .btn-cancel {
+            background: #F3F4F6;
+            color: #374151;
+            border: 1px solid #D1D5DB;
+            padding: 10px 20px;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn-cancel:hover {
+            background: #E5E7EB;
+        }
     </style>
 </head>
 <body>
@@ -895,7 +1063,7 @@
                             <input type="text" placeholder="Search...">
                         </div>
                         <div class="action-buttons">
-                            <button class="btn btn-excel">
+                            <button class="btn btn-excel" onclick="openImportPopup()">
                                 <i class="fas fa-file-excel"></i>
                                 Excel Yükle
                             </button>
@@ -985,6 +1153,41 @@
         </div>
     </div>
 
+    <!-- Excel Import Popup -->
+    <div id="importPopup" class="import-popup" style="display: none;">
+        <div class="import-popup-content">
+            <div class="import-popup-header">
+                <div class="import-popup-title">Excel Import</div>
+                <div class="import-popup-close" onclick="closeImportPopup()">×</div>
+            </div>
+            <div class="import-popup-body">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                    <div style="display: flex; align-items: center; gap: 12px;">
+                        <i class="fas fa-info-circle" style="color: #1976D2; font-size: 18px;"></i>
+                        <strong style="color: #1976D2; font-size: 14px;">Excel Dosyası Yükle</strong>
+                    </div>
+                    <button class="btn-import" onclick="downloadTemplate()" style="background: #17A2B8; padding: 8px 16px; font-size: 13px;">
+                        <i class="fas fa-download"></i> Template İndir
+                    </button>
+                </div>
+                <div class="file-upload-area" onclick="document.getElementById('excelFileInput').click()" 
+                     ondrop="handleFileDrop(event)" ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)">
+                    <div class="file-upload-icon">
+                        <i class="fas fa-file-excel"></i>
+                    </div>
+                    <div class="file-upload-text">Excel dosyasını seçin veya sürükleyin</div>
+                    <div class="file-upload-subtext">.xlsx, .xls formatları desteklenir</div>
+                </div>
+                <input type="file" id="excelFileInput" class="file-input" accept=".xlsx,.xls" onchange="handleFileSelect(event)">
+                <div id="importMessage" class="import-message" style="display: none;"></div>
+                <div class="import-popup-footer">
+                    <button class="btn-cancel" onclick="closeImportPopup()">İptal</button>
+                    <button class="btn-import" id="importBtn" onclick="importExcelData()" disabled>Yükle</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Silme Onay Modal -->
     <div id="confirmModal" class="confirm-modal">
         <div class="confirm-modal-content">
@@ -1004,6 +1207,7 @@
     </div>
 
     <script src="/js/sidebar.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <script>
         // Sayfalama için gerekli değişkenler
         let currentPage = 1;
@@ -1451,6 +1655,356 @@
             } catch (error) {
                 console.error('Organizasyon silme hatası:', error);
                 showMessageModal('error', 'Hata', 'Organizasyon silinirken bir hata oluştu!');
+            }
+        }
+
+        // Excel Import Functions
+        let selectedFile = null;
+
+        function openImportPopup() {
+            document.getElementById('importPopup').style.display = 'flex';
+            hideImportMessage();
+        }
+
+        function closeImportPopup() {
+            document.getElementById('importPopup').style.display = 'none';
+            removeSelectedFile();
+        }
+
+        function downloadTemplate() {
+            try {
+                // Excel template verilerini oluştur - organization sütunları
+                const headers = [
+                    'Genel Müdür Yardımcılığı',
+                    'Direktörlük',
+                    'Müdürlük',
+                    'Grup Liderliği',
+                    'Pozisyon'
+                ];
+
+                // Örnek veri satırı
+                const exampleRow = [
+                    'Örnek Genel Müdür Yardımcılığı',
+                    'Örnek Direktörlük',
+                    'Örnek Müdürlük',
+                    'Örnek Grup Liderliği',
+                    'Örnek Pozisyon'
+                ];
+
+                // Boş satırlar için veri
+                const emptyRows = [];
+                for (let i = 0; i < 10; i++) {
+                    emptyRows.push(['', '', '', '', '']);
+                }
+
+                // Tüm veriyi birleştir
+                const allData = [headers, exampleRow, ...emptyRows];
+
+                // Excel workbook oluştur
+                const wb = XLSX.utils.book_new();
+                
+                // Worksheet oluştur
+                const ws = XLSX.utils.aoa_to_sheet(allData);
+                
+                // Sütun genişliklerini ayarla
+                ws['!cols'] = [
+                    { wch: 25 }, // Genel Müdür Yardımcılığı
+                    { wch: 20 }, // Direktörlük
+                    { wch: 20 }, // Müdürlük
+                    { wch: 20 }, // Grup Liderliği
+                    { wch: 20 }  // Pozisyon
+                ];
+
+                // Başlık satırını kalın yap
+                const headerRange = XLSX.utils.decode_range(ws['!ref']);
+                for (let col = headerRange.s.c; col <= headerRange.e.c; col++) {
+                    const cellAddress = XLSX.utils.encode_cell({ r: 0, c: col });
+                    if (!ws[cellAddress]) continue;
+                    ws[cellAddress].s = {
+                        font: { bold: true },
+                        fill: { fgColor: { rgb: "E3F2FD" } },
+                        alignment: { horizontal: "center" }
+                    };
+                }
+
+                // Worksheet'i workbook'a ekle
+                XLSX.utils.book_append_sheet(wb, ws, "Organizasyon Template");
+
+                // Excel dosyasını indir
+                XLSX.writeFile(wb, 'organizasyon_template.xlsx');
+                
+                showMessageModal('success', 'Başarılı', 'Excel template başarıyla indirildi! (.xlsx formatında)');
+                
+            } catch (error) {
+                console.error('Template indirme hatası:', error);
+                showMessageModal('error', 'Hata', 'Template indirilirken bir hata oluştu!');
+            }
+        }
+
+        function handleFileSelect(event) {
+            const file = event.target.files[0];
+            if (file) {
+                selectedFile = file;
+                showImportMessage(`Dosya seçildi: ${file.name}`, 'success');
+                document.getElementById('importBtn').disabled = false;
+            }
+        }
+
+        function handleFileDrop(event) {
+            event.preventDefault();
+            const file = event.dataTransfer.files[0];
+            if (file) {
+                if (file.name.endsWith('.xlsx') || file.name.endsWith('.xls')) {
+                    selectedFile = file;
+                    showImportMessage(`Dosya seçildi: ${file.name}`, 'success');
+                    document.getElementById('importBtn').disabled = false;
+                } else {
+                    showImportMessage('Lütfen sadece Excel dosyası (.xlsx, .xls) seçin!', 'error');
+                }
+            }
+            event.target.classList.remove('dragover');
+        }
+
+        function handleDragOver(event) {
+            event.preventDefault();
+            event.target.classList.add('dragover');
+        }
+
+        function handleDragLeave(event) {
+            event.preventDefault();
+            event.target.classList.remove('dragover');
+        }
+
+        function removeSelectedFile() {
+            selectedFile = null;
+            document.getElementById('excelFileInput').value = '';
+            document.getElementById('importBtn').disabled = true;
+            hideImportMessage();
+        }
+
+        function showImportMessage(message, type) {
+            const messageDiv = document.getElementById('importMessage');
+            messageDiv.textContent = message;
+            messageDiv.className = `import-message ${type}`;
+            messageDiv.style.display = 'block';
+        }
+
+        function hideImportMessage() {
+            document.getElementById('importMessage').style.display = 'none';
+        }
+
+        async function importExcelData() {
+            
+            if (!selectedFile) {
+                showImportMessage('Lütfen önce bir Excel dosyası seçin!', 'error');
+                return;
+            }
+
+            try {
+                showImportMessage('Excel dosyası yükleniyor...', 'success');
+                document.getElementById('importBtn').disabled = true;
+
+                const token = localStorage.getItem('token');
+                if (!token) {
+                    showImportMessage('Oturum süreniz dolmuş. Lütfen tekrar giriş yapın.', 'error');
+                    document.getElementById('importBtn').disabled = false;
+                    return;
+                }
+
+                const formData = new FormData();
+                formData.append('excelFile', selectedFile);
+
+                const response = await fetch('/api/organization/import', {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: formData
+                });
+
+                if (!response.ok) {
+                    if (response.status === 401) {
+                        showImportMessage('Yetkiniz bulunmuyor. Lütfen tekrar giriş yapın.', 'error');
+                    } else if (response.status === 413) {
+                        showImportMessage('Dosya çok büyük. Lütfen daha küçük bir dosya seçin.', 'error');
+                    } else if (response.status === 400) {
+                        // Backend'den gelen detaylı hata mesajını kullan
+                        const errorResult = await response.json();
+                        let errorMessage = errorResult.message || 'Dosya formatı hatalı. Lütfen geçerli bir Excel dosyası seçin.';
+                        if (errorResult.errors && errorResult.errors.length > 0) {
+                            errorMessage += '\n\nDetaylar:\n';
+                            errorResult.errors.forEach(error => {
+                                errorMessage += `• Satır ${error.row}: ${error.message}\n`;
+                            });
+                        }
+                        showImportMessage(errorMessage, 'error');
+                    } else {
+                        showImportMessage(`Sunucu hatası (${response.status}). Lütfen tekrar deneyin.`, 'error');
+                    }
+                    document.getElementById('importBtn').disabled = false;
+                    return;
+                }
+
+                const result = await response.json();
+                
+                if (result.success) {
+                    let message = result.message;
+                    if (result.errors && result.errors.length > 0) {
+                        message += `\n\nHatalı satırlar:\n`;
+                        result.errors.forEach(error => {
+                            message += `• Satır ${error.row}: ${error.message}\n`;
+                        });
+                    }
+                    showImportMessage(message, 'success');
+                    setTimeout(() => {
+                        closeImportPopup();
+                        loadOrganizations();
+                    }, 3000);
+                } else {
+                    let errorMessage = result.message || 'Bilinmeyen hata';
+                    if (result.errors && result.errors.length > 0) {
+                        errorMessage += '\n\nDetaylar:\n';
+                        result.errors.forEach(error => {
+                            errorMessage += `• Satır ${error.row}: ${error.message}\n`;
+                        });
+                    }
+                    showImportMessage(errorMessage, 'error');
+                }
+
+            } catch (error) {
+                console.error('Import hatası:', error);
+                if (error.name === 'TypeError' && error.message.includes('fetch')) {
+                    showImportMessage('Sunucuya bağlanılamıyor. İnternet bağlantınızı kontrol edin.', 'error');
+                } else {
+                    showImportMessage(`Excel dosyası işlenirken hata oluştu: ${error.message}`, 'error');
+                }
+            } finally {
+                document.getElementById('importBtn').disabled = false;
+            }
+        }
+
+        function readExcelFile(file) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    try {
+                        const data = new Uint8Array(e.target.result);
+                        const workbook = XLSX.read(data, { type: 'array' });
+                        const sheetName = workbook.SheetNames[0];
+                        const worksheet = workbook.Sheets[sheetName];
+                        const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+                        
+                        // İlk satırı atla (başlık satırı)
+                        const dataRows = jsonData.slice(1);
+                        
+                        // Boş satırları filtrele
+                        const filteredData = dataRows.filter(row => 
+                            row && row.length > 0 && row.some(cell => cell && cell.toString().trim() !== '')
+                        );
+                        
+                        resolve(filteredData);
+                    } catch (error) {
+                        reject(error);
+                    }
+                };
+                reader.onerror = reject;
+                reader.readAsArrayBuffer(file);
+            });
+        }
+
+        function validateExcelData(data) {
+            const expectedColumns = 5; // Genel Müdür Yardımcılığı, Direktörlük, Müdürlük, Grup Liderliği, Pozisyon
+            
+            for (let i = 0; i < data.length; i++) {
+                const row = data[i];
+                
+                // Sütun sayısı kontrolü
+                if (row.length < expectedColumns) {
+                    return {
+                        isValid: false,
+                        message: `${i + 2}. satırda eksik sütun var. ${expectedColumns} sütun olmalı.`
+                    };
+                }
+                
+                // Boş alan kontrolü
+                for (let j = 0; j < expectedColumns; j++) {
+                    if (!row[j] || row[j].toString().trim() === '') {
+                        const columnNames = ['Genel Müdür Yardımcılığı', 'Direktörlük', 'Müdürlük', 'Grup Liderliği', 'Pozisyon'];
+                        return {
+                            isValid: false,
+                            message: `${i + 2}. satırda "${columnNames[j]}" alanı boş olamaz.`
+                        };
+                    }
+                }
+                
+                // Aynı değer kontrolü (tüm alanlar aynıysa)
+                const values = row.slice(0, expectedColumns).map(v => v.toString().trim());
+                const uniqueValues = [...new Set(values)];
+                if (uniqueValues.length === 1) {
+                    return {
+                        isValid: false,
+                        message: `${i + 2}. satırda tüm alanlar aynı değeri içeriyor. Farklı değerler girin.`
+                    };
+                }
+            }
+            
+            return { isValid: true };
+        }
+
+        async function sendExcelDataToBackend(data) {
+            try {
+                console.log('🔍 Frontend: Excel verisi işleniyor...', data);
+                
+                const organizations = data.map(row => ({
+                    genelMudurYardimciligi: row[0].toString().trim(),
+                    direktörlük: row[1].toString().trim(),
+                    müdürlük: row[2].toString().trim(),
+                    grupLiderligi: row[3].toString().trim(),
+                    pozisyon: row[4].toString().trim()
+                }));
+
+                console.log('🔍 Frontend: Organizasyon verileri hazırlandı:', organizations);
+
+                const token = localStorage.getItem('token');
+                console.log('🔍 Frontend: Token var mı?', !!token);
+                
+                const requestData = { organizations };
+                console.log('🔍 Frontend: Gönderilecek veri:', requestData);
+                
+                console.log('🔍 Frontend: API çağrısı yapılıyor: /api/organization/import');
+                const response = await fetch('/api/organization/import', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify(requestData)
+                });
+
+                console.log('🔍 Frontend: Response status:', response.status);
+                console.log('🔍 Frontend: Response ok:', response.ok);
+                
+                const result = await response.json();
+                console.log('🔍 Frontend: Response data:', result);
+                
+                if (response.ok) {
+                    return {
+                        success: true,
+                        count: result.count || organizations.length,
+                        message: result.message
+                    };
+                } else {
+                    return {
+                        success: false,
+                        message: result.message || 'Organizasyonlar eklenirken bir hata oluştu!'
+                    };
+                }
+            } catch (error) {
+                console.error('Backend gönderme hatası:', error);
+                return {
+                    success: false,
+                    message: 'Sunucu ile bağlantı kurulamadı!'
+                };
             }
         }
     </script>

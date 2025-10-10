@@ -354,9 +354,6 @@ const competencyController = {
                 }
                 data.push(row);
             }
-
-            console.log(`Excel'den okunan satır sayısı: ${data.length}`);
-            console.log(`İlk veri satırı:`, data[0]);
             
             if (data.length === 0) {
                 return res.status(400).json({
@@ -451,18 +448,15 @@ const competencyController = {
 
                     // Önce mevcut kaydı ara (case-insensitive ve trim ile)
                     const trimmedTitle = title.trim();
-                    console.log(`Aranan unvan: "${trimmedTitle}"`);
                     
                     const existingCompetency = await Competency.findOne({ 
                         title: { $regex: new RegExp(`^${trimmedTitle.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`, 'i') }
                     });
 
-                    console.log(`Bulunan kayıt:`, existingCompetency ? `ID: ${existingCompetency._id}, Title: "${existingCompetency.title}"` : 'Bulunamadı');
 
                     let competency;
                     if (existingCompetency) {
                         // Mevcut kaydı güncelle
-                        console.log(`Güncelleniyor: ${existingCompetency._id}`);
                         competency = await Competency.findByIdAndUpdate(
                             existingCompetency._id,
                             {
@@ -475,10 +469,8 @@ const competencyController = {
                             },
                             { new: true, runValidators: true }
                         );
-                        console.log(`Güncellendi: ${competency._id}`);
                     } else {
                         // Yeni kayıt oluştur
-                        console.log(`Yeni kayıt oluşturuluyor: "${trimmedTitle}"`);
                         competency = new Competency({
                             title: trimmedTitle,
                             customerFocus: { min: numericValues.customerFocusMin, max: numericValues.customerFocusMax },
@@ -488,7 +480,6 @@ const competencyController = {
                             createdBy: adminId
                         });
                         await competency.save();
-                        console.log(`Yeni kayıt oluşturuldu: ${competency._id}`);
                     }
 
                     importedCompetencies.push(competency);
