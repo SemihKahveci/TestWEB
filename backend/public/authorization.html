@@ -583,13 +583,15 @@
             overflow-y: auto;
         }
 
-        .form-group {
-            min-height: 65px;
-            display: flex;
-            flex-direction: column;
-            gap: 6px;
-            flex-shrink: 0;
-        }
+         .form-group {
+             min-height: 65px;
+             display: flex;
+             flex-direction: column;
+             gap: 6px;
+             flex-shrink: 0;
+             align-items: center;
+             width: 100%;
+         }
 
         .form-label {
             color: #8A92A6;
@@ -599,33 +601,33 @@
             line-height: 28px;
         }
 
-        .form-input {
-            width: 100%;
-            max-width: 436px;
-            padding: 6px 12px;
-            background: white;
-            border-radius: 4px;
-            border: 1px solid #3A57E8;
-            color: #232D42;
-            font-size: 14px;
-            font-family: Poppins;
-            font-style: italic;
-            font-weight: 500;
-            line-height: 24px;
-            outline: none;
-        }
+         .form-input {
+             width: 100%;
+             max-width: 300px;
+             padding: 6px 12px;
+             background: white;
+             border-radius: 4px;
+             border: 1px solid #3A57E8;
+             color: #232D42;
+             font-size: 14px;
+             font-family: Poppins;
+             font-style: italic;
+             font-weight: 500;
+             line-height: 24px;
+             outline: none;
+         }
 
         .form-input::placeholder {
             color: #8A92A6;
         }
 
-        .modal-buttons {
-            display: flex;
-            gap: 15px;
-            justify-content: flex-start;
-            align-items: flex-start;
-            flex-shrink: 0;
-        }
+         .modal-buttons {
+             display: flex;
+             gap: 15px;
+             justify-content: center;
+             align-items: center;
+             flex-shrink: 0;
+         }
 
         .btn-cancel {
             width: 143px;
@@ -968,7 +970,7 @@
                 <img src="images/close-icon.svg" alt="Kapat">
             </button>
             <div class="modal-header">
-                <div class="modal-title">Yetkilendirme Ekle</div>
+                <div class="modal-title">Kişi Ekle</div>
                 <div class="modal-divider"></div>
             </div>
             <div class="modal-body">
@@ -1246,7 +1248,7 @@
                 });
 
                 if (!response.ok) {
-                    throw new Error('Yetkilendirme listesi yüklenemedi');
+                    throw new Error('Kişi listesi yüklenemedi');
                 }
 
                 const result = await response.json();
@@ -1256,10 +1258,10 @@
                     displayAuthorizations();
                     updatePagination();
                     } else {
-                    throw new Error(result.message || 'Yetkilendirme listesi alınamadı');
+                    throw new Error(result.message || 'Kişi listesi alınamadı');
                 }
             } catch (error) {
-                console.error('Yetkilendirme listesi yükleme hatası:', error);
+                console.error('Kişi listesi yükleme hatası:', error);
                 document.querySelector('.results-table tbody').innerHTML = 
                     '<tr><td colspan="4" style="text-align: center; color: #dc3545;">Veriler yüklenemedi</td></tr>';
             }
@@ -1329,7 +1331,7 @@
             // Reset edit mode
             window.editingAuthorizationId = null;
             // Reset modal title
-            document.querySelector('.modal-title').textContent = 'Yetkilendirme Ekle';
+            document.querySelector('.modal-title').textContent = 'Kişi Ekle';
         }
 
         // Yetkilendirme kaydet
@@ -1388,7 +1390,7 @@
                 const result = await response.json();
 
                 if (result.success) {
-                    const message = isEditMode ? 'Yetkilendirme başarıyla güncellendi!' : 'Yetkilendirme başarıyla eklendi!';
+                    const message = isEditMode ? 'Kişi başarıyla güncellendi!' : 'Kişi başarıyla eklendi!';
                     showMessage('Başarılı', message, true);
                     closeAuthorizationModal();
                     if (!isEditMode) {
@@ -1400,15 +1402,15 @@
                 }
 
             } catch (error) {
-                console.error('Yetkilendirme işlemi hatası:', error);
-                const errorMessage = window.editingAuthorizationId ? 'Yetkilendirme güncellenirken bir hata oluştu!' : 'Yetkilendirme eklenirken bir hata oluştu!';
+                console.error('Kişi işlemi hatası:', error);
+                const errorMessage = window.editingAuthorizationId ? 'Kişi güncellenirken bir hata oluştu!' : 'Kişi eklenirken bir hata oluştu!';
                 showMessage('Hata', errorMessage, false);
             } finally {
                 isSaving = false; // Kayıt tamamlandı
             }
         }
 
-        // Yetkilendirme düzenle
+        // Kişi düzenle
         async function editAuthorization(id) {
             try {
                 const token = localStorage.getItem('token');
@@ -1419,7 +1421,7 @@
                 });
 
                 if (!response.ok) {
-                    throw new Error('Yetkilendirme verileri alınamadı');
+                    throw new Error('Kişi verileri alınamadı');
                 }
 
                 const result = await response.json();
@@ -1433,7 +1435,7 @@
                     document.getElementById('titleInput').value = authorization.title;
                     
                     // Modal başlığını değiştir
-                    document.querySelector('.modal-title').textContent = 'Yetkilendirme Düzenle';
+                    document.querySelector('.modal-title').textContent = 'Kişi Düzenle';
                     
                     // Global değişken olarak düzenlenen ID'yi sakla
                     window.editingAuthorizationId = id;
@@ -1441,11 +1443,11 @@
                     // Modal'ı aç
                     openAuthorizationModal();
                 } else {
-                    throw new Error(result.message || 'Yetkilendirme verileri alınamadı');
+                    throw new Error(result.message || 'Kişi verileri alınamadı');
                 }
             } catch (error) {
-                console.error('Yetkilendirme verileri alma hatası:', error);
-                showMessage('Hata', 'Yetkilendirme verileri alınırken bir hata oluştu: ' + error.message, false);
+                console.error('Kişi verileri alma hatası:', error);
+                showMessage('Hata', 'Kişi verileri alınırken bir hata oluştu: ' + error.message, false);
             }
         }
 
@@ -1453,7 +1455,7 @@
         async function deleteAuthorization(id) {
             const authorization = allAuthorizations.find(a => a._id === id);
             if (authorization) {
-                showConfirm(`"${authorization.personName}" yetkilendirmesini silmek istediğinizden emin misiniz?`, async () => {
+                showConfirm(`"${authorization.personName}" kişisini silmek istediğinizden emin misiniz?`, async () => {
                     try {
                         const token = localStorage.getItem('token');
                         const response = await fetch(`/api/authorization/${id}`, {
@@ -1466,14 +1468,14 @@
                         const result = await response.json();
 
                         if (result.success) {
-                            showMessage('Başarılı', 'Yetkilendirme başarıyla silindi!', true);
+                            showMessage('Başarılı', 'Kişi başarıyla silindi!', true);
                             loadAuthorizations(); // Verileri yenile
                         } else {
                             showMessage('Hata', result.message, false);
                         }
                     } catch (error) {
-                        console.error('Yetkilendirme silme hatası:', error);
-                        showMessage('Hata', 'Yetkilendirme silinirken bir hata oluştu!', false);
+                        console.error('Kişi silme hatası:', error);
+                        showMessage('Hata', 'Kişi silinirken bir hata oluştu!', false);
                     }
                 });
             }
@@ -1547,7 +1549,7 @@
 
         function downloadTemplate() {
             try {
-                // Excel template verilerini oluştur - authorization sütunları
+                // Excel template verilerini oluştur - kişi sütunları
                 const headers = [
                     'Sicil No',
                     'Ad Soyad',
