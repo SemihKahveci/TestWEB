@@ -1,21 +1,6 @@
 const mongoose = require('mongoose');
 
 const organizationSchema = new mongoose.Schema({
-    sicil: {
-        type: String,
-        required: true,
-        trim: true
-    },
-    adSoyad: {
-        type: String,
-        required: true,
-        trim: true
-    },
-    sirket: {
-        type: String,
-        required: true,
-        trim: true
-    },
     genelMudurYardimciligi: {
         type: String,
         required: true,
@@ -31,6 +16,11 @@ const organizationSchema = new mongoose.Schema({
         required: true,
         trim: true
     },
+    grupLiderligi: {
+        type: String,
+        required: true,
+        trim: true
+    },
     pozisyon: {
         type: String,
         required: true,
@@ -40,7 +30,11 @@ const organizationSchema = new mongoose.Schema({
     timestamps: true
 });
 
-// Sicil numarasına göre unique index
-organizationSchema.index({ sicil: 1 }, { unique: true });
+// Index'ler
+organizationSchema.index({ genelMudurYardimciligi: 1 });
+organizationSchema.index({ direktörlük: 1 });
+organizationSchema.index({ müdürlük: 1 });
+organizationSchema.index({ grupLiderligi: 1 });
+organizationSchema.index({ pozisyon: 1 });
 
 module.exports = mongoose.model('Organization', organizationSchema);

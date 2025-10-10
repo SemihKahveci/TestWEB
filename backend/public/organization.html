@@ -428,7 +428,7 @@
             background: white;
             border-radius: 4px;
             border: 1px solid #3A57E8;
-            color: #8A92A6;
+            color: #232D42;
             font-size: 14px;
             font-family: Poppins;
             font-style: italic;
@@ -878,7 +878,7 @@
             <div class="content-wrapper">
                 <div class="page-title">
                     <div class="title-content">
-                        <div class="title-text">Yetkilendirme</div>
+                        <div class="title-text">Kişiler</div>
                     </div>
                 </div>
 
@@ -886,7 +886,7 @@
                     <div class="tab-container">
                         <div class="tab active">Organizasyon</div>
                         <div class="tab inactive" onclick="window.location.href='grouping.html'">Gruplama</div>
-                        <div class="tab inactive" onclick="window.location.href='authorization.html'">Yetkiler</div>
+                        <div class="tab inactive" onclick="window.location.href='authorization.html'">Kişiler</div>
                     </div>
 
                     <div style="padding: 16px; background: white; display: flex; justify-content: space-between; align-items: center;">
@@ -909,7 +909,6 @@
                     <table class="results-table">
                         <thead>
                             <tr>
-                                <th>Seçim</th>
                                 <th>Genel Müdür Yardımcılığı</th>
                                 <th>Direktörlük</th>
                                 <th>Müdürlük</th>
@@ -943,32 +942,24 @@
             </div>
             <div class="modal-form">
                 <div class="form-group">
-                    <div class="form-label">Sicil</div>
-                    <input type="text" class="form-input" placeholder="Lütfen Sicil Giriniz">
-                </div>
-                <div class="form-group">
-                    <div class="form-label">Ad Soyad</div>
-                    <input type="text" class="form-input" placeholder="Lütfen Ad Soyad Giriniz">
-                </div>
-                <div class="form-group">
-                    <div class="form-label">Şirket</div>
-                    <input type="text" class="form-input" placeholder="Lütfen Şirket Giriniz">
-                </div>
-                <div class="form-group">
                     <div class="form-label">Genel Müdür Yardımcılığı</div>
-                    <input type="text" class="form-input" placeholder="Lütfen Genel Müdür Yardımcılığı Giriniz">
+                    <input type="text" class="form-input" placeholder="Lütfen Genel Müdür Yardımcılığı Giriniz" id="genelMudurYardimciligiInput">
                 </div>
                 <div class="form-group">
-                    <div class="form-label">Direktör</div>
-                    <input type="text" class="form-input" placeholder="Lütfen Direktör Giriniz">
+                    <div class="form-label">Direktörlük</div>
+                    <input type="text" class="form-input" placeholder="Lütfen Direktörlük Giriniz" id="direktorlukInput">
                 </div>
                 <div class="form-group">
-                    <div class="form-label">Müdür</div>
-                    <input type="text" class="form-input" placeholder="Lütfen Müdür Giriniz">
+                    <div class="form-label">Müdürlük</div>
+                    <input type="text" class="form-input" placeholder="Lütfen Müdürlük Giriniz" id="mudurlukInput">
                 </div>
                 <div class="form-group">
-                    <div class="form-label">Ünvan</div>
-                    <input type="text" class="form-input" placeholder="Lütfen Ünvan Giriniz">
+                    <div class="form-label">Grup Liderliği</div>
+                    <input type="text" class="form-input" placeholder="Lütfen Grup Liderliği Giriniz" id="grupLiderligiInput">
+                </div>
+                <div class="form-group">
+                    <div class="form-label">Pozisyon</div>
+                    <input type="text" class="form-input" placeholder="Lütfen Pozisyon Giriniz" id="pozisyonInput">
                 </div>
             </div>
             <div class="modal-buttons">
@@ -1035,18 +1026,6 @@
                 });
             });
 
-            // Checkbox işlevi
-            const checkboxes = document.querySelectorAll('input[type="checkbox"]');
-            checkboxes.forEach(checkbox => {
-                checkbox.addEventListener('change', function() {
-                    const row = this.closest('tr');
-                    if (this.checked) {
-                        row.style.background = 'rgba(2, 134, 247, 0.10)';
-                    } else {
-                        row.style.background = '';
-                    }
-                });
-            });
 
             // Sayfa numaralarına tıklama işlevi
             const pageButtons = document.querySelectorAll('.page-button');
@@ -1088,8 +1067,11 @@
         function closeModal() {
             document.getElementById('organizationModal').style.display = 'none';
             // Clear form inputs
-            const inputs = document.querySelectorAll('.form-input');
-            inputs.forEach(input => input.value = '');
+            document.getElementById('genelMudurYardimciligiInput').value = '';
+            document.getElementById('direktorlukInput').value = '';
+            document.getElementById('mudurlukInput').value = '';
+            document.getElementById('grupLiderligiInput').value = '';
+            document.getElementById('pozisyonInput').value = '';
             // Reset edit mode
             window.editingOrganizationId = null;
             // Reset modal title
@@ -1141,16 +1123,14 @@
 
         async function saveOrganization() {
             // Get form data
-            const sicil = document.querySelector('input[placeholder="Lütfen Sicil Giriniz"]').value.trim();
-            const adSoyad = document.querySelector('input[placeholder="Lütfen Ad Soyad Giriniz"]').value.trim();
-            const sirket = document.querySelector('input[placeholder="Lütfen Şirket Giriniz"]').value.trim();
-            const genelMudurYardimciligi = document.querySelector('input[placeholder="Lütfen Genel Müdür Yardımcılığı Giriniz"]').value.trim();
-            const direktörlük = document.querySelector('input[placeholder="Lütfen Direktör Giriniz"]').value.trim();
-            const müdürlük = document.querySelector('input[placeholder="Lütfen Müdür Giriniz"]').value.trim();
-            const pozisyon = document.querySelector('input[placeholder="Lütfen Ünvan Giriniz"]').value.trim();
+            const genelMudurYardimciligi = document.getElementById('genelMudurYardimciligiInput').value.trim();
+            const direktörlük = document.getElementById('direktorlukInput').value.trim();
+            const müdürlük = document.getElementById('mudurlukInput').value.trim();
+            const grupLiderligi = document.getElementById('grupLiderligiInput').value.trim();
+            const pozisyon = document.getElementById('pozisyonInput').value.trim();
 
             // Validation
-            if (!sicil || !adSoyad || !sirket || !genelMudurYardimciligi || !direktörlük || !müdürlük || !pozisyon) {
+            if (!genelMudurYardimciligi || !direktörlük || !müdürlük || !grupLiderligi || !pozisyon) {
                 showMessageModal('warning', 'Uyarı', 'Lütfen tüm alanları doldurun!');
                 return;
             }
@@ -1158,12 +1138,10 @@
             try {
                 const token = localStorage.getItem('token');
                 const organizationData = {
-                    sicil,
-                    adSoyad,
-                    sirket,
                     genelMudurYardimciligi,
                     direktörlük,
                     müdürlük,
+                    grupLiderligi,
                     pozisyon
                 };
 
@@ -1259,7 +1237,7 @@
             } catch (error) {
                 console.error('Organizasyon listesi yükleme hatası:', error);
                 document.querySelector('.results-table tbody').innerHTML = 
-                    '<tr><td colspan="7" style="text-align: center; color: #dc3545;">Veriler yüklenemedi</td></tr>';
+                    '<tr><td colspan="6" style="text-align: center; color: #dc3545;">Veriler yüklenemedi</td></tr>';
             }
         }
 
@@ -1269,7 +1247,7 @@
             tableBody.innerHTML = '';
 
             if (allOrganizations.length === 0) {
-                tableBody.innerHTML = '<tr><td colspan="7" style="text-align: center; color: #8A92A6;">Henüz organizasyon bulunmuyor</td></tr>';
+                tableBody.innerHTML = '<tr><td colspan="6" style="text-align: center; color: #8A92A6;">Henüz organizasyon bulunmuyor</td></tr>';
                 return;
             }
 
@@ -1282,12 +1260,11 @@
                 const row = document.createElement('tr');
                 row.setAttribute('data-organization-id', organization._id);
                 row.innerHTML = `
-                    <td><input type="checkbox" /></td>
                     <td>${organization.genelMudurYardimciligi}</td>
                     <td>${organization.direktörlük}</td>
                     <td>${organization.müdürlük}</td>
+                    <td>${organization.grupLiderligi}</td>
                     <td>${organization.pozisyon}</td>
-                    <td>${organization.sicil}</td>
                     <td>
                         <i class="fas fa-edit" style="color: #0286F7; margin-right: 16px; cursor: pointer;" onclick="editOrganization('${organization._id}')"></i>
                         <i class="fas fa-trash" style="color: #A30D11; cursor: pointer;" onclick="deleteOrganization('${organization._id}')"></i>
@@ -1415,13 +1392,11 @@
                     const org = result.organization;
                     
                     // Form alanlarını doldur
-                    document.querySelector('input[placeholder="Lütfen Sicil Giriniz"]').value = org.sicil;
-                    document.querySelector('input[placeholder="Lütfen Ad Soyad Giriniz"]').value = org.adSoyad;
-                    document.querySelector('input[placeholder="Lütfen Şirket Giriniz"]').value = org.sirket;
-                    document.querySelector('input[placeholder="Lütfen Genel Müdür Yardımcılığı Giriniz"]').value = org.genelMudurYardimciligi;
-                    document.querySelector('input[placeholder="Lütfen Direktör Giriniz"]').value = org.direktörlük;
-                    document.querySelector('input[placeholder="Lütfen Müdür Giriniz"]').value = org.müdürlük;
-                    document.querySelector('input[placeholder="Lütfen Ünvan Giriniz"]').value = org.pozisyon;
+                    document.getElementById('genelMudurYardimciligiInput').value = org.genelMudurYardimciligi;
+                    document.getElementById('direktorlukInput').value = org.direktörlük;
+                    document.getElementById('mudurlukInput').value = org.müdürlük;
+                    document.getElementById('grupLiderligiInput').value = org.grupLiderligi;
+                    document.getElementById('pozisyonInput').value = org.pozisyon;
                     
                     // Modal başlığını değiştir
                     document.querySelector('.modal-title').textContent = 'Organizasyon Düzenle';

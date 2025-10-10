@@ -22,41 +22,28 @@ const getAllOrganizations = async (req, res) => {
 const createOrganization = async (req, res) => {
     try {
         const {
-            sicil,
-            adSoyad,
-            sirket,
             genelMudurYardimciligi,
             direktörlük,
             müdürlük,
+            grupLiderligi,
             pozisyon
         } = req.body;
 
         // Gerekli alanları kontrol et
-        if (!sicil || !adSoyad || !sirket || !genelMudurYardimciligi || 
-            !direktörlük || !müdürlük || !pozisyon) {
+        if (!genelMudurYardimciligi || !direktörlük || !müdürlük || 
+            !grupLiderligi || !pozisyon) {
             return res.status(400).json({
                 success: false,
                 message: 'Tüm alanlar doldurulmalıdır'
             });
         }
 
-        // Sicil numarası benzersizlik kontrolü
-        const existingOrganization = await Organization.findOne({ sicil });
-        if (existingOrganization) {
-            return res.status(400).json({
-                success: false,
-                message: 'Bu sicil numarası zaten kullanılıyor'
-            });
-        }
-
         // Yeni organizasyon oluştur
         const newOrganization = new Organization({
-            sicil,
-            adSoyad,
-            sirket,
             genelMudurYardimciligi,
             direktörlük,
             müdürlük,
+            grupLiderligi,
             pozisyon
         });
 
@@ -82,33 +69,19 @@ const updateOrganization = async (req, res) => {
     try {
         const { id } = req.params;
         const {
-            sicil,
-            adSoyad,
-            sirket,
             genelMudurYardimciligi,
             direktörlük,
             müdürlük,
+            grupLiderligi,
             pozisyon
         } = req.body;
 
         // Gerekli alanları kontrol et
-        if (!sicil || !adSoyad || !sirket || !genelMudurYardimciligi || 
-            !direktörlük || !müdürlük || !pozisyon) {
+        if (!genelMudurYardimciligi || !direktörlük || !müdürlük || 
+            !grupLiderligi || !pozisyon) {
             return res.status(400).json({
                 success: false,
                 message: 'Tüm alanlar doldurulmalıdır'
-            });
-        }
-
-        // Sicil numarası benzersizlik kontrolü (kendi kaydı hariç)
-        const existingOrganization = await Organization.findOne({ 
-            sicil, 
-            _id: { $ne: id } 
-        });
-        if (existingOrganization) {
-            return res.status(400).json({
-                success: false,
-                message: 'Bu sicil numarası zaten kullanılıyor'
             });
         }
 
@@ -116,12 +89,10 @@ const updateOrganization = async (req, res) => {
         const updatedOrganization = await Organization.findByIdAndUpdate(
             id,
             {
-                sicil,
-                adSoyad,
-                sirket,
                 genelMudurYardimciligi,
                 direktörlük,
                 müdürlük,
+                grupLiderligi,
                 pozisyon
             },
             { new: true, runValidators: true }
