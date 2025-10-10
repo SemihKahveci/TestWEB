@@ -14,8 +14,8 @@ async function createSidebar() {
         '/gamemanagement.html': 'Oyun Tanımlama',
         '/authorization.html': 'Organizasyon Ayarları',
         '/authorization.html': 'Yetkilendirme',
-        '/grouping.html': 'Yetkilendirme', 
-        '/organization.html': 'Yetkilendirme',
+        '/grouping.html': 'Organizasyon Ayarları', 
+        '/organization.html': 'Organizasyon Ayarları',
         '/subscriptionSettings.html': 'Oyun Kullanım Özeti',
         '/competencySettings.html': 'Yetkinlik Ayarları',
     };
@@ -376,9 +376,8 @@ async function createSidebar() {
                 case 'Oyun Kullanım Özeti':
                     window.location.href = '/subscriptionSettings.html';
                     break;
-
                 case 'Yetkilendirme':
-                    window.location.href = '/authorization.html';
+                //  window.location.href = '/authorization.html';
                     break;
                 case 'Yetkinlik Ayarları':
                     window.location.href = '/competencySettings.html';
