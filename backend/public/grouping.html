@@ -425,7 +425,7 @@
             display: flex;
             flex-direction: column;
             justify-content: flex-start;
-            align-items: flex-start;
+            align-items: center;
             gap: 15px;
             flex: 1;
             overflow-y: auto;
@@ -437,6 +437,8 @@
             flex-direction: column;
             gap: 6px;
             flex-shrink: 0;
+            align-items: center;
+            width: 100%;
         }
 
         .form-label {
@@ -461,16 +463,229 @@
             font-weight: 500;
             line-height: 24px;
             outline: none;
+            text-align: center;
         }
 
         .form-input::placeholder {
             color: #8A92A6;
         }
 
+        .select-container {
+            position: relative;
+            width: 100%;
+            max-width: 436px;
+        }
+
+        .form-select {
+            width: 100%;
+            padding: 8px 40px 8px 16px;
+            background: white;
+            border-radius: 4px;
+            border: 1px solid #3A57E8;
+            color: #8A92A6;
+            font-size: 16px;
+            font-family: Poppins;
+            font-style: italic;
+            font-weight: 500;
+            line-height: 28px;
+            outline: none;
+            appearance: none;
+            cursor: pointer;
+        }
+
+        .form-select:focus {
+            border-color: #3A57E8;
+        }
+
+        .form-select option {
+            color: #232D42;
+            font-style: normal;
+        }
+
+        .form-select optgroup {
+            color: #8A92A6;
+            font-weight: 600;
+            font-style: normal;
+            background: #F8F9FA;
+        }
+
+        .select-arrow {
+            position: absolute;
+            right: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            pointer-events: none;
+            color: #8A92A6;
+        }
+
+        .selection-container {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            width: 100%;
+            max-width: 436px;
+        }
+
+        .dropdown-container {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+        }
+
+        .add-btn {
+            background: #28a745;
+            color: white;
+            border: none;
+            padding: 8px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: background-color 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 40px;
+            height: 40px;
+        }
+
+        .add-btn:hover {
+            background: #218838;
+        }
+
+        .add-btn:disabled {
+            background: #6c757d;
+            cursor: not-allowed;
+        }
+
+        .selected-items {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            min-height: 40px;
+            padding: 8px;
+            border: 1px solid #E9ECEF;
+            border-radius: 4px;
+            background: #f8f9fa;
+        }
+
+        .item-tag {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: #3A57E8;
+            color: white;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 500;
+            cursor: pointer;
+            user-select: none;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .item-tag:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+        }
+
+        .remove-btn {
+            background: none;
+            border: none;
+            color: white;
+            cursor: pointer;
+            font-size: 14px;
+            padding: 0;
+            width: 16px;
+            height: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+        }
+
+        .remove-btn:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        .details-btn {
+            background: #17a2b8;
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            transition: background-color 0.3s;
+        }
+
+        .details-btn:hover {
+            background: #138496;
+        }
+
+        .details-content {
+            text-align: left;
+            margin: 20px 0;
+        }
+
+        .details-section {
+            margin-bottom: 20px;
+        }
+
+        .details-section h4 {
+            color: #232D42;
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 10px;
+            border-bottom: 2px solid #3A57E8;
+            padding-bottom: 5px;
+        }
+
+        .details-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .details-tag {
+            background: #E9ECEF;
+            color: #495057;
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+
+        .person-detail-tag {
+            background: #F8F9FA;
+            border: 1px solid #DEE2E6;
+            color: #495057;
+            padding: 8px 12px;
+            border-radius: 8px;
+            font-size: 12px;
+            font-weight: 500;
+            margin-bottom: 8px;
+            min-width: 200px;
+        }
+
+        .person-detail-tag strong {
+            color: #232D42;
+            font-weight: 600;
+        }
+
+        .person-detail-tag small {
+            color: #6C757D;
+            display: block;
+            margin-top: 2px;
+        }
+
         .modal-buttons {
             display: flex;
             gap: 15px;
-            justify-content: flex-start;
+            justify-content: center;
             align-items: flex-start;
             flex-shrink: 0;
         }
@@ -817,6 +1032,7 @@
                             <tr>
                                 <th>Grup Adı</th>
                                 <th>Aktiflik Durumu</th>
+                                <th>Detaylar</th>
                                 <th>İşlemler</th>
                             </tr>
                         </thead>
@@ -845,7 +1061,70 @@
             <div class="modal-body">
                 <div class="form-group">
                     <div class="form-label">Grup Adı</div>
-                    <input type="text" class="form-input" placeholder="Lütfen Grup Adını Giriniz" id="groupNameInput">
+                    <input type="text" class="form-input" placeholder="Lütfen Grup Adını Giriniz" id="groupNameInput" maxlength="200">
+                </div>
+                <div class="form-group">
+                    <div class="form-label">Organizasyon</div>
+                    <div class="selection-container">
+                        <div class="dropdown-container">
+                            <div class="select-container">
+                                <select class="form-select" id="organizationSelect">
+                                    <option value="">Lütfen Organizasyon seçiniz</option>
+                                </select>
+                                <div class="select-arrow">
+                                    <i class="fas fa-chevron-down"></i>
+                                </div>
+                            </div>
+                            <button type="button" class="add-btn" onclick="addOrganization()">
+                                <i class="fas fa-plus"></i>
+                            </button>
+                        </div>
+                        <div id="selectedOrganizations" class="selected-items">
+                            <!-- Seçilen organizasyonlar burada görünecek -->
+                        </div>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <div class="form-label">Kişi</div>
+                    <div class="selection-container">
+                        <div class="dropdown-container">
+                            <div class="select-container">
+                                <select class="form-select" id="personSelect">
+                                    <option value="">Lütfen Kişi seçiniz</option>
+                                </select>
+                                <div class="select-arrow">
+                                    <i class="fas fa-chevron-down"></i>
+                                </div>
+                            </div>
+                            <button type="button" class="add-btn" onclick="addPerson()">
+                                <i class="fas fa-plus"></i>
+                            </button>
+                        </div>
+                        <div id="selectedPersons" class="selected-items">
+                            <!-- Seçilen kişiler burada görünecek -->
+                        </div>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <div class="form-label">Gezegen</div>
+                    <div class="selection-container">
+                        <div class="dropdown-container">
+                            <div class="select-container">
+                                <select class="form-select" id="planetSelect">
+                                    <option value="">Lütfen Gezegen Seçiniz</option>
+                                </select>
+                                <div class="select-arrow">
+                                    <i class="fas fa-chevron-down"></i>
+                                </div>
+                            </div>
+                            <button type="button" class="add-btn" onclick="addPlanet()">
+                                <i class="fas fa-plus"></i>
+                            </button>
+                        </div>
+                        <div id="selectedPlanets" class="selected-items">
+                            <!-- Seçilen gezegenler burada görünecek -->
+                        </div>
+                    </div>
                 </div>
                 <div class="form-group">
                     <div class="form-label">Durum</div>
@@ -896,6 +1175,24 @@
         </div>
     </div>
 
+    <!-- Group Details Modal -->
+    <div id="detailsModal" class="message-modal">
+        <div class="message-modal-content" style="max-width: 600px;">
+            <div class="message-modal-header">
+                <div class="message-icon success">
+                    <i class="fas fa-info-circle"></i>
+                </div>
+                <h3 class="message-title" id="detailsTitle">Grup Detayları</h3>
+            </div>
+            <div class="details-content" id="detailsContent">
+                <!-- Detaylar burada görünecek -->
+            </div>
+            <div class="message-buttons">
+                <button class="btn-message primary" onclick="closeDetailsModal()">Kapat</button>
+            </div>
+        </div>
+    </div>
+
     <script src="/js/sidebar.js"></script>
     <script>
         // Sayfalama için gerekli değişkenler
@@ -904,6 +1201,13 @@
         let totalItems = 0;
         let allGroups = [];
         let isSaving = false; // Çoklu kayıt engelleme
+        
+        // Seçilen öğeler için array'ler
+        let selectedOrganizations = [];
+        let selectedPersons = [];
+        let selectedPlanets = [];
+        let manualPersons = []; // Manuel eklenen kişiler
+        let autoPersons = []; // Otomatik eklenen kişiler
 
         document.addEventListener('DOMContentLoaded', function() {
             createSidebar();
@@ -1036,7 +1340,7 @@
             tableBody.innerHTML = '';
 
             if (allGroups.length === 0) {
-                tableBody.innerHTML = '<tr><td colspan="3" style="text-align: center; color: #8A92A6;">Henüz grup bulunmuyor</td></tr>';
+                tableBody.innerHTML = '<tr><td colspan="4" style="text-align: center; color: #8A92A6;">Henüz grup bulunmuyor</td></tr>';
                 return;
             }
 
@@ -1065,6 +1369,12 @@
                     <td>${group.name}</td>
                     <td>${group.status}</td>
                     <td>
+                        <button class="details-btn" onclick="showGroupDetails('${group._id}')">
+                            <i class="fas fa-eye"></i>
+                            Detayı Gör
+                        </button>
+                    </td>
+                    <td>
                         <i class="fas fa-edit" style="color: #0286F7; margin-right: 16px; cursor: pointer;" onclick="editGroup('${group._id}')"></i>
                         <i class="fas fa-trash" style="color: #A30D11; cursor: pointer;" onclick="deleteGroup('${group._id}')"></i>
                     </td>
@@ -1073,9 +1383,12 @@
             });
         }
 
-        // Sayfa yüklendiğinde grupları yükle
+        // Sayfa yüklendiğinde grupları, organizasyonları, kişileri ve gezegenleri yükle
         document.addEventListener('DOMContentLoaded', function() {
             loadGroups();
+            loadOrganizations();
+            loadAuthorizations();
+            loadPlanets();
         });
 
         // Grupları yükle
@@ -1108,6 +1421,542 @@
             }
         }
 
+        // Organizasyonları yükle ve combobox'ı doldur
+        async function loadOrganizations() {
+            try {
+                const token = localStorage.getItem('token');
+                const response = await fetch('/api/organization', {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+
+                if (!response.ok) {
+                    throw new Error('Organizasyon listesi yüklenemedi');
+                }
+
+                const result = await response.json();
+                if (result.success) {
+                    const organizations = result.organizations;
+                    populateOrganizationSelect(organizations);
+                } else {
+                    throw new Error(result.message || 'Organizasyon listesi alınamadı');
+                }
+            } catch (error) {
+                console.error('Organizasyon listesi yükleme hatası:', error);
+            }
+        }
+
+        // Organizasyon combobox'ını doldur
+        function populateOrganizationSelect(organizations) {
+            const select = document.getElementById('organizationSelect');
+            
+            // Mevcut seçenekleri temizle (ilk option hariç)
+            select.innerHTML = '<option value="">Lütfen Organizasyon seçiniz</option>';
+            
+            // Her alan için benzersiz değerleri topla
+            const genelMudurYardimciliklari = [...new Set(organizations.map(org => org.genelMudurYardimciligi).filter(Boolean))];
+            const direktörlükler = [...new Set(organizations.map(org => org.direktörlük).filter(Boolean))];
+            const müdürlükler = [...new Set(organizations.map(org => org.müdürlük).filter(Boolean))];
+            const grupLiderlikleri = [...new Set(organizations.map(org => org.grupLiderligi).filter(Boolean))];
+            const pozisyonlar = [...new Set(organizations.map(org => org.pozisyon).filter(Boolean))];
+            
+            // Genel Müdür Yardımcılıkları
+            if (genelMudurYardimciliklari.length > 0) {
+                const optgroup1 = document.createElement('optgroup');
+                optgroup1.label = 'Genel Müdür Yardımcılıkları';
+                genelMudurYardimciliklari.forEach(value => {
+                    const optionValue = `genelMudurYardimciligi:${value}`;
+                    // Seçilen organizasyonlarda yoksa ekle
+                    if (!selectedOrganizations.includes(optionValue)) {
+                        const option = document.createElement('option');
+                        option.value = optionValue;
+                        option.textContent = value;
+                        optgroup1.appendChild(option);
+                    }
+                });
+                if (optgroup1.children.length > 0) {
+                    select.appendChild(optgroup1);
+                }
+            }
+            
+            // Direktörlükler
+            if (direktörlükler.length > 0) {
+                const optgroup2 = document.createElement('optgroup');
+                optgroup2.label = 'Direktörlükler';
+                direktörlükler.forEach(value => {
+                    const optionValue = `direktörlük:${value}`;
+                    // Seçilen organizasyonlarda yoksa ekle
+                    if (!selectedOrganizations.includes(optionValue)) {
+                        const option = document.createElement('option');
+                        option.value = optionValue;
+                        option.textContent = value;
+                        optgroup2.appendChild(option);
+                    }
+                });
+                if (optgroup2.children.length > 0) {
+                    select.appendChild(optgroup2);
+                }
+            }
+            
+            // Müdürlükler
+            if (müdürlükler.length > 0) {
+                const optgroup3 = document.createElement('optgroup');
+                optgroup3.label = 'Müdürlükler';
+                müdürlükler.forEach(value => {
+                    const optionValue = `müdürlük:${value}`;
+                    // Seçilen organizasyonlarda yoksa ekle
+                    if (!selectedOrganizations.includes(optionValue)) {
+                        const option = document.createElement('option');
+                        option.value = optionValue;
+                        option.textContent = value;
+                        optgroup3.appendChild(option);
+                    }
+                });
+                if (optgroup3.children.length > 0) {
+                    select.appendChild(optgroup3);
+                }
+            }
+            
+            // Grup Liderlikleri
+            if (grupLiderlikleri.length > 0) {
+                const optgroup4 = document.createElement('optgroup');
+                optgroup4.label = 'Grup Liderlikleri';
+                grupLiderlikleri.forEach(value => {
+                    const optionValue = `grupLiderligi:${value}`;
+                    // Seçilen organizasyonlarda yoksa ekle
+                    if (!selectedOrganizations.includes(optionValue)) {
+                        const option = document.createElement('option');
+                        option.value = optionValue;
+                        option.textContent = value;
+                        optgroup4.appendChild(option);
+                    }
+                });
+                if (optgroup4.children.length > 0) {
+                    select.appendChild(optgroup4);
+                }
+            }
+            
+            // Pozisyonlar
+            if (pozisyonlar.length > 0) {
+                const optgroup5 = document.createElement('optgroup');
+                optgroup5.label = 'Pozisyonlar';
+                pozisyonlar.forEach(value => {
+                    const optionValue = `pozisyon:${value}`;
+                    // Seçilen organizasyonlarda yoksa ekle
+                    if (!selectedOrganizations.includes(optionValue)) {
+                        const option = document.createElement('option');
+                        option.value = optionValue;
+                        option.textContent = value;
+                        optgroup5.appendChild(option);
+                    }
+                });
+                if (optgroup5.children.length > 0) {
+                    select.appendChild(optgroup5);
+                }
+            }
+        }
+
+        // Kişileri yükle ve combobox'ı doldur
+        async function loadAuthorizations() {
+            try {
+                const token = localStorage.getItem('token');
+                const response = await fetch('/api/authorization', {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+
+                if (!response.ok) {
+                    throw new Error('Kişi listesi yüklenemedi');
+                }
+
+                const result = await response.json();
+                if (result.success) {
+                    const authorizations = result.authorizations;
+                    populatePersonSelect(authorizations);
+                    } else {
+                    throw new Error(result.message || 'Kişi listesi alınamadı');
+                }
+            } catch (error) {
+                console.error('Kişi listesi yükleme hatası:', error);
+            }
+        }
+
+        // Kişi combobox'ını doldur
+        function populatePersonSelect(authorizations) {
+            const select = document.getElementById('personSelect');
+            
+            // Mevcut seçenekleri temizle (ilk option hariç)
+            select.innerHTML = '<option value="">Lütfen Kişi seçiniz</option>';
+            
+            // Sadece ad soyadları topla
+            const adSoyadlar = [...new Set(authorizations.map(auth => auth.personName).filter(Boolean))];
+            
+            // Ad Soyadları
+            if (adSoyadlar.length > 0) {
+                adSoyadlar.forEach(value => {
+                    const optionValue = `personName:${value}`;
+                    // Seçilen kişilerde yoksa ekle
+                    if (!selectedPersons.includes(optionValue)) {
+                        const option = document.createElement('option');
+                        option.value = optionValue;
+                        option.textContent = value;
+                        select.appendChild(option);
+                    }
+                });
+            }
+        }
+
+        // Gezegenleri yükle ve combobox'ı doldur
+        function loadPlanets() {
+            const select = document.getElementById('planetSelect');
+            
+            // Mevcut seçenekleri temizle (ilk option hariç)
+            select.innerHTML = '<option value="">Lütfen Gezegen Seçiniz</option>';
+            
+            // game-send.html'deki gezegen listesi
+            const planets = [
+                { value: 'venus', label: 'Venüs (Belirsizlik Yönetimi - Müşteri Odaklılık)' },
+                { value: 'titan', label: 'Titan (İnsanları Etkileme - Güven Veren İşbirlikçi ve Sinerji)' }
+            ];
+            
+            // Gezegenleri combobox'a ekle (seçilenler hariç)
+            planets.forEach(planet => {
+                // Seçilen gezegenlerde yoksa ekle
+                if (!selectedPlanets.includes(planet.value)) {
+                    const option = document.createElement('option');
+                    option.value = planet.value;
+                    option.textContent = planet.label;
+                    select.appendChild(option);
+                }
+            });
+        }
+
+        // Organizasyon ekleme fonksiyonu
+        function addOrganization() {
+            const select = document.getElementById('organizationSelect');
+            const selectedValue = select.value;
+            
+            if (!selectedValue) {
+                showMessage('Hata', 'Lütfen bir organizasyon seçin!', false);
+                return;
+            }
+
+            // Organizasyon zaten seçilmiş mi kontrol et
+            if (selectedOrganizations.includes(selectedValue)) {
+                showMessage('Hata', 'Bu organizasyon zaten seçilmiş!', false);
+                return;
+            }
+
+            // Organizasyonu listeye ekle
+            selectedOrganizations.push(selectedValue);
+            
+            // UI'ı güncelle
+            updateOrganizationUI();
+            
+            // Dropdown'ı güncelle (seçilen organizasyonu gizle)
+            loadOrganizations();
+            
+            // Eşleşen kişileri otomatik ekle (sadece organizasyon seçilmişse)
+            addMatchingPersons();
+            
+            // Dropdown'ı sıfırla
+            select.value = '';
+        }
+
+        // Organizasyon çıkarma fonksiyonu
+        function removeOrganization(orgValue) {
+            const index = selectedOrganizations.indexOf(orgValue);
+            if (index > -1) {
+                selectedOrganizations.splice(index, 1);
+                updateOrganizationUI();
+                
+                // Dropdown'ı güncelle (çıkarılan organizasyonu tekrar göster)
+                loadOrganizations();
+                
+                // Organizasyon çıkarıldığında eşleşen kişileri güncelle
+                updateMatchingPersons();
+            }
+        }
+
+        // Eşleşen kişileri otomatik ekle
+        async function addMatchingPersons() {
+            // Organizasyon seçilmemişse otomatik kişi ekleme yapma
+            if (selectedOrganizations.length === 0) {
+                return;
+            }
+
+            try {
+                const token = localStorage.getItem('token');
+                const response = await fetch('/api/group/matching-persons', {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        organizations: selectedOrganizations
+                    })
+                });
+
+                if (!response.ok) {
+                    throw new Error('Eşleşen kişiler alınamadı');
+                }
+
+                const result = await response.json();
+                if (result.success && result.persons.length > 0) {
+                    // Yeni kişileri ekle (zaten var olanları atla)
+                    let addedCount = 0;
+                    result.persons.forEach(person => {
+                        if (!selectedPersons.includes(person.value)) {
+                            selectedPersons.push(person.value);
+                            autoPersons.push(person.value); // Otomatik eklenen olarak işaretle
+                            addedCount++;
+                        }
+                    });
+                    
+                    if (addedCount > 0) {
+                        updatePersonUI();
+                        
+                        // Dropdown'ı güncelle (yeni otomatik kişileri gizle)
+                        loadAuthorizations();
+                        
+                        // Detaylı bilgi göster
+                        const positionCount = result.positions ? result.positions.length : 0;
+                        showMessage('Bilgi', `${addedCount} kişi otomatik olarak eklendi! (${positionCount} farklı pozisyondan)`, true);
+                    }
+                } else if (result.success && result.persons.length === 0) {
+                    // Pozisyon bulunamadı mesajı
+                    showMessage('Bilgi', result.message || 'Seçilen organizasyonlarda eşleşen pozisyon bulunamadı.', true);
+                }
+            } catch (error) {
+                console.error('Eşleşen kişileri alma hatası:', error);
+                // Hata durumunda sessizce devam et, kullanıcıyı rahatsız etme
+            }
+        }
+
+        // Organizasyon değişikliklerinde eşleşen kişileri güncelle
+        async function updateMatchingPersons() {
+            try {
+                const token = localStorage.getItem('token');
+                
+                // Eğer organizasyon yoksa, sadece manuel eklenen kişileri tut
+                if (selectedOrganizations.length === 0) {
+                    // Otomatik eklenen kişileri temizle, manuel eklenenleri koru
+                    autoPersons = [];
+                    selectedPersons = [...manualPersons];
+                    updatePersonUI();
+                    
+                    // Dropdown'ı güncelle (çıkarılan otomatik kişileri tekrar göster)
+                    loadAuthorizations();
+                    return;
+                }
+
+                const response = await fetch('/api/group/matching-persons', {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        organizations: selectedOrganizations
+                    })
+                });
+
+                if (!response.ok) {
+                    throw new Error('Eşleşen kişiler alınamadı');
+                }
+
+                const result = await response.json();
+                if (result.success) {
+                    // Otomatik eklenen kişileri temizle
+                    autoPersons = [];
+                    
+                    // Manuel eklenen kişileri koru, otomatik eklenenleri güncelle
+                    selectedPersons = [...manualPersons];
+                    
+                    // Yeni eşleşen kişileri ekle
+                    if (result.persons.length > 0) {
+                        result.persons.forEach(person => {
+                            if (!selectedPersons.includes(person.value)) {
+                                selectedPersons.push(person.value);
+                                autoPersons.push(person.value);
+                            }
+                        });
+                    }
+                    
+                    updatePersonUI();
+                    
+                    // Dropdown'ı güncelle (yeni otomatik kişileri gizle)
+                    loadAuthorizations();
+                }
+            } catch (error) {
+                console.error('Eşleşen kişileri güncelleme hatası:', error);
+            }
+        }
+
+        // Organizasyon UI güncelleme
+        function updateOrganizationUI() {
+            const container = document.getElementById('selectedOrganizations');
+            container.innerHTML = '';
+            
+            selectedOrganizations.forEach(orgValue => {
+                const tag = document.createElement('div');
+                tag.className = 'item-tag';
+                // Prefix'i kaldır (örn: "genelMudurYardimciligi:Değer" -> "Değer")
+                const displayValue = orgValue.includes(':') ? orgValue.split(':')[1] : orgValue;
+                tag.innerHTML = `
+                    ${displayValue}
+                    <button class="remove-btn" onclick="removeOrganization('${orgValue}')">
+                        <i class="fas fa-times"></i>
+                    </button>
+                `;
+                container.appendChild(tag);
+            });
+        }
+
+        // Kişi ekleme fonksiyonu
+        function addPerson() {
+            const select = document.getElementById('personSelect');
+            const selectedValue = select.value;
+            
+            if (!selectedValue) {
+                showMessage('Hata', 'Lütfen bir kişi seçin!', false);
+                return;
+            }
+
+            // Kişi zaten seçilmiş mi kontrol et
+            if (selectedPersons.includes(selectedValue)) {
+                showMessage('Hata', 'Bu kişi zaten seçilmiş!', false);
+                return;
+            }
+
+            // Kişiyi listeye ekle
+            selectedPersons.push(selectedValue);
+            manualPersons.push(selectedValue); // Manuel eklenen olarak işaretle
+            
+            // UI'ı güncelle
+            updatePersonUI();
+            
+            // Dropdown'ı güncelle (seçilen kişiyi gizle)
+            loadAuthorizations();
+            
+            // Dropdown'ı sıfırla
+            select.value = '';
+        }
+
+        // Kişi çıkarma fonksiyonu
+        function removePerson(personValue) {
+            const index = selectedPersons.indexOf(personValue);
+            if (index > -1) {
+                selectedPersons.splice(index, 1);
+                
+                // Manuel kişiler listesinden de çıkar
+                const manualIndex = manualPersons.indexOf(personValue);
+                if (manualIndex > -1) {
+                    manualPersons.splice(manualIndex, 1);
+                }
+                
+                // Otomatik kişiler listesinden de çıkar
+                const autoIndex = autoPersons.indexOf(personValue);
+                if (autoIndex > -1) {
+                    autoPersons.splice(autoIndex, 1);
+                }
+                
+                updatePersonUI();
+                
+                // Dropdown'ı güncelle (çıkarılan kişiyi tekrar göster)
+                loadAuthorizations();
+            }
+        }
+
+        // Kişi UI güncelleme
+        function updatePersonUI() {
+            const container = document.getElementById('selectedPersons');
+            container.innerHTML = '';
+            
+            selectedPersons.forEach(personValue => {
+                const tag = document.createElement('div');
+                tag.className = 'item-tag';
+                // Prefix'i kaldır (örn: "personName:Değer" -> "Değer")
+                const displayValue = personValue.includes(':') ? personValue.split(':')[1] : personValue;
+                tag.innerHTML = `
+                    ${displayValue}
+                    <button class="remove-btn" onclick="removePerson('${personValue}')">
+                        <i class="fas fa-times"></i>
+                    </button>
+                `;
+                container.appendChild(tag);
+            });
+        }
+
+        // Gezegen ekleme fonksiyonu
+        function addPlanet() {
+            const select = document.getElementById('planetSelect');
+            const selectedValue = select.value;
+            
+            if (!selectedValue) {
+                showMessage('Hata', 'Lütfen bir gezegen seçin!', false);
+                return;
+            }
+
+            // Gezegen zaten seçilmiş mi kontrol et
+            if (selectedPlanets.includes(selectedValue)) {
+                showMessage('Hata', 'Bu gezegen zaten seçilmiş!', false);
+                return;
+            }
+
+            // Gezegeni listeye ekle
+            selectedPlanets.push(selectedValue);
+            
+            // UI'ı güncelle
+            updatePlanetUI();
+            
+            // Dropdown'ı güncelle (seçilen gezegeni gizle)
+            loadPlanets();
+            
+            // Dropdown'ı sıfırla
+            select.value = '';
+        }
+
+        // Gezegen çıkarma fonksiyonu
+        function removePlanet(planetValue) {
+            const index = selectedPlanets.indexOf(planetValue);
+            if (index > -1) {
+                selectedPlanets.splice(index, 1);
+                updatePlanetUI();
+                
+                // Dropdown'ı güncelle (çıkarılan gezegeni tekrar göster)
+                loadPlanets();
+            }
+        }
+
+        // Gezegen UI güncelleme
+        function updatePlanetUI() {
+            const container = document.getElementById('selectedPlanets');
+            container.innerHTML = '';
+            
+            selectedPlanets.forEach(planetValue => {
+                const tag = document.createElement('div');
+                tag.className = 'item-tag';
+                // Gezegenler için label'ı bul (value'dan label'a çevir)
+                const planets = [
+                    { value: 'venus', label: 'Venüs (Belirsizlik Yönetimi - Müşteri Odaklılık)' },
+                    { value: 'titan', label: 'Titan (İnsanları Etkileme - Güven Veren İşbirlikçi ve Sinerji)' }
+                ];
+                const planet = planets.find(p => p.value === planetValue);
+                const displayValue = planet ? planet.label : planetValue;
+                tag.innerHTML = `
+                    ${displayValue}
+                    <button class="remove-btn" onclick="removePlanet('${planetValue}')">
+                        <i class="fas fa-times"></i>
+                    </button>
+                `;
+                container.appendChild(tag);
+            });
+        }
+
         // Custom Popup Fonksiyonları
         function showMessage(title, text, isSuccess = true) {
             const modal = document.getElementById('messageModal');
@@ -1121,7 +1970,7 @@
             if (isSuccess) {
                 icon.className = 'message-icon success';
                 icon.innerHTML = '<i class="fas fa-check"></i>';
-            } else {
+                    } else {
                 icon.className = 'message-icon error';
                 icon.innerHTML = '<i class="fas fa-times"></i>';
             }
@@ -1157,11 +2006,141 @@
             document.getElementById('confirmModal').style.display = 'none';
         }
 
+        // Grup detaylarını göster
+        async function showGroupDetails(groupId) {
+            const group = allGroups.find(g => g._id === groupId);
+            if (!group) {
+                showMessage('Hata', 'Grup bulunamadı!', false);
+                return;
+            }
+
+            const title = document.getElementById('detailsTitle');
+            const content = document.getElementById('detailsContent');
+            
+            title.textContent = `${group.name} - Detayları`;
+            
+            let detailsHTML = `
+                <div class="details-section">
+                    <h4>Grup Bilgileri</h4>
+                    <div class="details-list">
+                        <span class="details-tag">Durum: ${group.status}</span>
+                        <span class="details-tag">Oluşturulma: ${new Date(group.createdAt).toLocaleDateString('tr-TR')}</span>
+                    </div>
+                </div>
+            `;
+
+            // Organizasyonlar
+            if (group.organizations && group.organizations.length > 0) {
+                detailsHTML += `
+                    <div class="details-section">
+                        <h4>Organizasyonlar (${group.organizations.length})</h4>
+                        <div class="details-list">
+                `;
+                group.organizations.forEach(org => {
+                    const displayValue = org.includes(':') ? org.split(':')[1] : org;
+                    detailsHTML += `<span class="details-tag">${displayValue}</span>`;
+                });
+                detailsHTML += `</div></div>`;
+            }
+
+            // Kişiler - Detaylı bilgi ile
+            if (group.persons && group.persons.length > 0) {
+                detailsHTML += `
+                    <div class="details-section">
+                        <h4>Kişiler (${group.persons.length})</h4>
+                        <div class="details-list">
+                `;
+                
+                // Kişi detaylarını al
+                try {
+                    const token = localStorage.getItem('token');
+                    const response = await fetch('/api/authorization', {
+                        headers: {
+                            'Authorization': `Bearer ${token}`
+                        }
+                    });
+                    
+                    if (response.ok) {
+                        const result = await response.json();
+                        if (result.success) {
+                            const allPersons = result.authorizations;
+                            
+                            group.persons.forEach(personValue => {
+                                const personName = personValue.includes(':') ? personValue.split(':')[1] : personValue;
+                                const personDetail = allPersons.find(p => p.personName === personName);
+                                
+                                if (personDetail) {
+                                    detailsHTML += `
+                                        <div class="person-detail-tag">
+                                            <strong>${personDetail.personName}</strong><br>
+                                            <small>📧 ${personDetail.email || 'Email yok'}</small><br>
+                                            <small>💼 ${personDetail.title || 'Pozisyon yok'}</small>
+                                        </div>
+                                    `;
+                                } else {
+                                    detailsHTML += `<span class="details-tag">${personName}</span>`;
+                                }
+                            });
+                        } else {
+                            // Fallback: sadece isimleri göster
+                            group.persons.forEach(person => {
+                                const displayValue = person.includes(':') ? person.split(':')[1] : person;
+                                detailsHTML += `<span class="details-tag">${displayValue}</span>`;
+                            });
+                        }
+                    } else {
+                        // Fallback: sadece isimleri göster
+                        group.persons.forEach(person => {
+                            const displayValue = person.includes(':') ? person.split(':')[1] : person;
+                            detailsHTML += `<span class="details-tag">${displayValue}</span>`;
+                        });
+                    }
+                } catch (error) {
+                    console.error('Kişi detayları alınamadı:', error);
+                    // Fallback: sadece isimleri göster
+                    group.persons.forEach(person => {
+                        const displayValue = person.includes(':') ? person.split(':')[1] : person;
+                        detailsHTML += `<span class="details-tag">${displayValue}</span>`;
+                    });
+                }
+                
+                detailsHTML += `</div></div>`;
+            }
+
+            // Gezegenler
+            if (group.planets && group.planets.length > 0) {
+                detailsHTML += `
+                    <div class="details-section">
+                        <h4>Gezegenler (${group.planets.length})</h4>
+                        <div class="details-list">
+                `;
+                group.planets.forEach(planet => {
+                    const planets = [
+                        { value: 'venus', label: 'Venüs (Belirsizlik Yönetimi - Müşteri Odaklılık)' },
+                        { value: 'titan', label: 'Titan (İnsanları Etkileme - Güven Veren İşbirlikçi ve Sinerji)' }
+                    ];
+                    const planetObj = planets.find(p => p.value === planet);
+                    const displayValue = planetObj ? planetObj.label : planet;
+                    detailsHTML += `<span class="details-tag">${displayValue}</span>`;
+                });
+                detailsHTML += `</div></div>`;
+            }
+
+            content.innerHTML = detailsHTML;
+            document.getElementById('detailsModal').style.display = 'flex';
+        }
+
+        // Detay modal'ını kapat
+        function closeDetailsModal() {
+            document.getElementById('detailsModal').style.display = 'none';
+        }
+
         // Modal toggle switch fonksiyonu
         function toggleModalStatus() {
             const toggle = document.getElementById('groupStatusToggle');
             toggle.classList.toggle('active');
         }
+
 
         // Modal fonksiyonları
         function openGroupModal() {
@@ -1172,7 +2151,21 @@
             document.getElementById('groupModal').style.display = 'none';
             // Clear form inputs
             document.getElementById('groupNameInput').value = '';
+            document.getElementById('organizationSelect').value = '';
+            document.getElementById('personSelect').value = '';
+            document.getElementById('planetSelect').value = '';
             document.getElementById('groupStatusToggle').classList.remove('active');
+            
+            // Clear selected items
+            selectedOrganizations = [];
+            selectedPersons = [];
+            selectedPlanets = [];
+            manualPersons = [];
+            autoPersons = [];
+            updateOrganizationUI();
+            updatePersonUI();
+            updatePlanetUI();
+            
             // Reset edit mode
             window.editingGroupId = null;
             // Reset modal title
@@ -1194,12 +2187,26 @@
                 return;
             }
 
+            // En az bir organizasyon VEYA en az bir kişi seçilmiş olmalı
+            if (selectedOrganizations.length === 0 && selectedPersons.length === 0) {
+                showMessage('Hata', 'Lütfen en az bir organizasyon veya kişi seçiniz!', false);
+                return;
+            }
+
+            if (selectedPlanets.length === 0) {
+                showMessage('Hata', 'Lütfen en az bir gezegen seçiniz!', false);
+                return;
+            }
+
             isSaving = true; // Kayıt başladı
 
             try {
                 const token = localStorage.getItem('token');
                 const groupData = {
                     name: groupName,
+                    organizations: selectedOrganizations,
+                    persons: selectedPersons,
+                    planets: selectedPlanets,
                     status: groupStatus ? 'Aktif' : 'Pasif'
                 };
 
@@ -1271,6 +2278,34 @@
                     
                     // Form alanlarını doldur
                     document.getElementById('groupNameInput').value = group.name;
+                    
+                    // Seçili öğeleri temizle
+                    selectedOrganizations = [];
+                    selectedPersons = [];
+                    selectedPlanets = [];
+                    manualPersons = [];
+                    autoPersons = [];
+                    
+                    // Organizasyonları doldur
+                    if (group.organizations && group.organizations.length > 0) {
+                        selectedOrganizations = [...group.organizations];
+                        updateOrganizationUI();
+                    }
+                    
+                    // Kişileri doldur - hepsini manuel olarak işaretle (düzenleme modunda)
+                    if (group.persons && group.persons.length > 0) {
+                        selectedPersons = [...group.persons];
+                        manualPersons = [...group.persons]; // Düzenleme modunda hepsi manuel
+                        updatePersonUI();
+                    }
+                    
+                    // Gezegenleri doldur
+                    if (group.planets && group.planets.length > 0) {
+                        selectedPlanets = [...group.planets];
+                        updatePlanetUI();
+                    }
+                    
+                    // Durum toggle'ını ayarla
                     const toggle = document.getElementById('groupStatusToggle');
                     if (group.status === 'Aktif') {
                         toggle.classList.add('active');

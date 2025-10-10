@@ -5,13 +5,25 @@ const groupSchema = new mongoose.Schema({
         type: String,
         required: [true, 'Grup adı gereklidir'],
         trim: true,
-        maxlength: [100, 'Grup adı 100 karakterden fazla olamaz']
+        maxlength: [200, 'Grup adı 200 karakterden fazla olamaz']
     },
     status: {
         type: String,
         enum: ['Aktif', 'Pasif'],
         default: 'Aktif'
     },
+    organizations: [{
+        type: String,
+        required: true
+    }],
+    persons: [{
+        type: String,
+        required: true
+    }],
+    planets: [{
+        type: String,
+        required: true
+    }],
     isActive: {
         type: Boolean,
         default: true
@@ -19,15 +31,7 @@ const groupSchema = new mongoose.Schema({
     createdBy: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'Admin',
-        required: true
-    },
-    createdAt: {
-        type: Date,
-        default: Date.now
-    },
-    updatedAt: {
-        type: Date,
-        default: Date.now
+        required: false
     }
 }, {
     timestamps: true

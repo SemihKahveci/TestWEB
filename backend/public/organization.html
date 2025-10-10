@@ -1135,6 +1135,14 @@
                 return;
             }
 
+            // Aynı değer kontrolü
+            const values = [genelMudurYardimciligi, direktörlük, müdürlük, grupLiderligi, pozisyon];
+            const uniqueValues = [...new Set(values)];
+            if (uniqueValues.length === 1) {
+                showMessageModal('warning', 'Uyarı', 'Tüm alanlar aynı olamaz! Lütfen farklı değerler giriniz.');
+                return;
+            }
+
             try {
                 const token = localStorage.getItem('token');
                 const organizationData = {

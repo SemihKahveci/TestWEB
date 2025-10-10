@@ -80,8 +80,8 @@ const getGroupById = async (req, res) => {
 // Yeni grup oluştur
 const createGroup = async (req, res) => {
     try {
-        const { name, status } = req.body;
-        const createdBy = req.admin.id; // Middleware'den gelen admin ID
+        const { name, status, organizations, persons, planets } = req.body;
+        const createdBy = req.admin?.id; // Middleware'den gelen admin ID (optional)
 
         // Gerekli alanları kontrol et
         if (!name || !name.trim()) {
@@ -91,10 +91,24 @@ const createGroup = async (req, res) => {
             });
         }
 
+        // En az bir organizasyon VEYA en az bir kişi seçilmiş olmalı
+        if ((!organizations || organizations.length === 0) && (!persons || persons.length === 0)) {
+            return res.status(400).json({
+                success: false,
+                message: 'En az bir organizasyon veya kişi seçilmelidir'
+            });
+        }
+
+        if (!planets || planets.length === 0) {
+            return res.status(400).json({
+                success: false,
+                message: 'En az bir gezegen seçilmelidir'
+            });
+        }
+
         // Aynı isimde grup var mı kontrol et
         const existingGroup = await Group.findOne({ 
-            name: name.trim(),
-            createdBy: createdBy
+            name: name.trim()
         });
 
         if (existingGroup) {
@@ -108,14 +122,19 @@ const createGroup = async (req, res) => {
         const newGroup = new Group({
             name: name.trim(),
             status: status || 'Aktif',
+            organizations: organizations,
+            persons: persons,
+            planets: planets,
             isActive: status === 'Aktif' || status === undefined,
             createdBy: createdBy
         });
 
         await newGroup.save();
 
-        // Populate ile createdBy bilgisini ekle
-        await newGroup.populate('createdBy', 'username email');
+        // Populate ile createdBy bilgisini ekle (eğer varsa)
+        if (createdBy) {
+            await newGroup.populate('createdBy', 'username email');
+        }
 
         res.status(201).json({
             success: true,
@@ -136,8 +155,8 @@ const createGroup = async (req, res) => {
 const updateGroup = async (req, res) => {
     try {
         const { id } = req.params;
-        const { name, status } = req.body;
-        const updatedBy = req.admin.id;
+        const { name, status, organizations, persons, planets } = req.body;
+        const updatedBy = req.admin?.id;
 
         // Grup var mı kontrol et
         const group = await Group.findById(id);
@@ -155,7 +174,6 @@ const updateGroup = async (req, res) => {
             // Aynı isimde başka grup var mı kontrol et
             const existingGroup = await Group.findOne({ 
                 name: name.trim(),
-                createdBy: group.createdBy,
                 _id: { $ne: id }
             });
 
@@ -174,12 +192,40 @@ const updateGroup = async (req, res) => {
             updateData.isActive = status === 'Aktif';
         }
 
+        // Organizasyon ve kişi güncellemeleri için validation
+        if (organizations !== undefined && persons !== undefined) {
+            // En az bir organizasyon VEYA en az bir kişi seçilmiş olmalı
+            if (organizations.length === 0 && persons.length === 0) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'En az bir organizasyon veya kişi seçilmelidir'
+                });
+            }
+        }
+
+        if (organizations && organizations.length > 0) {
+            updateData.organizations = organizations;
+        }
+
+        if (persons && persons.length > 0) {
+            updateData.persons = persons;
+        }
+
+        if (planets && planets.length > 0) {
+            updateData.planets = planets;
+        }
+
         // Grubu güncelle
         const updatedGroup = await Group.findByIdAndUpdate(
             id,
             updateData,
             { new: true, runValidators: true }
-        ).populate('createdBy', 'username email');
+        );
+
+        // Populate ile createdBy bilgisini ekle (eğer varsa)
+        if (updatedGroup.createdBy) {
+            await updatedGroup.populate('createdBy', 'username email');
+        }
 
         res.json({
             success: true,
@@ -277,6 +323,112 @@ const getActiveGroups = async (req, res) => {
     }
 };
 
+// Organizasyon seçimine göre eşleşen kişileri getir
+const getMatchingPersonsByOrganizations = async (req, res) => {
+    try {
+        const { organizations } = req.body;
+        
+        if (!organizations || !Array.isArray(organizations) || organizations.length === 0) {
+            return res.status(400).json({
+                success: false,
+                message: 'Organizasyon listesi gereklidir'
+            });
+        }
+
+        // Authorization modelini import et
+        const Authorization = require('../models/Authorization');
+        
+        // Seçilen organizasyonlardan pozisyonları çıkar
+        const positions = [];
+        const organizationData = [];
+        
+        organizations.forEach(org => {
+            if (org.includes(':')) {
+                const [type, value] = org.split(':');
+                if (type === 'pozisyon') {
+                    positions.push(value);
+                } else {
+                    // Organizasyon verilerini topla
+                    organizationData.push({ type, value });
+                }
+            }
+        });
+
+        // Organizasyon verilerinden eşleşen pozisyonları bul
+        if (organizationData.length > 0) {
+            const Organization = require('../models/Organization');
+            
+            // Her organizasyon türü için eşleşen kayıtları bul
+            for (const orgItem of organizationData) {
+                let query = {};
+                
+                // Organizasyon türüne göre sorgu oluştur
+                switch (orgItem.type) {
+                    case 'genelMudurYardimciligi':
+                        query.genelMudurYardimciligi = orgItem.value;
+                        break;
+                    case 'direktörlük':
+                        query.direktörlük = orgItem.value;
+                        break;
+                    case 'müdürlük':
+                        query.müdürlük = orgItem.value;
+                        break;
+                    case 'grupLiderligi':
+                        query.grupLiderligi = orgItem.value;
+                        break;
+                }
+                
+                // Bu kriterlere uyan organizasyonları bul
+                const matchingOrgs = await Organization.find(query);
+                
+                // Bu organizasyonlardaki pozisyonları topla
+                matchingOrgs.forEach(org => {
+                    if (org.pozisyon && !positions.includes(org.pozisyon)) {
+                        positions.push(org.pozisyon);
+                    }
+                });
+            }
+        }
+
+        if (positions.length === 0) {
+            return res.json({
+                success: true,
+                persons: [],
+                message: 'Seçilen organizasyonlarda pozisyon bulunamadı veya organizasyon seçilmemiş'
+            });
+        }
+
+        // Bu pozisyonlardaki kişileri bul
+        const matchingPersons = await Authorization.find({
+            title: { $in: positions }
+        }).select('personName email title');
+
+        // Kişileri formatla
+        const formattedPersons = matchingPersons.map(person => ({
+            value: `personName:${person.personName}`,
+            label: person.personName,
+            email: person.email,
+            title: person.title
+        }));
+
+        res.json({
+            success: true,
+            persons: formattedPersons,
+            positions: positions,
+            organizationData: organizationData,
+            message: `${formattedPersons.length} kişi bulundu (${positions.length} farklı pozisyondan)`
+        });
+
+    } catch (error) {
+        console.error('Eşleşen kişileri getirme hatası:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Eşleşen kişiler getirilirken bir hata oluştu',
+            error: error.message
+        });
+    }
+};
+
 module.exports = {
     getAllGroups,
     getGroupById,
@@ -284,5 +436,6 @@ module.exports = {
     updateGroup,
     deleteGroup,
     toggleGroupStatus,
-    getActiveGroups
+    getActiveGroups,
+    getMatchingPersonsByOrganizations
 };

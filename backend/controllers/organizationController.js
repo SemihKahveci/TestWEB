@@ -38,6 +38,22 @@ const createOrganization = async (req, res) => {
             });
         }
 
+        // Aynı organizasyon var mı kontrol et
+        const existingOrganization = await Organization.findOne({
+            genelMudurYardimciligi: genelMudurYardimciligi.trim(),
+            direktörlük: direktörlük.trim(),
+            müdürlük: müdürlük.trim(),
+            grupLiderligi: grupLiderligi.trim(),
+            pozisyon: pozisyon.trim()
+        });
+
+        if (existingOrganization) {
+            return res.status(400).json({
+                success: false,
+                message: 'Bu organizasyon zaten mevcut!'
+            });
+        }
+
         // Yeni organizasyon oluştur
         const newOrganization = new Organization({
             genelMudurYardimciligi,
@@ -82,6 +98,23 @@ const updateOrganization = async (req, res) => {
             return res.status(400).json({
                 success: false,
                 message: 'Tüm alanlar doldurulmalıdır'
+            });
+        }
+
+        // Aynı organizasyon var mı kontrol et (kendisi hariç)
+        const existingOrganization = await Organization.findOne({
+            genelMudurYardimciligi: genelMudurYardimciligi.trim(),
+            direktörlük: direktörlük.trim(),
+            müdürlük: müdürlük.trim(),
+            grupLiderligi: grupLiderligi.trim(),
+            pozisyon: pozisyon.trim(),
+            _id: { $ne: id }
+        });
+
+        if (existingOrganization) {
+            return res.status(400).json({
+                success: false,
+                message: 'Bu organizasyon zaten mevcut!'
             });
         }
 

@@ -14,6 +14,14 @@ const authorizationSchema = new mongoose.Schema({
         trim: true,
         maxlength: [100, 'Kişi adı 100 karakterden fazla olamaz']
     },
+    email: {
+        type: String,
+        required: [true, 'Email gereklidir'],
+        trim: true,
+        lowercase: true,
+        maxlength: [100, 'Email 100 karakterden fazla olamaz'],
+        match: [/^\w+([.-]?\w+)*@\w+([.-]?\w+)*(\.\w{2,3})+$/, 'Geçerli bir email adresi giriniz']
+    },
     title: {
         type: String,
         required: [true, 'Pozisyon gereklidir'],
@@ -32,6 +40,7 @@ const authorizationSchema = new mongoose.Schema({
 // Index'ler
 authorizationSchema.index({ sicilNo: 1 });
 authorizationSchema.index({ personName: 1 });
+authorizationSchema.index({ email: 1 });
 authorizationSchema.index({ title: 1 });
 
 // Virtual field for formatted dates

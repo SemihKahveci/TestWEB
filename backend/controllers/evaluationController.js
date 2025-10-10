@@ -167,10 +167,10 @@ const evaluationController = {
 // Yetenek türüne göre başlık belirleme fonksiyonu
 function getReportTitle(type) {
     switch (type) {
-        case 'BY': return 'Belirsizlik Yönetimi Raporu';
+        case 'BY': return 'Uyumluluk ve Dayanıklılık Raporu';
         case 'MO': return 'Müşteri Odaklılık Raporu';
         case 'IE': return 'İnsanları Etkileme Raporu';
-        case 'IDIK': return 'Güven Veren İşbirlikçi ve Sinerji Raporu';
+        case 'IDIK': return 'Güven Veren İşbirliği ve Sinerji Raporu';
         default: return 'Bilinmeyen Yetenek Raporu';
     }
 }
@@ -475,7 +475,7 @@ async function buildEvaluationHTML(evaluation, options, userCode, isPreview = fa
                 display:flex; 
                 align-items:center; 
                 justify-content:center;">
-                <h1 style="font-size:64px; font-weight:bold; color:#1e3a8a;
+                <h1 style="font-size:80px; font-weight:bold; color:#1e3a8a;
                         text-shadow:4px 4px 8px rgba(0,0,0,0.3); font-family:sans-serif;">
                     ${competencyName}
                 </h1>

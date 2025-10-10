@@ -7,7 +7,8 @@ const {
     deleteGroup,
     getGroupById,
     toggleGroupStatus,
-    getActiveGroups
+    getActiveGroups,
+    getMatchingPersonsByOrganizations
 } = require('../controllers/groupController');
 const { authenticateAdmin } = require('../middleware/auth');
 
@@ -28,6 +29,9 @@ router.delete('/:id', authenticateAdmin, deleteGroup);
 
 // Grup durumunu değiştir
 router.patch('/:id/toggle-status', authenticateAdmin, toggleGroupStatus);
+
+// Organizasyonlara göre eşleşen kişileri getir
+router.post('/matching-persons', authenticateAdmin, getMatchingPersonsByOrganizations);
 
 // Tek grup getir
 router.get('/:id', authenticateAdmin, getGroupById);

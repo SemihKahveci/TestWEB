@@ -12,6 +12,7 @@ const getAllAuthorizations = async (req, res) => {
             filter.$or = [
                 { sicilNo: { $regex: search, $options: 'i' } },
                 { personName: { $regex: search, $options: 'i' } },
+                { email: { $regex: search, $options: 'i' } },
                 { title: { $regex: search, $options: 'i' } }
             ];
         }
@@ -80,7 +81,7 @@ const getAuthorizationById = async (req, res) => {
 // Yeni yetkilendirme oluştur
 const createAuthorization = async (req, res) => {
     try {
-        const { sicilNo, personName, title } = req.body;
+        const { sicilNo, personName, email, title } = req.body;
         const createdBy = req.admin?.id; // Middleware'den gelen admin ID (opsiyonel)
 
         // Gerekli alanları kontrol et
@@ -95,6 +96,13 @@ const createAuthorization = async (req, res) => {
             return res.status(400).json({
                 success: false,
                 message: 'Kişi adı gereklidir'
+            });
+        }
+
+        if (!email || !email.trim()) {
+            return res.status(400).json({
+                success: false,
+                message: 'Email gereklidir'
             });
         }
 
@@ -117,10 +125,23 @@ const createAuthorization = async (req, res) => {
             });
         }
 
+        // Aynı email adresinde yetkilendirme var mı kontrol et
+        const existingEmail = await Authorization.findOne({ 
+            email: email.trim().toLowerCase()
+        });
+
+        if (existingEmail) {
+            return res.status(400).json({
+                success: false,
+                message: 'Bu email adresinde zaten bir yetkilendirme mevcut'
+            });
+        }
+
         // Yeni yetkilendirme oluştur
         const newAuthorization = new Authorization({
             sicilNo: sicilNo.trim(),
             personName: personName.trim(),
+            email: email.trim().toLowerCase(),
             title: title.trim(),
             createdBy: createdBy
         });
@@ -149,7 +170,7 @@ const createAuthorization = async (req, res) => {
 const updateAuthorization = async (req, res) => {
     try {
         const { id } = req.params;
-        const { sicilNo, personName, title } = req.body;
+        const { sicilNo, personName, email, title } = req.body;
 
         // Yetkilendirme var mı kontrol et
         const authorization = await Authorization.findById(id);
@@ -184,10 +205,26 @@ const updateAuthorization = async (req, res) => {
             updateData.personName = personName.trim();
         }
 
+        if (email && email.trim()) {
+            // Aynı email adresinde başka yetkilendirme var mı kontrol et
+            const existingEmail = await Authorization.findOne({ 
+                email: email.trim().toLowerCase(),
+                _id: { $ne: id }
+            });
+
+            if (existingEmail) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'Bu email adresinde başka bir yetkilendirme zaten mevcut'
+                });
+            }
+            
+            updateData.email = email.trim().toLowerCase();
+        }
+
         if (title && title.trim()) {
             updateData.title = title.trim();
         }
-
 
         // Yetkilendirmeyi güncelle
         const updatedAuthorization = await Authorization.findByIdAndUpdate(
