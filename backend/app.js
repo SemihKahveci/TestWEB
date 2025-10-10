@@ -12,6 +12,8 @@ const adminController = require('./controllers/adminController');
 const companyManagementRoutes = require('./routes/companyManagementRoutes');
 const competencyRoutes = require('./routes/competencyRoutes');
 const organizationRoutes = require('./routes/organizationRoutes');
+const groupRoutes = require('./routes/groupRoutes');
+const authorizationRoutes = require('./routes/authorizationRoutes');
 
 const app = express();
 const port = process.env.PORT || 5000;
@@ -212,6 +214,12 @@ apiRouter.use('/competency', competencyRoutes);
 
 // Organization işlemleri
 apiRouter.use('/organization', organizationRoutes);
+
+// Group işlemleri
+apiRouter.use('/group', groupRoutes);
+
+// Authorization işlemleri
+apiRouter.use('/authorization', authorizationRoutes);
 
 // API route'larını uygula
 app.use('/api', apiRouter);

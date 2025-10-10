@@ -328,11 +328,6 @@
             border: none;
         }
 
-        .btn-excel {
-            background: #01A94D;
-            color: white;
-        }
-
         .btn-add {
             background: #0286F7;
             color: white;
@@ -515,6 +510,16 @@
             gap: 8px;
         }
 
+        .btn-save::before {
+            content: '';
+            width: 18px;
+            height: 18px;
+            background-image: url('images/save-icon.svg');
+            background-size: contain;
+            background-repeat: no-repeat;
+            background-position: center;
+        }
+
         .btn-save:hover {
             background: #0275D8;
         }
@@ -542,6 +547,109 @@
             top: 2.5px;
             left: 2.5px;
             transition: 0.3s;
+        }
+
+        .toggle-switch.active {
+            background: #3A57E8;
+        }
+
+        .toggle-switch.active::before {
+            left: 20.5px;
+        }
+
+        /* Custom Popup Stilleri */
+        .message-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 2000;
+        }
+
+        .message-modal-content {
+            background: white;
+            border-radius: 12px;
+            padding: 24px;
+            max-width: 400px;
+            width: 90%;
+            text-align: center;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+        }
+
+        .message-modal-header {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 16px;
+            margin-bottom: 20px;
+        }
+
+        .message-icon {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            color: white;
+        }
+
+        .message-icon.success {
+            background: #28a745;
+        }
+
+        .message-icon.error {
+            background: #dc3545;
+        }
+
+        .message-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: #232D42;
+            margin: 0;
+        }
+
+        .message-text {
+            font-size: 14px;
+            color: #6C757D;
+            margin: 0 0 20px 0;
+            line-height: 1.5;
+        }
+
+        .message-buttons {
+            display: flex;
+            gap: 12px;
+            justify-content: center;
+        }
+
+        .btn-message {
+            padding: 10px 20px;
+            border-radius: 6px;
+            border: none;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            min-width: 80px;
+        }
+
+        .btn-message.primary {
+            background: #0286F7;
+            color: white;
+        }
+
+        .btn-message.secondary {
+            background: #6C757D;
+            color: white;
+        }
+
+        .btn-message:hover {
+            opacity: 0.9;
         }
 
         /* Sayfalama Stilleri */
@@ -697,10 +805,6 @@
                             <input type="text" placeholder="Search...">
                         </div>
                         <div class="action-buttons">
-                            <button class="btn btn-excel">
-                                <i class="fas fa-file-excel"></i>
-                                Excel Yükle
-                            </button>
                             <button class="btn btn-add" onclick="openGroupModal()">
                                 <i class="fas fa-plus"></i>
                                 EKLE
@@ -711,49 +815,13 @@
                     <table class="results-table">
                         <thead>
                             <tr>
-                                <th>Seçim</th>
                                 <th>Grup Adı</th>
-                                <th>Aktif / Pasif</th>
+                                <th>Aktiflik Durumu</th>
                                 <th>İşlemler</th>
                             </tr>
                         </thead>
                         <tbody>
-                            <tr>
-                                <td><input type="checkbox" /></td>
-                                <td>AAAA</td>
-                                <td><div class="toggle-switch"></div></td>
-                                <td>
-                                    <button style="background: #0286F7; color: white; border: none; padding: 8px 16px; border-radius: 4px; margin-right: 8px;">Düzenle</button>
-                                    <button style="background: #A30D11; color: white; border: none; padding: 8px 16px; border-radius: 4px;">Sil</button>
-                                </td>
-                            </tr>
-                            <tr>
-                                <td><input type="checkbox" /></td>
-                                <td>BBBB</td>
-                                <td><div class="toggle-switch"></div></td>
-                                <td>
-                                    <button style="background: #0286F7; color: white; border: none; padding: 8px 16px; border-radius: 4px; margin-right: 8px;">Düzenle</button>
-                                    <button style="background: #A30D11; color: white; border: none; padding: 8px 16px; border-radius: 4px;">Sil</button>
-                                </td>
-                            </tr>
-                            <tr>
-                                <td><input type="checkbox" /></td>
-                                <td>CCCC</td>
-                                <td><div class="toggle-switch"></div></td>
-                                <td>
-                                    <button style="background: #0286F7; color: white; border: none; padding: 8px 16px; border-radius: 4px; margin-right: 8px;">Düzenle</button>
-                                    <button style="background: #A30D11; color: white; border: none; padding: 8px 16px; border-radius: 4px;">Sil</button>
-                                </td>
-                            </tr>
-                            <tr>
-                                <td><input type="checkbox" /></td>
-                                <td>DDDD</td>
-                                <td><div class="toggle-switch"></div></td>
-                                <td>
-                                    <button style="background: #0286F7; color: white; border: none; padding: 8px 16px; border-radius: 4px; margin-right: 8px;">Düzenle</button>
-                                    <button style="background: #A30D11; color: white; border: none; padding: 8px 16px; border-radius: 4px;">Sil</button>
-                                </td>
-                            </tr>
+                            <!-- Veriler JavaScript ile doldurulacak -->
                         </tbody>
                     </table>
                     <div class="pagination-container">
@@ -782,19 +850,48 @@
                 <div class="form-group">
                     <div class="form-label">Durum</div>
                     <div style="display: flex; align-items: center; gap: 10px;">
-                        <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
-                            <input type="checkbox" id="groupStatusInput" style="width: 20px; height: 20px;">
-                            <span style="color: #8A92A6; font-size: 16px;">Aktif</span>
-                        </label>
+                        <span style="color: #8A92A6; font-size: 16px;">Pasif</span>
+                        <div class="toggle-switch" id="groupStatusToggle" onclick="toggleModalStatus()"></div>
+                        <span style="color: #8A92A6; font-size: 16px;">Aktif</span>
                     </div>
                 </div>
             </div>
             <div class="modal-buttons">
                 <button class="btn-cancel" onclick="closeGroupModal()">İptal</button>
-                <button class="btn-save" onclick="saveGroup()">
-                    <div style="width: 18px; height: 18px; background: white; border-radius: 2px;"></div>
-                    <div>Kaydet</div>
-                </button>
+                <button class="btn-save" onclick="saveGroup()">Kaydet</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Custom Message Modal -->
+    <div id="messageModal" class="message-modal">
+        <div class="message-modal-content">
+            <div class="message-modal-header">
+                <div class="message-icon" id="messageIcon">
+                    <i class="fas fa-check"></i>
+                </div>
+                <h3 class="message-title" id="messageTitle">Başarılı</h3>
+            </div>
+            <p class="message-text" id="messageText">İşlem başarıyla tamamlandı.</p>
+            <div class="message-buttons">
+                <button class="btn-message primary" onclick="closeMessageModal()">Tamam</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Custom Confirm Modal -->
+    <div id="confirmModal" class="message-modal">
+        <div class="message-modal-content">
+            <div class="message-modal-header">
+                <div class="message-icon error">
+                    <i class="fas fa-exclamation-triangle"></i>
+                </div>
+                <h3 class="message-title">Onay Gerekli</h3>
+            </div>
+            <p class="message-text" id="confirmText">Bu işlemi gerçekleştirmek istediğinizden emin misiniz?</p>
+            <div class="message-buttons">
+                <button class="btn-message secondary" onclick="closeConfirmModal()">İptal</button>
+                <button class="btn-message primary" id="confirmButton">Onayla</button>
             </div>
         </div>
     </div>
@@ -806,6 +903,7 @@
         const itemsPerPage = 10;
         let totalItems = 0;
         let allGroups = [];
+        let isSaving = false; // Çoklu kayıt engelleme
 
         document.addEventListener('DOMContentLoaded', function() {
             createSidebar();
@@ -821,33 +919,7 @@
                 });
             });
 
-            // Checkbox işlevi
-            const checkboxes = document.querySelectorAll('input[type="checkbox"]');
-            checkboxes.forEach(checkbox => {
-                checkbox.addEventListener('change', function() {
-                    const row = this.closest('tr');
-                    if (this.checked) {
-                        row.style.background = 'rgba(2, 134, 247, 0.10)';
-                    } else {
-                        row.style.background = '';
-                    }
-                });
-            });
 
-            // Toggle switch işlevi
-            const toggleSwitches = document.querySelectorAll('.toggle-switch');
-            toggleSwitches.forEach(toggle => {
-                toggle.addEventListener('click', function() {
-                    this.classList.toggle('active');
-                    if (this.classList.contains('active')) {
-                        this.style.background = '#3A57E8';
-                        this.querySelector('::before').style.left = '23px';
-                    } else {
-                        this.style.background = '#D9D9D9';
-                        this.querySelector('::before').style.left = '2.5px';
-                    }
-                });
-            });
 
             // Sayfa numaralarına tıklama işlevi
             const pageButtons = document.querySelectorAll('.page-button');
@@ -964,24 +1036,37 @@
             tableBody.innerHTML = '';
 
             if (allGroups.length === 0) {
-                tableBody.innerHTML = '<tr><td colspan="4" style="text-align: center; color: #8A92A6;">Henüz grup bulunmuyor</td></tr>';
+                tableBody.innerHTML = '<tr><td colspan="3" style="text-align: center; color: #8A92A6;">Henüz grup bulunmuyor</td></tr>';
                 return;
             }
+
+            // Grupları sırala: Aktif olanlar üstte, pasif olanlar altta
+            // Her grup kendi içinde eklenme zamanına göre sıralanır
+            const sortedGroups = [...allGroups].sort((a, b) => {
+                // Önce duruma göre sırala (Aktif > Pasif)
+                if (a.status === 'Aktif' && b.status === 'Pasif') return -1;
+                if (a.status === 'Pasif' && b.status === 'Aktif') return 1;
+                
+                // Aynı durumdaysa eklenme zamanına göre sırala (yeni olanlar üstte)
+                const dateA = new Date(a.createdAt || a.updatedAt || 0);
+                const dateB = new Date(b.createdAt || b.updatedAt || 0);
+                return dateB - dateA;
+            });
 
             // Sayfalama için verileri dilimle
             const startIndex = (currentPage - 1) * itemsPerPage;
             const endIndex = startIndex + itemsPerPage;
-            const pageData = allGroups.slice(startIndex, endIndex);
+            const pageData = sortedGroups.slice(startIndex, endIndex);
 
             pageData.forEach(group => {
                 const row = document.createElement('tr');
+                row.setAttribute('data-group-id', group._id);
                 row.innerHTML = `
-                    <td><input type="checkbox" /></td>
                     <td>${group.name}</td>
-                    <td><div class="toggle-switch ${group.isActive ? 'active' : ''}"></div></td>
+                    <td>${group.status}</td>
                     <td>
-                        <i class="fas fa-edit" style="color: #0286F7; margin-right: 16px; cursor: pointer;" onclick="editGroup('${group.id}')"></i>
-                        <i class="fas fa-trash" style="color: #A30D11; cursor: pointer;" onclick="deleteGroup('${group.id}')"></i>
+                        <i class="fas fa-edit" style="color: #0286F7; margin-right: 16px; cursor: pointer;" onclick="editGroup('${group._id}')"></i>
+                        <i class="fas fa-trash" style="color: #A30D11; cursor: pointer;" onclick="deleteGroup('${group._id}')"></i>
                     </td>
                 `;
                 tableBody.appendChild(row);
@@ -993,27 +1078,89 @@
             loadGroups();
         });
 
-        // Grupları yükle (örnek veri)
-        function loadGroups() {
-            // Örnek veri - gerçek uygulamada API'den gelecek
-            allGroups = [
-                { id: '1', name: 'AAAA', isActive: true },
-                { id: '2', name: 'BBBB', isActive: false },
-                { id: '3', name: 'CCCC', isActive: true },
-                { id: '4', name: 'DDDD', isActive: false },
-                { id: '5', name: 'EEEE', isActive: true },
-                { id: '6', name: 'FFFF', isActive: false },
-                { id: '7', name: 'GGGG', isActive: true },
-                { id: '8', name: 'HHHH', isActive: false },
-                { id: '9', name: 'IIII', isActive: true },
-                { id: '10', name: 'JJJJ', isActive: false },
-                { id: '11', name: 'KKKK', isActive: true },
-                { id: '12', name: 'LLLL', isActive: false }
-            ];
+        // Grupları yükle
+        async function loadGroups() {
+            try {
+                const token = localStorage.getItem('token');
+                const response = await fetch('/api/group', {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+
+                if (!response.ok) {
+                    throw new Error('Grup listesi yüklenemedi');
+                }
+
+                const result = await response.json();
+                if (result.success) {
+                    allGroups = result.groups;
+                    totalItems = allGroups.length;
+                    displayGroups();
+                    updatePagination();
+                    } else {
+                    throw new Error(result.message || 'Grup listesi alınamadı');
+                }
+            } catch (error) {
+                console.error('Grup listesi yükleme hatası:', error);
+                document.querySelector('.results-table tbody').innerHTML = 
+                    '<tr><td colspan="3" style="text-align: center; color: #dc3545;">Veriler yüklenemedi</td></tr>';
+            }
+        }
+
+        // Custom Popup Fonksiyonları
+        function showMessage(title, text, isSuccess = true) {
+            const modal = document.getElementById('messageModal');
+            const icon = document.getElementById('messageIcon');
+            const titleEl = document.getElementById('messageTitle');
+            const textEl = document.getElementById('messageText');
             
-            totalItems = allGroups.length;
-            displayGroups();
-            updatePagination();
+            titleEl.textContent = title;
+            textEl.textContent = text;
+            
+            if (isSuccess) {
+                icon.className = 'message-icon success';
+                icon.innerHTML = '<i class="fas fa-check"></i>';
+            } else {
+                icon.className = 'message-icon error';
+                icon.innerHTML = '<i class="fas fa-times"></i>';
+            }
+            
+            modal.style.display = 'flex';
+        }
+
+        function closeMessageModal() {
+            document.getElementById('messageModal').style.display = 'none';
+        }
+
+        function showConfirm(text, onConfirm) {
+            const modal = document.getElementById('confirmModal');
+            const textEl = document.getElementById('confirmText');
+            const button = document.getElementById('confirmButton');
+            
+            textEl.textContent = text;
+            
+            // Önceki event listener'ı kaldır
+            const newButton = button.cloneNode(true);
+            button.parentNode.replaceChild(newButton, button);
+            
+            // Yeni event listener ekle
+            newButton.addEventListener('click', function() {
+                closeConfirmModal();
+                onConfirm();
+            });
+            
+            modal.style.display = 'flex';
+        }
+
+        function closeConfirmModal() {
+            document.getElementById('confirmModal').style.display = 'none';
+        }
+
+        // Modal toggle switch fonksiyonu
+        function toggleModalStatus() {
+            const toggle = document.getElementById('groupStatusToggle');
+            toggle.classList.toggle('active');
         }
 
         // Modal fonksiyonları
@@ -1025,7 +1172,7 @@
             document.getElementById('groupModal').style.display = 'none';
             // Clear form inputs
             document.getElementById('groupNameInput').value = '';
-            document.getElementById('groupStatusInput').checked = false;
+            document.getElementById('groupStatusToggle').classList.remove('active');
             // Reset edit mode
             window.editingGroupId = null;
             // Reset modal title
@@ -1033,83 +1180,151 @@
         }
 
         // Grup kaydet
-        function saveGroup() {
-            const groupName = document.getElementById('groupNameInput').value.trim();
-            const groupStatus = document.getElementById('groupStatusInput').checked;
-
-            if (!groupName) {
-                alert('Lütfen grup adını giriniz!');
+        async function saveGroup() {
+            // Çoklu kayıt engelleme
+            if (isSaving) {
                 return;
             }
 
-            const isEditMode = window.editingGroupId;
-            
-            if (isEditMode) {
-                // Düzenleme modu
-                const groupIndex = allGroups.findIndex(g => g.id === window.editingGroupId);
-                if (groupIndex !== -1) {
-                    allGroups[groupIndex].name = groupName;
-                    allGroups[groupIndex].status = groupStatus ? 'Aktif' : 'Pasif';
-                    alert('Grup başarıyla güncellendi!');
-                }
-            } else {
-                // Ekleme modu
-                const newGroup = {
-                    id: Date.now().toString(),
+            const groupName = document.getElementById('groupNameInput').value.trim();
+            const groupStatus = document.getElementById('groupStatusToggle').classList.contains('active');
+
+            if (!groupName) {
+                showMessage('Hata', 'Lütfen grup adını giriniz!', false);
+                return;
+            }
+
+            isSaving = true; // Kayıt başladı
+
+            try {
+                const token = localStorage.getItem('token');
+                const groupData = {
                     name: groupName,
                     status: groupStatus ? 'Aktif' : 'Pasif'
                 };
-                allGroups.unshift(newGroup);
-                totalItems = allGroups.length;
-                currentPage = 1; // Yeni ekleme durumunda sayfalama sıfırla
-                alert('Grup başarıyla eklendi!');
-            }
 
-            closeGroupModal();
-            displayGroups();
-            updatePagination();
+                let response;
+                let isEditMode = window.editingGroupId;
+
+                if (isEditMode) {
+                    // Düzenleme modu
+                    response = await fetch(`/api/group/${window.editingGroupId}`, {
+                        method: 'PUT',
+                        headers: {
+                            'Authorization': `Bearer ${token}`,
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify(groupData)
+                    });
+                } else {
+                    // Ekleme modu
+                    response = await fetch('/api/group', {
+                        method: 'POST',
+                        headers: {
+                            'Authorization': `Bearer ${token}`,
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify(groupData)
+                    });
+                }
+
+                const result = await response.json();
+
+                if (result.success) {
+                    const message = isEditMode ? 'Grup başarıyla güncellendi!' : 'Grup başarıyla eklendi!';
+                    showMessage('Başarılı', message, true);
+                    closeGroupModal();
+                    if (!isEditMode) {
+                        currentPage = 1; // Yeni ekleme durumunda sayfalama sıfırla
+                    }
+                    loadGroups(); // Verileri yenile
+                } else {
+                    showMessage('Hata', result.message, false);
+                }
+
+            } catch (error) {
+                console.error('Grup işlemi hatası:', error);
+                const errorMessage = window.editingGroupId ? 'Grup güncellenirken bir hata oluştu!' : 'Grup eklenirken bir hata oluştu!';
+                showMessage('Hata', errorMessage, false);
+            } finally {
+                isSaving = false; // Kayıt tamamlandı
+            }
         }
 
         // Grup düzenle
-        function editGroup(id) {
-            const group = allGroups.find(g => g.id === id);
-            if (group) {
-                // Form alanlarını doldur
-                document.getElementById('groupNameInput').value = group.name;
-                document.getElementById('groupStatusInput').checked = group.status === 'Aktif';
-                
-                // Modal başlığını değiştir
-                document.querySelector('.modal-title').textContent = 'Grup Düzenle';
-                
-                // Global değişken olarak düzenlenen ID'yi sakla
-                window.editingGroupId = id;
-                
-                // Modal'ı aç
-                openGroupModal();
+        async function editGroup(id) {
+            try {
+                const token = localStorage.getItem('token');
+                const response = await fetch(`/api/group/${id}`, {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+
+                if (!response.ok) {
+                    throw new Error('Grup verileri alınamadı');
+                }
+
+                const result = await response.json();
+                if (result.success) {
+                    const group = result.group;
+                    
+                    // Form alanlarını doldur
+                    document.getElementById('groupNameInput').value = group.name;
+                    const toggle = document.getElementById('groupStatusToggle');
+                    if (group.status === 'Aktif') {
+                        toggle.classList.add('active');
+                    } else {
+                        toggle.classList.remove('active');
+                    }
+                    
+                    // Modal başlığını değiştir
+                    document.querySelector('.modal-title').textContent = 'Grup Düzenle';
+                    
+                    // Global değişken olarak düzenlenen ID'yi sakla
+                    window.editingGroupId = id;
+                    
+                    // Modal'ı aç
+                    openGroupModal();
+                } else {
+                    throw new Error(result.message || 'Grup verileri alınamadı');
+                }
+            } catch (error) {
+                console.error('Grup verileri alma hatası:', error);
+                showMessage('Hata', 'Grup verileri alınırken bir hata oluştu: ' + error.message, false);
             }
         }
 
         // Grup sil
-        function deleteGroup(id) {
-            const group = allGroups.find(g => g.id === id);
+        async function deleteGroup(id) {
+            const group = allGroups.find(g => g._id === id);
             if (group) {
-                if (confirm(`"${group.name}" grubunu silmek istediğinizden emin misiniz?`)) {
-                    // Grubu listeden kaldır
-                    allGroups = allGroups.filter(g => g.id !== id);
-                    totalItems = allGroups.length;
-                    
-                    // Eğer mevcut sayfa boş kaldıysa önceki sayfaya git
-                    const totalPages = Math.ceil(totalItems / itemsPerPage);
-                    if (currentPage > totalPages && totalPages > 0) {
-                        currentPage = totalPages;
+                showConfirm(`"${group.name}" grubunu silmek istediğinizden emin misiniz?`, async () => {
+                    try {
+                        const token = localStorage.getItem('token');
+                        const response = await fetch(`/api/group/${id}`, {
+                            method: 'DELETE',
+                            headers: {
+                                'Authorization': `Bearer ${token}`
+                            }
+                        });
+
+                        const result = await response.json();
+
+                        if (result.success) {
+                            showMessage('Başarılı', 'Grup başarıyla silindi!', true);
+                            loadGroups(); // Verileri yenile
+                        } else {
+                            showMessage('Hata', result.message, false);
+                        }
+                    } catch (error) {
+                        console.error('Grup silme hatası:', error);
+                        showMessage('Hata', 'Grup silinirken bir hata oluştu!', false);
                     }
-                    
-                    displayGroups();
-                    updatePagination();
-                    alert('Grup başarıyla silindi!');
-                }
+                });
             }
         }
+
     </script>
 </body>
 </html>

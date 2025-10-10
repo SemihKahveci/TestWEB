@@ -225,6 +225,10 @@
         .results-table tr:last-child td {
             border-bottom: none;
         }
+        .results-table th:last-child,
+        .results-table td:last-child {
+            text-align: right;
+        }
 
         .pagination {
             padding: 16px;
@@ -279,6 +283,344 @@
             color: #232D42;
             font-size: 14px;
             font-weight: 500;
+        }
+
+        .search-bar {
+            padding: 8px 16px;
+            background: white;
+            border: 1px solid #E9ECEF;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            width: 350px;
+        }
+
+        .search-bar input {
+            border: none;
+            outline: none;
+            width: 100%;
+            color: #ADB5BD;
+            font-size: 16px;
+            font-family: 'Inter', sans-serif;
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 20px;
+        }
+
+        .btn {
+            padding: 8px 16px;
+            border-radius: 8px;
+            font-family: 'Montserrat', sans-serif;
+            font-size: 12px;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
+            border: none;
+        }
+
+        .btn-excel {
+            background: #01A94D;
+            color: white;
+        }
+
+        .btn-add {
+            background: #0286F7;
+            color: white;
+        }
+
+        /* Modal Stilleri */
+        .modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+
+        .modal-content {
+            width: 100%;
+            max-width: 506px;
+            max-height: 90vh;
+            padding: 20px 25px;
+            background: white;
+            border-radius: 15px;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            overflow-y: auto;
+        }
+
+        .modal-header {
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-start;
+            align-items: flex-start;
+            gap: 13px;
+            position: relative;
+        }
+
+        .modal-title {
+            text-align: center;
+            color: black;
+            font-size: 20px;
+            font-family: Inter;
+            font-weight: 700;
+            word-wrap: break-word;
+            width: 100%;
+        }
+
+        .modal-divider {
+            width: 44px;
+            height: 3px;
+            background: black;
+            border-radius: 29px;
+            position: absolute;
+            top: 28px;
+            left: 50%;
+            transform: translateX(-50%);
+        }
+
+        .modal-close {
+            position: absolute;
+            top: 13px;
+            right: 13px;
+            width: 24px;
+            height: 24px;
+            padding: 4px;
+            background: #E5E5E5;
+            border-radius: 50%;
+            border: none;
+            cursor: pointer;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            transition: background-color 0.2s ease;
+            z-index: 1001;
+        }
+
+        .modal-close:hover {
+            background: #D0D0D0;
+        }
+
+        .modal-close img {
+            width: 16px;
+            height: 16px;
+            pointer-events: none;
+            display: block;
+        }
+
+        .modal-body {
+            padding: 19px 0;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-start;
+            align-items: flex-start;
+            gap: 15px;
+            flex: 1;
+            overflow-y: auto;
+        }
+
+        .form-group {
+            min-height: 65px;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            flex-shrink: 0;
+        }
+
+        .form-label {
+            color: #8A92A6;
+            font-size: 16px;
+            font-family: Inter;
+            font-weight: 400;
+            line-height: 28px;
+        }
+
+        .form-input {
+            width: 100%;
+            max-width: 436px;
+            padding: 6px 12px;
+            background: white;
+            border-radius: 4px;
+            border: 1px solid #3A57E8;
+            color: #8A92A6;
+            font-size: 14px;
+            font-family: Poppins;
+            font-style: italic;
+            font-weight: 500;
+            line-height: 24px;
+            outline: none;
+        }
+
+        .form-input::placeholder {
+            color: #8A92A6;
+        }
+
+        .modal-buttons {
+            display: flex;
+            gap: 15px;
+            justify-content: flex-start;
+            align-items: flex-start;
+            flex-shrink: 0;
+        }
+
+        .btn-cancel {
+            width: 143px;
+            height: 48px;
+            padding: 14px 20px;
+            background: white;
+            border-radius: 8px;
+            border: 1px solid #E02D3C;
+            color: #E02D3C;
+            font-size: 16px;
+            font-family: Inter;
+            font-weight: 500;
+            cursor: pointer;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .btn-save {
+            width: 145px;
+            height: 46px;
+            padding: 8px 12px;
+            background: #0286F7;
+            border-radius: 8px;
+            border: none;
+            color: white;
+            font-size: 14px;
+            font-family: Poppins;
+            font-weight: 700;
+            cursor: pointer;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-save::before {
+            content: '';
+            width: 18px;
+            height: 18px;
+            background-image: url('images/save-icon.svg');
+            background-size: contain;
+            background-repeat: no-repeat;
+            background-position: center;
+        }
+
+        .btn-save:hover {
+            background: #0275D8;
+        }
+
+        .btn-cancel:hover {
+            background: #f8f9fa;
+        }
+
+        /* Custom Popup Stilleri */
+        .message-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 2000;
+        }
+
+        .message-modal-content {
+            background: white;
+            border-radius: 12px;
+            padding: 24px;
+            max-width: 400px;
+            width: 90%;
+            text-align: center;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+        }
+
+        .message-modal-header {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 16px;
+            margin-bottom: 20px;
+        }
+
+        .message-icon {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            color: white;
+        }
+
+        .message-icon.success {
+            background: #28a745;
+        }
+
+        .message-icon.error {
+            background: #dc3545;
+        }
+
+        .message-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: #232D42;
+            margin: 0;
+        }
+
+        .message-text {
+            font-size: 14px;
+            color: #6C757D;
+            margin: 0 0 20px 0;
+            line-height: 1.5;
+        }
+
+        .message-buttons {
+            display: flex;
+            gap: 12px;
+            justify-content: center;
+        }
+
+        .btn-message {
+            padding: 10px 20px;
+            border-radius: 6px;
+            border: none;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            min-width: 80px;
+        }
+
+        .btn-message.primary {
+            background: #0286F7;
+            color: white;
+        }
+
+        .btn-message.secondary {
+            background: #6C757D;
+            color: white;
+        }
+
+        .btn-message:hover {
+            opacity: 0.9;
         }
 
         /* Sayfalama Stilleri */
@@ -427,40 +769,35 @@
                         <div class="tab inactive" onclick="window.location.href='grouping.html'">Gruplama</div>
                         <div class="tab active">Kişiler</div>
                     </div>
+
+                    <div style="padding: 16px; background: white; display: flex; justify-content: space-between; align-items: center;">
+                        <div class="search-bar">
+                            <i class="fas fa-search" style="color: #ADB5BD;"></i>
+                            <input type="text" placeholder="Search...">
+                        </div>
+                        <div class="action-buttons">
+                            <button class="btn btn-excel">
+                                <i class="fas fa-file-excel"></i>
+                                Excel Yükle
+                            </button>
+                            <button class="btn btn-add" onclick="openAuthorizationModal()">
+                                <i class="fas fa-plus"></i>
+                                EKLE
+                            </button>
+                        </div>
+                    </div>
+
                     <table class="results-table">
                         <thead>
                             <tr>
-                                <th>Seçim</th>
                                 <th>Sicil No</th>
-                                <th>Kişi</th>
-                                <th>Unvan</th>
+                                <th>Ad Soyad</th>
+                                <th>Pozisyon</th>
+                                <th>İşlemler</th>
                             </tr>
                         </thead>
                         <tbody>
-                            <tr>
-                                <td><input type="checkbox" /></td>
-                                <td>1</td>
-                                <td>AAAA</td>
-                                <td>Devam Ediyor</td>
-                            </tr>
-                            <tr>
-                                <td><input type="checkbox" /></td>
-                                <td>2</td>
-                                <td>BBBB</td>
-                                <td>Gönderilmedi</td>
-                            </tr>
-                            <tr>
-                                <td><input type="checkbox" /></td>
-                                <td>3</td>
-                                <td>CCCC</td>
-                                <td>Tamamlandı</td>
-                            </tr>
-                            <tr>
-                                <td><input type="checkbox" /></td>
-                                <td>4</td>
-                                <td>DDDD</td>
-                                <td>Süresi Doldu</td>
-                            </tr>
+                            <!-- Veriler JavaScript ile doldurulacak -->
                         </tbody>
                     </table>
                     <div class="pagination-container">
@@ -471,13 +808,78 @@
         </div>
     </div>
 
+    <!-- Yetkilendirme Ekleme/Düzenleme Modal -->
+    <div id="authorizationModal" class="modal">
+        <div class="modal-content">
+            <button class="modal-close" onclick="closeAuthorizationModal()">
+                <img src="images/close-icon.svg" alt="Kapat">
+            </button>
+            <div class="modal-header">
+                <div class="modal-title">Yetkilendirme Ekle</div>
+                <div class="modal-divider"></div>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <div class="form-label">Sicil No</div>
+                    <input type="text" class="form-input" placeholder="Lütfen Sicil No Giriniz" id="sicilNoInput">
+                </div>
+                <div class="form-group">
+                    <div class="form-label">Kişi Adı</div>
+                    <input type="text" class="form-input" placeholder="Lütfen Kişi Adını Giriniz" id="personNameInput">
+                </div>
+                <div class="form-group">
+                    <div class="form-label">Pozisyon</div>
+                    <input type="text" class="form-input" placeholder="Lütfen Pozisyon Giriniz" id="titleInput">
+                </div>
+            </div>
+            <div class="modal-buttons">
+                <button class="btn-cancel" onclick="closeAuthorizationModal()">İptal</button>
+                <button class="btn-save" onclick="saveAuthorization()">Kaydet</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Custom Message Modal -->
+    <div id="messageModal" class="message-modal">
+        <div class="message-modal-content">
+            <div class="message-modal-header">
+                <div class="message-icon" id="messageIcon">
+                    <i class="fas fa-check"></i>
+                </div>
+                <h3 class="message-title" id="messageTitle">Başarılı</h3>
+            </div>
+            <p class="message-text" id="messageText">İşlem başarıyla tamamlandı.</p>
+            <div class="message-buttons">
+                <button class="btn-message primary" onclick="closeMessageModal()">Tamam</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Custom Confirm Modal -->
+    <div id="confirmModal" class="message-modal">
+        <div class="message-modal-content">
+            <div class="message-modal-header">
+                <div class="message-icon error">
+                    <i class="fas fa-exclamation-triangle"></i>
+                </div>
+                <h3 class="message-title">Onay Gerekli</h3>
+            </div>
+            <p class="message-text" id="confirmText">Bu işlemi gerçekleştirmek istediğinizden emin misiniz?</p>
+            <div class="message-buttons">
+                <button class="btn-message secondary" onclick="closeConfirmModal()">İptal</button>
+                <button class="btn-message primary" id="confirmButton">Onayla</button>
+            </div>
+        </div>
+    </div>
+
     <script src="/js/sidebar.js"></script>
     <script>
         // Sayfalama için gerekli değişkenler
         let currentPage = 1;
         const itemsPerPage = 10;
         let totalItems = 0;
-        let allPersons = [];
+        let allAuthorizations = [];
+        let isSaving = false; // Çoklu kayıt engelleme
 
         document.addEventListener('DOMContentLoaded', function() {
             createSidebar();
@@ -493,18 +895,6 @@
                 });
             });
 
-            // Checkbox işlevi
-            const checkboxes = document.querySelectorAll('input[type="checkbox"]');
-            checkboxes.forEach(checkbox => {
-                checkbox.addEventListener('change', function() {
-                    const row = this.closest('tr');
-                    if (this.checked) {
-                        row.style.background = 'rgba(2, 134, 247, 0.10)';
-                    } else {
-                        row.style.background = '';
-                    }
-                });
-            });
 
             // Sayfa numaralarına tıklama işlevi
             const pageButtons = document.querySelectorAll('.page-button');
@@ -604,7 +994,7 @@
             const totalPages = Math.ceil(totalItems / itemsPerPage);
             if (page >= 1 && page <= totalPages && page !== currentPage) {
                 currentPage = page;
-                displayPersons();
+                displayAuthorizations();
                 updatePagination();
                 
                 // Sayfa başına scroll
@@ -615,59 +1005,280 @@
             }
         }
 
-        // Kişileri tabloda göster
-        function displayPersons() {
+        // Yetkilendirmeleri tabloda göster
+        function displayAuthorizations() {
             const tableBody = document.querySelector('.results-table tbody');
             tableBody.innerHTML = '';
 
-            if (allPersons.length === 0) {
-                tableBody.innerHTML = '<tr><td colspan="4" style="text-align: center; color: #8A92A6;">Henüz kişi bulunmuyor</td></tr>';
+            if (allAuthorizations.length === 0) {
+                tableBody.innerHTML = '<tr><td colspan="4" style="text-align: center; color: #8A92A6;">Henüz yetkilendirme bulunmuyor</td></tr>';
                 return;
             }
 
             // Sayfalama için verileri dilimle
             const startIndex = (currentPage - 1) * itemsPerPage;
             const endIndex = startIndex + itemsPerPage;
-            const pageData = allPersons.slice(startIndex, endIndex);
+            const pageData = allAuthorizations.slice(startIndex, endIndex);
 
-            pageData.forEach(person => {
+            pageData.forEach(authorization => {
                 const row = document.createElement('tr');
+                row.setAttribute('data-authorization-id', authorization._id);
                 row.innerHTML = `
-                    <td><input type="checkbox" /></td>
-                    <td>${person.sicilNo}</td>
-                    <td>${person.name}</td>
-                    <td>${person.title}</td>
+                    <td>${authorization.sicilNo}</td>
+                    <td>${authorization.personName}</td>
+                    <td>${authorization.title}</td>
+                    <td>
+                        <i class="fas fa-edit" style="color: #0286F7; margin-right: 16px; cursor: pointer;" onclick="editAuthorization('${authorization._id}')"></i>
+                        <i class="fas fa-trash" style="color: #A30D11; cursor: pointer;" onclick="deleteAuthorization('${authorization._id}')"></i>
+                    </td>
                 `;
                 tableBody.appendChild(row);
             });
         }
 
-        // Sayfa yüklendiğinde kişileri yükle
+        // Sayfa yüklendiğinde yetkilendirmeleri yükle
         document.addEventListener('DOMContentLoaded', function() {
-            loadPersons();
+            loadAuthorizations();
         });
 
-        // Kişileri yükle (örnek veri)
-        function loadPersons() {
-            // Örnek veri - gerçek uygulamada API'den gelecek
-            allPersons = [
-                { sicilNo: '1', name: 'AAAA', title: 'Devam Ediyor' },
-                { sicilNo: '2', name: 'BBBB', title: 'Gönderilmedi' },
-                { sicilNo: '3', name: 'CCCC', title: 'Tamamlandı' },
-                { sicilNo: '4', name: 'DDDD', title: 'Süresi Doldu' },
-                { sicilNo: '5', name: 'EEEE', title: 'Devam Ediyor' },
-                { sicilNo: '6', name: 'FFFF', title: 'Gönderilmedi' },
-                { sicilNo: '7', name: 'GGGG', title: 'Tamamlandı' },
-                { sicilNo: '8', name: 'HHHH', title: 'Süresi Doldu' },
-                { sicilNo: '9', name: 'IIII', title: 'Devam Ediyor' },
-                { sicilNo: '10', name: 'JJJJ', title: 'Gönderilmedi' },
-                { sicilNo: '11', name: 'KKKK', title: 'Tamamlandı' },
-                { sicilNo: '12', name: 'LLLL', title: 'Süresi Doldu' }
-            ];
+        // Yetkilendirmeleri yükle
+        async function loadAuthorizations() {
+            try {
+                const token = localStorage.getItem('token');
+                const response = await fetch('/api/authorization', {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+
+                if (!response.ok) {
+                    throw new Error('Yetkilendirme listesi yüklenemedi');
+                }
+
+                const result = await response.json();
+                if (result.success) {
+                    allAuthorizations = result.authorizations;
+                    totalItems = allAuthorizations.length;
+                    displayAuthorizations();
+                    updatePagination();
+                    } else {
+                    throw new Error(result.message || 'Yetkilendirme listesi alınamadı');
+                }
+            } catch (error) {
+                console.error('Yetkilendirme listesi yükleme hatası:', error);
+                document.querySelector('.results-table tbody').innerHTML = 
+                    '<tr><td colspan="4" style="text-align: center; color: #dc3545;">Veriler yüklenemedi</td></tr>';
+            }
+        }
+
+        // Custom Popup Fonksiyonları
+        function showMessage(title, text, isSuccess = true) {
+            const modal = document.getElementById('messageModal');
+            const icon = document.getElementById('messageIcon');
+            const titleEl = document.getElementById('messageTitle');
+            const textEl = document.getElementById('messageText');
             
-            totalItems = allPersons.length;
-            displayPersons();
-            updatePagination();
+            titleEl.textContent = title;
+            textEl.textContent = text;
+            
+            if (isSuccess) {
+                icon.className = 'message-icon success';
+                icon.innerHTML = '<i class="fas fa-check"></i>';
+            } else {
+                icon.className = 'message-icon error';
+                icon.innerHTML = '<i class="fas fa-times"></i>';
+            }
+            
+            modal.style.display = 'flex';
+        }
+
+        function closeMessageModal() {
+            document.getElementById('messageModal').style.display = 'none';
+        }
+
+        function showConfirm(text, onConfirm) {
+            const modal = document.getElementById('confirmModal');
+            const textEl = document.getElementById('confirmText');
+            const button = document.getElementById('confirmButton');
+            
+            textEl.textContent = text;
+            
+            // Önceki event listener'ı kaldır
+            const newButton = button.cloneNode(true);
+            button.parentNode.replaceChild(newButton, button);
+            
+            // Yeni event listener ekle
+            newButton.addEventListener('click', function() {
+                closeConfirmModal();
+                onConfirm();
+            });
+            
+            modal.style.display = 'flex';
+        }
+
+        function closeConfirmModal() {
+            document.getElementById('confirmModal').style.display = 'none';
+        }
+
+        // Modal fonksiyonları
+        function openAuthorizationModal() {
+            document.getElementById('authorizationModal').style.display = 'flex';
+        }
+
+        function closeAuthorizationModal() {
+            document.getElementById('authorizationModal').style.display = 'none';
+            // Clear form inputs
+            document.getElementById('sicilNoInput').value = '';
+            document.getElementById('personNameInput').value = '';
+            document.getElementById('titleInput').value = '';
+            // Reset edit mode
+            window.editingAuthorizationId = null;
+            // Reset modal title
+            document.querySelector('.modal-title').textContent = 'Yetkilendirme Ekle';
+        }
+
+        // Yetkilendirme kaydet
+        async function saveAuthorization() {
+            // Çoklu kayıt engelleme
+            if (isSaving) {
+                return;
+            }
+
+            const sicilNo = document.getElementById('sicilNoInput').value.trim();
+            const personName = document.getElementById('personNameInput').value.trim();
+            const title = document.getElementById('titleInput').value.trim();
+
+            if (!sicilNo || !personName || !title) {
+                showMessage('Hata', 'Lütfen tüm alanları doldurun!', false);
+                return;
+            }
+
+            isSaving = true; // Kayıt başladı
+
+            try {
+                const token = localStorage.getItem('token');
+                const authorizationData = {
+                    sicilNo,
+                    personName,
+                    title
+                };
+
+                let response;
+                let isEditMode = window.editingAuthorizationId;
+
+                if (isEditMode) {
+                    // Düzenleme modu
+                    response = await fetch(`/api/authorization/${window.editingAuthorizationId}`, {
+                        method: 'PUT',
+                        headers: {
+                            'Authorization': `Bearer ${token}`,
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify(authorizationData)
+                    });
+                } else {
+                    // Ekleme modu
+                    response = await fetch('/api/authorization', {
+                        method: 'POST',
+                        headers: {
+                            'Authorization': `Bearer ${token}`,
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify(authorizationData)
+                    });
+                }
+
+                const result = await response.json();
+
+                if (result.success) {
+                    const message = isEditMode ? 'Yetkilendirme başarıyla güncellendi!' : 'Yetkilendirme başarıyla eklendi!';
+                    showMessage('Başarılı', message, true);
+                    closeAuthorizationModal();
+                    if (!isEditMode) {
+                        currentPage = 1; // Yeni ekleme durumunda sayfalama sıfırla
+                    }
+                    loadAuthorizations(); // Verileri yenile
+                } else {
+                    showMessage('Hata', result.message, false);
+                }
+
+            } catch (error) {
+                console.error('Yetkilendirme işlemi hatası:', error);
+                const errorMessage = window.editingAuthorizationId ? 'Yetkilendirme güncellenirken bir hata oluştu!' : 'Yetkilendirme eklenirken bir hata oluştu!';
+                showMessage('Hata', errorMessage, false);
+            } finally {
+                isSaving = false; // Kayıt tamamlandı
+            }
+        }
+
+        // Yetkilendirme düzenle
+        async function editAuthorization(id) {
+            try {
+                const token = localStorage.getItem('token');
+                const response = await fetch(`/api/authorization/${id}`, {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+
+                if (!response.ok) {
+                    throw new Error('Yetkilendirme verileri alınamadı');
+                }
+
+                const result = await response.json();
+                if (result.success) {
+                    const authorization = result.authorization;
+                    
+                    // Form alanlarını doldur
+                    document.getElementById('sicilNoInput').value = authorization.sicilNo;
+                    document.getElementById('personNameInput').value = authorization.personName;
+                    document.getElementById('titleInput').value = authorization.title;
+                    
+                    // Modal başlığını değiştir
+                    document.querySelector('.modal-title').textContent = 'Yetkilendirme Düzenle';
+                    
+                    // Global değişken olarak düzenlenen ID'yi sakla
+                    window.editingAuthorizationId = id;
+                    
+                    // Modal'ı aç
+                    openAuthorizationModal();
+                } else {
+                    throw new Error(result.message || 'Yetkilendirme verileri alınamadı');
+                }
+            } catch (error) {
+                console.error('Yetkilendirme verileri alma hatası:', error);
+                showMessage('Hata', 'Yetkilendirme verileri alınırken bir hata oluştu: ' + error.message, false);
+            }
+        }
+
+        // Yetkilendirme sil
+        async function deleteAuthorization(id) {
+            const authorization = allAuthorizations.find(a => a._id === id);
+            if (authorization) {
+                showConfirm(`"${authorization.personName}" yetkilendirmesini silmek istediğinizden emin misiniz?`, async () => {
+                    try {
+                        const token = localStorage.getItem('token');
+                        const response = await fetch(`/api/authorization/${id}`, {
+                            method: 'DELETE',
+                            headers: {
+                                'Authorization': `Bearer ${token}`
+                            }
+                        });
+
+                        const result = await response.json();
+
+                        if (result.success) {
+                            showMessage('Başarılı', 'Yetkilendirme başarıyla silindi!', true);
+                            loadAuthorizations(); // Verileri yenile
+                        } else {
+                            showMessage('Hata', result.message, false);
+                        }
+                    } catch (error) {
+                        console.error('Yetkilendirme silme hatası:', error);
+                        showMessage('Hata', 'Yetkilendirme silinirken bir hata oluştu!', false);
+                    }
+                });
+            }
         }
     </script>
 </body>
