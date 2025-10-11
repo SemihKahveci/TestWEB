@@ -11,17 +11,25 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
   const { user, logout } = useAuth();
   const location = useLocation();
 
-  const menuItems = [
+  const [companySettingsExpanded, setCompanySettingsExpanded] = useState(false);
+
+  const mainMenuItems = [
     { path: '/admin', label: 'Genel Takip Sistemi', icon: '🏠' },
     { path: '/results', label: 'Kişi Sonuçları Sayfası', icon: '📈' },
+    { path: '/subscription-settings', label: 'Oyun Kullanım Özeti', icon: '💳' },
+  ];
+
+  const companySettingsItems = [
+    { path: '/company-identification', label: 'Firma Tanımlama', icon: '🏭' },
+    { path: '/define-company-admin', label: 'Firma Admini Tanımlama', icon: '👤' },
+    { path: '/game-management', label: 'Oyun Tanımlama', icon: '🎮' },
+  ];
+
+  const otherSettingsItems = [
     { path: '/authorization', label: 'Yetkilendirme', icon: '👥' },
     { path: '/organization', label: 'Organizasyon', icon: '🏢' },
     { path: '/competency-settings', label: 'Yetkinlik Ayarları', icon: '⚙️' },
-    { path: '/game-management', label: 'Oyun Yönetimi', icon: '🎮' },
     { path: '/grouping', label: 'Gruplama', icon: '📊' },
-    { path: '/company-identification', label: 'Şirket Tanımlama', icon: '🏭' },
-    { path: '/define-company-admin', label: 'Şirket Admin Tanımla', icon: '👤' },
-    { path: '/subscription-settings', label: 'Abonelik Ayarları', icon: '💳' },
     { path: '/admin-management', label: 'Admin Yönetimi', icon: '🔧' },
   ];
 
@@ -88,41 +96,184 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
 
         {/* Navigation */}
         <nav style={{ marginTop: '24px' }}>
-          {menuItems.map((item) => (
-            <Link
-              key={item.path}
-              to={item.path}
+          {/* Ana Menü */}
+          <div style={{ marginBottom: '20px' }}>
+            <div style={{
+              padding: '0 24px',
+              color: '#8A92A6',
+              fontSize: '12px',
+              fontWeight: 600,
+              textTransform: 'uppercase',
+              marginBottom: '8px',
+              fontFamily: 'Inter'
+            }}>
+              Ana Menü
+            </div>
+            {mainMenuItems.map((item) => (
+              <Link
+                key={item.path}
+                to={item.path}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  padding: '12px 24px',
+                  fontSize: '14px',
+                  fontWeight: 500,
+                  color: isActive(item.path) ? '#3B82F6' : '#6B7280',
+                  backgroundColor: isActive(item.path) ? '#EFF6FF' : 'transparent',
+                  borderRight: isActive(item.path) ? '3px solid #3B82F6' : '3px solid transparent',
+                  textDecoration: 'none',
+                  transition: 'all 0.2s',
+                  fontFamily: 'Inter'
+                }}
+                onMouseEnter={(e) => {
+                  if (!isActive(item.path)) {
+                    e.currentTarget.style.backgroundColor = '#F9FAFB';
+                    e.currentTarget.style.color = '#374151';
+                  }
+                }}
+                onMouseLeave={(e) => {
+                  if (!isActive(item.path)) {
+                    e.currentTarget.style.backgroundColor = 'transparent';
+                    e.currentTarget.style.color = '#6B7280';
+                  }
+                }}
+                onClick={() => setSidebarOpen(false)}
+              >
+                <span style={{ marginRight: '12px', fontSize: '16px' }}>{item.icon}</span>
+                {item.label}
+              </Link>
+            ))}
+          </div>
+
+          {/* Ayarlar */}
+          <div>
+            <div style={{
+              padding: '0 24px',
+              color: '#8A92A6',
+              fontSize: '12px',
+              fontWeight: 600,
+              textTransform: 'uppercase',
+              marginBottom: '8px',
+              fontFamily: 'Inter'
+            }}>
+              Ayarlar
+            </div>
+            
+            {/* Firma Ayarları - Expandable */}
+            <div
               style={{
                 display: 'flex',
                 alignItems: 'center',
                 padding: '12px 24px',
                 fontSize: '14px',
                 fontWeight: 500,
-                color: isActive(item.path) ? '#3B82F6' : '#6B7280',
-                backgroundColor: isActive(item.path) ? '#EFF6FF' : 'transparent',
-                borderRight: isActive(item.path) ? '3px solid #3B82F6' : '3px solid transparent',
-                textDecoration: 'none',
+                color: '#6B7280',
+                backgroundColor: 'transparent',
+                cursor: 'pointer',
                 transition: 'all 0.2s',
                 fontFamily: 'Inter'
               }}
+              onClick={() => setCompanySettingsExpanded(!companySettingsExpanded)}
               onMouseEnter={(e) => {
-                if (!isActive(item.path)) {
-                  e.currentTarget.style.backgroundColor = '#F9FAFB';
-                  e.currentTarget.style.color = '#374151';
-                }
+                e.currentTarget.style.backgroundColor = '#F9FAFB';
+                e.currentTarget.style.color = '#374151';
               }}
               onMouseLeave={(e) => {
-                if (!isActive(item.path)) {
-                  e.currentTarget.style.backgroundColor = 'transparent';
-                  e.currentTarget.style.color = '#6B7280';
-                }
+                e.currentTarget.style.backgroundColor = 'transparent';
+                e.currentTarget.style.color = '#6B7280';
               }}
-              onClick={() => setSidebarOpen(false)}
             >
-              <span style={{ marginRight: '12px', fontSize: '16px' }}>{item.icon}</span>
-              {item.label}
-            </Link>
-          ))}
+              <span style={{ marginRight: '12px', fontSize: '16px' }}>🏢</span>
+              <span style={{ flex: 1 }}>Firma Ayarları</span>
+              <span style={{ 
+                fontSize: '12px', 
+                transform: companySettingsExpanded ? 'rotate(45deg)' : 'rotate(0deg)',
+                transition: 'transform 0.2s'
+              }}>+</span>
+            </div>
+
+            {/* Firma Ayarları Submenu */}
+            {companySettingsExpanded && (
+              <div style={{
+                backgroundColor: '#F8F9FA',
+                borderLeft: '3px solid #3B82F6'
+              }}>
+                {companySettingsItems.map((item) => (
+                  <Link
+                    key={item.path}
+                    to={item.path}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      padding: '10px 24px 10px 48px',
+                      fontSize: '14px',
+                      fontWeight: 500,
+                      color: isActive(item.path) ? '#3B82F6' : '#6B7280',
+                      backgroundColor: isActive(item.path) ? '#EFF6FF' : 'transparent',
+                      borderRight: isActive(item.path) ? '3px solid #3B82F6' : '3px solid transparent',
+                      textDecoration: 'none',
+                      transition: 'all 0.2s',
+                      fontFamily: 'Inter'
+                    }}
+                    onMouseEnter={(e) => {
+                      if (!isActive(item.path)) {
+                        e.currentTarget.style.backgroundColor = '#E9ECEF';
+                        e.currentTarget.style.color = '#374151';
+                      }
+                    }}
+                    onMouseLeave={(e) => {
+                      if (!isActive(item.path)) {
+                        e.currentTarget.style.backgroundColor = 'transparent';
+                        e.currentTarget.style.color = '#6B7280';
+                      }
+                    }}
+                    onClick={() => setSidebarOpen(false)}
+                  >
+                    <span style={{ marginRight: '12px', fontSize: '16px' }}>{item.icon}</span>
+                    {item.label}
+                  </Link>
+                ))}
+              </div>
+            )}
+
+            {/* Diğer Ayarlar */}
+            {otherSettingsItems.map((item) => (
+              <Link
+                key={item.path}
+                to={item.path}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  padding: '12px 24px',
+                  fontSize: '14px',
+                  fontWeight: 500,
+                  color: isActive(item.path) ? '#3B82F6' : '#6B7280',
+                  backgroundColor: isActive(item.path) ? '#EFF6FF' : 'transparent',
+                  borderRight: isActive(item.path) ? '3px solid #3B82F6' : '3px solid transparent',
+                  textDecoration: 'none',
+                  transition: 'all 0.2s',
+                  fontFamily: 'Inter'
+                }}
+                onMouseEnter={(e) => {
+                  if (!isActive(item.path)) {
+                    e.currentTarget.style.backgroundColor = '#F9FAFB';
+                    e.currentTarget.style.color = '#374151';
+                  }
+                }}
+                onMouseLeave={(e) => {
+                  if (!isActive(item.path)) {
+                    e.currentTarget.style.backgroundColor = 'transparent';
+                    e.currentTarget.style.color = '#6B7280';
+                  }
+                }}
+                onClick={() => setSidebarOpen(false)}
+              >
+                <span style={{ marginRight: '12px', fontSize: '16px' }}>{item.icon}</span>
+                {item.label}
+              </Link>
+            ))}
+          </div>
         </nav>
 
         {/* User info and logout */}

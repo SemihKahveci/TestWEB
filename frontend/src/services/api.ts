@@ -161,4 +161,19 @@ export const evaluationAPI = {
     api.get(`/evaluation/preview-pdf?code=${code}&${new URLSearchParams(options)}`),
 };
 
+// Company Management API
+export const companyAPI = {
+  getAll: () =>
+    api.get('/company-management'),
+  
+  create: (data: { vkn: string; firmName: string; firmMail: string }) =>
+    api.post('/company-management', data),
+  
+  update: (vkn: string, data: { firmName: string; firmMail: string }) =>
+    api.put(`/company-management/${vkn}`, data),
+  
+  delete: (vkn: string) =>
+    api.delete(`/company-management/${vkn}`)
+};
+
 export default api;

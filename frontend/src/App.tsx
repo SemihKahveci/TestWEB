@@ -11,12 +11,12 @@ import AdminPanel from './pages/AdminPanel';
 import AuthorizationPage from './pages/AuthorizationPage';
 import OrganizationPage from './pages/OrganizationPage';
 import CompetencySettingsPage from './pages/CompetencySettingsPage';
-import GameManagementPage from './pages/GameManagementPage';
+import GameManagement from './pages/GameManagement';
 import GroupingPage from './pages/GroupingPage';
 import ResultsPage from './pages/ResultsPage';
-import CompanyIdentificationPage from './pages/CompanyIdentificationPage';
-import DefineCompanyAdminPage from './pages/DefineCompanyAdminPage';
-import SubscriptionSettingsPage from './pages/SubscriptionSettingsPage';
+import CompanyIdentification from './pages/CompanyIdentification';
+import DefineCompanyAdmin from './pages/DefineCompanyAdmin';
+import SubscriptionSettings from './pages/SubscriptionSettings';
 import AdminManagementPage from './pages/AdminManagementPage';
 
 function App() {
@@ -65,7 +65,7 @@ function App() {
             <Route path="/game-management" element={
               <ProtectedRoute>
                 <Layout>
-                  <GameManagementPage />
+                  <GameManagement />
                 </Layout>
               </ProtectedRoute>
             } />
@@ -89,7 +89,7 @@ function App() {
             <Route path="/company-identification" element={
               <ProtectedRoute>
                 <Layout>
-                  <CompanyIdentificationPage />
+                  <CompanyIdentification />
                 </Layout>
               </ProtectedRoute>
             } />
@@ -97,7 +97,7 @@ function App() {
             <Route path="/define-company-admin" element={
               <ProtectedRoute>
                 <Layout>
-                  <DefineCompanyAdminPage />
+                  <DefineCompanyAdmin />
                 </Layout>
               </ProtectedRoute>
             } />
@@ -105,7 +105,15 @@ function App() {
             <Route path="/subscription-settings" element={
               <ProtectedRoute>
                 <Layout>
-                  <SubscriptionSettingsPage />
+                  <SubscriptionSettings />
+                </Layout>
+              </ProtectedRoute>
+            } />
+            
+            <Route path="/company-identification" element={
+              <ProtectedRoute>
+                <Layout>
+                  <CompanyIdentification />
                 </Layout>
               </ProtectedRoute>
             } />
