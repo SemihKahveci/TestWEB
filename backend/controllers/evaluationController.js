@@ -409,20 +409,6 @@ async function buildEvaluationHTML(evaluation, options, userCode, isPreview = fa
                     text-shadow: 0 1px 1px rgba(0,0,0,0.1);
                 }
 
-                 .score-label {
-                     font-size: 12px;
-                     font-weight: bold;
-                     color: #666;
-                     margin-bottom: 12px;
-                     font-family: serif;
-                 }
-
-                 .score-label .large-letter {
-                     font-size: 24px;
-                     color: #999;
-                 }
-
-
                 /* Sabit Footer */
                 .page-footer {
                     position: fixed;
@@ -557,15 +543,12 @@ async function buildEvaluationHTML(evaluation, options, userCode, isPreview = fa
                     <tr>
                       <td>
                         <div class="competency-header-bar">
+                          <div class="competency-name">${competencyName}</div>
                           <div style="display:flex; flex-direction:column;">
-                            <div class="score-label">
-                              <span class="large-letter">Y</span>ETKİNLİK <span class="large-letter">S</span>KORU
-                            </div>
                             <div class="bar">
                               <div class="filled" style="width: ${score}%; background-color: ${barColor};">${score}</div>
                             </div>
                           </div>
-                          <div class="competency-name">${competencyName}</div>
                         </div>
                       </td>
                     </tr>
