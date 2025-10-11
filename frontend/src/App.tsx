@@ -14,7 +14,6 @@ import GameManagement from './pages/GameManagement';
 import CompetencySettings from './pages/CompetencySettings';
 import Organization from './pages/Organization';
 import Grouping from './pages/Grouping';
-import GroupingPage from './pages/GroupingPage';
 import ResultsPage from './pages/ResultsPage';
 import CompanyIdentification from './pages/CompanyIdentification';
 import DefineCompanyAdmin from './pages/DefineCompanyAdmin';
