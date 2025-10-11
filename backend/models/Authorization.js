@@ -38,7 +38,6 @@ const authorizationSchema = new mongoose.Schema({
 });
 
 // Index'ler
-authorizationSchema.index({ sicilNo: 1 });
 authorizationSchema.index({ personName: 1 });
 authorizationSchema.index({ email: 1 });
 authorizationSchema.index({ title: 1 });
