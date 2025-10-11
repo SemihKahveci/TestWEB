@@ -279,6 +279,7 @@ async function buildEvaluationHTML(evaluation, options, userCode, isPreview = fa
                 .subsection {
                     margin: 20px 0 70px 0;
                     padding-left: 10px;
+                    padding-right: 10px;
                     padding-bottom: 90px;
                     position: relative;
                     margin-bottom: 90px;
@@ -557,7 +558,7 @@ async function buildEvaluationHTML(evaluation, options, userCode, isPreview = fa
                     <tr>
                       <td>
                         <h3>${title}</h3>
-                        <p>${content}</p>
+                        <p style="text-align: justify; text-justify: inter-word;">${content}</p>
                       </td>
                     </tr>
                   </tbody>
