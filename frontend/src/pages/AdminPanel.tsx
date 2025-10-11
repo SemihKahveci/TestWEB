@@ -391,9 +391,11 @@ const AdminPanel: React.FC = () => {
     return (
       <div style={{
         display: 'flex',
+        flexDirection: 'column',
         alignItems: 'center',
         justifyContent: 'center',
-        height: '64px'
+        height: '100vh',
+        gap: '16px'
       }}>
         <div style={{
           width: '48px',
@@ -403,6 +405,13 @@ const AdminPanel: React.FC = () => {
           borderRadius: '50%',
           animation: 'spin 1s linear infinite'
         }}></div>
+        <div style={{
+          color: '#666',
+          fontSize: '14px',
+          fontFamily: 'Inter'
+        }}>
+          Veriler yükleniyor...
+        </div>
       </div>
     );
   }

@@ -13,12 +13,12 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
 
   const menuItems = [
     { path: '/admin', label: 'Genel Takip Sistemi', icon: '🏠' },
+    { path: '/results', label: 'Kişi Sonuçları Sayfası', icon: '📈' },
     { path: '/authorization', label: 'Yetkilendirme', icon: '👥' },
     { path: '/organization', label: 'Organizasyon', icon: '🏢' },
     { path: '/competency-settings', label: 'Yetkinlik Ayarları', icon: '⚙️' },
     { path: '/game-management', label: 'Oyun Yönetimi', icon: '🎮' },
     { path: '/grouping', label: 'Gruplama', icon: '📊' },
-    { path: '/results', label: 'Sonuçlar', icon: '📈' },
     { path: '/company-identification', label: 'Şirket Tanımlama', icon: '🏭' },
     { path: '/define-company-admin', label: 'Şirket Admin Tanımla', icon: '👤' },
     { path: '/subscription-settings', label: 'Abonelik Ayarları', icon: '💳' },
@@ -73,16 +73,16 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
           borderBottom: '1px solid #E9ECEF'
         }}>
           <div style={{ display: 'flex', alignItems: 'center' }}>
-            <img src="/logo.png" alt="Logo" style={{ height: '32px', width: '32px' }} />
-            <span style={{
-              marginLeft: '12px',
-              fontSize: '18px',
-              fontWeight: 700,
-              color: '#232D42',
-              fontFamily: 'Inter'
-            }}>
-              Admin Panel
-            </span>
+            <img 
+              src="/logo.png" 
+              alt="Logo" 
+              style={{ 
+                height: '40px', 
+                width: 'auto',
+                maxWidth: '100%',
+                objectFit: 'contain'
+              }} 
+            />
           </div>
         </div>
 
