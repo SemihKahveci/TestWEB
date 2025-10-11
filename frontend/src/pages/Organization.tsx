@@ -1,17 +1,19 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 
-interface Authorization {
+interface Organization {
   _id: string;
-  employeeId?: string;
-  name?: string;
-  email?: string;
-  role?: string;
+  generalManagerDeputy?: string;
+  directorate?: string;
+  management?: string;
+  department?: string;
+  unit?: string;
+  position?: string;
 }
 
-const AuthorizationPage: React.FC = () => {
+const Organization: React.FC = () => {
   const navigate = useNavigate();
-  const [authorizations, setAuthorizations] = useState<Authorization[]>([]);
+  const [organizations, setOrganizations] = useState<Organization[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [showAddPopup, setShowAddPopup] = useState(false);
@@ -21,15 +23,17 @@ const AuthorizationPage: React.FC = () => {
   const [showErrorPopup, setShowErrorPopup] = useState(false);
   const [successMessage, setSuccessMessage] = useState('');
   const [errorMessage, setErrorMessage] = useState('');
-  const [selectedAuthorization, setSelectedAuthorization] = useState<Authorization | null>(null);
+  const [selectedOrganization, setSelectedOrganization] = useState<Organization | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   
   // Form states
   const [formData, setFormData] = useState({
-    employeeId: '',
-    name: '',
-    email: '',
-    role: ''
+    generalManagerDeputy: '',
+    directorate: '',
+    management: '',
+    department: '',
+    unit: '',
+    position: ''
   });
 
   // Pagination states
@@ -37,75 +41,79 @@ const AuthorizationPage: React.FC = () => {
   const [itemsPerPage] = useState(10);
 
   useEffect(() => {
-    loadAuthorizations();
+    loadOrganizations();
   }, []);
 
-  const loadAuthorizations = async () => {
+  const loadOrganizations = async () => {
     try {
       setIsLoading(true);
-      console.log('🔄 Yetkilendirmeler yükleniyor...');
+      console.log('🔄 Organizasyonlar yükleniyor...');
       
       const token = localStorage.getItem('token');
-      const response = await fetch('/api/authorization', {
+      const response = await fetch('/api/organization', {
         headers: {
           'Authorization': `Bearer ${token}`
         }
       });
 
       if (!response.ok) {
-        throw new Error('Yetkilendirme listesi yüklenemedi');
+        throw new Error('Organizasyon listesi yüklenemedi');
       }
 
       const result = await response.json();
-      console.log('✅ Yetkilendirmeler yüklendi:', result);
+      console.log('✅ Organizasyonlar yüklendi:', result);
       
       if (result.success) {
-        setAuthorizations(result.data || []);
+        setOrganizations(result.data || []);
       } else {
-        throw new Error(result.message || 'Yetkilendirme listesi alınamadı');
+        throw new Error(result.message || 'Organizasyon listesi alınamadı');
       }
     } catch (error: any) {
-      console.error('💥 Yetkilendirme yükleme hatası:', error);
-      setErrorMessage('Yetkilendirmeler yüklenirken bir hata oluştu');
+      console.error('💥 Organizasyon yükleme hatası:', error);
+      setErrorMessage('Organizasyonlar yüklenirken bir hata oluştu');
       setShowErrorPopup(true);
     } finally {
       setIsLoading(false);
     }
   };
 
-  const handleAddAuthorization = () => {
+  const handleAddOrganization = () => {
     setFormData({
-      employeeId: '',
-      name: '',
-      email: '',
-      role: ''
+      generalManagerDeputy: '',
+      directorate: '',
+      management: '',
+      department: '',
+      unit: '',
+      position: ''
     });
     setShowAddPopup(true);
   };
 
-  const handleEditAuthorization = (authorization: Authorization) => {
-    setSelectedAuthorization(authorization);
+  const handleEditOrganization = (organization: Organization) => {
+    setSelectedOrganization(organization);
     setFormData({
-      employeeId: authorization.employeeId || '',
-      name: authorization.name || '',
-      email: authorization.email || '',
-      role: authorization.role || ''
+      generalManagerDeputy: organization.generalManagerDeputy || '',
+      directorate: organization.directorate || '',
+      management: organization.management || '',
+      department: organization.department || '',
+      unit: organization.unit || '',
+      position: organization.position || ''
     });
     setShowEditPopup(true);
   };
 
-  const handleDeleteAuthorization = (authorization: Authorization) => {
-    setSelectedAuthorization(authorization);
+  const handleDeleteOrganization = (organization: Organization) => {
+    setSelectedOrganization(organization);
     setShowDeletePopup(true);
   };
 
   const handleSubmitAdd = async () => {
     try {
       setIsSubmitting(true);
-      console.log('🔄 Yeni yetkilendirme ekleniyor:', formData);
+      console.log('🔄 Yeni organizasyon ekleniyor:', formData);
       
       const token = localStorage.getItem('token');
-      const response = await fetch('/api/authorization', {
+      const response = await fetch('/api/organization', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -116,22 +124,22 @@ const AuthorizationPage: React.FC = () => {
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.message || 'Yetkilendirme eklenemedi');
+        throw new Error(errorData.message || 'Organizasyon eklenemedi');
       }
 
       const responseData = await response.json();
-      console.log('✅ Yetkilendirme başarıyla eklendi:', responseData);
+      console.log('✅ Organizasyon başarıyla eklendi:', responseData);
       
-      // Yeni yetkilendirmeyi listeye ekle
-      setAuthorizations(prev => [...prev, responseData.data]);
+      // Yeni organizasyonu listeye ekle
+      setOrganizations(prev => [...prev, responseData.data]);
       
       // Başarı mesajı göster
       setShowAddPopup(false);
       setShowSuccessPopup(true);
-      setSuccessMessage('Yetkilendirme başarıyla eklendi!');
+      setSuccessMessage('Organizasyon başarıyla eklendi!');
     } catch (error: any) {
-      console.error('💥 Yetkilendirme ekleme hatası:', error);
-      setErrorMessage(error.message || 'Yetkilendirme eklenirken bir hata oluştu');
+      console.error('💥 Organizasyon ekleme hatası:', error);
+      setErrorMessage(error.message || 'Organizasyon eklenirken bir hata oluştu');
       setShowErrorPopup(true);
     } finally {
       setIsSubmitting(false);
@@ -140,12 +148,12 @@ const AuthorizationPage: React.FC = () => {
 
   const handleSubmitEdit = async () => {
     try {
-      if (!selectedAuthorization) return;
+      if (!selectedOrganization) return;
       setIsSubmitting(true);
-      console.log('🔄 Yetkilendirme güncelleniyor:', selectedAuthorization._id, formData);
+      console.log('🔄 Organizasyon güncelleniyor:', selectedOrganization._id, formData);
       
       const token = localStorage.getItem('token');
-      const response = await fetch(`/api/authorization/${selectedAuthorization._id}`, {
+      const response = await fetch(`/api/organization/${selectedOrganization._id}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -156,24 +164,24 @@ const AuthorizationPage: React.FC = () => {
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.message || 'Yetkilendirme güncellenemedi');
+        throw new Error(errorData.message || 'Organizasyon güncellenemedi');
       }
 
       const responseData = await response.json();
-      console.log('✅ Yetkilendirme başarıyla güncellendi:', responseData);
+      console.log('✅ Organizasyon başarıyla güncellendi:', responseData);
       
-      // Güncellenen yetkilendirmeyi listede güncelle
-      setAuthorizations(prev => prev.map(auth => 
-        auth._id === selectedAuthorization._id ? responseData.data : auth
+      // Güncellenen organizasyonu listede güncelle
+      setOrganizations(prev => prev.map(org => 
+        org._id === selectedOrganization._id ? responseData.data : org
       ));
       
       // Başarı mesajı göster
       setShowEditPopup(false);
       setShowSuccessPopup(true);
-      setSuccessMessage('Yetkilendirme başarıyla güncellendi!');
+      setSuccessMessage('Organizasyon başarıyla güncellendi!');
     } catch (error: any) {
-      console.error('💥 Yetkilendirme güncelleme hatası:', error);
-      setErrorMessage(error.message || 'Yetkilendirme güncellenirken bir hata oluştu');
+      console.error('💥 Organizasyon güncelleme hatası:', error);
+      setErrorMessage(error.message || 'Organizasyon güncellenirken bir hata oluştu');
       setShowErrorPopup(true);
     } finally {
       setIsSubmitting(false);
@@ -182,12 +190,12 @@ const AuthorizationPage: React.FC = () => {
 
   const handleConfirmDelete = async () => {
     try {
-      if (!selectedAuthorization) return;
+      if (!selectedOrganization) return;
       setIsSubmitting(true);
-      console.log('🔄 Yetkilendirme siliniyor:', selectedAuthorization._id);
+      console.log('🔄 Organizasyon siliniyor:', selectedOrganization._id);
       
       const token = localStorage.getItem('token');
-      const response = await fetch(`/api/authorization/${selectedAuthorization._id}`, {
+      const response = await fetch(`/api/organization/${selectedOrganization._id}`, {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${token}`
@@ -198,40 +206,42 @@ const AuthorizationPage: React.FC = () => {
         throw new Error('Silme işlemi başarısız');
       }
 
-      console.log('✅ Yetkilendirme başarıyla silindi');
+      console.log('✅ Organizasyon başarıyla silindi');
       
-      // Silinen yetkilendirmeyi listeden çıkar
-      setAuthorizations(prev => prev.filter(auth => auth._id !== selectedAuthorization._id));
+      // Silinen organizasyonu listeden çıkar
+      setOrganizations(prev => prev.filter(org => org._id !== selectedOrganization._id));
       
       // Başarı mesajı göster
       setShowDeletePopup(false);
       setShowSuccessPopup(true);
-      setSuccessMessage('Yetkilendirme başarıyla silindi!');
+      setSuccessMessage('Organizasyon başarıyla silindi!');
     } catch (error: any) {
-      console.error('💥 Yetkilendirme silme hatası:', error);
-      setErrorMessage(error.message || 'Yetkilendirme silinirken bir hata oluştu');
+      console.error('💥 Organizasyon silme hatası:', error);
+      setErrorMessage(error.message || 'Organizasyon silinirken bir hata oluştu');
       setShowErrorPopup(true);
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  // Filter authorizations based on search term
-  const filteredAuthorizations = authorizations.filter(auth => {
+  // Filter organizations based on search term
+  const filteredOrganizations = organizations.filter(org => {
     const searchLower = searchTerm.toLowerCase();
     return (
-      (auth.employeeId && auth.employeeId.toLowerCase().includes(searchLower)) ||
-      (auth.name && auth.name.toLowerCase().includes(searchLower)) ||
-      (auth.email && auth.email.toLowerCase().includes(searchLower)) ||
-      (auth.role && auth.role.toLowerCase().includes(searchLower))
+      (org.generalManagerDeputy && org.generalManagerDeputy.toLowerCase().includes(searchLower)) ||
+      (org.directorate && org.directorate.toLowerCase().includes(searchLower)) ||
+      (org.management && org.management.toLowerCase().includes(searchLower)) ||
+      (org.department && org.department.toLowerCase().includes(searchLower)) ||
+      (org.unit && org.unit.toLowerCase().includes(searchLower)) ||
+      (org.position && org.position.toLowerCase().includes(searchLower))
     );
   });
 
   // Pagination
-  const totalPages = Math.ceil(filteredAuthorizations.length / itemsPerPage);
+  const totalPages = Math.ceil(filteredOrganizations.length / itemsPerPage);
   const startIndex = (currentPage - 1) * itemsPerPage;
   const endIndex = startIndex + itemsPerPage;
-  const currentAuthorizations = filteredAuthorizations.slice(startIndex, endIndex);
+  const currentOrganizations = filteredOrganizations.slice(startIndex, endIndex);
 
   const handlePageChange = (page: number) => {
     setCurrentPage(page);
@@ -261,7 +271,7 @@ const AuthorizationPage: React.FC = () => {
             borderRadius: '50%',
             animation: 'spin 1s linear infinite'
           }} />
-          <div>Yetkilendirmeler yükleniyor...</div>
+          <div>Organizasyonlar yükleniyor...</div>
         </div>
       </div>
     );
@@ -299,7 +309,7 @@ const AuthorizationPage: React.FC = () => {
               fontFamily: 'Inter',
               fontWeight: 700
             }}>
-              Kişiler
+              Organizasyon
             </div>
           </div>
         </div>
@@ -310,21 +320,18 @@ const AuthorizationPage: React.FC = () => {
           gap: '30px',
           marginBottom: '20px'
         }}>
-          <div 
-            style={{
-              flex: 1,
-              padding: '16px',
-              borderRadius: '6px',
-              textAlign: 'center',
-              cursor: 'pointer',
-              border: '1px solid rgba(0, 0, 0, 0.30)',
-              color: 'rgba(0, 0, 0, 0.30)',
-              fontSize: '14px',
-              fontWeight: 500,
-              lineHeight: '20px'
-            }}
-            onClick={() => navigate('/organization')}
-          >
+          <div style={{
+            flex: 1,
+            padding: '16px',
+            borderRadius: '6px',
+            textAlign: 'center',
+            cursor: 'pointer',
+            backgroundColor: '#3A57E8',
+            color: 'white',
+            fontSize: '14px',
+            fontWeight: 700,
+            lineHeight: '20px'
+          }}>
             Organizasyon
           </div>
           <div 
@@ -344,18 +351,21 @@ const AuthorizationPage: React.FC = () => {
           >
             Gruplama
           </div>
-          <div style={{
-            flex: 1,
-            padding: '16px',
-            borderRadius: '6px',
-            textAlign: 'center',
-            cursor: 'pointer',
-            backgroundColor: '#3A57E8',
-            color: 'white',
-            fontSize: '14px',
-            fontWeight: 700,
-            lineHeight: '20px'
-          }}>
+          <div 
+            style={{
+              flex: 1,
+              padding: '16px',
+              borderRadius: '6px',
+              textAlign: 'center',
+              cursor: 'pointer',
+              border: '1px solid rgba(0, 0, 0, 0.30)',
+              color: 'rgba(0, 0, 0, 0.30)',
+              fontSize: '14px',
+              fontWeight: 500,
+              lineHeight: '20px'
+            }}
+            onClick={() => navigate('/authorization')}
+          >
             Kişiler
           </div>
         </div>
@@ -398,7 +408,7 @@ const AuthorizationPage: React.FC = () => {
             />
           </div>
           <button
-            onClick={handleAddAuthorization}
+            onClick={handleAddOrganization}
             style={{
               backgroundColor: '#3A57E8',
               color: 'white',
@@ -435,7 +445,7 @@ const AuthorizationPage: React.FC = () => {
                   fontWeight: 700,
                   fontFamily: 'Montserrat'
                 }}>
-                  Sicil No
+                  Genel Müdür Yardımcılığı
                 </th>
                 <th style={{
                   padding: '16px',
@@ -445,7 +455,7 @@ const AuthorizationPage: React.FC = () => {
                   fontWeight: 700,
                   fontFamily: 'Montserrat'
                 }}>
-                  Ad Soyad
+                  Direktörlük
                 </th>
                 <th style={{
                   padding: '16px',
@@ -455,7 +465,7 @@ const AuthorizationPage: React.FC = () => {
                   fontWeight: 700,
                   fontFamily: 'Montserrat'
                 }}>
-                  Email
+                  Müdürlük
                 </th>
                 <th style={{
                   padding: '16px',
@@ -465,7 +475,27 @@ const AuthorizationPage: React.FC = () => {
                   fontWeight: 700,
                   fontFamily: 'Montserrat'
                 }}>
-                  Rol
+                  Departman
+                </th>
+                <th style={{
+                  padding: '16px',
+                  textAlign: 'left',
+                  color: '#232D42',
+                  fontSize: '14px',
+                  fontWeight: 700,
+                  fontFamily: 'Montserrat'
+                }}>
+                  Birim
+                </th>
+                <th style={{
+                  padding: '16px',
+                  textAlign: 'left',
+                  color: '#232D42',
+                  fontSize: '14px',
+                  fontWeight: 700,
+                  fontFamily: 'Montserrat'
+                }}>
+                  Pozisyon
                 </th>
                 <th style={{
                   padding: '16px',
@@ -480,20 +510,20 @@ const AuthorizationPage: React.FC = () => {
               </tr>
             </thead>
             <tbody>
-              {currentAuthorizations.length === 0 ? (
+              {currentOrganizations.length === 0 ? (
                 <tr>
-                  <td colSpan={5} style={{
+                  <td colSpan={7} style={{
                     padding: '40px',
                     textAlign: 'center',
                     color: '#8A92A6',
                     fontSize: '14px'
                   }}>
-                    {searchTerm ? 'Arama kriterlerine uygun kişi bulunamadı' : 'Henüz kişi bulunmuyor'}
+                    {searchTerm ? 'Arama kriterlerine uygun organizasyon bulunamadı' : 'Henüz organizasyon bulunmuyor'}
                   </td>
                 </tr>
               ) : (
-                currentAuthorizations.map((authorization) => (
-                  <tr key={authorization._id} style={{
+                currentOrganizations.map((organization) => (
+                  <tr key={organization._id} style={{
                     borderBottom: '1px solid #E9ECEF'
                   }}>
                     <td style={{
@@ -503,7 +533,7 @@ const AuthorizationPage: React.FC = () => {
                       fontFamily: 'Montserrat',
                       fontWeight: 500
                     }}>
-                      {authorization.employeeId || '-'}
+                      {organization.generalManagerDeputy || '-'}
                     </td>
                     <td style={{
                       padding: '16px',
@@ -512,7 +542,7 @@ const AuthorizationPage: React.FC = () => {
                       fontFamily: 'Montserrat',
                       fontWeight: 500
                     }}>
-                      {authorization.name || '-'}
+                      {organization.directorate || '-'}
                     </td>
                     <td style={{
                       padding: '16px',
@@ -521,7 +551,7 @@ const AuthorizationPage: React.FC = () => {
                       fontFamily: 'Montserrat',
                       fontWeight: 500
                     }}>
-                      {authorization.email || '-'}
+                      {organization.management || '-'}
                     </td>
                     <td style={{
                       padding: '16px',
@@ -530,7 +560,25 @@ const AuthorizationPage: React.FC = () => {
                       fontFamily: 'Montserrat',
                       fontWeight: 500
                     }}>
-                      {authorization.role || '-'}
+                      {organization.department || '-'}
+                    </td>
+                    <td style={{
+                      padding: '16px',
+                      color: '#232D42',
+                      fontSize: '14px',
+                      fontFamily: 'Montserrat',
+                      fontWeight: 500
+                    }}>
+                      {organization.unit || '-'}
+                    </td>
+                    <td style={{
+                      padding: '16px',
+                      color: '#232D42',
+                      fontSize: '14px',
+                      fontFamily: 'Montserrat',
+                      fontWeight: 500
+                    }}>
+                      {organization.position || '-'}
                     </td>
                     <td style={{
                       padding: '16px',
@@ -544,7 +592,7 @@ const AuthorizationPage: React.FC = () => {
                           cursor: 'pointer',
                           fontSize: '16px'
                         }}
-                        onClick={() => handleEditAuthorization(authorization)}
+                        onClick={() => handleEditOrganization(organization)}
                       />
                       <i 
                         className="fas fa-trash" 
@@ -553,7 +601,7 @@ const AuthorizationPage: React.FC = () => {
                           cursor: 'pointer',
                           fontSize: '16px'
                         }}
-                        onClick={() => handleDeleteAuthorization(authorization)}
+                        onClick={() => handleDeleteOrganization(organization)}
                       />
                     </td>
                   </tr>
@@ -654,7 +702,7 @@ const AuthorizationPage: React.FC = () => {
                 marginBottom: '24px',
                 fontFamily: 'Inter'
               }}>
-                Kişi Ekle
+                Organizasyon Ekle
               </div>
               
               <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
@@ -667,12 +715,12 @@ const AuthorizationPage: React.FC = () => {
                     marginBottom: '8px',
                     fontFamily: 'Inter'
                   }}>
-                    Sicil No
+                    Genel Müdür Yardımcılığı
                   </label>
                   <input
                     type="text"
-                    value={formData.employeeId}
-                    onChange={(e) => setFormData({ ...formData, employeeId: e.target.value })}
+                    value={formData.generalManagerDeputy}
+                    onChange={(e) => setFormData({ ...formData, generalManagerDeputy: e.target.value })}
                     style={{
                       width: '100%',
                       padding: '12px 16px',
@@ -694,12 +742,12 @@ const AuthorizationPage: React.FC = () => {
                     marginBottom: '8px',
                     fontFamily: 'Inter'
                   }}>
-                    Ad Soyad
+                    Direktörlük
                   </label>
                   <input
                     type="text"
-                    value={formData.name}
-                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                    value={formData.directorate}
+                    onChange={(e) => setFormData({ ...formData, directorate: e.target.value })}
                     style={{
                       width: '100%',
                       padding: '12px 16px',
@@ -721,12 +769,12 @@ const AuthorizationPage: React.FC = () => {
                     marginBottom: '8px',
                     fontFamily: 'Inter'
                   }}>
-                    Email
+                    Müdürlük
                   </label>
                   <input
-                    type="email"
-                    value={formData.email}
-                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                    type="text"
+                    value={formData.management}
+                    onChange={(e) => setFormData({ ...formData, management: e.target.value })}
                     style={{
                       width: '100%',
                       padding: '12px 16px',
@@ -748,11 +796,12 @@ const AuthorizationPage: React.FC = () => {
                     marginBottom: '8px',
                     fontFamily: 'Inter'
                   }}>
-                    Rol
+                    Departman
                   </label>
-                  <select
-                    value={formData.role}
-                    onChange={(e) => setFormData({ ...formData, role: e.target.value })}
+                  <input
+                    type="text"
+                    value={formData.department}
+                    onChange={(e) => setFormData({ ...formData, department: e.target.value })}
                     style={{
                       width: '100%',
                       padding: '12px 16px',
@@ -762,12 +811,61 @@ const AuthorizationPage: React.FC = () => {
                       fontFamily: 'Inter',
                       outline: 'none'
                     }}
-                  >
-                    <option value="">Rol Seçin</option>
-                    <option value="admin">Admin</option>
-                    <option value="user">Kullanıcı</option>
-                    <option value="manager">Yönetici</option>
-                  </select>
+                  />
+                </div>
+                
+                <div>
+                  <label style={{
+                    display: 'block',
+                    fontSize: '14px',
+                    fontWeight: 500,
+                    color: '#232D42',
+                    marginBottom: '8px',
+                    fontFamily: 'Inter'
+                  }}>
+                    Birim
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.unit}
+                    onChange={(e) => setFormData({ ...formData, unit: e.target.value })}
+                    style={{
+                      width: '100%',
+                      padding: '12px 16px',
+                      border: '1px solid #E9ECEF',
+                      borderRadius: '6px',
+                      fontSize: '14px',
+                      fontFamily: 'Inter',
+                      outline: 'none'
+                    }}
+                  />
+                </div>
+                
+                <div>
+                  <label style={{
+                    display: 'block',
+                    fontSize: '14px',
+                    fontWeight: 500,
+                    color: '#232D42',
+                    marginBottom: '8px',
+                    fontFamily: 'Inter'
+                  }}>
+                    Pozisyon
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.position}
+                    onChange={(e) => setFormData({ ...formData, position: e.target.value })}
+                    style={{
+                      width: '100%',
+                      padding: '12px 16px',
+                      border: '1px solid #E9ECEF',
+                      borderRadius: '6px',
+                      fontSize: '14px',
+                      fontFamily: 'Inter',
+                      outline: 'none'
+                    }}
+                  />
                 </div>
               </div>
               
@@ -844,7 +942,7 @@ const AuthorizationPage: React.FC = () => {
                 marginBottom: '24px',
                 fontFamily: 'Inter'
               }}>
-                Kişi Düzenle
+                Organizasyon Düzenle
               </div>
               
               <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
@@ -857,12 +955,12 @@ const AuthorizationPage: React.FC = () => {
                     marginBottom: '8px',
                     fontFamily: 'Inter'
                   }}>
-                    Sicil No
+                    Genel Müdür Yardımcılığı
                   </label>
                   <input
                     type="text"
-                    value={formData.employeeId}
-                    onChange={(e) => setFormData({ ...formData, employeeId: e.target.value })}
+                    value={formData.generalManagerDeputy}
+                    onChange={(e) => setFormData({ ...formData, generalManagerDeputy: e.target.value })}
                     style={{
                       width: '100%',
                       padding: '12px 16px',
@@ -884,12 +982,12 @@ const AuthorizationPage: React.FC = () => {
                     marginBottom: '8px',
                     fontFamily: 'Inter'
                   }}>
-                    Ad Soyad
+                    Direktörlük
                   </label>
                   <input
                     type="text"
-                    value={formData.name}
-                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                    value={formData.directorate}
+                    onChange={(e) => setFormData({ ...formData, directorate: e.target.value })}
                     style={{
                       width: '100%',
                       padding: '12px 16px',
@@ -911,12 +1009,12 @@ const AuthorizationPage: React.FC = () => {
                     marginBottom: '8px',
                     fontFamily: 'Inter'
                   }}>
-                    Email
+                    Müdürlük
                   </label>
                   <input
-                    type="email"
-                    value={formData.email}
-                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                    type="text"
+                    value={formData.management}
+                    onChange={(e) => setFormData({ ...formData, management: e.target.value })}
                     style={{
                       width: '100%',
                       padding: '12px 16px',
@@ -938,11 +1036,12 @@ const AuthorizationPage: React.FC = () => {
                     marginBottom: '8px',
                     fontFamily: 'Inter'
                   }}>
-                    Rol
+                    Departman
                   </label>
-                  <select
-                    value={formData.role}
-                    onChange={(e) => setFormData({ ...formData, role: e.target.value })}
+                  <input
+                    type="text"
+                    value={formData.department}
+                    onChange={(e) => setFormData({ ...formData, department: e.target.value })}
                     style={{
                       width: '100%',
                       padding: '12px 16px',
@@ -952,12 +1051,61 @@ const AuthorizationPage: React.FC = () => {
                       fontFamily: 'Inter',
                       outline: 'none'
                     }}
-                  >
-                    <option value="">Rol Seçin</option>
-                    <option value="admin">Admin</option>
-                    <option value="user">Kullanıcı</option>
-                    <option value="manager">Yönetici</option>
-                  </select>
+                  />
+                </div>
+                
+                <div>
+                  <label style={{
+                    display: 'block',
+                    fontSize: '14px',
+                    fontWeight: 500,
+                    color: '#232D42',
+                    marginBottom: '8px',
+                    fontFamily: 'Inter'
+                  }}>
+                    Birim
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.unit}
+                    onChange={(e) => setFormData({ ...formData, unit: e.target.value })}
+                    style={{
+                      width: '100%',
+                      padding: '12px 16px',
+                      border: '1px solid #E9ECEF',
+                      borderRadius: '6px',
+                      fontSize: '14px',
+                      fontFamily: 'Inter',
+                      outline: 'none'
+                    }}
+                  />
+                </div>
+                
+                <div>
+                  <label style={{
+                    display: 'block',
+                    fontSize: '14px',
+                    fontWeight: 500,
+                    color: '#232D42',
+                    marginBottom: '8px',
+                    fontFamily: 'Inter'
+                  }}>
+                    Pozisyon
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.position}
+                    onChange={(e) => setFormData({ ...formData, position: e.target.value })}
+                    style={{
+                      width: '100%',
+                      padding: '12px 16px',
+                      border: '1px solid #E9ECEF',
+                      borderRadius: '6px',
+                      fontSize: '14px',
+                      fontFamily: 'Inter',
+                      outline: 'none'
+                    }}
+                  />
                 </div>
               </div>
               
@@ -1005,7 +1153,7 @@ const AuthorizationPage: React.FC = () => {
         )}
 
         {/* Delete Popup */}
-        {showDeletePopup && selectedAuthorization && (
+        {showDeletePopup && selectedOrganization && (
           <div style={{
             position: 'fixed',
             top: 0,
@@ -1033,7 +1181,7 @@ const AuthorizationPage: React.FC = () => {
                 marginBottom: '16px',
                 fontFamily: 'Inter'
               }}>
-                Kişiyi Sil
+                Organizasyonu Sil
               </div>
               <div style={{
                 fontSize: '14px',
@@ -1042,7 +1190,7 @@ const AuthorizationPage: React.FC = () => {
                 lineHeight: '1.5',
                 fontFamily: 'Inter'
               }}>
-                Bu kişiyi silmek istediğinizden emin misiniz? Bu işlem geri alınamaz.
+                Bu organizasyonu silmek istediğinizden emin misiniz? Bu işlem geri alınamaz.
               </div>
               <div style={{
                 display: 'flex',
@@ -1210,4 +1358,4 @@ const AuthorizationPage: React.FC = () => {
   );
 };
 
-export default AuthorizationPage;
+export default Organization;

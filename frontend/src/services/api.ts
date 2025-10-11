@@ -89,6 +89,9 @@ export const organizationAPI = {
   getAll: () =>
     api.get('/organization'),
   
+  getById: (id: string) =>
+    api.get(`/organization/${id}`),
+  
   create: (organizationData: any) =>
     api.post('/organization', organizationData),
   
@@ -97,6 +100,15 @@ export const organizationAPI = {
   
   delete: (id: string) =>
     api.delete(`/organization/${id}`),
+};
+
+// Group Management API
+export const groupAPI = {
+  getAll: () => api.get('/group'),
+  getById: (id: string) => api.get(`/group/${id}`),
+  create: (data: any) => api.post('/group', data),
+  update: (id: string, data: any) => api.put(`/group/${id}`, data),
+  delete: (id: string) => api.delete(`/group/${id}`),
 };
 
 // Competency API
@@ -129,20 +141,6 @@ export const gameManagementAPI = {
     api.delete(`/game-management/${id}`),
 };
 
-// Group API
-export const groupAPI = {
-  getAll: () =>
-    api.get('/group'),
-  
-  create: (groupData: any) =>
-    api.post('/group', groupData),
-  
-  update: (id: string, groupData: any) =>
-    api.put(`/group/${id}`, groupData),
-  
-  delete: (id: string) =>
-    api.delete(`/group/${id}`),
-};
 
 // Evaluation API
 export const evaluationAPI = {
@@ -175,5 +173,6 @@ export const companyAPI = {
   delete: (vkn: string) =>
     api.delete(`/company-management/${vkn}`)
 };
+
 
 export default api;

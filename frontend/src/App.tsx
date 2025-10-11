@@ -10,8 +10,10 @@ import LoginPage from './pages/LoginPage';
 import AdminPanel from './pages/AdminPanel';
 import AuthorizationPage from './pages/AuthorizationPage';
 import OrganizationPage from './pages/OrganizationPage';
-import CompetencySettingsPage from './pages/CompetencySettingsPage';
 import GameManagement from './pages/GameManagement';
+import CompetencySettings from './pages/CompetencySettings';
+import Organization from './pages/Organization';
+import Grouping from './pages/Grouping';
 import GroupingPage from './pages/GroupingPage';
 import ResultsPage from './pages/ResultsPage';
 import CompanyIdentification from './pages/CompanyIdentification';
@@ -46,37 +48,44 @@ function App() {
               </ProtectedRoute>
             } />
             
-            <Route path="/organization" element={
-              <ProtectedRoute>
-                <Layout>
-                  <OrganizationPage />
-                </Layout>
-              </ProtectedRoute>
-            } />
+        <Route path="/organization" element={
+          <ProtectedRoute>
+            <Layout>
+              <Organization />
+            </Layout>
+          </ProtectedRoute>
+        } />
             
             <Route path="/competency-settings" element={
               <ProtectedRoute>
                 <Layout>
-                  <CompetencySettingsPage />
+                  <CompetencySettings />
                 </Layout>
               </ProtectedRoute>
             } />
             
-            <Route path="/game-management" element={
-              <ProtectedRoute>
-                <Layout>
-                  <GameManagement />
-                </Layout>
-              </ProtectedRoute>
-            } />
+        <Route path="/game-management" element={
+          <ProtectedRoute>
+            <Layout>
+              <GameManagement />
+            </Layout>
+          </ProtectedRoute>
+        } />
+        <Route path="/competency-settings" element={
+          <ProtectedRoute>
+            <Layout>
+              <CompetencySettings />
+            </Layout>
+          </ProtectedRoute>
+        } />
             
-            <Route path="/grouping" element={
-              <ProtectedRoute>
-                <Layout>
-                  <GroupingPage />
-                </Layout>
-              </ProtectedRoute>
-            } />
+        <Route path="/grouping" element={
+          <ProtectedRoute>
+            <Layout>
+              <Grouping />
+            </Layout>
+          </ProtectedRoute>
+        } />
             
             <Route path="/results" element={
               <ProtectedRoute>

@@ -1,17 +1,16 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 
-interface Authorization {
+interface Group {
   _id: string;
-  employeeId?: string;
-  name?: string;
-  email?: string;
-  role?: string;
+  groupName?: string;
+  isActive?: boolean;
+  details?: string;
 }
 
-const AuthorizationPage: React.FC = () => {
+const Grouping: React.FC = () => {
   const navigate = useNavigate();
-  const [authorizations, setAuthorizations] = useState<Authorization[]>([]);
+  const [groups, setGroups] = useState<Group[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [showAddPopup, setShowAddPopup] = useState(false);
@@ -21,15 +20,14 @@ const AuthorizationPage: React.FC = () => {
   const [showErrorPopup, setShowErrorPopup] = useState(false);
   const [successMessage, setSuccessMessage] = useState('');
   const [errorMessage, setErrorMessage] = useState('');
-  const [selectedAuthorization, setSelectedAuthorization] = useState<Authorization | null>(null);
+  const [selectedGroup, setSelectedGroup] = useState<Group | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   
   // Form states
   const [formData, setFormData] = useState({
-    employeeId: '',
-    name: '',
-    email: '',
-    role: ''
+    groupName: '',
+    isActive: true,
+    details: ''
   });
 
   // Pagination states
@@ -37,75 +35,73 @@ const AuthorizationPage: React.FC = () => {
   const [itemsPerPage] = useState(10);
 
   useEffect(() => {
-    loadAuthorizations();
+    loadGroups();
   }, []);
 
-  const loadAuthorizations = async () => {
+  const loadGroups = async () => {
     try {
       setIsLoading(true);
-      console.log('🔄 Yetkilendirmeler yükleniyor...');
+      console.log('🔄 Gruplar yükleniyor...');
       
       const token = localStorage.getItem('token');
-      const response = await fetch('/api/authorization', {
+      const response = await fetch('/api/group', {
         headers: {
           'Authorization': `Bearer ${token}`
         }
       });
 
       if (!response.ok) {
-        throw new Error('Yetkilendirme listesi yüklenemedi');
+        throw new Error('Grup listesi yüklenemedi');
       }
 
       const result = await response.json();
-      console.log('✅ Yetkilendirmeler yüklendi:', result);
+      console.log('✅ Gruplar yüklendi:', result);
       
       if (result.success) {
-        setAuthorizations(result.data || []);
+        setGroups(result.data || []);
       } else {
-        throw new Error(result.message || 'Yetkilendirme listesi alınamadı');
+        throw new Error(result.message || 'Grup listesi alınamadı');
       }
     } catch (error: any) {
-      console.error('💥 Yetkilendirme yükleme hatası:', error);
-      setErrorMessage('Yetkilendirmeler yüklenirken bir hata oluştu');
+      console.error('💥 Grup yükleme hatası:', error);
+      setErrorMessage('Gruplar yüklenirken bir hata oluştu');
       setShowErrorPopup(true);
     } finally {
       setIsLoading(false);
     }
   };
 
-  const handleAddAuthorization = () => {
+  const handleAddGroup = () => {
     setFormData({
-      employeeId: '',
-      name: '',
-      email: '',
-      role: ''
+      groupName: '',
+      isActive: true,
+      details: ''
     });
     setShowAddPopup(true);
   };
 
-  const handleEditAuthorization = (authorization: Authorization) => {
-    setSelectedAuthorization(authorization);
+  const handleEditGroup = (group: Group) => {
+    setSelectedGroup(group);
     setFormData({
-      employeeId: authorization.employeeId || '',
-      name: authorization.name || '',
-      email: authorization.email || '',
-      role: authorization.role || ''
+      groupName: group.groupName || '',
+      isActive: group.isActive || false,
+      details: group.details || ''
     });
     setShowEditPopup(true);
   };
 
-  const handleDeleteAuthorization = (authorization: Authorization) => {
-    setSelectedAuthorization(authorization);
+  const handleDeleteGroup = (group: Group) => {
+    setSelectedGroup(group);
     setShowDeletePopup(true);
   };
 
   const handleSubmitAdd = async () => {
     try {
       setIsSubmitting(true);
-      console.log('🔄 Yeni yetkilendirme ekleniyor:', formData);
+      console.log('🔄 Yeni grup ekleniyor:', formData);
       
       const token = localStorage.getItem('token');
-      const response = await fetch('/api/authorization', {
+      const response = await fetch('/api/group', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -116,22 +112,22 @@ const AuthorizationPage: React.FC = () => {
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.message || 'Yetkilendirme eklenemedi');
+        throw new Error(errorData.message || 'Grup eklenemedi');
       }
 
       const responseData = await response.json();
-      console.log('✅ Yetkilendirme başarıyla eklendi:', responseData);
+      console.log('✅ Grup başarıyla eklendi:', responseData);
       
-      // Yeni yetkilendirmeyi listeye ekle
-      setAuthorizations(prev => [...prev, responseData.data]);
+      // Yeni grubu listeye ekle
+      setGroups(prev => [...prev, responseData.data]);
       
       // Başarı mesajı göster
       setShowAddPopup(false);
       setShowSuccessPopup(true);
-      setSuccessMessage('Yetkilendirme başarıyla eklendi!');
+      setSuccessMessage('Grup başarıyla eklendi!');
     } catch (error: any) {
-      console.error('💥 Yetkilendirme ekleme hatası:', error);
-      setErrorMessage(error.message || 'Yetkilendirme eklenirken bir hata oluştu');
+      console.error('💥 Grup ekleme hatası:', error);
+      setErrorMessage(error.message || 'Grup eklenirken bir hata oluştu');
       setShowErrorPopup(true);
     } finally {
       setIsSubmitting(false);
@@ -140,12 +136,12 @@ const AuthorizationPage: React.FC = () => {
 
   const handleSubmitEdit = async () => {
     try {
-      if (!selectedAuthorization) return;
+      if (!selectedGroup) return;
       setIsSubmitting(true);
-      console.log('🔄 Yetkilendirme güncelleniyor:', selectedAuthorization._id, formData);
+      console.log('🔄 Grup güncelleniyor:', selectedGroup._id, formData);
       
       const token = localStorage.getItem('token');
-      const response = await fetch(`/api/authorization/${selectedAuthorization._id}`, {
+      const response = await fetch(`/api/group/${selectedGroup._id}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -156,24 +152,24 @@ const AuthorizationPage: React.FC = () => {
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.message || 'Yetkilendirme güncellenemedi');
+        throw new Error(errorData.message || 'Grup güncellenemedi');
       }
 
       const responseData = await response.json();
-      console.log('✅ Yetkilendirme başarıyla güncellendi:', responseData);
+      console.log('✅ Grup başarıyla güncellendi:', responseData);
       
-      // Güncellenen yetkilendirmeyi listede güncelle
-      setAuthorizations(prev => prev.map(auth => 
-        auth._id === selectedAuthorization._id ? responseData.data : auth
+      // Güncellenen grubu listede güncelle
+      setGroups(prev => prev.map(group => 
+        group._id === selectedGroup._id ? responseData.data : group
       ));
       
       // Başarı mesajı göster
       setShowEditPopup(false);
       setShowSuccessPopup(true);
-      setSuccessMessage('Yetkilendirme başarıyla güncellendi!');
+      setSuccessMessage('Grup başarıyla güncellendi!');
     } catch (error: any) {
-      console.error('💥 Yetkilendirme güncelleme hatası:', error);
-      setErrorMessage(error.message || 'Yetkilendirme güncellenirken bir hata oluştu');
+      console.error('💥 Grup güncelleme hatası:', error);
+      setErrorMessage(error.message || 'Grup güncellenirken bir hata oluştu');
       setShowErrorPopup(true);
     } finally {
       setIsSubmitting(false);
@@ -182,12 +178,12 @@ const AuthorizationPage: React.FC = () => {
 
   const handleConfirmDelete = async () => {
     try {
-      if (!selectedAuthorization) return;
+      if (!selectedGroup) return;
       setIsSubmitting(true);
-      console.log('🔄 Yetkilendirme siliniyor:', selectedAuthorization._id);
+      console.log('🔄 Grup siliniyor:', selectedGroup._id);
       
       const token = localStorage.getItem('token');
-      const response = await fetch(`/api/authorization/${selectedAuthorization._id}`, {
+      const response = await fetch(`/api/group/${selectedGroup._id}`, {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${token}`
@@ -198,40 +194,38 @@ const AuthorizationPage: React.FC = () => {
         throw new Error('Silme işlemi başarısız');
       }
 
-      console.log('✅ Yetkilendirme başarıyla silindi');
+      console.log('✅ Grup başarıyla silindi');
       
-      // Silinen yetkilendirmeyi listeden çıkar
-      setAuthorizations(prev => prev.filter(auth => auth._id !== selectedAuthorization._id));
+      // Silinen grubu listeden çıkar
+      setGroups(prev => prev.filter(group => group._id !== selectedGroup._id));
       
       // Başarı mesajı göster
       setShowDeletePopup(false);
       setShowSuccessPopup(true);
-      setSuccessMessage('Yetkilendirme başarıyla silindi!');
+      setSuccessMessage('Grup başarıyla silindi!');
     } catch (error: any) {
-      console.error('💥 Yetkilendirme silme hatası:', error);
-      setErrorMessage(error.message || 'Yetkilendirme silinirken bir hata oluştu');
+      console.error('💥 Grup silme hatası:', error);
+      setErrorMessage(error.message || 'Grup silinirken bir hata oluştu');
       setShowErrorPopup(true);
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  // Filter authorizations based on search term
-  const filteredAuthorizations = authorizations.filter(auth => {
+  // Filter groups based on search term
+  const filteredGroups = groups.filter(group => {
     const searchLower = searchTerm.toLowerCase();
     return (
-      (auth.employeeId && auth.employeeId.toLowerCase().includes(searchLower)) ||
-      (auth.name && auth.name.toLowerCase().includes(searchLower)) ||
-      (auth.email && auth.email.toLowerCase().includes(searchLower)) ||
-      (auth.role && auth.role.toLowerCase().includes(searchLower))
+      (group.groupName && group.groupName.toLowerCase().includes(searchLower)) ||
+      (group.details && group.details.toLowerCase().includes(searchLower))
     );
   });
 
   // Pagination
-  const totalPages = Math.ceil(filteredAuthorizations.length / itemsPerPage);
+  const totalPages = Math.ceil(filteredGroups.length / itemsPerPage);
   const startIndex = (currentPage - 1) * itemsPerPage;
   const endIndex = startIndex + itemsPerPage;
-  const currentAuthorizations = filteredAuthorizations.slice(startIndex, endIndex);
+  const currentGroups = filteredGroups.slice(startIndex, endIndex);
 
   const handlePageChange = (page: number) => {
     setCurrentPage(page);
@@ -261,7 +255,7 @@ const AuthorizationPage: React.FC = () => {
             borderRadius: '50%',
             animation: 'spin 1s linear infinite'
           }} />
-          <div>Yetkilendirmeler yükleniyor...</div>
+          <div>Gruplar yükleniyor...</div>
         </div>
       </div>
     );
@@ -299,7 +293,7 @@ const AuthorizationPage: React.FC = () => {
               fontFamily: 'Inter',
               fontWeight: 700
             }}>
-              Kişiler
+              Gruplama
             </div>
           </div>
         </div>
@@ -327,6 +321,20 @@ const AuthorizationPage: React.FC = () => {
           >
             Organizasyon
           </div>
+          <div style={{
+            flex: 1,
+            padding: '16px',
+            borderRadius: '6px',
+            textAlign: 'center',
+            cursor: 'pointer',
+            backgroundColor: '#3A57E8',
+            color: 'white',
+            fontSize: '14px',
+            fontWeight: 700,
+            lineHeight: '20px'
+          }}>
+            Gruplama
+          </div>
           <div 
             style={{
               flex: 1,
@@ -340,22 +348,8 @@ const AuthorizationPage: React.FC = () => {
               fontWeight: 500,
               lineHeight: '20px'
             }}
-            onClick={() => navigate('/grouping')}
+            onClick={() => navigate('/authorization')}
           >
-            Gruplama
-          </div>
-          <div style={{
-            flex: 1,
-            padding: '16px',
-            borderRadius: '6px',
-            textAlign: 'center',
-            cursor: 'pointer',
-            backgroundColor: '#3A57E8',
-            color: 'white',
-            fontSize: '14px',
-            fontWeight: 700,
-            lineHeight: '20px'
-          }}>
             Kişiler
           </div>
         </div>
@@ -398,7 +392,7 @@ const AuthorizationPage: React.FC = () => {
             />
           </div>
           <button
-            onClick={handleAddAuthorization}
+            onClick={handleAddGroup}
             style={{
               backgroundColor: '#3A57E8',
               color: 'white',
@@ -435,7 +429,7 @@ const AuthorizationPage: React.FC = () => {
                   fontWeight: 700,
                   fontFamily: 'Montserrat'
                 }}>
-                  Sicil No
+                  Grup Adı
                 </th>
                 <th style={{
                   padding: '16px',
@@ -445,7 +439,7 @@ const AuthorizationPage: React.FC = () => {
                   fontWeight: 700,
                   fontFamily: 'Montserrat'
                 }}>
-                  Ad Soyad
+                  Aktiflik Durumu
                 </th>
                 <th style={{
                   padding: '16px',
@@ -455,17 +449,7 @@ const AuthorizationPage: React.FC = () => {
                   fontWeight: 700,
                   fontFamily: 'Montserrat'
                 }}>
-                  Email
-                </th>
-                <th style={{
-                  padding: '16px',
-                  textAlign: 'left',
-                  color: '#232D42',
-                  fontSize: '14px',
-                  fontWeight: 700,
-                  fontFamily: 'Montserrat'
-                }}>
-                  Rol
+                  Detaylar
                 </th>
                 <th style={{
                   padding: '16px',
@@ -480,20 +464,20 @@ const AuthorizationPage: React.FC = () => {
               </tr>
             </thead>
             <tbody>
-              {currentAuthorizations.length === 0 ? (
+              {currentGroups.length === 0 ? (
                 <tr>
-                  <td colSpan={5} style={{
+                  <td colSpan={4} style={{
                     padding: '40px',
                     textAlign: 'center',
                     color: '#8A92A6',
                     fontSize: '14px'
                   }}>
-                    {searchTerm ? 'Arama kriterlerine uygun kişi bulunamadı' : 'Henüz kişi bulunmuyor'}
+                    {searchTerm ? 'Arama kriterlerine uygun grup bulunamadı' : 'Henüz grup bulunmuyor'}
                   </td>
                 </tr>
               ) : (
-                currentAuthorizations.map((authorization) => (
-                  <tr key={authorization._id} style={{
+                currentGroups.map((group) => (
+                  <tr key={group._id} style={{
                     borderBottom: '1px solid #E9ECEF'
                   }}>
                     <td style={{
@@ -503,7 +487,7 @@ const AuthorizationPage: React.FC = () => {
                       fontFamily: 'Montserrat',
                       fontWeight: 500
                     }}>
-                      {authorization.employeeId || '-'}
+                      {group.groupName || '-'}
                     </td>
                     <td style={{
                       padding: '16px',
@@ -512,7 +496,16 @@ const AuthorizationPage: React.FC = () => {
                       fontFamily: 'Montserrat',
                       fontWeight: 500
                     }}>
-                      {authorization.name || '-'}
+                      <span style={{
+                        padding: '4px 12px',
+                        borderRadius: '12px',
+                        fontSize: '12px',
+                        fontWeight: 500,
+                        backgroundColor: group.isActive ? '#D1FAE5' : '#FEE2E2',
+                        color: group.isActive ? '#065F46' : '#991B1B'
+                      }}>
+                        {group.isActive ? 'Aktif' : 'Pasif'}
+                      </span>
                     </td>
                     <td style={{
                       padding: '16px',
@@ -521,16 +514,7 @@ const AuthorizationPage: React.FC = () => {
                       fontFamily: 'Montserrat',
                       fontWeight: 500
                     }}>
-                      {authorization.email || '-'}
-                    </td>
-                    <td style={{
-                      padding: '16px',
-                      color: '#232D42',
-                      fontSize: '14px',
-                      fontFamily: 'Montserrat',
-                      fontWeight: 500
-                    }}>
-                      {authorization.role || '-'}
+                      {group.details || '-'}
                     </td>
                     <td style={{
                       padding: '16px',
@@ -544,7 +528,7 @@ const AuthorizationPage: React.FC = () => {
                           cursor: 'pointer',
                           fontSize: '16px'
                         }}
-                        onClick={() => handleEditAuthorization(authorization)}
+                        onClick={() => handleEditGroup(group)}
                       />
                       <i 
                         className="fas fa-trash" 
@@ -553,7 +537,7 @@ const AuthorizationPage: React.FC = () => {
                           cursor: 'pointer',
                           fontSize: '16px'
                         }}
-                        onClick={() => handleDeleteAuthorization(authorization)}
+                        onClick={() => handleDeleteGroup(group)}
                       />
                     </td>
                   </tr>
@@ -654,7 +638,7 @@ const AuthorizationPage: React.FC = () => {
                 marginBottom: '24px',
                 fontFamily: 'Inter'
               }}>
-                Kişi Ekle
+                Grup Ekle
               </div>
               
               <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
@@ -667,12 +651,12 @@ const AuthorizationPage: React.FC = () => {
                     marginBottom: '8px',
                     fontFamily: 'Inter'
                   }}>
-                    Sicil No
+                    Grup Adı
                   </label>
                   <input
                     type="text"
-                    value={formData.employeeId}
-                    onChange={(e) => setFormData({ ...formData, employeeId: e.target.value })}
+                    value={formData.groupName}
+                    onChange={(e) => setFormData({ ...formData, groupName: e.target.value })}
                     style={{
                       width: '100%',
                       padding: '12px 16px',
@@ -694,65 +678,11 @@ const AuthorizationPage: React.FC = () => {
                     marginBottom: '8px',
                     fontFamily: 'Inter'
                   }}>
-                    Ad Soyad
-                  </label>
-                  <input
-                    type="text"
-                    value={formData.name}
-                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                    style={{
-                      width: '100%',
-                      padding: '12px 16px',
-                      border: '1px solid #E9ECEF',
-                      borderRadius: '6px',
-                      fontSize: '14px',
-                      fontFamily: 'Inter',
-                      outline: 'none'
-                    }}
-                  />
-                </div>
-                
-                <div>
-                  <label style={{
-                    display: 'block',
-                    fontSize: '14px',
-                    fontWeight: 500,
-                    color: '#232D42',
-                    marginBottom: '8px',
-                    fontFamily: 'Inter'
-                  }}>
-                    Email
-                  </label>
-                  <input
-                    type="email"
-                    value={formData.email}
-                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                    style={{
-                      width: '100%',
-                      padding: '12px 16px',
-                      border: '1px solid #E9ECEF',
-                      borderRadius: '6px',
-                      fontSize: '14px',
-                      fontFamily: 'Inter',
-                      outline: 'none'
-                    }}
-                  />
-                </div>
-                
-                <div>
-                  <label style={{
-                    display: 'block',
-                    fontSize: '14px',
-                    fontWeight: 500,
-                    color: '#232D42',
-                    marginBottom: '8px',
-                    fontFamily: 'Inter'
-                  }}>
-                    Rol
+                    Aktiflik Durumu
                   </label>
                   <select
-                    value={formData.role}
-                    onChange={(e) => setFormData({ ...formData, role: e.target.value })}
+                    value={formData.isActive ? 'true' : 'false'}
+                    onChange={(e) => setFormData({ ...formData, isActive: e.target.value === 'true' })}
                     style={{
                       width: '100%',
                       padding: '12px 16px',
@@ -763,11 +693,37 @@ const AuthorizationPage: React.FC = () => {
                       outline: 'none'
                     }}
                   >
-                    <option value="">Rol Seçin</option>
-                    <option value="admin">Admin</option>
-                    <option value="user">Kullanıcı</option>
-                    <option value="manager">Yönetici</option>
+                    <option value="true">Aktif</option>
+                    <option value="false">Pasif</option>
                   </select>
+                </div>
+                
+                <div>
+                  <label style={{
+                    display: 'block',
+                    fontSize: '14px',
+                    fontWeight: 500,
+                    color: '#232D42',
+                    marginBottom: '8px',
+                    fontFamily: 'Inter'
+                  }}>
+                    Detaylar
+                  </label>
+                  <textarea
+                    value={formData.details}
+                    onChange={(e) => setFormData({ ...formData, details: e.target.value })}
+                    rows={4}
+                    style={{
+                      width: '100%',
+                      padding: '12px 16px',
+                      border: '1px solid #E9ECEF',
+                      borderRadius: '6px',
+                      fontSize: '14px',
+                      fontFamily: 'Inter',
+                      outline: 'none',
+                      resize: 'vertical'
+                    }}
+                  />
                 </div>
               </div>
               
@@ -844,7 +800,7 @@ const AuthorizationPage: React.FC = () => {
                 marginBottom: '24px',
                 fontFamily: 'Inter'
               }}>
-                Kişi Düzenle
+                Grup Düzenle
               </div>
               
               <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
@@ -857,12 +813,12 @@ const AuthorizationPage: React.FC = () => {
                     marginBottom: '8px',
                     fontFamily: 'Inter'
                   }}>
-                    Sicil No
+                    Grup Adı
                   </label>
                   <input
                     type="text"
-                    value={formData.employeeId}
-                    onChange={(e) => setFormData({ ...formData, employeeId: e.target.value })}
+                    value={formData.groupName}
+                    onChange={(e) => setFormData({ ...formData, groupName: e.target.value })}
                     style={{
                       width: '100%',
                       padding: '12px 16px',
@@ -884,65 +840,11 @@ const AuthorizationPage: React.FC = () => {
                     marginBottom: '8px',
                     fontFamily: 'Inter'
                   }}>
-                    Ad Soyad
-                  </label>
-                  <input
-                    type="text"
-                    value={formData.name}
-                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                    style={{
-                      width: '100%',
-                      padding: '12px 16px',
-                      border: '1px solid #E9ECEF',
-                      borderRadius: '6px',
-                      fontSize: '14px',
-                      fontFamily: 'Inter',
-                      outline: 'none'
-                    }}
-                  />
-                </div>
-                
-                <div>
-                  <label style={{
-                    display: 'block',
-                    fontSize: '14px',
-                    fontWeight: 500,
-                    color: '#232D42',
-                    marginBottom: '8px',
-                    fontFamily: 'Inter'
-                  }}>
-                    Email
-                  </label>
-                  <input
-                    type="email"
-                    value={formData.email}
-                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                    style={{
-                      width: '100%',
-                      padding: '12px 16px',
-                      border: '1px solid #E9ECEF',
-                      borderRadius: '6px',
-                      fontSize: '14px',
-                      fontFamily: 'Inter',
-                      outline: 'none'
-                    }}
-                  />
-                </div>
-                
-                <div>
-                  <label style={{
-                    display: 'block',
-                    fontSize: '14px',
-                    fontWeight: 500,
-                    color: '#232D42',
-                    marginBottom: '8px',
-                    fontFamily: 'Inter'
-                  }}>
-                    Rol
+                    Aktiflik Durumu
                   </label>
                   <select
-                    value={formData.role}
-                    onChange={(e) => setFormData({ ...formData, role: e.target.value })}
+                    value={formData.isActive ? 'true' : 'false'}
+                    onChange={(e) => setFormData({ ...formData, isActive: e.target.value === 'true' })}
                     style={{
                       width: '100%',
                       padding: '12px 16px',
@@ -953,11 +855,37 @@ const AuthorizationPage: React.FC = () => {
                       outline: 'none'
                     }}
                   >
-                    <option value="">Rol Seçin</option>
-                    <option value="admin">Admin</option>
-                    <option value="user">Kullanıcı</option>
-                    <option value="manager">Yönetici</option>
+                    <option value="true">Aktif</option>
+                    <option value="false">Pasif</option>
                   </select>
+                </div>
+                
+                <div>
+                  <label style={{
+                    display: 'block',
+                    fontSize: '14px',
+                    fontWeight: 500,
+                    color: '#232D42',
+                    marginBottom: '8px',
+                    fontFamily: 'Inter'
+                  }}>
+                    Detaylar
+                  </label>
+                  <textarea
+                    value={formData.details}
+                    onChange={(e) => setFormData({ ...formData, details: e.target.value })}
+                    rows={4}
+                    style={{
+                      width: '100%',
+                      padding: '12px 16px',
+                      border: '1px solid #E9ECEF',
+                      borderRadius: '6px',
+                      fontSize: '14px',
+                      fontFamily: 'Inter',
+                      outline: 'none',
+                      resize: 'vertical'
+                    }}
+                  />
                 </div>
               </div>
               
@@ -1005,7 +933,7 @@ const AuthorizationPage: React.FC = () => {
         )}
 
         {/* Delete Popup */}
-        {showDeletePopup && selectedAuthorization && (
+        {showDeletePopup && selectedGroup && (
           <div style={{
             position: 'fixed',
             top: 0,
@@ -1033,7 +961,7 @@ const AuthorizationPage: React.FC = () => {
                 marginBottom: '16px',
                 fontFamily: 'Inter'
               }}>
-                Kişiyi Sil
+                Grubu Sil
               </div>
               <div style={{
                 fontSize: '14px',
@@ -1042,7 +970,7 @@ const AuthorizationPage: React.FC = () => {
                 lineHeight: '1.5',
                 fontFamily: 'Inter'
               }}>
-                Bu kişiyi silmek istediğinizden emin misiniz? Bu işlem geri alınamaz.
+                Bu grubu silmek istediğinizden emin misiniz? Bu işlem geri alınamaz.
               </div>
               <div style={{
                 display: 'flex',
@@ -1210,4 +1138,4 @@ const AuthorizationPage: React.FC = () => {
   );
 };
 
-export default AuthorizationPage;
+export default Grouping;

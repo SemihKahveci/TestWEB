@@ -26,14 +26,19 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
   ];
 
   const otherSettingsItems = [
-    { path: '/authorization', label: 'Yetkilendirme', icon: '👥' },
     { path: '/organization', label: 'Organizasyon', icon: '🏢' },
     { path: '/competency-settings', label: 'Yetkinlik Ayarları', icon: '⚙️' },
-    { path: '/grouping', label: 'Gruplama', icon: '📊' },
-    { path: '/admin-management', label: 'Admin Yönetimi', icon: '🔧' },
+    { path: '/admin-management', label: 'Bildirimler', icon: '🔧' },
   ];
 
-  const isActive = (path: string) => location.pathname === path;
+  const isActive = (path: string) => {
+    if (path === '/organization') {
+      return location.pathname === '/organization' || 
+             location.pathname === '/grouping' || 
+             location.pathname === '/authorization';
+    }
+    return location.pathname === path;
+  };
 
   return (
     <div style={{
