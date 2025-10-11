@@ -337,10 +337,10 @@ async function buildEvaluationHTML(evaluation, options, userCode, isPreview = fa
                 .cover-title {
                     font-size: 64px;
                     font-weight: bold;
-                    color: #c0392b;
+                    color: #CC0000;
                     margin-bottom: 40px;
                     text-shadow: 4px 4px 8px rgba(0,0,0,0.3);
-                    font-family: serif;
+                    font-family: Cambria, Georgia, serif;
                     line-height: 1.1;
                     text-align: right;
                     width: 100%;
@@ -349,7 +349,7 @@ async function buildEvaluationHTML(evaluation, options, userCode, isPreview = fa
 
                 .cover-divider {
                     width: 100%;
-                    border-bottom: 3px solid #000;
+                    border-bottom: 1px solid #000;
                     margin: 30px 0;
                 }
 
@@ -360,6 +360,10 @@ async function buildEvaluationHTML(evaluation, options, userCode, isPreview = fa
                     line-height: 2;
                     font-style: italic;
                     max-width: 600px;
+                    width: 100%;
+                    display: flex;
+                    flex-direction: column;
+                    align-items: flex-end;
                 }
 
                 /* Üst Bar (Sol bar + Sağda Yetkinlik Adı) */
@@ -469,12 +473,12 @@ async function buildEvaluationHTML(evaluation, options, userCode, isPreview = fa
         htmlContent += `
             <div class="section-start" style="
                 page-break-before: always;
-                text-align:center; 
+                text-align:right; 
                 padding:180px 20px; 
                 min-height:682px; 
                 display:flex; 
                 align-items:center; 
-                justify-content:center;">
+                justify-content:flex-end;">
                 <h1 style="font-size:80px; font-weight:bold; color:#1e3a8a;
                         text-shadow:4px 4px 8px rgba(0,0,0,0.3); font-family:sans-serif;">
                     ${competencyName}
