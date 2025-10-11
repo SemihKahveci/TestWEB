@@ -391,11 +391,19 @@ const bulkCreateOrganizations = async (req, res) => {
             });
         }
 
+        // Eğer herhangi bir hata varsa, hiçbir veri eklenmesin
+        if (results.errors.length > 0) {
+            return res.status(400).json({
+                success: false,
+                message: 'Excel dosyasında hatalar bulundu. Lütfen hataları düzeltip tekrar deneyin.',
+                errors: results.errors
+            });
+        }
+
         res.json({
             success: true,
             message: `${results.success.length} organizasyon başarıyla eklendi`,
-            count: results.success.length,
-            errors: results.errors.length > 0 ? results.errors : undefined
+            count: results.success.length
         });
 
     } catch (error) {

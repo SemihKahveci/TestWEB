@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { evaluationAPI } from '../services/api';
 
 // Dinamik API base URL - hem local hem live'da çalışır
-const API_BASE_URL = import.meta.env.DEV 
+const API_BASE_URL = (import.meta as any).env?.DEV 
   ? 'http://localhost:5000'  // Development
   : '';  // Production (aynı domain'de serve edilir)
 
@@ -461,55 +461,118 @@ const AdminPanel: React.FC = () => {
         marginBottom: '16px'
       }}>
         {/* Search Box */}
-        <div style={{
-          padding: '4px 16px',
-          background: 'white',
-          borderRadius: '4px',
-          outline: '1px #E9ECEF solid',
-          display: 'flex',
-          justifyContent: 'flex-start',
-          alignItems: 'center',
-          gap: '8px'
-        }}>
-          <div style={{
-            width: '24px',
-            height: '24px',
-            display: 'flex',
-            justifyContent: 'center',
-            alignItems: 'center'
-          }}>
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M21 21L16.514 16.506L21 21ZM19 10.5C19 15.194 15.194 19 10.5 19C5.806 19 2 15.194 2 10.5C2 5.806 5.806 2 10.5 2C15.194 2 19 5.806 19 10.5Z" stroke="#ADB5BD" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-            </svg>
-          </div>
-           <input
-             type="text"
-             placeholder="Arama yapın..."
-             value={searchTerm}
-             onChange={(e) => {
-               setSearchTerm(e.target.value);
-               // HTML'deki gibi anlık filtreleme
-               setTimeout(() => {
-                 filterResults();
-               }, 100);
-             }}
-             onKeyPress={(e) => {
-               if (e.key === 'Enter') {
-                 filterResults();
-               }
-             }}
-             style={{
-               width: '240px',
-               border: 'none',
-               outline: 'none',
-               background: 'transparent',
-               color: '#232D42',
-               fontSize: '16px',
-               fontFamily: 'Inter',
-               fontWeight: 400,
-               lineHeight: '28px'
-             }}
-           />
+        <div style={{ position: 'relative' }}>
+          <i className="fas fa-search" style={{
+            position: 'absolute',
+            left: '16px',
+            top: '50%',
+            transform: 'translateY(-50%)',
+            color: '#6B7280',
+            fontSize: '16px',
+            zIndex: 1
+          }} />
+          <input
+            type="text"
+            placeholder="Tüm sütunlarda akıllı arama yapın..."
+            value={searchTerm}
+            onChange={(e) => {
+              const value = e.target.value;
+              setSearchTerm(value);
+              // HTML'deki gibi anlık filtreleme
+              setTimeout(() => {
+                filterResults();
+              }, 100);
+            }}
+            onInput={(e) => {
+              // onInput event'i daha güvenilir
+              const value = (e.target as HTMLInputElement).value;
+              setSearchTerm(value);
+              setTimeout(() => {
+                filterResults();
+              }, 100);
+            }}
+            onKeyDown={(e) => {
+              // Tüm metni seçip silme durumunu yakala
+              if (e.key === 'Delete' || e.key === 'Backspace') {
+                const input = e.target as HTMLInputElement;
+                if (input.selectionStart === 0 && input.selectionEnd === input.value.length) {
+                  setSearchTerm('');
+                  setTimeout(() => {
+                    filterResults();
+                  }, 100);
+                }
+              }
+              if (e.key === 'Enter') {
+                filterResults();
+              }
+            }}
+            onKeyUp={(e) => {
+              // Ctrl+A + Delete/Backspace kombinasyonunu yakala
+              const input = e.target as HTMLInputElement;
+              if (input.value === '') {
+                setSearchTerm('');
+                setTimeout(() => {
+                  filterResults();
+                }, 100);
+              }
+            }}
+            style={{
+              padding: '12px 16px 12px 48px',
+              border: '2px solid #E5E7EB',
+              borderRadius: '10px',
+              fontSize: '14px',
+              width: '350px',
+              outline: 'none',
+              backgroundColor: '#FAFAFA',
+              transition: 'all 0.2s ease',
+              fontFamily: 'Inter',
+              fontWeight: '500'
+            }}
+            onFocus={(e) => {
+              e.target.style.borderColor = '#3B82F6';
+              e.target.style.backgroundColor = 'white';
+              e.target.style.boxShadow = '0 0 0 3px rgba(59, 130, 246, 0.1)';
+            }}
+            onBlur={(e) => {
+              e.target.style.borderColor = '#E5E7EB';
+              e.target.style.backgroundColor = '#FAFAFA';
+              e.target.style.boxShadow = 'none';
+            }}
+          />
+          {searchTerm && (
+            <button
+              onClick={() => setSearchTerm('')}
+              style={{
+                position: 'absolute',
+                right: '12px',
+                top: '50%',
+                transform: 'translateY(-50%)',
+                background: 'none',
+                border: 'none',
+                color: '#9CA3AF',
+                cursor: 'pointer',
+                fontSize: '16px',
+                padding: '4px',
+                borderRadius: '50%',
+                width: '24px',
+                height: '24px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                transition: 'all 0.2s ease'
+              }}
+              onMouseEnter={(e) => {
+                (e.target as HTMLButtonElement).style.backgroundColor = '#F3F4F6';
+                (e.target as HTMLButtonElement).style.color = '#6B7280';
+              }}
+              onMouseLeave={(e) => {
+                (e.target as HTMLButtonElement).style.backgroundColor = 'transparent';
+                (e.target as HTMLButtonElement).style.color = '#9CA3AF';
+              }}
+            >
+              ×
+            </button>
+          )}
         </div>
 
         {/* Right Controls */}

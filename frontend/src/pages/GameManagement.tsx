@@ -168,7 +168,7 @@ const GameManagement: React.FC = () => {
     try {
       console.log('🔄 Yeni oyun ekleniyor:', formData);
       
-      let invoiceFileData = null;
+      let invoiceFileData: { fileName: string; fileType: string; fileData: string } | null = null;
       if (formData.invoiceFile) {
         const fileData = await convertFileToBase64(formData.invoiceFile);
         invoiceFileData = {
@@ -469,31 +469,102 @@ const GameManagement: React.FC = () => {
             alignItems: 'center',
             gap: '16px'
           }}>
-            <div style={{
-              position: 'relative',
-              display: 'flex',
-              alignItems: 'center',
-              background: '#F8F9FA',
-              borderRadius: '8px',
-              padding: '8px 12px',
-              border: '1px solid #E9ECEF'
-            }}>
-              <i className="fas fa-search" style={{ color: '#8A92A6', marginRight: '8px' }}></i>
+            <div style={{ position: 'relative' }}>
+              <i className="fas fa-search" style={{
+                position: 'absolute',
+                left: '16px',
+                top: '50%',
+                transform: 'translateY(-50%)',
+                color: '#6B7280',
+                fontSize: '16px',
+                zIndex: 1
+              }} />
               <input
                 type="text"
-                placeholder="Arama yapın..."
+                placeholder="Firma adı ve fatura no'da akıllı arama yapın..."
                 value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
+                onChange={(e) => {
+                  const value = e.target.value;
+                  setSearchTerm(value);
+                }}
+                onInput={(e) => {
+                  // onInput event'i daha güvenilir
+                  const value = (e.target as HTMLInputElement).value;
+                  setSearchTerm(value);
+                }}
+                onKeyDown={(e) => {
+                  // Tüm metni seçip silme durumunu yakala
+                  if (e.key === 'Delete' || e.key === 'Backspace') {
+                    const input = e.target as HTMLInputElement;
+                    if (input.selectionStart === 0 && input.selectionEnd === input.value.length) {
+                      setSearchTerm('');
+                    }
+                  }
+                }}
+                onKeyUp={(e) => {
+                  // Ctrl+A + Delete/Backspace kombinasyonunu yakala
+                  const input = e.target as HTMLInputElement;
+                  if (input.value === '') {
+                    setSearchTerm('');
+                  }
+                }}
                 style={{
-                  border: 'none',
-                  outline: 'none',
-                  background: 'transparent',
+                  padding: '12px 16px 12px 48px',
+                  border: '2px solid #E5E7EB',
+                  borderRadius: '10px',
                   fontSize: '14px',
+                  width: '350px',
+                  outline: 'none',
+                  backgroundColor: '#FAFAFA',
+                  transition: 'all 0.2s ease',
                   fontFamily: 'Inter',
-                  color: '#232D42',
-                  width: '200px'
+                  fontWeight: '500'
+                }}
+                onFocus={(e) => {
+                  e.target.style.borderColor = '#3B82F6';
+                  e.target.style.backgroundColor = 'white';
+                  e.target.style.boxShadow = '0 0 0 3px rgba(59, 130, 246, 0.1)';
+                }}
+                onBlur={(e) => {
+                  e.target.style.borderColor = '#E5E7EB';
+                  e.target.style.backgroundColor = '#FAFAFA';
+                  e.target.style.boxShadow = 'none';
                 }}
               />
+              {searchTerm && (
+                <button
+                  onClick={() => setSearchTerm('')}
+                  style={{
+                    position: 'absolute',
+                    right: '12px',
+                    top: '50%',
+                    transform: 'translateY(-50%)',
+                    background: 'none',
+                    border: 'none',
+                    color: '#9CA3AF',
+                    cursor: 'pointer',
+                    fontSize: '16px',
+                    padding: '4px',
+                    borderRadius: '50%',
+                    width: '24px',
+                    height: '24px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    transition: 'all 0.2s ease'
+                  }}
+                  onMouseEnter={(e) => {
+                    (e.target as HTMLButtonElement).style.backgroundColor = '#F3F4F6';
+                    (e.target as HTMLButtonElement).style.color = '#6B7280';
+                  }}
+                  onMouseLeave={(e) => {
+                    (e.target as HTMLButtonElement).style.backgroundColor = 'transparent';
+                    (e.target as HTMLButtonElement).style.color = '#9CA3AF';
+                  }}
+                >
+                  ×
+                </button>
+              )}
             </div>
           </div>
           <button

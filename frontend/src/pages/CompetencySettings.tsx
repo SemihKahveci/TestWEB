@@ -560,42 +560,102 @@ const CompetencySettings: React.FC = () => {
             alignItems: 'center',
             marginBottom: '16px'
           }}>
-            <div style={{
-              padding: '4px 16px',
-              background: 'white',
-              borderRadius: '4px',
-              outline: '1px #E9ECEF solid',
-              display: 'flex',
-              justifyContent: 'flex-start',
-              alignItems: 'center',
-              gap: '8px'
-            }}>
-              <div style={{
-                width: '24px',
-                height: '24px',
-                display: 'flex',
-                justifyContent: 'center',
-                alignItems: 'center'
-              }}>
-                <i className="fas fa-search" style={{ color: '#ADB5BD' }}></i>
-              </div>
+            <div style={{ position: 'relative' }}>
+              <i className="fas fa-search" style={{
+                position: 'absolute',
+                left: '16px',
+                top: '50%',
+                transform: 'translateY(-50%)',
+                color: '#6B7280',
+                fontSize: '16px',
+                zIndex: 1
+              }} />
               <input
                 type="text"
                 value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                placeholder="Arama yapın..."
+                onChange={(e) => {
+                  const value = e.target.value;
+                  setSearchTerm(value);
+                }}
+                onInput={(e) => {
+                  // onInput event'i daha güvenilir
+                  const value = (e.target as HTMLInputElement).value;
+                  setSearchTerm(value);
+                }}
+                onKeyDown={(e) => {
+                  // Tüm metni seçip silme durumunu yakala
+                  if (e.key === 'Delete' || e.key === 'Backspace') {
+                    const input = e.target as HTMLInputElement;
+                    if (input.selectionStart === 0 && input.selectionEnd === input.value.length) {
+                      setSearchTerm('');
+                    }
+                  }
+                }}
+                onKeyUp={(e) => {
+                  // Ctrl+A + Delete/Backspace kombinasyonunu yakala
+                  const input = e.target as HTMLInputElement;
+                  if (input.value === '') {
+                    setSearchTerm('');
+                  }
+                }}
+                placeholder="Yetkinlik adında akıllı arama yapın..."
                 style={{
-                  width: '240px',
-                  border: 'none',
+                  padding: '12px 16px 12px 48px',
+                  border: '2px solid #E5E7EB',
+                  borderRadius: '10px',
+                  fontSize: '14px',
+                  width: '350px',
                   outline: 'none',
-                  background: 'transparent',
-                  color: '#232D42',
-                  fontSize: '16px',
+                  backgroundColor: '#FAFAFA',
+                  transition: 'all 0.2s ease',
                   fontFamily: 'Inter',
-                  fontWeight: 400,
-                  lineHeight: '28px'
+                  fontWeight: '500'
+                }}
+                onFocus={(e) => {
+                  e.target.style.borderColor = '#3B82F6';
+                  e.target.style.backgroundColor = 'white';
+                  e.target.style.boxShadow = '0 0 0 3px rgba(59, 130, 246, 0.1)';
+                }}
+                onBlur={(e) => {
+                  e.target.style.borderColor = '#E5E7EB';
+                  e.target.style.backgroundColor = '#FAFAFA';
+                  e.target.style.boxShadow = 'none';
                 }}
               />
+              {searchTerm && (
+                <button
+                  onClick={() => setSearchTerm('')}
+                  style={{
+                    position: 'absolute',
+                    right: '12px',
+                    top: '50%',
+                    transform: 'translateY(-50%)',
+                    background: 'none',
+                    border: 'none',
+                    color: '#9CA3AF',
+                    cursor: 'pointer',
+                    fontSize: '16px',
+                    padding: '4px',
+                    borderRadius: '50%',
+                    width: '24px',
+                    height: '24px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    transition: 'all 0.2s ease'
+                  }}
+                  onMouseEnter={(e) => {
+                    (e.target as HTMLButtonElement).style.backgroundColor = '#F3F4F6';
+                    (e.target as HTMLButtonElement).style.color = '#6B7280';
+                  }}
+                  onMouseLeave={(e) => {
+                    (e.target as HTMLButtonElement).style.backgroundColor = 'transparent';
+                    (e.target as HTMLButtonElement).style.color = '#9CA3AF';
+                  }}
+                >
+                  ×
+                </button>
+              )}
             </div>
             <div style={{ display: 'flex', gap: '12px' }}>
               <button
