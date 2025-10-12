@@ -29,51 +29,48 @@ const createOrganization = async (req, res) => {
             pozisyon
         } = req.body;
 
-        // Gerekli alanları kontrol et
-        if (!genelMudurYardimciligi || !direktörlük || !müdürlük || 
-            !grupLiderligi || !pozisyon) {
+        // Gerekli alanları kontrol et - sadece Genel Müdür Yardımcılığı ve Pozisyon zorunlu
+        if (!genelMudurYardimciligi || genelMudurYardimciligi.trim() === '') {
             return res.status(400).json({
                 success: false,
-                message: 'Tüm alanlar doldurulmalıdır'
+                message: 'Genel Müdür Yardımcılığı alanı boş olamaz'
+            });
+        }
+        
+        if (!pozisyon || pozisyon.trim() === '') {
+            return res.status(400).json({
+                success: false,
+                message: 'Pozisyon alanı boş olamaz'
             });
         }
 
-        // Pozisyon duplicate kontrolü (sadece pozisyon için)
-        const existingPosition = await Organization.findOne({
-            pozisyon: pozisyon.trim()
-        });
-
-        if (existingPosition) {
-            return res.status(400).json({
-                success: false,
-                message: 'Bu pozisyon zaten mevcut! Farklı bir pozisyon girin.'
-            });
-        }
-
-        // Aynı organizasyon var mı kontrol et (tüm alanlar aynıysa)
-        const existingOrganization = await Organization.findOne({
+        // Diğer alanları temizle - boş olanları "-" yap, "-" olanları olduğu gibi bırak
+        const cleanedData = {
             genelMudurYardimciligi: genelMudurYardimciligi.trim(),
-            direktörlük: direktörlük.trim(),
-            müdürlük: müdürlük.trim(),
-            grupLiderligi: grupLiderligi.trim(),
+            direktörlük: direktörlük && direktörlük.trim() !== '' ? direktörlük.trim() : '-',
+            müdürlük: müdürlük && müdürlük.trim() !== '' ? müdürlük.trim() : '-',
+            grupLiderligi: grupLiderligi && grupLiderligi.trim() !== '' ? grupLiderligi.trim() : '-',
             pozisyon: pozisyon.trim()
+        };
+
+        // Birebir aynı organizasyon var mı kontrol et (tüm alanlar aynıysa)
+        const existingOrganization = await Organization.findOne({
+            genelMudurYardimciligi: cleanedData.genelMudurYardimciligi,
+            direktörlük: cleanedData.direktörlük,
+            müdürlük: cleanedData.müdürlük,
+            grupLiderligi: cleanedData.grupLiderligi,
+            pozisyon: cleanedData.pozisyon
         });
 
         if (existingOrganization) {
             return res.status(400).json({
                 success: false,
-                message: 'Bu organizasyon zaten mevcut!'
+                message: 'Bu organizasyon yapısı zaten mevcut! Aynı bilgilerle tekrar ekleyemezsiniz.'
             });
         }
 
         // Yeni organizasyon oluştur
-        const newOrganization = new Organization({
-            genelMudurYardimciligi,
-            direktörlük,
-            müdürlük,
-            grupLiderligi,
-            pozisyon
-        });
+        const newOrganization = new Organization(cleanedData);
 
         const savedOrganization = await newOrganization.save();
 
@@ -104,55 +101,51 @@ const updateOrganization = async (req, res) => {
             pozisyon
         } = req.body;
 
-        // Gerekli alanları kontrol et
-        if (!genelMudurYardimciligi || !direktörlük || !müdürlük || 
-            !grupLiderligi || !pozisyon) {
+        // Gerekli alanları kontrol et - sadece Genel Müdür Yardımcılığı ve Pozisyon zorunlu
+        if (!genelMudurYardimciligi || genelMudurYardimciligi.trim() === '') {
             return res.status(400).json({
                 success: false,
-                message: 'Tüm alanlar doldurulmalıdır'
+                message: 'Genel Müdür Yardımcılığı alanı boş olamaz'
+            });
+        }
+        
+        if (!pozisyon || pozisyon.trim() === '') {
+            return res.status(400).json({
+                success: false,
+                message: 'Pozisyon alanı boş olamaz'
             });
         }
 
-        // Pozisyon duplicate kontrolü (sadece pozisyon için, kendisi hariç)
-        const existingPosition = await Organization.findOne({
-            pozisyon: pozisyon.trim(),
-            _id: { $ne: id }
-        });
-
-        if (existingPosition) {
-            return res.status(400).json({
-                success: false,
-                message: 'Bu pozisyon zaten mevcut! Farklı bir pozisyon girin.'
-            });
-        }
-
-        // Aynı organizasyon var mı kontrol et (tüm alanlar aynıysa, kendisi hariç)
-        const existingOrganization = await Organization.findOne({
+        // Diğer alanları temizle - boş olanları "-" yap, "-" olanları olduğu gibi bırak
+        const cleanedData = {
             genelMudurYardimciligi: genelMudurYardimciligi.trim(),
-            direktörlük: direktörlük.trim(),
-            müdürlük: müdürlük.trim(),
-            grupLiderligi: grupLiderligi.trim(),
-            pozisyon: pozisyon.trim(),
+            direktörlük: direktörlük && direktörlük.trim() !== '' ? direktörlük.trim() : '-',
+            müdürlük: müdürlük && müdürlük.trim() !== '' ? müdürlük.trim() : '-',
+            grupLiderligi: grupLiderligi && grupLiderligi.trim() !== '' ? grupLiderligi.trim() : '-',
+            pozisyon: pozisyon.trim()
+        };
+
+        // Birebir aynı organizasyon var mı kontrol et (tüm alanlar aynıysa, kendisi hariç)
+        const existingOrganization = await Organization.findOne({
+            genelMudurYardimciligi: cleanedData.genelMudurYardimciligi,
+            direktörlük: cleanedData.direktörlük,
+            müdürlük: cleanedData.müdürlük,
+            grupLiderligi: cleanedData.grupLiderligi,
+            pozisyon: cleanedData.pozisyon,
             _id: { $ne: id }
         });
 
         if (existingOrganization) {
             return res.status(400).json({
                 success: false,
-                message: 'Bu organizasyon zaten mevcut!'
+                message: 'Bu organizasyon yapısı zaten mevcut! Aynı bilgilerle tekrar ekleyemezsiniz.'
             });
         }
 
         // Organizasyonu güncelle
         const updatedOrganization = await Organization.findByIdAndUpdate(
             id,
-            {
-                genelMudurYardimciligi,
-                direktörlük,
-                müdürlük,
-                grupLiderligi,
-                pozisyon
-            },
+            cleanedData,
             { new: true, runValidators: true }
         );
 
@@ -291,31 +284,31 @@ const bulkCreateOrganizations = async (req, res) => {
 
                 const [genelMudurYardimciligi, direktörlük, müdürlük, grupLiderligi, pozisyon] = row;
 
-                // Boş alan kontrolü: null, undefined, boş string veya sadece '-' karakteri
-                const isEmpty = (value) => !value || value.toString().trim() === '' || value.toString().trim() === '-';
+                // Zorunlu alan kontrolü: sadece Genel Müdür Yardımcılığı ve Pozisyon zorunlu
+                const isEmpty = (value) => !value || value.toString().trim() === '';
                 
-                if (isEmpty(genelMudurYardimciligi) || isEmpty(direktörlük) || isEmpty(müdürlük) || isEmpty(grupLiderligi) || isEmpty(pozisyon)) {
+                if (isEmpty(genelMudurYardimciligi) || isEmpty(pozisyon)) {
                     const missingFields = [];
                     if (isEmpty(genelMudurYardimciligi)) missingFields.push('Genel Müdür Yardımcılığı');
-                    if (isEmpty(direktörlük)) missingFields.push('Direktörlük');
-                    if (isEmpty(müdürlük)) missingFields.push('Müdürlük');
-                    if (isEmpty(grupLiderligi)) missingFields.push('Grup Liderliği');
                     if (isEmpty(pozisyon)) missingFields.push('Pozisyon');
                     
                     errors.push({
                         row: rowNumber,
-                        message: `Eksik/geçersiz alanlar: ${missingFields.join(', ')}. Tüm alanlar dolu olmalıdır (boş veya '-' karakteri kabul edilmez).`
+                        message: `Zorunlu alanlar eksik: ${missingFields.join(', ')}. Bu alanlar boş olamaz.`
                     });
                     continue;
                 }
 
-                organizations.push({
+                // Diğer alanları temizle - boş olanları "-" yap, "-" olanları olduğu gibi bırak
+                const cleanedOrgData = {
                     genelMudurYardimciligi: genelMudurYardimciligi.toString().trim(),
-                    direktörlük: direktörlük.toString().trim(),
-                    müdürlük: müdürlük.toString().trim(),
-                    grupLiderligi: grupLiderligi.toString().trim(),
+                    direktörlük: direktörlük && direktörlük.toString().trim() !== '' ? direktörlük.toString().trim() : '-',
+                    müdürlük: müdürlük && müdürlük.toString().trim() !== '' ? müdürlük.toString().trim() : '-',
+                    grupLiderligi: grupLiderligi && grupLiderligi.toString().trim() !== '' ? grupLiderligi.toString().trim() : '-',
                     pozisyon: pozisyon.toString().trim()
-                });
+                };
+
+                organizations.push(cleanedOrgData);
 
             } catch (error) {
                 errors.push({
@@ -336,20 +329,7 @@ const bulkCreateOrganizations = async (req, res) => {
             const rowNumber = i + 2; // Excel'de satır numarası
             
             try {
-                // Pozisyon duplicate kontrolü
-                const existingPosition = await Organization.findOne({
-                    pozisyon: org.pozisyon
-                });
-
-                if (existingPosition) {
-                    results.errors.push({
-                        row: rowNumber,
-                        message: 'Bu pozisyon zaten mevcut! Farklı bir pozisyon girin.'
-                    });
-                    continue;
-                }
-
-                // Aynı organizasyon var mı kontrol et
+                // Birebir aynı organizasyon var mı kontrol et
                 const existingOrganization = await Organization.findOne({
                     genelMudurYardimciligi: org.genelMudurYardimciligi,
                     direktörlük: org.direktörlük,
@@ -361,7 +341,7 @@ const bulkCreateOrganizations = async (req, res) => {
                 if (existingOrganization) {
                     results.errors.push({
                         row: rowNumber,
-                        message: 'Bu organizasyon zaten mevcut!'
+                        message: 'Bu organizasyon yapısı zaten mevcut! Aynı bilgilerle tekrar ekleyemezsiniz.'
                     });
                     continue;
                 }

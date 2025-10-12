@@ -146,9 +146,47 @@ const Organization: React.FC = () => {
   const handleSubmitAdd = async () => {
     try {
       setIsSubmitting(true);
-      console.log('🔄 Yeni organizasyon ekleniyor:', formData);
       
-      const result = await organizationAPI.create(formData);
+      // Form validasyonu
+      if (!formData.genelMudurYardimciligi || formData.genelMudurYardimciligi.trim() === '') {
+        setErrorMessage('Genel Müdür Yardımcılığı alanı boş olamaz!');
+        setShowErrorPopup(true);
+        return;
+      }
+      
+      if (!formData.pozisyon || formData.pozisyon.trim() === '') {
+        setErrorMessage('Pozisyon alanı boş olamaz!');
+        setShowErrorPopup(true);
+        return;
+      }
+      
+      // Diğer alanları temizle - boş olanları "-" yap, "-" olanları olduğu gibi bırak
+      const cleanedFormData = {
+        genelMudurYardimciligi: formData.genelMudurYardimciligi.trim(),
+        direktörlük: formData.direktörlük.trim() === '' ? '-' : formData.direktörlük.trim(),
+        müdürlük: formData.müdürlük.trim() === '' ? '-' : formData.müdürlük.trim(),
+        grupLiderligi: formData.grupLiderligi.trim() === '' ? '-' : formData.grupLiderligi.trim(),
+        pozisyon: formData.pozisyon.trim()
+      };
+      
+      // Birebir aynı satır kontrolü
+      const isDuplicate = organizations.some(org => 
+        org.genelMudurYardimciligi === cleanedFormData.genelMudurYardimciligi &&
+        org.direktörlük === cleanedFormData.direktörlük &&
+        org.müdürlük === cleanedFormData.müdürlük &&
+        org.grupLiderligi === cleanedFormData.grupLiderligi &&
+        org.pozisyon === cleanedFormData.pozisyon
+      );
+      
+      if (isDuplicate) {
+        setErrorMessage('Bu organizasyon yapısı zaten mevcut! Aynı bilgilerle tekrar ekleyemezsiniz.');
+        setShowErrorPopup(true);
+        return;
+      }
+      
+      console.log('🔄 Yeni organizasyon ekleniyor:', cleanedFormData);
+      
+      const result = await organizationAPI.create(cleanedFormData);
       console.log('✅ Organizasyon başarıyla eklendi:', result);
       
       // Yeni organizasyonu listeye ekle
@@ -171,9 +209,48 @@ const Organization: React.FC = () => {
     try {
       if (!selectedOrganization) return;
       setIsSubmitting(true);
-      console.log('🔄 Organizasyon güncelleniyor:', selectedOrganization._id, formData);
       
-      const result = await organizationAPI.update(selectedOrganization._id, formData);
+      // Form validasyonu
+      if (!formData.genelMudurYardimciligi || formData.genelMudurYardimciligi.trim() === '') {
+        setErrorMessage('Genel Müdür Yardımcılığı alanı boş olamaz!');
+        setShowErrorPopup(true);
+        return;
+      }
+      
+      if (!formData.pozisyon || formData.pozisyon.trim() === '') {
+        setErrorMessage('Pozisyon alanı boş olamaz!');
+        setShowErrorPopup(true);
+        return;
+      }
+      
+      // Diğer alanları temizle - boş olanları "-" yap, "-" olanları olduğu gibi bırak
+      const cleanedFormData = {
+        genelMudurYardimciligi: formData.genelMudurYardimciligi.trim(),
+        direktörlük: formData.direktörlük.trim() === '' ? '-' : formData.direktörlük.trim(),
+        müdürlük: formData.müdürlük.trim() === '' ? '-' : formData.müdürlük.trim(),
+        grupLiderligi: formData.grupLiderligi.trim() === '' ? '-' : formData.grupLiderligi.trim(),
+        pozisyon: formData.pozisyon.trim()
+      };
+      
+      // Birebir aynı satır kontrolü (kendi kaydı hariç)
+      const isDuplicate = organizations.some(org => 
+        org._id !== selectedOrganization._id &&
+        org.genelMudurYardimciligi === cleanedFormData.genelMudurYardimciligi &&
+        org.direktörlük === cleanedFormData.direktörlük &&
+        org.müdürlük === cleanedFormData.müdürlük &&
+        org.grupLiderligi === cleanedFormData.grupLiderligi &&
+        org.pozisyon === cleanedFormData.pozisyon
+      );
+      
+      if (isDuplicate) {
+        setErrorMessage('Bu organizasyon yapısı zaten mevcut! Aynı bilgilerle tekrar ekleyemezsiniz.');
+        setShowErrorPopup(true);
+        return;
+      }
+      
+      console.log('🔄 Organizasyon güncelleniyor:', selectedOrganization._id, cleanedFormData);
+      
+      const result = await organizationAPI.update(selectedOrganization._id, cleanedFormData);
       console.log('✅ Organizasyon başarıyla güncellendi:', result);
       
       // Güncellenen organizasyonu listede güncelle
@@ -379,8 +456,8 @@ const Organization: React.FC = () => {
     try {
       setIsSubmitting(true);
       
-      const formData = new FormData();
-      formData.append('excelFile', selectedFile);
+      const formDataToSend = new FormData();
+      formDataToSend.append('excelFile', selectedFile);
 
       const token = localStorage.getItem('token');
       const response = await fetch('/api/organization/import', {
@@ -388,7 +465,7 @@ const Organization: React.FC = () => {
         headers: {
           'Authorization': `Bearer ${token}`
         },
-        body: formData
+        body: formDataToSend
       });
 
       // HTTP status koduna göre hata yönetimi
@@ -1092,7 +1169,7 @@ const Organization: React.FC = () => {
                     marginBottom: '8px',
                     fontFamily: 'Inter'
                   }}>
-                    Genel Müdür Yardımcılığı
+                    Genel Müdür Yardımcılığı <span style={{ color: '#DC2626' }}>*</span>
                   </label>
                   <input
                     type="text"
@@ -1213,7 +1290,7 @@ const Organization: React.FC = () => {
                     marginBottom: '8px',
                     fontFamily: 'Inter'
                   }}>
-                    Pozisyon
+                    Pozisyon <span style={{ color: '#DC2626' }}>*</span>
                   </label>
                   <input
                     type="text"
@@ -1468,7 +1545,7 @@ const Organization: React.FC = () => {
                     marginBottom: '8px',
                     fontFamily: 'Inter'
                   }}>
-                    Pozisyon
+                    Pozisyon <span style={{ color: '#DC2626' }}>*</span>
                   </label>
                   <input
                     type="text"
