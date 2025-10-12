@@ -224,11 +224,6 @@ apiRouter.use('/authorization', authorizationRoutes);
 // API route'larını uygula
 app.use('/api', apiRouter);
 
-// Ana sayfa
-app.get('/', (req, res) => {
-    res.sendFile(path.join(__dirname, 'public', 'admin.html'));
-});
-
 // 404 handler
 app.use((req, res) => {
     res.status(404).json({ message: 'Sayfa bulunamadı' });

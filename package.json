@@ -1,6 +1,7 @@
 {
   "dependencies": {
     "bcryptjs": "^2.4.3",
+    "concurrently": "^8.2.2",
     "cors": "^2.8.5",
     "csv-parser": "^3.2.0",
     "dotenv": "^16.4.7",
@@ -22,7 +23,11 @@
     "npm": "9.x"
   },
   "scripts": {
-    "start": "node ./backend/app.js",
+    "start": "concurrently \"npm run backend\" \"npm run frontend\"",
+    "backend": "node ./backend/app.js",
+    "frontend": "cd frontend && npm run dev",
+    "build": "cd frontend && npm run build",
+    "install-all": "npm install && cd frontend && npm install",
     "update-reports": "node ./backend/scripts/updateGameReports.js",
     "update-reports-code": "node ./backend/scripts/updateGameReports.js"
   }
