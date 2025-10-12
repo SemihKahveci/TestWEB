@@ -62,8 +62,8 @@ const Grouping: React.FC = () => {
   const [selectedOrganizations, setSelectedOrganizations] = useState<string[]>([]);
   const [selectedPersons, setSelectedPersons] = useState<string[]>([]);
   const [selectedPlanets, setSelectedPlanets] = useState<string[]>([]);
-  const [manualPersons, setManualPersons] = useState<string[]>([]);
-  const [autoPersons, setAutoPersons] = useState<string[]>([]);
+  const [manualPersons, setManualPersons] = useState<string[]>([]); // Manuel eklenen kişiler
+  const [autoPersons, setAutoPersons] = useState<string[]>([]); // Otomatik eklenen kişiler
   
   // Data states
   const [organizations, setOrganizations] = useState<Organization[]>([]);
@@ -131,8 +131,20 @@ const Grouping: React.FC = () => {
 
       const result = await response.json();
       if (result.success) {
-        setGroups(result.groups || []);
-        console.log('✅ Gruplar yüklendi:', result.groups?.length || 0);
+        // Grupları sırala: Aktifler üstte, pasifler altta, her grup kendi içinde eklenme zamanına göre
+        const sortedGroups = (result.groups || []).sort((a: any, b: any) => {
+          // Önce status'a göre sırala (Aktif > Pasif)
+          if (a.status === 'Aktif' && b.status !== 'Aktif') return -1;
+          if (a.status !== 'Aktif' && b.status === 'Aktif') return 1;
+          
+          // Aynı status'taysa, eklenme zamanına göre sırala (yeni olan üstte)
+          const dateA = new Date(a.createdAt || a.updatedAt || 0);
+          const dateB = new Date(b.createdAt || b.updatedAt || 0);
+          return dateB.getTime() - dateA.getTime();
+        });
+        
+        setGroups(sortedGroups);
+        console.log('✅ Gruplar yüklendi:', sortedGroups.length);
       } else {
         throw new Error(result.message || 'Grup listesi alınamadı');
       }
@@ -159,43 +171,56 @@ const Grouping: React.FC = () => {
         if (result.success) {
           const orgs: Organization[] = [];
           
-          // Organizasyon verilerini kategorilere ayır
-          result.organizations?.forEach((org: any) => {
-            if (org.genelMudurYardimciligi) {
-              orgs.push({
-                value: `genelMudurYardimciligi:${org.genelMudurYardimciligi}`,
-                label: org.genelMudurYardimciligi,
-                type: 'genelMudurYardimciligi'
-              });
-            }
-            if (org.direktörlük) {
-              orgs.push({
-                value: `direktörlük:${org.direktörlük}`,
-                label: org.direktörlük,
-                type: 'direktörlük'
-              });
-            }
-            if (org.müdürlük) {
-              orgs.push({
-                value: `müdürlük:${org.müdürlük}`,
-                label: org.müdürlük,
-                type: 'müdürlük'
-              });
-            }
-            if (org.grupLiderligi) {
-              orgs.push({
-                value: `grupLiderligi:${org.grupLiderligi}`,
-                label: org.grupLiderligi,
-                type: 'grupLiderligi'
-              });
-            }
-            if (org.pozisyon) {
-              orgs.push({
-                value: `pozisyon:${org.pozisyon}`,
-                label: org.pozisyon,
-                type: 'pozisyon'
-              });
-            }
+          // Her alan için benzersiz değerleri topla (HTML'deki gibi)
+          const genelMudurYardimciliklari = [...new Set(result.organizations?.map((org: any) => org.genelMudurYardimciligi).filter(Boolean) || [])] as string[];
+          const direktörlükler = [...new Set(result.organizations?.map((org: any) => org.direktörlük).filter(Boolean) || [])] as string[];
+          const müdürlükler = [...new Set(result.organizations?.map((org: any) => org.müdürlük).filter(Boolean) || [])] as string[];
+          const grupLiderlikleri = [...new Set(result.organizations?.map((org: any) => org.grupLiderligi).filter(Boolean) || [])] as string[];
+          const pozisyonlar = [...new Set(result.organizations?.map((org: any) => org.pozisyon).filter(Boolean) || [])] as string[];
+          
+          // Genel Müdür Yardımcılıkları
+          genelMudurYardimciliklari.forEach(value => {
+            orgs.push({
+              value: `genelMudurYardimciligi:${value}`,
+              label: value,
+              type: 'genelMudurYardimciligi'
+            });
+          });
+          
+          // Direktörlükler
+          direktörlükler.forEach(value => {
+            orgs.push({
+              value: `direktörlük:${value}`,
+              label: value,
+              type: 'direktörlük'
+            });
+          });
+          
+          // Müdürlükler
+          müdürlükler.forEach(value => {
+            orgs.push({
+              value: `müdürlük:${value}`,
+              label: value,
+              type: 'müdürlük'
+            });
+          });
+          
+          // Grup Liderlikleri
+          grupLiderlikleri.forEach(value => {
+            orgs.push({
+              value: `grupLiderligi:${value}`,
+              label: value,
+              type: 'grupLiderligi'
+            });
+          });
+          
+          // Pozisyonlar
+          pozisyonlar.forEach(value => {
+            orgs.push({
+              value: `pozisyon:${value}`,
+              label: value,
+              type: 'pozisyon'
+            });
           });
           
           setOrganizations(orgs);
@@ -219,14 +244,17 @@ const Grouping: React.FC = () => {
         const result = await response.json();
         if (result.success) {
           const persons: Person[] = [];
-          result.authorizations?.forEach((auth: any) => {
-            if (auth.adSoyad) {
-              persons.push({
-                value: `personName:${auth.adSoyad}`,
-                label: auth.adSoyad
-              });
-            }
+          
+          // Sadece ad soyadları topla (benzersiz değerler)
+          const adSoyadlar = [...new Set(result.authorizations?.map((auth: any) => auth.personName).filter(Boolean) || [])] as string[];
+          
+          adSoyadlar.forEach(value => {
+            persons.push({
+              value: `personName:${value}`,
+              label: value
+            });
           });
+          
           setPersons(persons);
         }
       }
@@ -237,28 +265,12 @@ const Grouping: React.FC = () => {
 
   const loadPlanets = async () => {
     try {
-      const token = localStorage.getItem('token');
-      const response = await fetch('/api/authorization', {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      });
-
-      if (response.ok) {
-        const result = await response.json();
-        if (result.success) {
-          const planets: Planet[] = [];
-          result.authorizations?.forEach((auth: any) => {
-            if (auth.gezegen) {
-              planets.push({
-                value: auth.gezegen,
-                label: auth.gezegen
-              });
-            }
-          });
-          setPlanets(planets);
-        }
-      }
+      // HTML'deki gibi sabit gezegen listesi
+      const planets: Planet[] = [
+        { value: 'venus', label: 'Venüs (Belirsizlik Yönetimi - Müşteri Odaklılık)' },
+        { value: 'titan', label: 'Titan (İnsanları Etkileme - Güven Veren İşbirlikçi ve Sinerji)' }
+      ];
+      setPlanets(planets);
     } catch (error) {
       console.error('❌ Gezegen yükleme hatası:', error);
     }
@@ -473,12 +485,13 @@ const Grouping: React.FC = () => {
       const token = localStorage.getItem('token');
       
       const groupData = {
-        groupName,
-        isActive: formData.isActive,
+        name: groupName, // Backend 'name' alanını bekliyor
+        status: formData.isActive ? 'Aktif' : 'Pasif', // Backend 'Aktif'/'Pasif' bekliyor
         organizations: selectedOrganizations,
         persons: selectedPersons,
         planets: selectedPlanets
       };
+
 
       const url = selectedGroup ? `/api/group/${selectedGroup._id}` : '/api/group';
       const method = selectedGroup ? 'PUT' : 'POST';
@@ -542,10 +555,10 @@ const Grouping: React.FC = () => {
     }
   };
 
-  const addOrganization = () => {
+  const addOrganization = async () => {
     const select = document.getElementById('organizationSelect') as HTMLSelectElement;
     const selectedValue = select.value;
-    
+
     if (!selectedValue) {
       setErrorMessage('Lütfen bir organizasyon seçin!');
       setShowErrorPopup(true);
@@ -558,23 +571,26 @@ const Grouping: React.FC = () => {
       return;
     }
 
-    setSelectedOrganizations([...selectedOrganizations, selectedValue]);
+    const newOrganizations = [...selectedOrganizations, selectedValue];
+    setSelectedOrganizations(newOrganizations);
     select.value = '';
     
-    // Otomatik kişi ekleme
-    addMatchingPersons();
+    // Eşleşen kişileri otomatik ekle (güncellenmiş organizasyon listesi ile)
+    await addMatchingPersonsForOrganizations(newOrganizations);
   };
 
-  const removeOrganization = (orgValue: string) => {
-    setSelectedOrganizations(selectedOrganizations.filter(org => org !== orgValue));
+  const removeOrganization = async (orgValue: string) => {
+    const newOrganizations = selectedOrganizations.filter(org => org !== orgValue);
+    setSelectedOrganizations(newOrganizations);
+    
     // Organizasyon çıkarıldığında eşleşen kişileri güncelle
-    updateMatchingPersons();
+    await updateMatchingPersonsForOrganizations(newOrganizations);
   };
 
-  // Eşleşen kişileri otomatik ekle
-  const addMatchingPersons = async () => {
+  // Eşleşen kişileri otomatik ekle (belirli organizasyon listesi ile)
+  const addMatchingPersonsForOrganizations = async (organizations: string[]) => {
     // Organizasyon seçilmemişse otomatik kişi ekleme yapma
-    if (selectedOrganizations.length === 0) {
+    if (organizations.length === 0) {
       return;
     }
 
@@ -587,7 +603,7 @@ const Grouping: React.FC = () => {
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({
-          organizations: selectedOrganizations
+          organizations: organizations
         })
       });
 
@@ -596,7 +612,8 @@ const Grouping: React.FC = () => {
       }
 
       const result = await response.json();
-      if (result.success && result.persons.length > 0) {
+      
+      if (result.success && result.persons && result.persons.length > 0) {
         // Yeni kişileri ekle (zaten var olanları atla)
         let addedCount = 0;
         const newPersons = [...selectedPersons];
@@ -630,13 +647,13 @@ const Grouping: React.FC = () => {
     }
   };
 
-  // Organizasyon değişikliklerinde eşleşen kişileri güncelle
-  const updateMatchingPersons = async () => {
+  // Organizasyon değişikliklerinde eşleşen kişileri güncelle (belirli organizasyon listesi ile)
+  const updateMatchingPersonsForOrganizations = async (organizations: string[]) => {
     try {
       const token = localStorage.getItem('token');
       
       // Eğer organizasyon yoksa, sadece manuel eklenen kişileri tut
-      if (selectedOrganizations.length === 0) {
+      if (organizations.length === 0) {
         // Otomatik eklenen kişileri temizle, manuel eklenenleri koru
         setAutoPersons([]);
         setSelectedPersons([...manualPersons]);
@@ -650,7 +667,7 @@ const Grouping: React.FC = () => {
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({
-          organizations: selectedOrganizations
+          organizations: organizations
         })
       });
 
@@ -668,7 +685,7 @@ const Grouping: React.FC = () => {
         const newAutoPersons: string[] = [];
         
         // Yeni eşleşen kişileri ekle
-        if (result.persons.length > 0) {
+        if (result.persons && result.persons.length > 0) {
           result.persons.forEach((person: any) => {
             if (!newPersons.includes(person.value)) {
               newPersons.push(person.value);
@@ -681,9 +698,10 @@ const Grouping: React.FC = () => {
         setAutoPersons(newAutoPersons);
       }
     } catch (error) {
-      console.error('Eşleşen kişileri güncelleme hatası:', error);
+      // Hata durumunda sessizce devam et, kullanıcıyı rahatsız etme
     }
   };
+
 
   const addPerson = () => {
     const select = document.getElementById('personSelect') as HTMLSelectElement;
@@ -1617,10 +1635,7 @@ const Grouping: React.FC = () => {
                     }}
                   >
                     <option value="">Gezegen seçiniz</option>
-                    {[
-                      { value: 'venus', label: 'Venüs (Belirsizlik Yönetimi - Müşteri Odaklılık)' },
-                      { value: 'titan', label: 'Titan (İnsanları Etkileme - Güven Veren İşbirlikçi ve Sinerji)' }
-                    ]
+                    {planets
                       .filter(planet => !selectedPlanets.includes(planet.value))
                       .map(planet => (
                         <option key={planet.value} value={planet.value}>{planet.label}</option>
@@ -1683,10 +1698,6 @@ const Grouping: React.FC = () => {
                           }}
                         >
                           {(() => {
-                            const planets = [
-                              { value: 'venus', label: 'Venüs (Belirsizlik Yönetimi - Müşteri Odaklılık)' },
-                              { value: 'titan', label: 'Titan (İnsanları Etkileme - Güven Veren İşbirlikçi ve Sinerji)' }
-                            ];
                             const planetObj = planets.find(p => p.value === planet);
                             return planetObj ? planetObj.label : planet;
                           })()}
@@ -2194,10 +2205,7 @@ const Grouping: React.FC = () => {
                     }}
                   >
                     <option value="">Gezegen seçiniz</option>
-                    {[
-                      { value: 'venus', label: 'Venüs (Belirsizlik Yönetimi - Müşteri Odaklılık)' },
-                      { value: 'titan', label: 'Titan (İnsanları Etkileme - Güven Veren İşbirlikçi ve Sinerji)' }
-                    ]
+                    {planets
                       .filter(planet => !selectedPlanets.includes(planet.value))
                       .map(planet => (
                         <option key={planet.value} value={planet.value}>{planet.label}</option>
@@ -2260,10 +2268,6 @@ const Grouping: React.FC = () => {
                           }}
                         >
                           {(() => {
-                            const planets = [
-                              { value: 'venus', label: 'Venüs (Belirsizlik Yönetimi - Müşteri Odaklılık)' },
-                              { value: 'titan', label: 'Titan (İnsanları Etkileme - Güven Veren İşbirlikçi ve Sinerji)' }
-                            ];
                             const planetObj = planets.find(p => p.value === planet);
                             return planetObj ? planetObj.label : planet;
                           })()}
@@ -2562,10 +2566,6 @@ const Grouping: React.FC = () => {
                     gap: '8px'
                   }}>
                     {selectedGroup.planets.map((planet, index) => {
-                      const planets = [
-                        { value: 'venus', label: 'Venüs (Belirsizlik Yönetimi - Müşteri Odaklılık)' },
-                        { value: 'titan', label: 'Titan (İnsanları Etkileme - Güven Veren İşbirlikçi ve Sinerji)' }
-                      ];
                       const planetObj = planets.find(p => p.value === planet);
                       const displayValue = planetObj ? planetObj.label : planet;
                       return (

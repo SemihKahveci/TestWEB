@@ -3,33 +3,55 @@ import { useNavigate } from 'react-router-dom';
 
 interface Authorization {
   _id: string;
-  employeeId?: string;
-  name?: string;
+  sicilNo?: string;
+  personName?: string;
   email?: string;
-  role?: string;
+  title?: string;
 }
 
 const AuthorizationPage: React.FC = () => {
+  // CSS animasyonu için style tag'i ekle
+  React.useEffect(() => {
+    const style = document.createElement('style');
+    style.textContent = `
+      @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+      }
+    `;
+    document.head.appendChild(style);
+    
+    return () => {
+      document.head.removeChild(style);
+    };
+  }, []);
+
   const navigate = useNavigate();
   const [authorizations, setAuthorizations] = useState<Authorization[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
+  const [isSearching, setIsSearching] = useState(false);
+  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('');
   const [showAddPopup, setShowAddPopup] = useState(false);
   const [showEditPopup, setShowEditPopup] = useState(false);
   const [showDeletePopup, setShowDeletePopup] = useState(false);
   const [showSuccessPopup, setShowSuccessPopup] = useState(false);
   const [showErrorPopup, setShowErrorPopup] = useState(false);
+  const [showImportPopup, setShowImportPopup] = useState(false);
   const [successMessage, setSuccessMessage] = useState('');
   const [errorMessage, setErrorMessage] = useState('');
   const [selectedAuthorization, setSelectedAuthorization] = useState<Authorization | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [importMessage, setImportMessage] = useState('');
+  const [importMessageType, setImportMessageType] = useState<'success' | 'error'>('success');
   
   // Form states
   const [formData, setFormData] = useState({
-    employeeId: '',
-    name: '',
+    sicilNo: '',
+    personName: '',
     email: '',
-    role: ''
+    title: ''
   });
 
   // Pagination states
@@ -39,6 +61,17 @@ const AuthorizationPage: React.FC = () => {
   useEffect(() => {
     loadAuthorizations();
   }, []);
+
+  // Debounce search term
+  useEffect(() => {
+    setIsSearching(true);
+    const timer = setTimeout(() => {
+      setDebouncedSearchTerm(searchTerm);
+      setIsSearching(false);
+    }, 300);
+
+    return () => clearTimeout(timer);
+  }, [searchTerm]);
 
   const loadAuthorizations = async () => {
     try {
@@ -60,7 +93,7 @@ const AuthorizationPage: React.FC = () => {
       console.log('✅ Yetkilendirmeler yüklendi:', result);
       
       if (result.success) {
-        setAuthorizations(result.data || []);
+        setAuthorizations(result.authorizations || []);
       } else {
         throw new Error(result.message || 'Yetkilendirme listesi alınamadı');
       }
@@ -75,10 +108,10 @@ const AuthorizationPage: React.FC = () => {
 
   const handleAddAuthorization = () => {
     setFormData({
-      employeeId: '',
-      name: '',
+      sicilNo: '',
+      personName: '',
       email: '',
-      role: ''
+      title: ''
     });
     setShowAddPopup(true);
   };
@@ -86,10 +119,10 @@ const AuthorizationPage: React.FC = () => {
   const handleEditAuthorization = (authorization: Authorization) => {
     setSelectedAuthorization(authorization);
     setFormData({
-      employeeId: authorization.employeeId || '',
-      name: authorization.name || '',
+      sicilNo: authorization.sicilNo || '',
+      personName: authorization.personName || '',
       email: authorization.email || '',
-      role: authorization.role || ''
+      title: authorization.title || ''
     });
     setShowEditPopup(true);
   };
@@ -123,7 +156,7 @@ const AuthorizationPage: React.FC = () => {
       console.log('✅ Yetkilendirme başarıyla eklendi:', responseData);
       
       // Yeni yetkilendirmeyi listeye ekle
-      setAuthorizations(prev => [...prev, responseData.data]);
+      setAuthorizations(prev => [...prev, responseData.authorization]);
       
       // Başarı mesajı göster
       setShowAddPopup(false);
@@ -164,7 +197,7 @@ const AuthorizationPage: React.FC = () => {
       
       // Güncellenen yetkilendirmeyi listede güncelle
       setAuthorizations(prev => prev.map(auth => 
-        auth._id === selectedAuthorization._id ? responseData.data : auth
+        auth._id === selectedAuthorization._id ? responseData.authorization : auth
       ));
       
       // Başarı mesajı göster
@@ -216,16 +249,35 @@ const AuthorizationPage: React.FC = () => {
     }
   };
 
-  // Filter authorizations based on search term
+  // Filter authorizations based on search term (sadece kişi adına göre)
   const filteredAuthorizations = authorizations.filter(auth => {
-    const searchLower = searchTerm.toLowerCase();
+    const searchLower = debouncedSearchTerm.toLowerCase();
     return (
-      (auth.employeeId && auth.employeeId.toLowerCase().includes(searchLower)) ||
-      (auth.name && auth.name.toLowerCase().includes(searchLower)) ||
-      (auth.email && auth.email.toLowerCase().includes(searchLower)) ||
-      (auth.role && auth.role.toLowerCase().includes(searchLower))
+      auth.personName && auth.personName.toLowerCase().includes(searchLower)
     );
   });
+
+  // Highlight search term in text
+  const highlightText = (text: string, searchTerm: string) => {
+    if (!searchTerm || !text) return text;
+    
+    const regex = new RegExp(`(${searchTerm})`, 'gi');
+    const parts = text.split(regex);
+    
+    return parts.map((part, index) => 
+      regex.test(part) ? (
+        <span key={index} style={{ 
+          backgroundColor: '#FEF3C7', 
+          color: '#92400E',
+          fontWeight: '600',
+          padding: '2px 4px',
+          borderRadius: '4px'
+        }}>
+          {part}
+        </span>
+      ) : part
+    );
+  };
 
   // Pagination
   const totalPages = Math.ceil(filteredAuthorizations.length / itemsPerPage);
@@ -235,6 +287,151 @@ const AuthorizationPage: React.FC = () => {
 
   const handlePageChange = (page: number) => {
     setCurrentPage(page);
+  };
+
+  // Excel Import Functions
+  const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      setSelectedFile(file);
+      setImportMessage('');
+    }
+  };
+
+  const handleFileDrop = (event: React.DragEvent<HTMLDivElement>) => {
+    event.preventDefault();
+    const file = event.dataTransfer.files[0];
+    if (file && (file.name.endsWith('.xlsx') || file.name.endsWith('.xls'))) {
+      setSelectedFile(file);
+      setImportMessage('');
+    }
+  };
+
+  const handleDragOver = (event: React.DragEvent<HTMLDivElement>) => {
+    event.preventDefault();
+  };
+
+  const handleDragLeave = (event: React.DragEvent<HTMLDivElement>) => {
+    event.preventDefault();
+  };
+
+  const downloadTemplate = () => {
+    try {
+      // Excel template verilerini oluştur - kişi sütunları
+      const headers = [
+        'Sicil No',
+        'Ad Soyad',
+        'Email',
+        'Pozisyon'
+      ];
+
+      // Örnek veri satırı
+      const exampleRow = [
+        '12345',
+        'Serdar Kahveci',
+        'serdar.kahveci@example.com',
+        'Yazılım Geliştirici'
+      ];
+
+      // Boş satırlar için veri
+      const emptyRows: string[][] = [];
+      for (let i = 0; i < 10; i++) {
+        emptyRows.push(['', '', '', '']);
+      }
+
+      // Tüm veriyi birleştir
+      const allData = [headers, exampleRow, ...emptyRows];
+
+      // CSV formatında template oluştur (basit versiyon)
+      const csvContent = allData.map(row => row.join(',')).join('\n');
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const link = document.createElement('a');
+      const url = URL.createObjectURL(blob);
+      link.setAttribute('href', url);
+      link.setAttribute('download', 'kişiler_template.csv');
+      link.style.visibility = 'hidden';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    } catch (error) {
+      console.error('Template indirme hatası:', error);
+      setImportMessage('Template indirilirken bir hata oluştu!');
+      setImportMessageType('error');
+    }
+  };
+
+  const importExcelData = async () => {
+    if (!selectedFile) {
+      setImportMessage('Lütfen önce bir Excel dosyası seçin!');
+      setImportMessageType('error');
+      return;
+    }
+
+    try {
+      setImportMessage('Excel dosyası yükleniyor...');
+      setImportMessageType('success');
+      setIsSubmitting(true);
+
+      const token = localStorage.getItem('token');
+      if (!token) {
+        setImportMessage('Oturum süreniz dolmuş. Lütfen tekrar giriş yapın.');
+        setImportMessageType('error');
+        setIsSubmitting(false);
+        return;
+      }
+
+      const formData = new FormData();
+      formData.append('excelFile', selectedFile);
+
+      const response = await fetch('/api/authorization/import', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        },
+        body: formData
+      });
+
+      if (!response.ok) {
+        if (response.status === 401) {
+          setImportMessage('Yetkiniz bulunmuyor. Lütfen tekrar giriş yapın.');
+        } else if (response.status === 413) {
+          setImportMessage('Dosya çok büyük. Lütfen daha küçük bir dosya seçin.');
+        } else if (response.status === 400) {
+          const errorResult = await response.json();
+          let errorMessage = errorResult.message || 'Dosya formatı hatalı. Lütfen geçerli bir Excel dosyası seçin.';
+          if (errorResult.errors && errorResult.errors.length > 0) {
+            errorMessage += '\n\nDetaylar:\n';
+            errorResult.errors.forEach((error: any) => {
+              errorMessage += `• Satır ${error.row}: ${error.message}\n`;
+            });
+          }
+          setImportMessage(errorMessage);
+        } else {
+          setImportMessage('Dosya yüklenirken bir hata oluştu.');
+        }
+        setImportMessageType('error');
+        setIsSubmitting(false);
+        return;
+      }
+
+      const result = await response.json();
+      if (result.success) {
+        setImportMessage(`Başarıyla ${result.importedCount} kişi eklendi!`);
+        setImportMessageType('success');
+        setShowImportPopup(false);
+        setSelectedFile(null);
+        loadAuthorizations(); // Verileri yenile
+      } else {
+        setImportMessage(result.message || 'Dosya yüklenirken bir hata oluştu.');
+        setImportMessageType('error');
+      }
+    } catch (error) {
+      console.error('Excel import hatası:', error);
+      setImportMessage('Dosya yüklenirken bir hata oluştu.');
+      setImportMessageType('error');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   if (isLoading) {
@@ -376,42 +573,157 @@ const AuthorizationPage: React.FC = () => {
             display: 'flex',
             alignItems: 'center'
           }}>
-            <i className="fas fa-search" style={{
-              position: 'absolute',
-              left: '12px',
-              color: '#ADB5BD',
-              fontSize: '14px'
-            }} />
+            {isSearching ? (
+              <div style={{
+                position: 'absolute',
+                left: '16px',
+                top: '50%',
+                transform: 'translateY(-50%)',
+                zIndex: 1
+              }}>
+                <div style={{
+                  width: '16px',
+                  height: '16px',
+                  border: '2px solid #E5E7EB',
+                  borderTop: '2px solid #3B82F6',
+                  borderRadius: '50%',
+                  animation: 'spin 1s linear infinite'
+                }} />
+              </div>
+            ) : (
+              <i className="fas fa-search" style={{
+                position: 'absolute',
+                left: '16px',
+                top: '50%',
+                transform: 'translateY(-50%)',
+                color: '#6B7280',
+                fontSize: '16px',
+                zIndex: 1
+              }} />
+            )}
             <input
               type="text"
-              placeholder="Arama yapın..."
+              placeholder="Kişi adına göre akıllı arama yapın..."
               value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
+              onChange={(e) => {
+                const value = e.target.value;
+                setSearchTerm(value);
+              }}
+              onInput={(e) => {
+                // onInput event'i daha güvenilir
+                const value = (e.target as HTMLInputElement).value;
+                setSearchTerm(value);
+              }}
+              onKeyDown={(e) => {
+                // Tüm metni seçip silme durumunu yakala
+                if (e.key === 'Delete' || e.key === 'Backspace') {
+                  const input = e.target as HTMLInputElement;
+                  if (input.selectionStart === 0 && input.selectionEnd === input.value.length) {
+                    setSearchTerm('');
+                  }
+                }
+              }}
+              onKeyUp={(e) => {
+                // Ctrl+A + Delete/Backspace kombinasyonunu yakala
+                const input = e.target as HTMLInputElement;
+                if (input.value === '') {
+                  setSearchTerm('');
+                }
+              }}
               style={{
-                padding: '8px 16px 8px 40px',
-                border: '1px solid #E9ECEF',
-                borderRadius: '6px',
+                padding: '12px 16px 12px 48px',
+                border: '2px solid #E5E7EB',
+                borderRadius: '10px',
                 fontSize: '14px',
-                width: '300px',
-                outline: 'none'
+                width: '350px',
+                outline: 'none',
+                backgroundColor: '#FAFAFA',
+                transition: 'all 0.2s ease',
+                fontFamily: 'Inter',
+                fontWeight: '500'
+              }}
+              onFocus={(e) => {
+                e.target.style.borderColor = '#3B82F6';
+                e.target.style.backgroundColor = 'white';
+                e.target.style.boxShadow = '0 0 0 3px rgba(59, 130, 246, 0.1)';
+              }}
+              onBlur={(e) => {
+                e.target.style.borderColor = '#E5E7EB';
+                e.target.style.backgroundColor = '#FAFAFA';
+                e.target.style.boxShadow = 'none';
               }}
             />
+            {searchTerm && (
+              <button
+                onClick={() => setSearchTerm('')}
+                style={{
+                  position: 'absolute',
+                  right: '12px',
+                  top: '50%',
+                  transform: 'translateY(-50%)',
+                  background: 'none',
+                  border: 'none',
+                  color: '#9CA3AF',
+                  cursor: 'pointer',
+                  fontSize: '16px',
+                  padding: '4px',
+                  borderRadius: '50%',
+                  width: '24px',
+                  height: '24px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  transition: 'all 0.2s ease'
+                }}
+                onMouseEnter={(e) => {
+                  (e.target as HTMLButtonElement).style.backgroundColor = '#F3F4F6';
+                  (e.target as HTMLButtonElement).style.color = '#6B7280';
+                }}
+                onMouseLeave={(e) => {
+                  (e.target as HTMLButtonElement).style.backgroundColor = 'transparent';
+                  (e.target as HTMLButtonElement).style.color = '#9CA3AF';
+                }}
+              >
+                ×
+              </button>
+            )}
           </div>
-          <button
-            onClick={handleAddAuthorization}
-            style={{
-              backgroundColor: '#3A57E8',
-              color: 'white',
-              border: 'none',
-              borderRadius: '6px',
-              padding: '10px 20px',
-              fontSize: '14px',
-              fontWeight: 600,
-              cursor: 'pointer'
-            }}
-          >
-            EKLE
-          </button>
+          <div style={{ display: 'flex', gap: '12px' }}>
+            <button
+              onClick={() => setShowImportPopup(true)}
+              style={{
+                backgroundColor: '#17A2B8',
+                color: 'white',
+                border: 'none',
+                borderRadius: '6px',
+                padding: '10px 20px',
+                fontSize: '14px',
+                fontWeight: 600,
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px'
+              }}
+            >
+              <i className="fas fa-file-excel" />
+              Excel Yükle
+            </button>
+            <button
+              onClick={handleAddAuthorization}
+              style={{
+                backgroundColor: '#3A57E8',
+                color: 'white',
+                border: 'none',
+                borderRadius: '6px',
+                padding: '10px 20px',
+                fontSize: '14px',
+                fontWeight: 600,
+                cursor: 'pointer'
+              }}
+            >
+              EKLE
+            </button>
+          </div>
         </div>
 
         {/* Table */}
@@ -465,7 +777,7 @@ const AuthorizationPage: React.FC = () => {
                   fontWeight: 700,
                   fontFamily: 'Montserrat'
                 }}>
-                  Rol
+                  Pozisyon
                 </th>
                 <th style={{
                   padding: '16px',
@@ -480,6 +792,21 @@ const AuthorizationPage: React.FC = () => {
               </tr>
             </thead>
             <tbody>
+              {searchTerm && (
+                <tr>
+                  <td colSpan={5} style={{
+                    padding: '12px 16px',
+                    backgroundColor: '#F8FAFC',
+                    borderBottom: '1px solid #E2E8F0',
+                    fontSize: '13px',
+                    color: '#64748B',
+                    fontFamily: 'Inter',
+                    fontWeight: '500'
+                  }}>
+                    🔍 "{debouncedSearchTerm}" için {filteredAuthorizations.length} sonuç bulundu
+                  </td>
+                </tr>
+              )}
               {currentAuthorizations.length === 0 ? (
                 <tr>
                   <td colSpan={5} style={{
@@ -488,7 +815,7 @@ const AuthorizationPage: React.FC = () => {
                     color: '#8A92A6',
                     fontSize: '14px'
                   }}>
-                    {searchTerm ? 'Arama kriterlerine uygun kişi bulunamadı' : 'Henüz kişi bulunmuyor'}
+                    {searchTerm ? `"${searchTerm}" için arama sonucu bulunamadı` : 'Henüz kişi bulunmuyor'}
                   </td>
                 </tr>
               ) : (
@@ -503,7 +830,7 @@ const AuthorizationPage: React.FC = () => {
                       fontFamily: 'Montserrat',
                       fontWeight: 500
                     }}>
-                      {authorization.employeeId || '-'}
+                      {authorization.sicilNo || '-'}
                     </td>
                     <td style={{
                       padding: '16px',
@@ -512,7 +839,7 @@ const AuthorizationPage: React.FC = () => {
                       fontFamily: 'Montserrat',
                       fontWeight: 500
                     }}>
-                      {authorization.name || '-'}
+                      {highlightText(authorization.personName || '-', searchTerm)}
                     </td>
                     <td style={{
                       padding: '16px',
@@ -530,7 +857,7 @@ const AuthorizationPage: React.FC = () => {
                       fontFamily: 'Montserrat',
                       fontWeight: 500
                     }}>
-                      {authorization.role || '-'}
+                      {authorization.title || '-'}
                     </td>
                     <td style={{
                       padding: '16px',
@@ -671,8 +998,9 @@ const AuthorizationPage: React.FC = () => {
                   </label>
                   <input
                     type="text"
-                    value={formData.employeeId}
-                    onChange={(e) => setFormData({ ...formData, employeeId: e.target.value })}
+                    value={formData.sicilNo}
+                    onChange={(e) => setFormData({ ...formData, sicilNo: e.target.value })}
+                    placeholder="Lütfen Sicil No Giriniz"
                     style={{
                       width: '100%',
                       padding: '12px 16px',
@@ -694,12 +1022,13 @@ const AuthorizationPage: React.FC = () => {
                     marginBottom: '8px',
                     fontFamily: 'Inter'
                   }}>
-                    Ad Soyad
+                    Kişi Adı
                   </label>
                   <input
                     type="text"
-                    value={formData.name}
-                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                    value={formData.personName}
+                    onChange={(e) => setFormData({ ...formData, personName: e.target.value })}
+                    placeholder="Lütfen Kişi Adını Giriniz"
                     style={{
                       width: '100%',
                       padding: '12px 16px',
@@ -727,6 +1056,7 @@ const AuthorizationPage: React.FC = () => {
                     type="email"
                     value={formData.email}
                     onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                    placeholder="Lütfen Email Giriniz"
                     style={{
                       width: '100%',
                       padding: '12px 16px',
@@ -748,11 +1078,13 @@ const AuthorizationPage: React.FC = () => {
                     marginBottom: '8px',
                     fontFamily: 'Inter'
                   }}>
-                    Rol
+                    Pozisyon
                   </label>
-                  <select
-                    value={formData.role}
-                    onChange={(e) => setFormData({ ...formData, role: e.target.value })}
+                  <input
+                    type="text"
+                    value={formData.title}
+                    onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                    placeholder="Lütfen Pozisyon Giriniz"
                     style={{
                       width: '100%',
                       padding: '12px 16px',
@@ -762,12 +1094,7 @@ const AuthorizationPage: React.FC = () => {
                       fontFamily: 'Inter',
                       outline: 'none'
                     }}
-                  >
-                    <option value="">Rol Seçin</option>
-                    <option value="admin">Admin</option>
-                    <option value="user">Kullanıcı</option>
-                    <option value="manager">Yönetici</option>
-                  </select>
+                  />
                 </div>
               </div>
               
@@ -861,8 +1188,9 @@ const AuthorizationPage: React.FC = () => {
                   </label>
                   <input
                     type="text"
-                    value={formData.employeeId}
-                    onChange={(e) => setFormData({ ...formData, employeeId: e.target.value })}
+                    value={formData.sicilNo}
+                    onChange={(e) => setFormData({ ...formData, sicilNo: e.target.value })}
+                    placeholder="Lütfen Sicil No Giriniz"
                     style={{
                       width: '100%',
                       padding: '12px 16px',
@@ -884,12 +1212,13 @@ const AuthorizationPage: React.FC = () => {
                     marginBottom: '8px',
                     fontFamily: 'Inter'
                   }}>
-                    Ad Soyad
+                    Kişi Adı
                   </label>
                   <input
                     type="text"
-                    value={formData.name}
-                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                    value={formData.personName}
+                    onChange={(e) => setFormData({ ...formData, personName: e.target.value })}
+                    placeholder="Lütfen Kişi Adını Giriniz"
                     style={{
                       width: '100%',
                       padding: '12px 16px',
@@ -917,6 +1246,7 @@ const AuthorizationPage: React.FC = () => {
                     type="email"
                     value={formData.email}
                     onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                    placeholder="Lütfen Email Giriniz"
                     style={{
                       width: '100%',
                       padding: '12px 16px',
@@ -938,11 +1268,13 @@ const AuthorizationPage: React.FC = () => {
                     marginBottom: '8px',
                     fontFamily: 'Inter'
                   }}>
-                    Rol
+                    Pozisyon
                   </label>
-                  <select
-                    value={formData.role}
-                    onChange={(e) => setFormData({ ...formData, role: e.target.value })}
+                  <input
+                    type="text"
+                    value={formData.title}
+                    onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                    placeholder="Lütfen Pozisyon Giriniz"
                     style={{
                       width: '100%',
                       padding: '12px 16px',
@@ -952,12 +1284,7 @@ const AuthorizationPage: React.FC = () => {
                       fontFamily: 'Inter',
                       outline: 'none'
                     }}
-                  >
-                    <option value="">Rol Seçin</option>
-                    <option value="admin">Admin</option>
-                    <option value="user">Kullanıcı</option>
-                    <option value="manager">Yönetici</option>
-                  </select>
+                  />
                 </div>
               </div>
               
@@ -1203,6 +1530,213 @@ const AuthorizationPage: React.FC = () => {
               >
                 Tamam
               </button>
+            </div>
+          </div>
+        )}
+
+        {/* Excel Import Popup */}
+        {showImportPopup && (
+          <div style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: 'rgba(0, 0, 0, 0.5)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 1000
+          }}>
+            <div style={{
+              backgroundColor: 'white',
+              borderRadius: '12px',
+              padding: '24px',
+              maxWidth: '500px',
+              width: '90%',
+              maxHeight: '80vh',
+              overflowY: 'auto'
+            }}>
+              <div style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                marginBottom: '20px'
+              }}>
+                <div style={{
+                  fontSize: '18px',
+                  fontWeight: 600,
+                  color: '#232D42',
+                  fontFamily: 'Inter'
+                }}>
+                  Excel Import
+                </div>
+                <button
+                  onClick={() => setShowImportPopup(false)}
+                  style={{
+                    background: 'none',
+                    border: 'none',
+                    fontSize: '24px',
+                    cursor: 'pointer',
+                    color: '#6B7280'
+                  }}
+                >
+                  ×
+                </button>
+              </div>
+              
+              <div style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                marginBottom: '20px'
+              }}>
+                <div style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '12px'
+                }}>
+                  <i className="fas fa-info-circle" style={{ color: '#1976D2', fontSize: '18px' }} />
+                  <strong style={{ color: '#1976D2', fontSize: '14px' }}>Excel Dosyası Yükle</strong>
+                </div>
+                <button
+                  onClick={downloadTemplate}
+                  style={{
+                    background: '#17A2B8',
+                    padding: '8px 16px',
+                    fontSize: '13px',
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: '6px',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '8px'
+                  }}
+                >
+                  <i className="fas fa-download" />
+                  Template İndir
+                </button>
+              </div>
+              
+              <div
+                onClick={() => document.getElementById('excelFileInput')?.click()}
+                onDrop={handleFileDrop}
+                onDragOver={handleDragOver}
+                onDragLeave={handleDragLeave}
+                style={{
+                  border: '2px dashed #E9ECEF',
+                  borderRadius: '8px',
+                  padding: '40px 20px',
+                  textAlign: 'center',
+                  cursor: 'pointer',
+                  backgroundColor: '#F8F9FA',
+                  marginBottom: '20px'
+                }}
+              >
+                <div style={{
+                  fontSize: '48px',
+                  color: '#28A745',
+                  marginBottom: '16px'
+                }}>
+                  <i className="fas fa-file-excel" />
+                </div>
+                <div style={{
+                  fontSize: '16px',
+                  color: '#232D42',
+                  marginBottom: '8px',
+                  fontFamily: 'Inter'
+                }}>
+                  Excel dosyasını seçin veya sürükleyin
+                </div>
+                <div style={{
+                  fontSize: '14px',
+                  color: '#6B7280',
+                  fontFamily: 'Inter'
+                }}>
+                  .xlsx, .xls formatları desteklenir
+                </div>
+              </div>
+              
+              <input
+                type="file"
+                id="excelFileInput"
+                accept=".xlsx,.xls"
+                onChange={handleFileSelect}
+                style={{ display: 'none' }}
+              />
+              
+              {selectedFile && (
+                <div style={{
+                  padding: '12px',
+                  backgroundColor: '#E3F2FD',
+                  borderRadius: '6px',
+                  marginBottom: '20px',
+                  fontSize: '14px',
+                  color: '#1976D2',
+                  fontFamily: 'Inter'
+                }}>
+                  Seçilen dosya: {selectedFile.name}
+                </div>
+              )}
+              
+              {importMessage && (
+                <div style={{
+                  padding: '12px',
+                  backgroundColor: importMessageType === 'success' ? '#D4EDDA' : '#F8D7DA',
+                  borderRadius: '6px',
+                  marginBottom: '20px',
+                  fontSize: '14px',
+                  color: importMessageType === 'success' ? '#155724' : '#721C24',
+                  fontFamily: 'Inter',
+                  whiteSpace: 'pre-line'
+                }}>
+                  {importMessage}
+                </div>
+              )}
+              
+              <div style={{
+                display: 'flex',
+                justifyContent: 'flex-end',
+                gap: '12px'
+              }}>
+                <button
+                  onClick={() => {
+                    setShowImportPopup(false);
+                    setSelectedFile(null);
+                    setImportMessage('');
+                  }}
+                  style={{
+                    padding: '12px 24px',
+                    border: '1px solid #E9ECEF',
+                    borderRadius: '6px',
+                    backgroundColor: 'white',
+                    color: '#6B7280',
+                    fontSize: '14px',
+                    fontWeight: 500,
+                    cursor: 'pointer'
+                  }}
+                >
+                  İptal
+                </button>
+                <button
+                  onClick={importExcelData}
+                  disabled={isSubmitting || !selectedFile}
+                  style={{
+                    padding: '12px 24px',
+                    border: 'none',
+                    borderRadius: '6px',
+                    backgroundColor: '#17A2B8',
+                    color: 'white',
+                    fontSize: '14px',
+                    fontWeight: 500,
+                    cursor: isSubmitting || !selectedFile ? 'not-allowed' : 'pointer',
+                    opacity: isSubmitting || !selectedFile ? 0.7 : 1
+                  }}
+                >
+                  {isSubmitting ? 'Yükleniyor...' : 'Yükle'}
+                </button>
+              </div>
             </div>
           </div>
         )}

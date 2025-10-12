@@ -16,6 +16,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
   const mainMenuItems = [
     { path: '/admin', label: 'Genel Takip Sistemi', icon: '🏠' },
     { path: '/results', label: 'Kişi Sonuçları Sayfası', icon: '📈' },
+    { path: '/game-send', label: 'Oyun Gönder', icon: '📤' },
     { path: '/subscription-settings', label: 'Oyun Kullanım Özeti', icon: '💳' },
   ];
 
@@ -28,7 +29,6 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
   const otherSettingsItems = [
     { path: '/organization', label: 'Organizasyon', icon: '🏢' },
     { path: '/competency-settings', label: 'Yetkinlik Ayarları', icon: '⚙️' },
-    { path: '/admin-management', label: 'Bildirimler', icon: '🔧' },
   ];
 
   const isActive = (path: string) => {

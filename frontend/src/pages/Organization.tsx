@@ -716,7 +716,7 @@ const Organization: React.FC = () => {
             <button
               onClick={handleOpenImportPopup}
               style={{
-                backgroundColor: '#01A94D',
+                backgroundColor: '#17A2B8',
                 color: 'white',
                 border: 'none',
                 borderRadius: '6px',

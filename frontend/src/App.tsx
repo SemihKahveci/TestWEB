@@ -5,20 +5,18 @@ import ProtectedRoute from './components/ProtectedRoute';
 import Layout from './components/Layout';
 
 // Pages
-import LandingPage from './pages/LandingPage';
 import LoginPage from './pages/LoginPage';
 import AdminPanel from './pages/AdminPanel';
 import AuthorizationPage from './pages/AuthorizationPage';
-import OrganizationPage from './pages/OrganizationPage';
 import GameManagement from './pages/GameManagement';
 import CompetencySettings from './pages/CompetencySettings';
 import Organization from './pages/Organization';
 import Grouping from './pages/Grouping';
+import GameSendPage from './pages/GameSendPage';
 import ResultsPage from './pages/ResultsPage';
 import CompanyIdentification from './pages/CompanyIdentification';
 import DefineCompanyAdmin from './pages/DefineCompanyAdmin';
 import SubscriptionSettings from './pages/SubscriptionSettings';
-import AdminManagementPage from './pages/AdminManagementPage';
 
 function App() {
   return (
@@ -86,6 +84,14 @@ function App() {
           </ProtectedRoute>
         } />
             
+        <Route path="/game-send" element={
+          <ProtectedRoute>
+            <Layout>
+              <GameSendPage />
+            </Layout>
+          </ProtectedRoute>
+        } />
+            
             <Route path="/results" element={
               <ProtectedRoute>
                 <Layout>
@@ -122,14 +128,6 @@ function App() {
               <ProtectedRoute>
                 <Layout>
                   <CompanyIdentification />
-                </Layout>
-              </ProtectedRoute>
-            } />
-            
-            <Route path="/admin-management" element={
-              <ProtectedRoute>
-                <Layout>
-                  <AdminManagementPage />
                 </Layout>
               </ProtectedRoute>
             } />
