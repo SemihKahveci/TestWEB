@@ -373,7 +373,7 @@ async function buildEvaluationHTML(evaluation, options, userCode, isPreview = fa
                     justify-content: space-between;
                     align-items: center;
                     margin-bottom: 10px;
-                    margin-top: 3px;
+                    margin-top: 32px;
                     page-break-inside: avoid;
                 }
 
@@ -402,11 +402,11 @@ async function buildEvaluationHTML(evaluation, options, userCode, isPreview = fa
                      text-shadow: 0 1px 2px rgba(0,0,0,0.5);
                  }
 
-                /* Sağ taraftaki yetkinlik ismi */
+                /* Sol taraftaki yetkinlik ismi */
                 .competency-header-bar .competency-name {
                     font-weight: 700;
                     color: #283c9b;
-                    font-size: 16px;
+                    font-size: 20px;
                     text-shadow: 0 1px 1px rgba(0,0,0,0.1);
                 }
 
