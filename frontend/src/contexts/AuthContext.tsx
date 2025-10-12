@@ -35,7 +35,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [isLoading, setIsLoading] = useState(true);
 
   // API base URL - dinamik olarak belirle
-  const API_BASE_URL = `${window.location.protocol}//${window.location.hostname}:5000/api`;
+  const API_BASE_URL = (import.meta as any).env?.DEV 
+    ? `${window.location.protocol}//${window.location.hostname}:5000/api`  // Development
+    : '/api';  // Production (aynı domain'de serve edilir)
 
   // Axios interceptor to add token to requests
   useEffect(() => {
