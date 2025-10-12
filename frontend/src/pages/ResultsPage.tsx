@@ -1,0 +1,1461 @@
+import React, { useState, useEffect, useRef } from 'react';
+import { evaluationAPI } from '../services/api';
+import * as XLSX from 'xlsx';
+
+// Dinamik API base URL - hem local hem live'da çalışır
+const API_BASE_URL = (import.meta as any).env?.DEV 
+  ? 'http://localhost:5000'  // Development
+  : '';  // Production (aynı domain'de serve edilir
+
+interface UserResult {
+  code: string;
+  name: string;
+  email: string;
+  status: string;
+  sentDate: string;
+  completionDate: string;
+  expiryDate: string;
+  customerFocusScore: number | string;
+  uncertaintyScore: number | string;
+  ieScore: number | string;
+  idikScore: number | string;
+  isGrouped?: boolean;
+  groupCount?: number;
+  allGroupItems?: UserResult[];
+}
+
+const ResultsPage: React.FC = () => {
+  const [results, setResults] = useState<UserResult[]>([]);
+  const [filteredResults, setFilteredResults] = useState<UserResult[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage] = useState(10);
+  
+  // Popup states
+  const [showFilterPopup, setShowFilterPopup] = useState(false);
+  const [selectedUser, setSelectedUser] = useState<UserResult | null>(null);
+  const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
+  
+  // Filter states
+  const [filters, setFilters] = useState({
+    nameSearch: '',
+    customerFocusMin: 0,
+    customerFocusMax: 100,
+    uncertaintyMin: 0,
+    uncertaintyMax: 100,
+    ieMin: 0,
+    ieMax: 100,
+    idikMin: 0,
+    idikMax: 100
+  });
+  
+  const hasLoaded = useRef(false);
+
+  const loadData = async () => {
+    try {
+      setIsLoading(true);
+      console.log('🔄 Results sayfası verileri yükleniyor...');
+      
+      const response = await fetch(`${API_BASE_URL}/api/user-results`, {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        }
+      });
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      
+      const data = await response.json();
+      console.log('✅ Results API yanıtı:', data);
+      
+      if (data.success && data.results) {
+        // Sadece "Tamamlandı" olan sonuçları filtrele
+        const completedResults = data.results.filter((result: any) => result.status === 'Tamamlandı');
+        console.log('📊 Tamamlanan sonuçlar:', completedResults);
+        
+        // HTML'deki gibi gruplama uygula
+        const groupedResults = groupByEmail(completedResults);
+        setResults(groupedResults);
+        setFilteredResults(groupedResults);
+      } else {
+        console.error('❌ API başarısız:', data.message);
+        setResults([]);
+        setFilteredResults([]);
+      }
+    } catch (error) {
+      console.error('❌ Results veri yükleme hatası:', error);
+      setResults([]);
+      setFilteredResults([]);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    // Sadece bir kere çalıştır (React Strict Mode için)
+    if (!hasLoaded.current) {
+      hasLoaded.current = true;
+      loadData();
+    }
+  }, []);
+
+  useEffect(() => {
+    // Sadece results yüklendiyse filtreleme yap
+    if (results.length > 0) {
+      filterResults();
+    }
+  }, [results, searchTerm]);
+
+
+  const filterResults = () => {
+    let filtered = results;
+
+    // HTML'deki gibi sadece isim ile arama
+    if (searchTerm) {
+      filtered = filtered.filter(result =>
+        result.name && result.name.toLowerCase().includes(searchTerm.toLowerCase())
+      );
+    }
+
+    setFilteredResults(filtered);
+    setCurrentPage(1);
+  };
+
+  const formatDate = (dateString: string) => {
+    if (!dateString) return '-';
+    return new Date(dateString).toLocaleDateString('tr-TR', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric'
+    });
+  };
+
+  const formatScore = (score: number | string) => {
+    if (score === null || score === undefined || score === '-') return '-';
+    return typeof score === 'number' ? score.toFixed(1) : score;
+  };
+
+  const getScoreColorClass = (score: number | string) => {
+    if (score === '-' || isNaN(Number(score))) return '';
+    const numScore = parseFloat(score.toString());
+    if (numScore <= 37) return 'red';
+    if (numScore <= 65) return 'yellow';
+    if (numScore <= 89.99999999999) return 'green';
+    return 'red';
+  };
+
+  // HTML'deki gibi e-posta adresine göre gruplama
+  const groupByEmail = (data: UserResult[]): UserResult[] => {
+    const emailGroups: { [key: string]: UserResult[] } = {};
+    
+    // Verileri e-posta adresine göre grupla
+    data.forEach(item => {
+      const email = (item.email || 'no-email').toLowerCase();
+      if (!emailGroups[email]) {
+        emailGroups[email] = [];
+      }
+      emailGroups[email].push(item);
+    });
+    
+    // Her grup içindeki verileri tarihe göre sırala (en yeni üstte)
+    Object.keys(emailGroups).forEach(email => {
+      emailGroups[email].sort((a, b) => new Date(b.sentDate || 0).getTime() - new Date(a.sentDate || 0).getTime());
+    });
+    
+    // Gruplandırılmış verileri düzleştir
+    const groupedData: UserResult[] = [];
+    
+    Object.keys(emailGroups).forEach(email => {
+      const group = emailGroups[email];
+      if (group.length === 1) {
+        // Tek sonuç varsa normal göster
+        groupedData.push({
+          ...group[0],
+          isGrouped: false,
+          groupCount: 1
+        });
+      } else {
+        // Birden fazla sonuç varsa gruplandır
+        const latestItem = group[0]; // En yeni olan
+        
+        groupedData.push({
+          ...latestItem,
+          isGrouped: true,
+          groupCount: group.length,
+          allGroupItems: group
+        });
+      }
+    });
+    
+    return groupedData;
+  };
+
+  // Grup açma/kapama fonksiyonu
+  const toggleGroup = (email: string) => {
+    const newExpandedGroups = new Set(expandedGroups);
+    if (newExpandedGroups.has(email)) {
+      newExpandedGroups.delete(email);
+    } else {
+      newExpandedGroups.add(email);
+    }
+    setExpandedGroups(newExpandedGroups);
+  };
+
+  // Filtreleme fonksiyonu
+  const applyFilters = () => {
+    try {
+      console.log('Filtreler:', filters);
+
+      const filteredItems = results.filter(item => {
+        try {
+          if (!item || !item.name) {
+            console.log('Name özelliği eksik:', item);
+            return false;
+          }
+
+          const itemName = item.name.toString().toLowerCase();
+          const customerFocusScore = item.customerFocusScore === '-' ? null : parseFloat(item.customerFocusScore.toString());
+          const uncertaintyScore = item.uncertaintyScore === '-' ? null : parseFloat(item.uncertaintyScore.toString());
+          const ieScore = item.ieScore === '-' ? null : parseFloat(item.ieScore.toString());
+          const idikScore = item.idikScore === '-' ? null : parseFloat(item.idikScore.toString());
+
+          // İsim araması
+          let nameMatch = true;
+          if (filters.nameSearch) {
+            nameMatch = itemName.includes(filters.nameSearch.toLowerCase());
+          }
+
+          // Müşteri Odaklılık Skoru filtresi
+          let customerFocusMatch = true;
+          if (customerFocusScore !== null) {
+            customerFocusMatch = customerFocusScore >= filters.customerFocusMin && customerFocusScore <= filters.customerFocusMax;
+          }
+
+          // Belirsizlik Yönetimi Skoru filtresi
+          let uncertaintyMatch = true;
+          if (uncertaintyScore !== null) {
+            uncertaintyMatch = uncertaintyScore >= filters.uncertaintyMin && uncertaintyScore <= filters.uncertaintyMax;
+          }
+
+          // IE Skoru filtresi
+          let ieMatch = true;
+          if (ieScore !== null) {
+            ieMatch = ieScore >= filters.ieMin && ieScore <= filters.ieMax;
+          }
+
+          // IDIK Skoru filtresi
+          let idikMatch = true;
+          if (idikScore !== null) {
+            idikMatch = idikScore >= filters.idikMin && idikScore <= filters.idikMax;
+          }
+
+          return nameMatch && customerFocusMatch && uncertaintyMatch && ieMatch && idikMatch;
+        } catch (error) {
+          console.error('Öğe filtreleme hatası:', error, item);
+          return false;
+        }
+      });
+
+      // Filtrelenmiş verileri gruplandır
+      const groupedData = groupByEmail(filteredItems);
+      setFilteredResults(groupedData);
+      setCurrentPage(1);
+
+      console.log('Filtrelenmiş veri sayısı:', groupedData.length);
+      setShowFilterPopup(false);
+    } catch (error) {
+      console.error('Filtreleme hatası:', error);
+    }
+  };
+
+  // Filtreleri temizle
+  const clearFilters = () => {
+    setFilters({
+      nameSearch: '',
+      customerFocusMin: 0,
+      customerFocusMax: 100,
+      uncertaintyMin: 0,
+      uncertaintyMax: 100,
+      ieMin: 0,
+      ieMax: 100,
+      idikMin: 0,
+      idikMax: 100
+    });
+    setFilteredResults(results);
+    setCurrentPage(1);
+  };
+
+  // Filtre popup'ını kapat
+  const closeFilterPopup = () => {
+    setShowFilterPopup(false);
+  };
+
+
+  const handleDownloadExcel = () => {
+    try {
+      // Tüm sonuçları al (sadece tamamlanmış oyunlar)
+      let dataToExport = results
+        .filter(item => item.status === 'Tamamlandı')
+        .map(item => ({
+          'Ad Soyad': item.name || '-',
+          'E-posta': item.email || '-',
+          'Tamamlanma Tarihi': formatDate(item.completionDate) || '-',
+          'Müşteri Odaklılık Skoru': item.customerFocusScore || '-',
+          'Belirsizlik Yönetimi Skoru': item.uncertaintyScore || '-',
+          'İnsanları Etkileme Skoru': item.ieScore || '-',
+          'Güven Veren İşbirliği ve Sinerji Skoru': item.idikScore || '-'
+        }));
+
+      if (dataToExport.length === 0) {
+        alert('İndirilecek veri bulunamadı.');
+        return;
+      }
+
+      // Excel workbook oluştur
+      const workbook = XLSX.utils.book_new();
+      const worksheet = XLSX.utils.json_to_sheet(dataToExport);
+
+      // Sütun genişliklerini ayarla
+      const columnWidths = [
+        { wch: 20 }, // Ad Soyad
+        { wch: 25 }, // E-posta
+        { wch: 18 }, // Tamamlanma Tarihi
+        { wch: 25 }, // Müşteri Odaklılık
+        { wch: 25 }, // Belirsizlik Yönetimi
+        { wch: 25 }, // İnsanları Etkileme
+        { wch: 35 }  // Güven Veren İşbirliği
+      ];
+      worksheet['!cols'] = columnWidths;
+
+      // Worksheet'i workbook'a ekle
+      XLSX.utils.book_append_sheet(workbook, worksheet, 'Kişi Sonuçları');
+
+      // Dosya adını oluştur
+      const now = new Date();
+      const dateStr = now.toISOString().split('T')[0];
+      const timeStr = now.toTimeString().split(' ')[0].replace(/:/g, '-');
+      const fileName = `kişi_sonuçları_${dateStr}_${timeStr}.xlsx`;
+
+      // Excel dosyasını indir
+      XLSX.writeFile(workbook, fileName);
+
+      console.log(`Excel dosyası indirildi. Toplam ${dataToExport.length} sonuç eklendi.`);
+    } catch (error) {
+      console.error('Excel indirme hatası:', error);
+      alert('Excel dosyası indirilirken bir hata oluştu!');
+    }
+  };
+
+  const paginatedResults = filteredResults.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
+  );
+
+  const totalPages = Math.ceil(filteredResults.length / itemsPerPage);
+
+  if (isLoading) {
+    return (
+      <div style={{
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'center',
+        height: '100vh',
+        gap: '16px'
+      }}>
+        <div style={{
+          width: '48px',
+          height: '48px',
+          border: '2px solid #3B82F6',
+          borderTop: '2px solid transparent',
+          borderRadius: '50%',
+          animation: 'spin 1s linear infinite'
+        }}></div>
+        <div style={{
+          color: '#666',
+          fontSize: '14px',
+          fontFamily: 'Inter'
+        }}>
+          Veriler yükleniyor...
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div style={{
+      fontFamily: 'Inter, sans-serif',
+      background: '#F8F9FA',
+      minHeight: '100vh',
+      padding: '24px 32px 0 10px'
+    }}>
+      {/* Page Title - Mavi Box */}
+      <div style={{
+        width: '100%',
+        height: '75px',
+        background: 'radial-gradient(ellipse 150.93% 36.28% at 50.00% 50.00%, #3B8AFF 0%, #0048B2 100%)',
+        borderBottomRightRadius: '16px',
+        borderBottomLeftRadius: '16px',
+        display: 'flex',
+        justifyContent: 'flex-start',
+        alignItems: 'center',
+        padding: '0 32px',
+        marginLeft: '0px',
+        marginBottom: '20px'
+      }}>
+        <div style={{
+          display: 'flex',
+          justifyContent: 'flex-start',
+          alignItems: 'center'
+        }}>
+          <div style={{
+            color: 'white',
+            fontSize: '30px',
+            fontFamily: 'Inter',
+            fontWeight: 700
+          }}>
+            Kişi Sonuçları Sayfası
+          </div>
+        </div>
+      </div>
+
+      {/* Search and Controls */}
+      <div style={{
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        marginBottom: '16px'
+      }}>
+        {/* Search Box */}
+        <div style={{ position: 'relative' }}>
+          <i className="fas fa-search" style={{
+            position: 'absolute',
+            left: '16px',
+            top: '50%',
+            transform: 'translateY(-50%)',
+            color: '#6B7280',
+            fontSize: '16px',
+            zIndex: 1
+          }} />
+          <input
+            type="text"
+            placeholder="Tüm sütunlarda akıllı arama yapın..."
+            value={searchTerm}
+            onChange={(e) => {
+              const value = e.target.value;
+              setSearchTerm(value);
+              // HTML'deki gibi anlık filtreleme
+              setTimeout(() => {
+                filterResults();
+              }, 100);
+            }}
+            onInput={(e) => {
+              // onInput event'i daha güvenilir
+              const value = (e.target as HTMLInputElement).value;
+              setSearchTerm(value);
+              setTimeout(() => {
+                filterResults();
+              }, 100);
+            }}
+            onKeyDown={(e) => {
+              // Tüm metni seçip silme durumunu yakala
+              if (e.key === 'Delete' || e.key === 'Backspace') {
+                const input = e.target as HTMLInputElement;
+                if (input.selectionStart === 0 && input.selectionEnd === input.value.length) {
+                  setSearchTerm('');
+                  setTimeout(() => {
+                    filterResults();
+                  }, 100);
+                }
+              }
+              if (e.key === 'Enter') {
+                filterResults();
+              }
+            }}
+            onKeyUp={(e) => {
+              // Ctrl+A + Delete/Backspace kombinasyonunu yakala
+              const input = e.target as HTMLInputElement;
+              if (input.value === '') {
+                setSearchTerm('');
+                setTimeout(() => {
+                  filterResults();
+                }, 100);
+              }
+            }}
+            style={{
+              padding: '12px 16px 12px 48px',
+              border: '2px solid #E5E7EB',
+              borderRadius: '10px',
+              fontSize: '14px',
+              width: '350px',
+              outline: 'none',
+              backgroundColor: '#FAFAFA',
+              transition: 'all 0.2s ease',
+              fontFamily: 'Inter',
+              fontWeight: '500'
+            }}
+            onFocus={(e) => {
+              e.target.style.borderColor = '#3B82F6';
+              e.target.style.backgroundColor = 'white';
+              e.target.style.boxShadow = '0 0 0 3px rgba(59, 130, 246, 0.1)';
+            }}
+            onBlur={(e) => {
+              e.target.style.borderColor = '#E5E7EB';
+              e.target.style.backgroundColor = '#FAFAFA';
+              e.target.style.boxShadow = 'none';
+            }}
+          />
+          {searchTerm && (
+            <button
+              onClick={() => setSearchTerm('')}
+              style={{
+                position: 'absolute',
+                right: '12px',
+                top: '50%',
+                transform: 'translateY(-50%)',
+                background: 'none',
+                border: 'none',
+                color: '#9CA3AF',
+                cursor: 'pointer',
+                fontSize: '16px',
+                padding: '4px',
+                borderRadius: '50%',
+                width: '24px',
+                height: '24px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                transition: 'all 0.2s ease'
+              }}
+              onMouseEnter={(e) => {
+                (e.target as HTMLButtonElement).style.backgroundColor = '#F3F4F6';
+                (e.target as HTMLButtonElement).style.color = '#6B7280';
+              }}
+              onMouseLeave={(e) => {
+                (e.target as HTMLButtonElement).style.backgroundColor = 'transparent';
+                (e.target as HTMLButtonElement).style.color = '#9CA3AF';
+              }}
+            >
+              ×
+            </button>
+          )}
+        </div>
+
+        {/* Right Controls */}
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: '12px'
+        }}>
+          {/* Refresh Button */}
+          <button
+            onClick={loadData}
+            style={{
+              background: '#0286F7',
+              color: 'white',
+              border: 'none',
+              padding: '8px 16px',
+              borderRadius: '8px',
+              cursor: 'pointer',
+              fontWeight: 500,
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+              transition: 'background-color 0.3s',
+              fontFamily: 'Inter'
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.backgroundColor = '#0275D8';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.backgroundColor = '#0286F7';
+            }}
+          >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M1 4V10H7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+              <path d="M23 20V14H17" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+              <path d="M20.49 9A9 9 0 0 0 5.64 5.64L1 10M23 14L18.36 18.36A9 9 0 0 1 3.51 15" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+            </svg>
+            Yenile
+          </button>
+
+          {/* Filter Button */}
+          <button
+            onClick={() => setShowFilterPopup(true)}
+            style={{
+              background: '#0286F7',
+              color: 'white',
+              border: 'none',
+              padding: '8px 16px',
+              borderRadius: '8px',
+              cursor: 'pointer',
+              fontWeight: 500,
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+              transition: 'background-color 0.3s',
+              fontFamily: 'Inter'
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.backgroundColor = '#0275D8';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.backgroundColor = '#0286F7';
+            }}
+          >
+            <i className="fas fa-filter"></i>
+            Filtrele
+          </button>
+
+          {/* Download Button */}
+          <button
+            onClick={handleDownloadExcel}
+            style={{
+              background: '#1D6F42',
+              color: 'white',
+              border: 'none',
+              padding: '8px 16px',
+              borderRadius: '8px',
+              cursor: 'pointer',
+              fontWeight: 500,
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+              transition: 'background-color 0.3s',
+              fontFamily: 'Inter'
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.backgroundColor = '#1A5F2E';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.backgroundColor = '#1D6F42';
+            }}
+          >
+            <i className="fas fa-download"></i>
+            Excel Yükle
+          </button>
+        </div>
+      </div>
+
+      {/* Results Table */}
+      <div style={{
+        background: 'white',
+        borderRadius: '8px',
+        boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)',
+        overflow: 'hidden'
+      }}>
+        <div style={{
+          overflowX: 'auto'
+        }}>
+          <table style={{
+            width: '100%',
+            borderCollapse: 'collapse'
+          }}>
+            <thead>
+              <tr style={{
+                background: '#F8F9FA',
+                borderBottom: '1px solid #E9ECEF'
+              }}>
+                <th style={{
+                  padding: '16px',
+                  textAlign: 'left',
+                  fontSize: '14px',
+                  fontWeight: 600,
+                  color: '#232D42',
+                  fontFamily: 'Inter'
+                }}>Ad Soyad</th>
+                <th style={{
+                  padding: '16px',
+                  textAlign: 'left',
+                  fontSize: '14px',
+                  fontWeight: 600,
+                  color: '#232D42',
+                  fontFamily: 'Inter'
+                }}>Tamamlanma Tarihi</th>
+                <th style={{
+                  padding: '16px',
+                  textAlign: 'left',
+                  fontSize: '14px',
+                  fontWeight: 600,
+                  color: '#232D42',
+                  fontFamily: 'Inter'
+                }}>Müşteri Odaklılık Skoru</th>
+                <th style={{
+                  padding: '16px',
+                  textAlign: 'left',
+                  fontSize: '14px',
+                  fontWeight: 600,
+                  color: '#232D42',
+                  fontFamily: 'Inter'
+                }}>Belirsizlik Yönetimi Skoru</th>
+                <th style={{
+                  padding: '16px',
+                  textAlign: 'left',
+                  fontSize: '14px',
+                  fontWeight: 600,
+                  color: '#232D42',
+                  fontFamily: 'Inter'
+                }}>İnsanları Etkileme Skoru</th>
+                <th style={{
+                  padding: '16px',
+                  textAlign: 'left',
+                  fontSize: '14px',
+                  fontWeight: 600,
+                  color: '#232D42',
+                  fontFamily: 'Inter'
+                }}>Güven Veren İşbirliği ve Sinerji Skoru</th>
+              </tr>
+            </thead>
+            <tbody>
+              {paginatedResults.map((result) => (
+                <React.Fragment key={result.code}>
+                  <tr style={{
+                    borderBottom: '1px solid #F1F3F4',
+                    background: result.isGrouped && result.groupCount && result.groupCount > 1 ? '#E3F2FD' : 'white'
+                  }}>
+                    <td style={{
+                      padding: '16px',
+                      fontSize: '14px',
+                      color: '#232D42',
+                      fontFamily: 'Inter',
+                      fontWeight: 500
+                    }}>
+                      {result.isGrouped && result.groupCount && result.groupCount > 1 && (
+                        <span
+                          onClick={() => toggleGroup(result.email)}
+                          style={{
+                            display: 'inline-block',
+                            width: '20px',
+                            height: '20px',
+                            lineHeight: '18px',
+                            textAlign: 'center',
+                            background: '#0286F7',
+                            color: 'white',
+                            borderRadius: '3px',
+                            cursor: 'pointer',
+                            marginRight: '8px',
+                            fontSize: '12px',
+                            fontWeight: 'bold'
+                          }}
+                        >
+                          {expandedGroups.has(result.email) ? '-' : '+'}
+                        </span>
+                      )}
+                      {result.name}
+                      {result.isGrouped && result.groupCount && result.groupCount > 1 && (
+                        <span style={{
+                          color: '#666',
+                          fontSize: '12px',
+                          marginLeft: '8px'
+                        }}>
+                          ({result.groupCount} sonuç)
+                        </span>
+                      )}
+                    </td>
+                  <td style={{
+                    padding: '16px',
+                    fontSize: '14px',
+                    color: '#8A92A6',
+                    fontFamily: 'Inter'
+                  }}>
+                    {formatDate(result.completionDate)}
+                  </td>
+                  <td style={{
+                    padding: '16px',
+                    fontSize: '14px',
+                    fontFamily: 'Inter'
+                  }}>
+                    <span style={{
+                      padding: '4px 8px',
+                      borderRadius: '4px',
+                      fontSize: '12px',
+                      fontWeight: 500,
+                      backgroundColor: getScoreColorClass(result.customerFocusScore) === 'red' ? '#FF0000' : 
+                                     getScoreColorClass(result.customerFocusScore) === 'yellow' ? '#FFD700' : 
+                                     getScoreColorClass(result.customerFocusScore) === 'green' ? '#00FF00' : 'transparent',
+                      color: getScoreColorClass(result.customerFocusScore) === 'red' ? '#FFF' : 
+                             getScoreColorClass(result.customerFocusScore) === 'yellow' ? '#000' : 
+                             getScoreColorClass(result.customerFocusScore) === 'green' ? '#000' : '#8A92A6'
+                    }}>
+                      {formatScore(result.customerFocusScore)}
+                    </span>
+                  </td>
+                  <td style={{
+                    padding: '16px',
+                    fontSize: '14px',
+                    fontFamily: 'Inter'
+                  }}>
+                    <span style={{
+                      padding: '4px 8px',
+                      borderRadius: '4px',
+                      fontSize: '12px',
+                      fontWeight: 500,
+                      backgroundColor: getScoreColorClass(result.uncertaintyScore) === 'red' ? '#FF0000' : 
+                                     getScoreColorClass(result.uncertaintyScore) === 'yellow' ? '#FFD700' : 
+                                     getScoreColorClass(result.uncertaintyScore) === 'green' ? '#00FF00' : 'transparent',
+                      color: getScoreColorClass(result.uncertaintyScore) === 'red' ? '#FFF' : 
+                             getScoreColorClass(result.uncertaintyScore) === 'yellow' ? '#000' : 
+                             getScoreColorClass(result.uncertaintyScore) === 'green' ? '#000' : '#8A92A6'
+                    }}>
+                      {formatScore(result.uncertaintyScore)}
+                    </span>
+                  </td>
+                  <td style={{
+                    padding: '16px',
+                    fontSize: '14px',
+                    fontFamily: 'Inter'
+                  }}>
+                    <span style={{
+                      padding: '4px 8px',
+                      borderRadius: '4px',
+                      fontSize: '12px',
+                      fontWeight: 500,
+                      backgroundColor: getScoreColorClass(result.ieScore) === 'red' ? '#FF0000' : 
+                                     getScoreColorClass(result.ieScore) === 'yellow' ? '#FFD700' : 
+                                     getScoreColorClass(result.ieScore) === 'green' ? '#00FF00' : 'transparent',
+                      color: getScoreColorClass(result.ieScore) === 'red' ? '#FFF' : 
+                             getScoreColorClass(result.ieScore) === 'yellow' ? '#000' : 
+                             getScoreColorClass(result.ieScore) === 'green' ? '#000' : '#8A92A6'
+                    }}>
+                      {formatScore(result.ieScore)}
+                    </span>
+                  </td>
+                  <td style={{
+                    padding: '16px',
+                    fontSize: '14px',
+                    fontFamily: 'Inter'
+                  }}>
+                    <span style={{
+                      padding: '4px 8px',
+                      borderRadius: '4px',
+                      fontSize: '12px',
+                      fontWeight: 500,
+                      backgroundColor: getScoreColorClass(result.idikScore) === 'red' ? '#FF0000' : 
+                                     getScoreColorClass(result.idikScore) === 'yellow' ? '#FFD700' : 
+                                     getScoreColorClass(result.idikScore) === 'green' ? '#00FF00' : 'transparent',
+                      color: getScoreColorClass(result.idikScore) === 'red' ? '#FFF' : 
+                             getScoreColorClass(result.idikScore) === 'yellow' ? '#000' : 
+                             getScoreColorClass(result.idikScore) === 'green' ? '#000' : '#8A92A6'
+                    }}>
+                      {formatScore(result.idikScore)}
+                    </span>
+                  </td>
+                  </tr>
+                  
+                  {/* Alt satırlar (gruplandırılmış ise) */}
+                  {result.isGrouped && result.groupCount && result.groupCount > 1 && result.allGroupItems && expandedGroups.has(result.email) && 
+                    result.allGroupItems.slice(1).map((groupItem) => (
+                      <tr key={groupItem.code} style={{
+                        borderBottom: '1px solid #F1F3F4',
+                        background: '#F8F9FA'
+                      }}>
+                        <td style={{
+                          padding: '16px',
+                          paddingLeft: '46px',
+                          fontSize: '14px',
+                          color: '#232D42',
+                          fontFamily: 'Inter',
+                          fontWeight: 500
+                        }}>
+                          {groupItem.name}
+                        </td>
+                        <td style={{
+                          padding: '16px',
+                          fontSize: '14px',
+                          color: '#8A92A6',
+                          fontFamily: 'Inter'
+                        }}>
+                          {formatDate(groupItem.completionDate)}
+                        </td>
+                        <td style={{
+                          padding: '16px',
+                          fontSize: '14px',
+                          fontFamily: 'Inter'
+                        }}>
+                          <span style={{
+                            padding: '4px 8px',
+                            borderRadius: '4px',
+                            fontSize: '12px',
+                            fontWeight: 500,
+                            backgroundColor: getScoreColorClass(groupItem.customerFocusScore) === 'red' ? '#FF0000' : 
+                                           getScoreColorClass(groupItem.customerFocusScore) === 'yellow' ? '#FFD700' : 
+                                           getScoreColorClass(groupItem.customerFocusScore) === 'green' ? '#00FF00' : 'transparent',
+                            color: getScoreColorClass(groupItem.customerFocusScore) === 'red' ? '#FFF' : 
+                                   getScoreColorClass(groupItem.customerFocusScore) === 'yellow' ? '#000' : 
+                                   getScoreColorClass(groupItem.customerFocusScore) === 'green' ? '#000' : '#8A92A6'
+                          }}>
+                            {formatScore(groupItem.customerFocusScore)}
+                          </span>
+                        </td>
+                        <td style={{
+                          padding: '16px',
+                          fontSize: '14px',
+                          fontFamily: 'Inter'
+                        }}>
+                          <span style={{
+                            padding: '4px 8px',
+                            borderRadius: '4px',
+                            fontSize: '12px',
+                            fontWeight: 500,
+                            backgroundColor: getScoreColorClass(groupItem.uncertaintyScore) === 'red' ? '#FF0000' : 
+                                           getScoreColorClass(groupItem.uncertaintyScore) === 'yellow' ? '#FFD700' : 
+                                           getScoreColorClass(groupItem.uncertaintyScore) === 'green' ? '#00FF00' : 'transparent',
+                            color: getScoreColorClass(groupItem.uncertaintyScore) === 'red' ? '#FFF' : 
+                                   getScoreColorClass(groupItem.uncertaintyScore) === 'yellow' ? '#000' : 
+                                   getScoreColorClass(groupItem.uncertaintyScore) === 'green' ? '#000' : '#8A92A6'
+                          }}>
+                            {formatScore(groupItem.uncertaintyScore)}
+                          </span>
+                        </td>
+                        <td style={{
+                          padding: '16px',
+                          fontSize: '14px',
+                          fontFamily: 'Inter'
+                        }}>
+                          <span style={{
+                            padding: '4px 8px',
+                            borderRadius: '4px',
+                            fontSize: '12px',
+                            fontWeight: 500,
+                            backgroundColor: getScoreColorClass(groupItem.ieScore) === 'red' ? '#FF0000' : 
+                                           getScoreColorClass(groupItem.ieScore) === 'yellow' ? '#FFD700' : 
+                                           getScoreColorClass(groupItem.ieScore) === 'green' ? '#00FF00' : 'transparent',
+                            color: getScoreColorClass(groupItem.ieScore) === 'red' ? '#FFF' : 
+                                   getScoreColorClass(groupItem.ieScore) === 'yellow' ? '#000' : 
+                                   getScoreColorClass(groupItem.ieScore) === 'green' ? '#000' : '#8A92A6'
+                          }}>
+                            {formatScore(groupItem.ieScore)}
+                          </span>
+                        </td>
+                        <td style={{
+                          padding: '16px',
+                          fontSize: '14px',
+                          fontFamily: 'Inter'
+                        }}>
+                          <span style={{
+                            padding: '4px 8px',
+                            borderRadius: '4px',
+                            fontSize: '12px',
+                            fontWeight: 500,
+                            backgroundColor: getScoreColorClass(groupItem.idikScore) === 'red' ? '#FF0000' : 
+                                           getScoreColorClass(groupItem.idikScore) === 'yellow' ? '#FFD700' : 
+                                           getScoreColorClass(groupItem.idikScore) === 'green' ? '#00FF00' : 'transparent',
+                            color: getScoreColorClass(groupItem.idikScore) === 'red' ? '#FFF' : 
+                                   getScoreColorClass(groupItem.idikScore) === 'yellow' ? '#000' : 
+                                   getScoreColorClass(groupItem.idikScore) === 'green' ? '#000' : '#8A92A6'
+                          }}>
+                            {formatScore(groupItem.idikScore)}
+                          </span>
+                        </td>
+                      </tr>
+                    ))
+                  }
+                </React.Fragment>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      {/* Pagination */}
+      {totalPages > 1 && (
+        <div style={{
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          gap: '16px',
+          marginTop: '24px',
+          padding: '16px 0'
+        }}>
+          {/* Pagination Info */}
+          <div style={{
+            fontSize: '14px',
+            color: '#6B7280',
+            fontFamily: 'Inter'
+          }}>
+            {((currentPage - 1) * itemsPerPage) + 1}-{Math.min(currentPage * itemsPerPage, filteredResults.length)} arası, toplam {filteredResults.length} kayıt
+          </div>
+
+          {/* Pagination Controls */}
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '4px'
+          }}>
+            {/* İlk sayfa */}
+            <button
+              onClick={() => setCurrentPage(1)}
+              disabled={currentPage === 1}
+              style={{
+                width: '32px',
+                height: '32px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                background: currentPage === 1 ? '#F3F4F6' : 'white',
+                color: currentPage === 1 ? '#9CA3AF' : '#374151',
+                border: '1px solid #E5E7EB',
+                borderRadius: '4px',
+                cursor: currentPage === 1 ? 'not-allowed' : 'pointer',
+                fontSize: '12px'
+              }}
+            >
+              <i className="fas fa-angle-double-left"></i>
+            </button>
+
+            {/* Önceki sayfa */}
+            <button
+              onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+              disabled={currentPage === 1}
+              style={{
+                width: '32px',
+                height: '32px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                background: currentPage === 1 ? '#F3F4F6' : 'white',
+                color: currentPage === 1 ? '#9CA3AF' : '#374151',
+                border: '1px solid #E5E7EB',
+                borderRadius: '4px',
+                cursor: currentPage === 1 ? 'not-allowed' : 'pointer',
+                fontSize: '12px'
+              }}
+            >
+              <i className="fas fa-angle-left"></i>
+            </button>
+
+            {/* Sayfa numaraları */}
+            {(() => {
+              const maxVisiblePages = 5;
+              let startPage = Math.max(1, currentPage - Math.floor(maxVisiblePages / 2));
+              let endPage = Math.min(totalPages, startPage + maxVisiblePages - 1);
+              
+              if (endPage - startPage + 1 < maxVisiblePages) {
+                startPage = Math.max(1, endPage - maxVisiblePages + 1);
+              }
+
+              const pageButtonStyle = (isActive: boolean) => ({
+                width: '32px',
+                height: '32px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                background: isActive ? '#3B82F6' : 'white',
+                color: isActive ? 'white' : '#374151',
+                border: '1px solid #E5E7EB',
+                borderRadius: '4px',
+                cursor: 'pointer',
+                fontSize: '14px',
+                fontFamily: 'Inter',
+                fontWeight: 500
+              });
+
+              const pages: JSX.Element[] = [];
+              
+              // Başlangıçta ellipsis
+              if (startPage > 1) {
+                pages.push(
+                  <button key={1} onClick={() => setCurrentPage(1)} style={pageButtonStyle(false)}>
+                    1
+                  </button>
+                );
+                if (startPage > 2) {
+                  pages.push(
+                    <span key="ellipsis1" style={{ padding: '0 8px', color: '#9CA3AF', fontSize: '14px' }}>...</span>
+                  );
+                }
+              }
+
+              // Sayfa numaraları
+              for (let i = startPage; i <= endPage; i++) {
+                pages.push(
+                  <button key={i} onClick={() => setCurrentPage(i)} style={pageButtonStyle(currentPage === i)}>
+                    {i}
+                  </button>
+                );
+              }
+
+              // Sonda ellipsis
+              if (endPage < totalPages) {
+                if (endPage < totalPages - 1) {
+                  pages.push(
+                    <span key="ellipsis2" style={{ padding: '0 8px', color: '#9CA3AF', fontSize: '14px' }}>...</span>
+                  );
+                }
+                pages.push(
+                  <button key={totalPages} onClick={() => setCurrentPage(totalPages)} style={pageButtonStyle(false)}>
+                    {totalPages}
+                  </button>
+                );
+              }
+
+              return pages;
+            })()}
+
+            {/* Sonraki sayfa */}
+            <button
+              onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+              disabled={currentPage === totalPages}
+              style={{
+                width: '32px',
+                height: '32px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                background: currentPage === totalPages ? '#F3F4F6' : 'white',
+                color: currentPage === totalPages ? '#9CA3AF' : '#374151',
+                border: '1px solid #E5E7EB',
+                borderRadius: '4px',
+                cursor: currentPage === totalPages ? 'not-allowed' : 'pointer',
+                fontSize: '12px'
+              }}
+            >
+              <i className="fas fa-angle-right"></i>
+            </button>
+
+            {/* Son sayfa */}
+            <button
+              onClick={() => setCurrentPage(totalPages)}
+              disabled={currentPage === totalPages}
+              style={{
+                width: '32px',
+                height: '32px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                background: currentPage === totalPages ? '#F3F4F6' : 'white',
+                color: currentPage === totalPages ? '#9CA3AF' : '#374151',
+                border: '1px solid #E5E7EB',
+                borderRadius: '4px',
+                cursor: currentPage === totalPages ? 'not-allowed' : 'pointer',
+                fontSize: '12px'
+              }}
+            >
+              <i className="fas fa-angle-double-right"></i>
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* CSS Animation */}
+      {/* Filter Popup */}
+      {showFilterPopup && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          width: '100%',
+          height: '100%',
+          background: 'rgba(0, 0, 0, 0.5)',
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+          zIndex: 1000
+        }}>
+          <div style={{
+            background: 'white',
+            borderRadius: '8px',
+            padding: '0',
+            maxWidth: '600px',
+            width: '90%',
+            maxHeight: '80vh',
+            overflow: 'auto',
+            boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)'
+          }}>
+            {/* Header */}
+            <div style={{
+              padding: '20px 24px',
+              borderBottom: '1px solid #E5E7EB',
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center'
+            }}>
+              <h3 style={{
+                margin: 0,
+                color: '#232D42',
+                fontFamily: 'Inter',
+                fontSize: '18px',
+                fontWeight: 600
+              }}>
+                Filtrele
+              </h3>
+              <button
+                onClick={closeFilterPopup}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  fontSize: '24px',
+                  color: '#6B7280',
+                  cursor: 'pointer',
+                  padding: '4px',
+                  lineHeight: 1
+                }}
+              >
+                ×
+              </button>
+            </div>
+
+            {/* Body */}
+            <div style={{
+              padding: '24px'
+            }}>
+              {/* İsim Ara */}
+              <div style={{ marginBottom: '24px' }}>
+                <label style={{
+                  display: 'block',
+                  marginBottom: '8px',
+                  color: '#232D42',
+                  fontWeight: 500,
+                  fontFamily: 'Inter',
+                  fontSize: '14px'
+                }}>
+                  İsim Ara
+                </label>
+                <input
+                  type="text"
+                  value={filters.nameSearch}
+                  onChange={(e) => setFilters({...filters, nameSearch: e.target.value})}
+                  placeholder="İsim girin..."
+                  style={{
+                    width: '100%',
+                    padding: '12px',
+                    border: '1px solid #D1D5DB',
+                    borderRadius: '6px',
+                    fontSize: '14px',
+                    fontFamily: 'Inter',
+                    outline: 'none'
+                  }}
+                />
+              </div>
+
+              {/* Müşteri Odaklılık Skoru */}
+              <div style={{ marginBottom: '24px' }}>
+                <label style={{
+                  display: 'block',
+                  marginBottom: '8px',
+                  color: '#232D42',
+                  fontWeight: 500,
+                  fontFamily: 'Inter',
+                  fontSize: '14px'
+                }}>
+                  Müşteri Odaklılık Skoru
+                </label>
+                <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+                  <input
+                    type="range"
+                    min="0"
+                    max="100"
+                    value={filters.customerFocusMin}
+                    onChange={(e) => setFilters({...filters, customerFocusMin: parseInt(e.target.value)})}
+                    style={{ flex: 1 }}
+                  />
+                  <span style={{ minWidth: '30px', textAlign: 'center', fontSize: '14px' }}>
+                    {filters.customerFocusMin}
+                  </span>
+                  <span style={{ fontSize: '14px' }}>-</span>
+                  <input
+                    type="range"
+                    min="0"
+                    max="100"
+                    value={filters.customerFocusMax}
+                    onChange={(e) => setFilters({...filters, customerFocusMax: parseInt(e.target.value)})}
+                    style={{ flex: 1 }}
+                  />
+                  <span style={{ minWidth: '30px', textAlign: 'center', fontSize: '14px' }}>
+                    {filters.customerFocusMax}
+                  </span>
+                </div>
+              </div>
+
+              {/* Belirsizlik Yönetimi Skoru */}
+              <div style={{ marginBottom: '24px' }}>
+                <label style={{
+                  display: 'block',
+                  marginBottom: '8px',
+                  color: '#232D42',
+                  fontWeight: 500,
+                  fontFamily: 'Inter',
+                  fontSize: '14px'
+                }}>
+                  Belirsizlik Yönetimi Skoru
+                </label>
+                <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+                  <input
+                    type="range"
+                    min="0"
+                    max="100"
+                    value={filters.uncertaintyMin}
+                    onChange={(e) => setFilters({...filters, uncertaintyMin: parseInt(e.target.value)})}
+                    style={{ flex: 1 }}
+                  />
+                  <span style={{ minWidth: '30px', textAlign: 'center', fontSize: '14px' }}>
+                    {filters.uncertaintyMin}
+                  </span>
+                  <span style={{ fontSize: '14px' }}>-</span>
+                  <input
+                    type="range"
+                    min="0"
+                    max="100"
+                    value={filters.uncertaintyMax}
+                    onChange={(e) => setFilters({...filters, uncertaintyMax: parseInt(e.target.value)})}
+                    style={{ flex: 1 }}
+                  />
+                  <span style={{ minWidth: '30px', textAlign: 'center', fontSize: '14px' }}>
+                    {filters.uncertaintyMax}
+                  </span>
+                </div>
+              </div>
+
+              {/* IE Skoru */}
+              <div style={{ marginBottom: '24px' }}>
+                <label style={{
+                  display: 'block',
+                  marginBottom: '8px',
+                  color: '#232D42',
+                  fontWeight: 500,
+                  fontFamily: 'Inter',
+                  fontSize: '14px'
+                }}>
+                  IE Skoru
+                </label>
+                <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+                  <input
+                    type="range"
+                    min="0"
+                    max="100"
+                    value={filters.ieMin}
+                    onChange={(e) => setFilters({...filters, ieMin: parseInt(e.target.value)})}
+                    style={{ flex: 1 }}
+                  />
+                  <span style={{ minWidth: '30px', textAlign: 'center', fontSize: '14px' }}>
+                    {filters.ieMin}
+                  </span>
+                  <span style={{ fontSize: '14px' }}>-</span>
+                  <input
+                    type="range"
+                    min="0"
+                    max="100"
+                    value={filters.ieMax}
+                    onChange={(e) => setFilters({...filters, ieMax: parseInt(e.target.value)})}
+                    style={{ flex: 1 }}
+                  />
+                  <span style={{ minWidth: '30px', textAlign: 'center', fontSize: '14px' }}>
+                    {filters.ieMax}
+                  </span>
+                </div>
+              </div>
+
+              {/* IDIK Skoru */}
+              <div style={{ marginBottom: '24px' }}>
+                <label style={{
+                  display: 'block',
+                  marginBottom: '8px',
+                  color: '#232D42',
+                  fontWeight: 500,
+                  fontFamily: 'Inter',
+                  fontSize: '14px'
+                }}>
+                  IDIK Skoru
+                </label>
+                <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+                  <input
+                    type="range"
+                    min="0"
+                    max="100"
+                    value={filters.idikMin}
+                    onChange={(e) => setFilters({...filters, idikMin: parseInt(e.target.value)})}
+                    style={{ flex: 1 }}
+                  />
+                  <span style={{ minWidth: '30px', textAlign: 'center', fontSize: '14px' }}>
+                    {filters.idikMin}
+                  </span>
+                  <span style={{ fontSize: '14px' }}>-</span>
+                  <input
+                    type="range"
+                    min="0"
+                    max="100"
+                    value={filters.idikMax}
+                    onChange={(e) => setFilters({...filters, idikMax: parseInt(e.target.value)})}
+                    style={{ flex: 1 }}
+                  />
+                  <span style={{ minWidth: '30px', textAlign: 'center', fontSize: '14px' }}>
+                    {filters.idikMax}
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            {/* Footer */}
+            <div style={{
+              padding: '20px 24px',
+              borderTop: '1px solid #E5E7EB',
+              display: 'flex',
+              justifyContent: 'flex-end',
+              gap: '12px'
+            }}>
+              <button
+                onClick={closeFilterPopup}
+                style={{
+                  padding: '8px 16px',
+                  border: '1px solid #E5E7EB',
+                  borderRadius: '6px',
+                  background: 'white',
+                  color: '#6B7280',
+                  fontFamily: 'Inter',
+                  fontSize: '14px',
+                  fontWeight: 500,
+                  cursor: 'pointer'
+                }}
+              >
+                İptal
+              </button>
+              <button
+                onClick={clearFilters}
+                style={{
+                  padding: '8px 16px',
+                  border: '1px solid #E5E7EB',
+                  borderRadius: '6px',
+                  background: 'white',
+                  color: '#6B7280',
+                  fontFamily: 'Inter',
+                  fontSize: '14px',
+                  fontWeight: 500,
+                  cursor: 'pointer'
+                }}
+              >
+                Filtreleri Temizle
+              </button>
+              <button
+                onClick={applyFilters}
+                style={{
+                  padding: '8px 16px',
+                  border: 'none',
+                  borderRadius: '6px',
+                  background: '#2563EB',
+                  color: 'white',
+                  fontFamily: 'Inter',
+                  fontSize: '14px',
+                  fontWeight: 500,
+                  cursor: 'pointer'
+                }}
+              >
+                Uygula
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      <style>{`
+        @keyframes spin {
+          0% { transform: rotate(0deg); }
+          100% { transform: rotate(360deg); }
+        }
+      `}</style>
+    </div>
+  );
+};
+
+export default ResultsPage;
