@@ -4,6 +4,7 @@ import { AuthProvider } from './contexts/AuthContext';
 import ProtectedRoute from './components/ProtectedRoute';
 import SuperAdminRoute from './components/SuperAdminRoute';
 import Layout from './components/Layout';
+// import backgroundImage from './assets/background.png';
 
 // Pages
 import LoginPage from './pages/LoginPage';
@@ -23,7 +24,9 @@ function App() {
   return (
     <AuthProvider>
       <Router>
-        <div className="App">
+        <div className="App" style={{
+          minHeight: '100vh'
+        }}>
           <Routes>
             {/* Public routes */}
             <Route path="/" element={<Navigate to="/login" replace />} />

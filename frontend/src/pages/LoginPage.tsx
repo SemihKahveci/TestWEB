@@ -69,7 +69,6 @@ const LoginPage: React.FC = () => {
   return (
     <div style={{
       minHeight: '100vh',
-      backgroundColor: 'white',
       display: 'flex',
       flexDirection: 'column',
       justifyContent: 'center',
@@ -90,11 +89,6 @@ const LoginPage: React.FC = () => {
         alignItems: 'center',
         opacity: 0.05
       }}>
-        <img 
-          src="/images/background.png" 
-          alt="Background" 
-          style={{ width: '544px', height: '522px', objectFit: 'cover' }}
-        />
       </div>
 
       {/* Login Container */}
