@@ -15,16 +15,27 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
 
   const [companySettingsExpanded, setCompanySettingsExpanded] = useState(false);
 
-  // Responsive kontrolü
+  // Responsive kontrolü - zoom değişimlerini de algılar
   useEffect(() => {
+    const mediaQuery = window.matchMedia('(max-width: 768px)');
+    
     const checkIsMobile = () => {
-      setIsMobile(window.innerWidth <= 768);
+      setIsMobile(mediaQuery.matches);
     };
     
+    // İlk kontrol
     checkIsMobile();
+    
+    // Media query değişimlerini dinle
+    mediaQuery.addEventListener('change', checkIsMobile);
+    
+    // Fallback olarak resize event'i de dinle
     window.addEventListener('resize', checkIsMobile);
     
-    return () => window.removeEventListener('resize', checkIsMobile);
+    return () => {
+      mediaQuery.removeEventListener('change', checkIsMobile);
+      window.removeEventListener('resize', checkIsMobile);
+    };
   }, []);
 
   // Super admin kontrolü

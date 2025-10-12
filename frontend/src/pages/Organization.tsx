@@ -45,6 +45,7 @@ const Organization: React.FC = () => {
   const [selectedOrganization, setSelectedOrganization] = useState<Organization | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [isMobile, setIsMobile] = useState(false);
   
   // Form states
   const [formData, setFormData] = useState({
@@ -58,6 +59,24 @@ const Organization: React.FC = () => {
   // Pagination states
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage] = useState(10);
+
+  // Responsive kontrolü
+  useEffect(() => {
+    const mediaQuery = window.matchMedia('(max-width: 768px)');
+    
+    const checkIsMobile = () => {
+      setIsMobile(mediaQuery.matches);
+    };
+    
+    checkIsMobile();
+    mediaQuery.addEventListener('change', checkIsMobile);
+    window.addEventListener('resize', checkIsMobile);
+    
+    return () => {
+      mediaQuery.removeEventListener('change', checkIsMobile);
+      window.removeEventListener('resize', checkIsMobile);
+    };
+  }, []);
 
   useEffect(() => {
     loadOrganizations();
@@ -764,7 +783,7 @@ const Organization: React.FC = () => {
             <table style={{
               width: '100%',
               borderCollapse: 'collapse',
-              minWidth: '600px'
+              minWidth: isMobile ? '400px' : '600px'
             }}>
             <thead>
               <tr style={{ backgroundColor: '#F8F9FA' }}>

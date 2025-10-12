@@ -54,12 +54,31 @@ const GameSendPage: React.FC = () => {
     message: '',
     callback: null as ((result: boolean) => void) | null
   });
+  const [isMobile, setIsMobile] = useState(false);
 
   // Available planets
   const availablePlanets: Planet[] = [
     { value: 'venus', label: 'Venüs (Belirsizlik Yönetimi - Müşteri Odaklılık)' },
     { value: 'titan', label: 'Titan (İnsanları Etkileme - Güven Veren İşbirlikçi ve Sinerji)' }
   ];
+
+  // Responsive kontrolü
+  useEffect(() => {
+    const mediaQuery = window.matchMedia('(max-width: 768px)');
+    
+    const checkIsMobile = () => {
+      setIsMobile(mediaQuery.matches);
+    };
+    
+    checkIsMobile();
+    mediaQuery.addEventListener('change', checkIsMobile);
+    window.addEventListener('resize', checkIsMobile);
+    
+    return () => {
+      mediaQuery.removeEventListener('change', checkIsMobile);
+      window.removeEventListener('resize', checkIsMobile);
+    };
+  }, []);
 
   // Load groups when group tab is selected
   useEffect(() => {

@@ -49,6 +49,7 @@ const ResultsPage: React.FC = () => {
     idikMin: 0,
     idikMax: 100
   });
+  const [isMobile, setIsMobile] = useState(false);
   
   const hasLoaded = useRef(false);
 
@@ -92,6 +93,24 @@ const ResultsPage: React.FC = () => {
       setIsLoading(false);
     }
   };
+
+  // Responsive kontrolü
+  useEffect(() => {
+    const mediaQuery = window.matchMedia('(max-width: 768px)');
+    
+    const checkIsMobile = () => {
+      setIsMobile(mediaQuery.matches);
+    };
+    
+    checkIsMobile();
+    mediaQuery.addEventListener('change', checkIsMobile);
+    window.addEventListener('resize', checkIsMobile);
+    
+    return () => {
+      mediaQuery.removeEventListener('change', checkIsMobile);
+      window.removeEventListener('resize', checkIsMobile);
+    };
+  }, []);
 
   useEffect(() => {
     // Sadece bir kere çalıştır (React Strict Mode için)

@@ -8,9 +8,28 @@ const LoginPage: React.FC = () => {
   const [remember, setRemember] = useState(true);
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
   
   const { login } = useAuth();
   const navigate = useNavigate();
+
+  // Responsive kontrolü
+  useEffect(() => {
+    const mediaQuery = window.matchMedia('(max-width: 768px)');
+    
+    const checkIsMobile = () => {
+      setIsMobile(mediaQuery.matches);
+    };
+    
+    checkIsMobile();
+    mediaQuery.addEventListener('change', checkIsMobile);
+    window.addEventListener('resize', checkIsMobile);
+    
+    return () => {
+      mediaQuery.removeEventListener('change', checkIsMobile);
+      window.removeEventListener('resize', checkIsMobile);
+    };
+  }, []);
 
   useEffect(() => {
     // Enter tuşu ile giriş yapma

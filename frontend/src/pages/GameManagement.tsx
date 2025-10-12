@@ -35,6 +35,7 @@ const GameManagement: React.FC = () => {
   const [isLoadingEdit, setIsLoadingEdit] = useState(false);
   const [showSuccessPopup, setShowSuccessPopup] = useState(false);
   const [successMessage, setSuccessMessage] = useState('');
+  const [isMobile, setIsMobile] = useState(false);
   
   // Form states
   const [formData, setFormData] = useState({
@@ -43,6 +44,24 @@ const GameManagement: React.FC = () => {
     credit: '',
     invoiceFile: null as File | null
   });
+
+  // Responsive kontrolü
+  useEffect(() => {
+    const mediaQuery = window.matchMedia('(max-width: 768px)');
+    
+    const checkIsMobile = () => {
+      setIsMobile(mediaQuery.matches);
+    };
+    
+    checkIsMobile();
+    mediaQuery.addEventListener('change', checkIsMobile);
+    window.addEventListener('resize', checkIsMobile);
+    
+    return () => {
+      mediaQuery.removeEventListener('change', checkIsMobile);
+      window.removeEventListener('resize', checkIsMobile);
+    };
+  }, []);
 
   useEffect(() => {
     loadGames();

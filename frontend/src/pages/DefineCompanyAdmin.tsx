@@ -17,6 +17,8 @@ const DefineCompanyAdmin: React.FC = () => {
   const [showEditPopup, setShowEditPopup] = useState(false);
   const [showDeletePopup, setShowDeletePopup] = useState(false);
   const [selectedAdmin, setSelectedAdmin] = useState<Admin | null>(null);
+  const [isMobile, setIsMobile] = useState(false);
+  
   // Form states
   const [formData, setFormData] = useState({
     name: '',
@@ -24,6 +26,24 @@ const DefineCompanyAdmin: React.FC = () => {
     company: '',
     password: ''
   });
+
+  // Responsive kontrolü
+  useEffect(() => {
+    const mediaQuery = window.matchMedia('(max-width: 768px)');
+    
+    const checkIsMobile = () => {
+      setIsMobile(mediaQuery.matches);
+    };
+    
+    checkIsMobile();
+    mediaQuery.addEventListener('change', checkIsMobile);
+    window.addEventListener('resize', checkIsMobile);
+    
+    return () => {
+      mediaQuery.removeEventListener('change', checkIsMobile);
+      window.removeEventListener('resize', checkIsMobile);
+    };
+  }, []);
 
   useEffect(() => {
     loadAdmins();
@@ -391,7 +411,7 @@ const DefineCompanyAdmin: React.FC = () => {
             <table style={{
               width: '100%',
               borderCollapse: 'collapse',
-              minWidth: '600px'
+              minWidth: isMobile ? '400px' : '600px'
             }}>
             <thead>
               <tr style={{
@@ -555,9 +575,9 @@ const DefineCompanyAdmin: React.FC = () => {
           <div style={{
             background: 'white',
             borderRadius: '8px',
-            padding: window.innerWidth <= 768 ? '20px' : '30px 35px',
-            maxWidth: window.innerWidth <= 768 ? '90%' : '600px',
-            width: window.innerWidth <= 768 ? '90%' : '90%',
+            padding: isMobile ? '20px' : '30px 35px',
+            maxWidth: isMobile ? '90%' : '600px',
+            width: isMobile ? '90%' : '90%',
             maxHeight: '80vh',
             overflow: 'auto',
             position: 'relative'

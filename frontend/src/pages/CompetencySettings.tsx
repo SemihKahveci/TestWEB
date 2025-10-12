@@ -37,6 +37,7 @@ const CompetencySettings: React.FC = () => {
   const [selectedCompetency, setSelectedCompetency] = useState<Competency | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isImporting, setIsImporting] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
   
   // Form states
   const [formData, setFormData] = useState({
@@ -50,6 +51,24 @@ const CompetencySettings: React.FC = () => {
     collaborationMin: '',
     collaborationMax: ''
   });
+
+  // Responsive kontrolü
+  useEffect(() => {
+    const mediaQuery = window.matchMedia('(max-width: 768px)');
+    
+    const checkIsMobile = () => {
+      setIsMobile(mediaQuery.matches);
+    };
+    
+    checkIsMobile();
+    mediaQuery.addEventListener('change', checkIsMobile);
+    window.addEventListener('resize', checkIsMobile);
+    
+    return () => {
+      mediaQuery.removeEventListener('change', checkIsMobile);
+      window.removeEventListener('resize', checkIsMobile);
+    };
+  }, []);
 
   useEffect(() => {
     loadCompetencies();
@@ -758,7 +777,7 @@ const CompetencySettings: React.FC = () => {
               <table style={{
                 width: '100%',
                 borderCollapse: 'collapse',
-                minWidth: '600px'
+                minWidth: isMobile ? '400px' : '600px'
               }}>
               <thead>
                 <tr style={{ background: '#F8F9FA' }}>
@@ -1011,10 +1030,10 @@ const CompetencySettings: React.FC = () => {
               zIndex: 1000
             }}>
               <div style={{
-                width: window.innerWidth <= 768 ? '90%' : '100%',
-                maxWidth: window.innerWidth <= 768 ? '90%' : '600px',
+                width: isMobile ? '90%' : '100%',
+                maxWidth: isMobile ? '90%' : '600px',
                 height: 'auto',
-                padding: window.innerWidth <= 768 ? '20px' : '30px 35px',
+                padding: isMobile ? '20px' : '30px 35px',
                 position: 'relative',
                 background: 'white',
                 borderRadius: '15px',
@@ -1459,10 +1478,10 @@ const CompetencySettings: React.FC = () => {
               zIndex: 1000
             }}>
               <div style={{
-                width: window.innerWidth <= 768 ? '90%' : '400px',
+                width: isMobile ? '90%' : '400px',
                 background: 'white',
                 borderRadius: '10px',
-                padding: window.innerWidth <= 768 ? '15px' : '20px',
+                padding: isMobile ? '15px' : '20px',
                 boxShadow: '0 2px 10px rgba(0, 0, 0, 0.1)',
                 animation: 'fadeIn 0.2s ease-in-out'
               }}>

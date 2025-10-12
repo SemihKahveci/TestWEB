@@ -60,6 +60,7 @@ const AdminPanel: React.FC = () => {
   const [showAnswersPopup, setShowAnswersPopup] = useState(false);
   const [selectedUser, setSelectedUser] = useState<UserResult | null>(null);
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
+  const [isMobile, setIsMobile] = useState(false);
   const [pdfOptions, setPdfOptions] = useState<PDFOptions>({
     generalEvaluation: true,
     strengths: true,
@@ -69,6 +70,24 @@ const AdminPanel: React.FC = () => {
   });
   
   const hasLoaded = useRef(false);
+
+  // Responsive kontrolü
+  useEffect(() => {
+    const mediaQuery = window.matchMedia('(max-width: 768px)');
+    
+    const checkIsMobile = () => {
+      setIsMobile(mediaQuery.matches);
+    };
+    
+    checkIsMobile();
+    mediaQuery.addEventListener('change', checkIsMobile);
+    window.addEventListener('resize', checkIsMobile);
+    
+    return () => {
+      mediaQuery.removeEventListener('change', checkIsMobile);
+      window.removeEventListener('resize', checkIsMobile);
+    };
+  }, []);
 
   useEffect(() => {
     // Sadece bir kere çalıştır (React Strict Mode için)
@@ -1336,7 +1355,7 @@ const AdminPanel: React.FC = () => {
           zIndex: 1000
         }}>
           <div style={{
-            width: window.innerWidth <= 768 ? '90%' : '400px',
+            width: isMobile ? '90%' : '400px',
             background: 'white',
             borderRadius: '10px',
             display: 'flex',
@@ -1585,8 +1604,8 @@ const AdminPanel: React.FC = () => {
           zIndex: 1000
         }}>
           <div style={{
-            width: window.innerWidth <= 768 ? '95%' : '80%',
-            maxWidth: window.innerWidth <= 768 ? '95%' : '800px',
+            width: isMobile ? '95%' : '80%',
+            maxWidth: isMobile ? '95%' : '800px',
             maxHeight: '80%',
             background: 'white',
             borderRadius: '10px',

@@ -15,6 +15,7 @@ const CompanyIdentification: React.FC = () => {
   const [showEditPopup, setShowEditPopup] = useState(false);
   const [showDeletePopup, setShowDeletePopup] = useState(false);
   const [selectedCompany, setSelectedCompany] = useState<Company | null>(null);
+  const [isMobile, setIsMobile] = useState(false);
   
   // Form states
   const [formData, setFormData] = useState({
@@ -22,6 +23,24 @@ const CompanyIdentification: React.FC = () => {
     firmName: '',
     firmMail: ''
   });
+
+  // Responsive kontrolü
+  useEffect(() => {
+    const mediaQuery = window.matchMedia('(max-width: 768px)');
+    
+    const checkIsMobile = () => {
+      setIsMobile(mediaQuery.matches);
+    };
+    
+    checkIsMobile();
+    mediaQuery.addEventListener('change', checkIsMobile);
+    window.addEventListener('resize', checkIsMobile);
+    
+    return () => {
+      mediaQuery.removeEventListener('change', checkIsMobile);
+      window.removeEventListener('resize', checkIsMobile);
+    };
+  }, []);
 
   useEffect(() => {
     loadCompanies();

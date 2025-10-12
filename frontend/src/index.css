@@ -61,3 +61,33 @@ body {
   border-color: #3b82f6;
   box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
 }
+
+/* Responsive base styles */
+html {
+  -webkit-text-size-adjust: 100%;
+  -ms-text-size-adjust: 100%;
+}
+
+body {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Mobile optimizations */
+@media (max-width: 768px) {
+  body {
+    font-size: 14px;
+    line-height: 1.5;
+  }
+  
+  .card {
+    padding: 16px;
+    margin: 8px;
+  }
+  
+  .btn-primary,
+  .btn-secondary {
+    padding: 12px 16px;
+    font-size: 14px;
+  }
+}
