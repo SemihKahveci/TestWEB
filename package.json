@@ -24,9 +24,11 @@
   },
   "scripts": {
     "start": "concurrently \"npm run backend\" \"npm run frontend\"",
+    "start:prod": "NODE_ENV=production node ./backend/app.js",
     "backend": "node ./backend/app.js",
     "frontend": "cd frontend && npm run dev",
     "build": "cd frontend && npm run build",
+    "build:prod": "cd frontend && npm run build && NODE_ENV=production node ./backend/app.js",
     "install-all": "npm install && cd frontend && npm install",
     "update-reports": "node ./backend/scripts/updateGameReports.js",
     "update-reports-code": "node ./backend/scripts/updateGameReports.js"

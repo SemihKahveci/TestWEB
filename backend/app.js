@@ -224,6 +224,21 @@ apiRouter.use('/authorization', authorizationRoutes);
 // API route'larını uygula
 app.use('/api', apiRouter);
 
+// Ana sayfa - Production'da frontend static dosyalarını serve et
+if (process.env.NODE_ENV === 'production') {
+    // Production'da frontend build dosyalarını serve et
+    app.use(express.static(path.join(__dirname, '../frontend/dist')));
+    
+    app.get('*', (req, res) => {
+        res.sendFile(path.join(__dirname, '../frontend/dist/index.html'));
+    });
+} else {
+    // Development'da React dev server'a yönlendir
+    app.get('/', (req, res) => {
+        res.redirect('http://localhost:5173');
+    });
+}
+
 // 404 handler
 app.use((req, res) => {
     res.status(404).json({ message: 'Sayfa bulunamadı' });
