@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import * as XLSX from 'xlsx';
 
 interface Authorization {
   _id: string;
@@ -361,21 +362,33 @@ const AuthorizationPage: React.FC = () => {
       // Tüm veriyi birleştir
       const allData = [headers, exampleRow, ...emptyRows];
 
-      // CSV formatında template oluştur (basit versiyon)
-      const csvContent = allData.map(row => row.join(',')).join('\n');
-      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-      const link = document.createElement('a');
-      const url = URL.createObjectURL(blob);
-      link.setAttribute('href', url);
-      link.setAttribute('download', 'kişiler_template.csv');
-      link.style.visibility = 'hidden';
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
+      // Excel workbook oluştur
+      const wb = XLSX.utils.book_new();
+      
+      // Worksheet oluştur
+      const ws = XLSX.utils.aoa_to_sheet(allData);
+      
+      // Sütun genişliklerini ayarla
+      ws['!cols'] = [
+        { wch: 15 }, // Sicil No
+        { wch: 25 }, // Ad Soyad
+        { wch: 30 }, // Email
+        { wch: 25 }  // Pozisyon
+      ];
+
+      // Worksheet'i workbook'a ekle
+      XLSX.utils.book_append_sheet(wb, ws, "Kişiler Template");
+
+      // Excel dosyasını indir
+      XLSX.writeFile(wb, 'kişiler_template.xlsx');
+      
+      setSuccessMessage('Excel template başarıyla indirildi!');
+      setShowSuccessPopup(true);
+      
     } catch (error) {
       console.error('Template indirme hatası:', error);
-      setImportMessage('Template indirilirken bir hata oluştu!');
-      setImportMessageType('error');
+      setErrorMessage('Template indirilirken bir hata oluştu!');
+      setShowErrorPopup(true);
     }
   };
 
