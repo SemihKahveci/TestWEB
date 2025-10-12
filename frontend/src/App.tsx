@@ -25,6 +25,10 @@ function App() {
     <AuthProvider>
       <Router>
         <div className="App" style={{
+          backgroundImage: `url('/background.png')`,
+          backgroundSize: 'cover',
+          backgroundPosition: 'center',
+          backgroundRepeat: 'no-repeat',
           minHeight: '100vh'
         }}>
           <Routes>
