@@ -2,6 +2,7 @@ import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from './contexts/AuthContext';
 import ProtectedRoute from './components/ProtectedRoute';
+import SuperAdminRoute from './components/SuperAdminRoute';
 import Layout from './components/Layout';
 
 // Pages
@@ -63,9 +64,11 @@ function App() {
             
         <Route path="/game-management" element={
           <ProtectedRoute>
-            <Layout>
-              <GameManagement />
-            </Layout>
+            <SuperAdminRoute>
+              <Layout>
+                <GameManagement />
+              </Layout>
+            </SuperAdminRoute>
           </ProtectedRoute>
         } />
         <Route path="/competency-settings" element={
@@ -102,17 +105,21 @@ function App() {
             
             <Route path="/company-identification" element={
               <ProtectedRoute>
-                <Layout>
-                  <CompanyIdentification />
-                </Layout>
+                <SuperAdminRoute>
+                  <Layout>
+                    <CompanyIdentification />
+                  </Layout>
+                </SuperAdminRoute>
               </ProtectedRoute>
             } />
             
             <Route path="/define-company-admin" element={
               <ProtectedRoute>
-                <Layout>
-                  <DefineCompanyAdmin />
-                </Layout>
+                <SuperAdminRoute>
+                  <Layout>
+                    <DefineCompanyAdmin />
+                  </Layout>
+                </SuperAdminRoute>
               </ProtectedRoute>
             } />
             

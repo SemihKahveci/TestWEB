@@ -3,7 +3,7 @@ import { evaluationAPI } from '../services/api';
 
 // Dinamik API base URL - hem local hem live'da çalışır
 const API_BASE_URL = (import.meta as any).env?.DEV 
-  ? 'http://localhost:5000'  // Development
+  ? `${window.location.protocol}//${window.location.hostname}:5000`  // Development
   : '';  // Production (aynı domain'de serve edilir)
 
 interface UserResult {

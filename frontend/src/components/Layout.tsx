@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 
@@ -10,8 +10,30 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const { user, logout } = useAuth();
   const location = useLocation();
+  const [isSuperAdmin, setIsSuperAdmin] = useState(false);
 
   const [companySettingsExpanded, setCompanySettingsExpanded] = useState(false);
+
+  // Super admin kontrolü
+  useEffect(() => {
+    const checkSuperAdmin = async () => {
+      try {
+        const token = localStorage.getItem('token');
+        const response = await fetch('/api/admin/check-superadmin', {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+        const data = await response.json();
+        setIsSuperAdmin(data.isSuperAdmin || false);
+      } catch (error) {
+        console.error('Rol kontrolü hatası:', error);
+        setIsSuperAdmin(false);
+      }
+    };
+
+    checkSuperAdmin();
+  }, []);
 
   const mainMenuItems = [
     { path: '/admin', label: 'Genel Takip Sistemi', icon: '🏠' },
@@ -21,10 +43,10 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
   ];
 
   const companySettingsItems = [
-    { path: '/company-identification', label: 'Firma Tanımlama', icon: '🏭' },
-    { path: '/define-company-admin', label: 'Firma Admini Tanımlama', icon: '👤' },
-    { path: '/game-management', label: 'Oyun Tanımlama', icon: '🎮' },
-  ];
+    { path: '/company-identification', label: 'Firma Tanımlama', icon: '🏭', superAdminOnly: true },
+    { path: '/define-company-admin', label: 'Firma Admini Tanımlama', icon: '👤', superAdminOnly: true },
+    { path: '/game-management', label: 'Oyun Tanımlama', icon: '🎮', superAdminOnly: true },
+  ].filter(item => isSuperAdmin || !item.superAdminOnly);
 
   const otherSettingsItems = [
     { path: '/organization', label: 'Organizasyon', icon: '🏢' },

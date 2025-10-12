@@ -17,8 +17,6 @@ const DefineCompanyAdmin: React.FC = () => {
   const [showEditPopup, setShowEditPopup] = useState(false);
   const [showDeletePopup, setShowDeletePopup] = useState(false);
   const [selectedAdmin, setSelectedAdmin] = useState<Admin | null>(null);
-  const [isSuperAdmin, setIsSuperAdmin] = useState(false);
-  
   // Form states
   const [formData, setFormData] = useState({
     name: '',
@@ -28,30 +26,8 @@ const DefineCompanyAdmin: React.FC = () => {
   });
 
   useEffect(() => {
-    checkSuperAdmin();
+    loadAdmins();
   }, []);
-
-  const checkSuperAdmin = async () => {
-    try {
-      const token = localStorage.getItem('token');
-      const response = await fetch('/api/admin/check-superadmin', {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      });
-      const data = await response.json();
-      setIsSuperAdmin(data.isSuperAdmin);
-      
-      if (data.isSuperAdmin) {
-        loadAdmins();
-      } else {
-        setIsLoading(false);
-      }
-    } catch (error) {
-      console.error('Superadmin kontrolü hatası:', error);
-      setIsLoading(false);
-    }
-  };
 
   const loadAdmins = async () => {
     try {
@@ -208,34 +184,6 @@ const DefineCompanyAdmin: React.FC = () => {
     }
   };
 
-  if (!isSuperAdmin) {
-    return (
-      <div style={{
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        justifyContent: 'center',
-        height: '100vh',
-        fontFamily: 'Inter'
-      }}>
-        <div style={{
-          color: '#EF4444',
-          fontSize: '24px',
-          fontWeight: 600,
-          marginBottom: '16px'
-        }}>
-          ⚠️ Erişim Reddedildi
-        </div>
-        <div style={{
-          color: '#6B7280',
-          fontSize: '16px',
-          textAlign: 'center'
-        }}>
-          Bu sayfaya erişmek için süper admin yetkisine sahip olmanız gerekiyor.
-        </div>
-      </div>
-    );
-  }
 
   if (isLoading) {
     return (
