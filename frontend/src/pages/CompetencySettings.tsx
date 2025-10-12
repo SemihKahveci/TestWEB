@@ -751,10 +751,15 @@ const CompetencySettings: React.FC = () => {
             boxShadow: '0 2px 10px rgba(0, 0, 0, 0.05)',
             overflow: 'hidden'
           }}>
-            <table style={{
-              width: '100%',
-              borderCollapse: 'collapse'
+            <div style={{
+              overflowX: 'auto',
+              WebkitOverflowScrolling: 'touch'
             }}>
+              <table style={{
+                width: '100%',
+                borderCollapse: 'collapse',
+                minWidth: '600px'
+              }}>
               <thead>
                 <tr style={{ background: '#F8F9FA' }}>
                   <th style={{
@@ -976,6 +981,7 @@ const CompetencySettings: React.FC = () => {
                 ))}
               </tbody>
             </table>
+            </div>
           </div>
         </div>
 
@@ -1005,10 +1011,10 @@ const CompetencySettings: React.FC = () => {
               zIndex: 1000
             }}>
               <div style={{
-                width: '100%',
-                maxWidth: '600px',
+                width: window.innerWidth <= 768 ? '90%' : '100%',
+                maxWidth: window.innerWidth <= 768 ? '90%' : '600px',
                 height: 'auto',
-                padding: '30px 35px',
+                padding: window.innerWidth <= 768 ? '20px' : '30px 35px',
                 position: 'relative',
                 background: 'white',
                 borderRadius: '15px',
@@ -1453,10 +1459,10 @@ const CompetencySettings: React.FC = () => {
               zIndex: 1000
             }}>
               <div style={{
-                width: '400px',
+                width: window.innerWidth <= 768 ? '90%' : '400px',
                 background: 'white',
                 borderRadius: '10px',
-                padding: '20px',
+                padding: window.innerWidth <= 768 ? '15px' : '20px',
                 boxShadow: '0 2px 10px rgba(0, 0, 0, 0.1)',
                 animation: 'fadeIn 0.2s ease-in-out'
               }}>

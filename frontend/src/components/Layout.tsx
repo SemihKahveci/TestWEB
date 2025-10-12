@@ -8,11 +8,24 @@ interface LayoutProps {
 
 const Layout: React.FC<LayoutProps> = ({ children }) => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
   const { user, logout } = useAuth();
   const location = useLocation();
   const [isSuperAdmin, setIsSuperAdmin] = useState(false);
 
   const [companySettingsExpanded, setCompanySettingsExpanded] = useState(false);
+
+  // Responsive kontrolü
+  useEffect(() => {
+    const checkIsMobile = () => {
+      setIsMobile(window.innerWidth <= 768);
+    };
+    
+    checkIsMobile();
+    window.addEventListener('resize', checkIsMobile);
+    
+    return () => window.removeEventListener('resize', checkIsMobile);
+  }, []);
 
   // Super admin kontrolü
   useEffect(() => {
@@ -95,7 +108,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
         backgroundColor: 'white',
         boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)',
         zIndex: 50,
-        transform: 'translateX(0)',
+        transform: !isMobile ? 'translateX(0)' : (sidebarOpen ? 'translateX(0)' : 'translateX(-100%)'),
         transition: 'transform 0.3s ease-in-out'
       }}>
         {/* Logo */}
@@ -383,12 +396,54 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
 
       {/* Main content */}
       <div style={{
-        marginLeft: '256px',
+        marginLeft: !isMobile ? '256px' : '0',
         flex: 1,
         display: 'flex',
         flexDirection: 'column',
-        minHeight: '100vh'
+        minHeight: '100vh',
+        transition: 'margin-left 0.3s ease'
       }}>
+        {/* Mobile header with hamburger menu */}
+        {isMobile && (
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            padding: '16px',
+            backgroundColor: 'white',
+            borderBottom: '1px solid #E5E7EB',
+            position: 'sticky',
+            top: 0,
+            zIndex: 30
+          }}>
+            <button
+              onClick={() => setSidebarOpen(true)}
+              style={{
+                background: 'none',
+                border: 'none',
+                fontSize: '24px',
+                cursor: 'pointer',
+                padding: '8px',
+                borderRadius: '6px',
+                color: '#374151',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center'
+              }}
+            >
+              ☰
+            </button>
+            <h1 style={{
+              margin: 0,
+              marginLeft: '16px',
+              fontSize: '18px',
+              fontWeight: 600,
+              color: '#111827',
+              fontFamily: 'Inter'
+            }}>
+              Admin Panel
+            </h1>
+          </div>
+        )}
     
         {/* Page content */}
         <main style={{ flex: 1, padding: 0 }}>

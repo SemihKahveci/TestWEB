@@ -384,10 +384,15 @@ const DefineCompanyAdmin: React.FC = () => {
           boxShadow: '0 2px 10px rgba(0, 0, 0, 0.05)',
           overflow: 'hidden'
         }}>
-          <table style={{
-            width: '100%',
-            borderCollapse: 'collapse'
+          <div style={{
+            overflowX: 'auto',
+            WebkitOverflowScrolling: 'touch'
           }}>
+            <table style={{
+              width: '100%',
+              borderCollapse: 'collapse',
+              minWidth: '600px'
+            }}>
             <thead>
               <tr style={{
                 background: '#F8F9FA'
@@ -529,6 +534,7 @@ const DefineCompanyAdmin: React.FC = () => {
               ))}
             </tbody>
           </table>
+          </div>
         </div>
       </div>
 
@@ -549,9 +555,9 @@ const DefineCompanyAdmin: React.FC = () => {
           <div style={{
             background: 'white',
             borderRadius: '8px',
-            padding: '30px 35px',
-            maxWidth: '600px',
-            width: '90%',
+            padding: window.innerWidth <= 768 ? '20px' : '30px 35px',
+            maxWidth: window.innerWidth <= 768 ? '90%' : '600px',
+            width: window.innerWidth <= 768 ? '90%' : '90%',
             maxHeight: '80vh',
             overflow: 'auto',
             position: 'relative'

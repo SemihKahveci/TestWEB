@@ -733,10 +733,15 @@ const AuthorizationPage: React.FC = () => {
           boxShadow: '0 2px 10px rgba(0, 0, 0, 0.05)',
           overflow: 'hidden'
         }}>
-          <table style={{
-            width: '100%',
-            borderCollapse: 'collapse'
+          <div style={{
+            overflowX: 'auto',
+            WebkitOverflowScrolling: 'touch'
           }}>
+            <table style={{
+              width: '100%',
+              borderCollapse: 'collapse',
+              minWidth: '600px'
+            }}>
             <thead>
               <tr style={{ backgroundColor: '#F8F9FA' }}>
                 <th style={{
@@ -888,6 +893,7 @@ const AuthorizationPage: React.FC = () => {
               )}
             </tbody>
           </table>
+          </div>
         </div>
 
         {/* Pagination */}

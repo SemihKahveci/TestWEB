@@ -1336,7 +1336,7 @@ const AdminPanel: React.FC = () => {
           zIndex: 1000
         }}>
           <div style={{
-            width: '400px',
+            width: window.innerWidth <= 768 ? '90%' : '400px',
             background: 'white',
             borderRadius: '10px',
             display: 'flex',
@@ -1585,8 +1585,8 @@ const AdminPanel: React.FC = () => {
           zIndex: 1000
         }}>
           <div style={{
-            width: '80%',
-            maxWidth: '800px',
+            width: window.innerWidth <= 768 ? '95%' : '80%',
+            maxWidth: window.innerWidth <= 768 ? '95%' : '800px',
             maxHeight: '80%',
             background: 'white',
             borderRadius: '10px',
