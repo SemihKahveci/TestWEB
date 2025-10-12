@@ -746,36 +746,18 @@ const adminController = {
             const venusGame = games.find(g => g.section === '0' || g.section === 0);
             const titanGame = games.find(g => g.section === '1' || g.section === 1);
             
-            // Skorları belirle - spesifik kaynaklardan al
-            // Belirsizlik Yönetimi ve Müşteri Odaklılık -> UserCode'dan al
-            let customerFocusScore = userCode.customerFocusScore;
-            let uncertaintyScore = userCode.uncertaintyScore;
+            // getUserResults'daki mantığı kullan - doğru skor alma
+            let customerFocusScore = (venusGame ? venusGame.customerFocusScore : null) || userCode.customerFocusScore || '-';
+            let uncertaintyScore = (venusGame ? venusGame.uncertaintyScore : null) || userCode.uncertaintyScore || '-';
+            let ieScore = (titanGame ? titanGame.ieScore : null) || userCode.ieScore || '-';
+            let idikScore = (titanGame ? titanGame.idikScore : null) || userCode.idikScore || '-';
             
-            // İnsanları Etkileme ve Güven Verme -> Game'den al
-            let ieScore = titanGame ? titanGame.ieScore : null;
-            let idikScore = titanGame ? titanGame.idikScore : null;
-            
-            // Eğer UserCode'da Venus skorları yoksa, Game'den al (fallback)
-            if (!customerFocusScore || customerFocusScore === '-' || customerFocusScore === null) {
-                customerFocusScore = venusGame ? venusGame.customerFocusScore : null;
-            }
-            if (!uncertaintyScore || uncertaintyScore === '-' || uncertaintyScore === null) {
-                uncertaintyScore = venusGame ? venusGame.uncertaintyScore : null;
-            }
-            
-            // Eğer Game'de Titan skorları yoksa, UserCode'dan al (fallback)
-            if (!ieScore || ieScore === '-' || ieScore === null) {
-                ieScore = userCode.ieScore;
-            }
-            if (!idikScore || idikScore === '-' || idikScore === null) {
-                idikScore = userCode.idikScore;
-            }
-            
-            // Son olarak '-' olarak ayarla eğer hala skor yoksa
-            customerFocusScore = customerFocusScore || '-';
-            uncertaintyScore = uncertaintyScore || '-';
-            ieScore = ieScore || '-';
-            idikScore = idikScore || '-';
+            console.log('Doğru skorlar:', {
+                customerFocusScore: customerFocusScore,
+                uncertaintyScore: uncertaintyScore,
+                ieScore: ieScore,
+                idikScore: idikScore
+            });
             
             // Tüm oyunlardan skorları topla
             let allScores = {
@@ -784,6 +766,7 @@ const adminController = {
                 ieScore: ieScore,
                 idikScore: idikScore
             };
+
 
             // Her oyun için ayrı satır oluştur
             for (const game of games) {
@@ -819,6 +802,7 @@ const adminController = {
                                 'Ad Soyad': userCode.name,
                                 'Ölçülen Yetkinlik': yetkinlikAdi,
                                 'Yetkinlik Skoru': yetkinlikSkoru,
+                                'Genel Değerlendirme': evalResult.data['Genel Değerlendirme'] || '-',
                                 'Güçlü Yönler': evalResult.data['Güçlü Yönler'] || '-',
                                 'Gelişim Alanları': evalResult.data['Gelişim Alanları'] || '-',
                                 'Mülakat Soruları': evalResult.data['Mülakat Soruları'] || '-',
