@@ -49,7 +49,7 @@ const AdminPanel: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
-  const [showExpiredWarning, setShowExpiredWarning] = useState(true);
+  const [showExpiredWarning, setShowExpiredWarning] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage] = useState(10);
   
@@ -740,7 +740,7 @@ const AdminPanel: React.FC = () => {
               cursor: 'pointer',
               userSelect: 'none'
             }}>
-              Süresi Doldu Uyarılarını Göster
+              Süresi Dolan Oyunları Göster
             </span>
           </label>
         </div>
