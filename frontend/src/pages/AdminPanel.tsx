@@ -1111,12 +1111,12 @@ const AdminPanel: React.FC = () => {
                           </td>
                           <td style={{
                             padding: '16px',
-                            fontSize: '14px',
-                            fontFamily: 'Inter'
+                            textAlign: 'center'
                           }}>
                             <div style={{
                               display: 'flex',
-                              gap: '12px',
+                              gap: '10px',
+                              justifyContent: 'center',
                               alignItems: 'center'
                             }}>
                               <div
@@ -1125,14 +1125,13 @@ const AdminPanel: React.FC = () => {
                                   cursor: 'pointer',
                                   color: '#17A2B8',
                                   fontSize: '16px',
-                                  transition: 'color 0.2s'
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  justifyContent: 'center',
+                                  width: '24px',
+                                  height: '24px'
                                 }}
-                                onMouseEnter={(e) => {
-                                  e.currentTarget.style.color = '#138496';
-                                }}
-                                onMouseLeave={(e) => {
-                                  e.currentTarget.style.color = '#17A2B8';
-                                }}
+                                title="Cevapları Görüntüle"
                               >
                                 <i className="fas fa-info-circle"></i>
                               </div>
@@ -1143,18 +1142,13 @@ const AdminPanel: React.FC = () => {
                                   color: groupItem.status === 'Tamamlandı' ? '#0286F7' : '#ADB5BD',
                                   opacity: groupItem.status === 'Tamamlandı' ? 1 : 0.5,
                                   fontSize: '16px',
-                                  transition: 'color 0.2s'
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  justifyContent: 'center',
+                                  width: '24px',
+                                  height: '24px'
                                 }}
-                                onMouseEnter={(e) => {
-                                  if (groupItem.status === 'Tamamlandı') {
-                                    e.currentTarget.style.color = '#0275D8';
-                                  }
-                                }}
-                                onMouseLeave={(e) => {
-                                  if (groupItem.status === 'Tamamlandı') {
-                                    e.currentTarget.style.color = '#0286F7';
-                                  }
-                                }}
+                                title="PDF İndir"
                               >
                                 <i className="fas fa-file-pdf"></i>
                               </div>
@@ -1165,18 +1159,13 @@ const AdminPanel: React.FC = () => {
                                   color: groupItem.status === 'Tamamlandı' ? '#1D6F42' : '#ADB5BD',
                                   opacity: groupItem.status === 'Tamamlandı' ? 1 : 0.5,
                                   fontSize: '16px',
-                                  transition: 'color 0.2s'
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  justifyContent: 'center',
+                                  width: '24px',
+                                  height: '24px'
                                 }}
-                                onMouseEnter={(e) => {
-                                  if (groupItem.status === 'Tamamlandı') {
-                                    e.currentTarget.style.color = '#1A5F2E';
-                                  }
-                                }}
-                                onMouseLeave={(e) => {
-                                  if (groupItem.status === 'Tamamlandı') {
-                                    e.currentTarget.style.color = '#1D6F42';
-                                  }
-                                }}
+                                title="Excel İndir"
                               >
                                 <i className="fas fa-file-excel"></i>
                               </div>
@@ -1186,14 +1175,13 @@ const AdminPanel: React.FC = () => {
                                   cursor: 'pointer',
                                   color: '#FF0000',
                                   fontSize: '16px',
-                                  transition: 'color 0.2s'
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  justifyContent: 'center',
+                                  width: '24px',
+                                  height: '24px'
                                 }}
-                                onMouseEnter={(e) => {
-                                  e.currentTarget.style.color = '#CC0000';
-                                }}
-                                onMouseLeave={(e) => {
-                                  e.currentTarget.style.color = '#FF0000';
-                                }}
+                                title="Sil"
                               >
                                 <i className="fas fa-trash"></i>
                               </div>
