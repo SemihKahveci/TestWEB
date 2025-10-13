@@ -18,6 +18,10 @@ const DefineCompanyAdmin: React.FC = () => {
   const [showDeletePopup, setShowDeletePopup] = useState(false);
   const [selectedAdmin, setSelectedAdmin] = useState<Admin | null>(null);
   const [isMobile, setIsMobile] = useState(false);
+  const [companies, setCompanies] = useState<any[]>([]);
+  const [filteredCompanies, setFilteredCompanies] = useState<any[]>([]);
+  const [companySearchTerm, setCompanySearchTerm] = useState('');
+  const [showCompanyDropdown, setShowCompanyDropdown] = useState(false);
   
   // Form states
   const [formData, setFormData] = useState({
@@ -47,7 +51,25 @@ const DefineCompanyAdmin: React.FC = () => {
 
   useEffect(() => {
     loadAdmins();
+    loadCompanies();
   }, []);
+
+  // Dropdown dışına tıklandığında kapat
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (showCompanyDropdown) {
+        const target = event.target as HTMLElement;
+        if (!target.closest('[data-company-dropdown]')) {
+          setShowCompanyDropdown(false);
+        }
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [showCompanyDropdown]);
 
   const loadAdmins = async () => {
     try {
@@ -70,8 +92,74 @@ const DefineCompanyAdmin: React.FC = () => {
     }
   };
 
+  const loadCompanies = async () => {
+    try {
+      const response = await companyAPI.getAll();
+      if (response.data.success) {
+        const companies = response.data.companies || [];
+        // Alfabetik sıralama
+        const sortedCompanies = companies.sort((a: any, b: any) => 
+          a.firmName.localeCompare(b.firmName, 'tr')
+        );
+        setCompanies(sortedCompanies);
+        setFilteredCompanies(sortedCompanies);
+      }
+    } catch (error) {
+      console.error('Firmalar yüklenirken hata:', error);
+    }
+  };
+
+  // Firma arama fonksiyonu
+  const handleCompanySearch = (searchTerm: string) => {
+    setCompanySearchTerm(searchTerm);
+    if (searchTerm.trim() === '') {
+      setFilteredCompanies(companies);
+    } else {
+      // Türkçe karakterleri normalize et
+      const normalizeText = (text: string) => {
+        return text
+          .trim()
+          .replace(/İ/g, 'i') // Büyük İ'yi noktasız i'ye çevir
+          .replace(/I/g, 'i') // Büyük I'yi noktasız i'ye çevir
+          .replace(/Ç/g, 'c') // Ç'yi c'ye çevir
+          .replace(/Ğ/g, 'g') // Ğ'yi g'ye çevir
+          .replace(/Ö/g, 'o') // Ö'yi o'ya çevir
+          .replace(/Ş/g, 's') // Ş'yi s'ye çevir
+          .replace(/Ü/g, 'u') // Ü'yi u'ya çevir
+          .toLowerCase()
+          .replace(/i̇/g, 'i') // Noktalı küçük i'yi noktasız i'ye çevir
+          .replace(/ı/g, 'i') // Noktasız küçük i'yi noktasız i'ye çevir
+          .replace(/ç/g, 'c') // Ç'yi c'ye çevir
+          .replace(/ğ/g, 'g') // Ğ'yi g'ye çevir
+          .replace(/ö/g, 'o') // Ö'yi o'ya çevir
+          .replace(/ş/g, 's') // Ş'yi s'ye çevir
+          .replace(/ü/g, 'u'); // Ü'yi u'ya çevir
+      };
+      
+      const searchNormalized = normalizeText(searchTerm);
+      
+      const filtered = companies.filter((company: any) => {
+        const nameNormalized = normalizeText(company.firmName);
+        return nameNormalized.includes(searchNormalized);
+      });
+      
+      setFilteredCompanies(filtered);
+    }
+  };
+
+  // Firma seçme fonksiyonu
+  const handleCompanySelect = (firmName: string) => {
+    setFormData({ ...formData, company: firmName });
+    setCompanySearchTerm(firmName);
+    setShowCompanyDropdown(false);
+    setFilteredCompanies(companies); // Reset filter
+  };
+
   const handleAddAdmin = () => {
     setFormData({ name: '', email: '', company: '', password: '' });
+    setCompanySearchTerm('');
+    setShowCompanyDropdown(false);
+    setFilteredCompanies(companies);
     setShowAddPopup(true);
   };
 
@@ -429,7 +517,7 @@ const DefineCompanyAdmin: React.FC = () => {
                   fontWeight: 700,
                   borderBottom: '1px solid #E9ECEF'
                 }}>
-                  Şirket
+                  Firma
                 </th>
                 <th style={{
                   padding: '16px',
@@ -662,23 +750,66 @@ const DefineCompanyAdmin: React.FC = () => {
                   fontFamily: 'Inter',
                   fontSize: '14px'
                 }}>
-                  Şirket
+                  Firma
                 </label>
-                <input
-                  type="text"
-                  value={formData.company}
-                  onChange={(e) => setFormData({...formData, company: e.target.value})}
-                  placeholder="Şirket adını giriniz"
-                  style={{
-                    width: '100%',
-                    padding: '8px 16px',
-                    border: '1px solid #D1D5DB',
-                    borderRadius: '4px',
-                    fontSize: '14px',
-                    fontFamily: 'Inter',
-                    outline: 'none'
-                  }}
-                />
+                <div style={{ position: 'relative' }} data-company-dropdown>
+                  <input
+                    type="text"
+                    value={companySearchTerm}
+                    onChange={(e) => {
+                      handleCompanySearch(e.target.value);
+                      setShowCompanyDropdown(true);
+                    }}
+                    placeholder="Firma adını arayın"
+                    style={{
+                      width: '100%',
+                      padding: '8px 16px',
+                      border: '1px solid #D1D5DB',
+                      borderRadius: '4px',
+                      fontSize: '14px',
+                      fontFamily: 'Inter',
+                      outline: 'none'
+                    }}
+                    onFocus={() => setShowCompanyDropdown(true)}
+                  />
+                  {showCompanyDropdown && (
+                    <div style={{
+                      position: 'absolute',
+                      top: '100%',
+                      left: 0,
+                      right: 0,
+                      background: 'white',
+                      border: '1px solid #D1D5DB',
+                      borderTop: 'none',
+                      borderRadius: '0 0 4px 4px',
+                      maxHeight: '200px',
+                      overflow: 'auto',
+                      zIndex: 1001
+                    }}>
+                      {filteredCompanies.map((company: any) => (
+                        <div
+                          key={company._id}
+                          onClick={() => handleCompanySelect(company.firmName)}
+                          style={{
+                            padding: '8px 16px',
+                            cursor: 'pointer',
+                            fontSize: '14px',
+                            fontFamily: 'Inter',
+                            borderBottom: '1px solid #F3F4F6'
+                          }}
+                          onMouseEnter={(e) => {
+                            e.currentTarget.style.backgroundColor = '#F3F4F6';
+                          }}
+                          onMouseLeave={(e) => {
+                            e.currentTarget.style.backgroundColor = 'transparent';
+                          }}
+                        >
+                          {company.firmName}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
               </div>
               <div>
                 <label style={{
@@ -867,13 +998,13 @@ const DefineCompanyAdmin: React.FC = () => {
                   fontFamily: 'Inter',
                   fontSize: '14px'
                 }}>
-                  Şirket
+                  Firma
                 </label>
                 <input
                   type="text"
                   value={formData.company}
                   onChange={(e) => setFormData({...formData, company: e.target.value})}
-                  placeholder="Şirket adını giriniz"
+                  placeholder="Firma adını giriniz"
                   style={{
                     width: '100%',
                     padding: '8px 16px',

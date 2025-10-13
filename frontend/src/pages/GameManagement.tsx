@@ -30,6 +30,8 @@ const GameManagement: React.FC = () => {
   const [selectedGame, setSelectedGame] = useState<Game | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [showCompanyDropdown, setShowCompanyDropdown] = useState(false);
+  const [filteredCompanies, setFilteredCompanies] = useState<Company[]>([]);
+  const [companySearchTerm, setCompanySearchTerm] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isLoadingInvoice, setIsLoadingInvoice] = useState(false);
   const [isLoadingEdit, setIsLoadingEdit] = useState(false);
@@ -68,6 +70,23 @@ const GameManagement: React.FC = () => {
     loadCompanies();
   }, []);
 
+  // Dropdown dışına tıklandığında kapat
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (showCompanyDropdown) {
+        const target = event.target as HTMLElement;
+        if (!target.closest('[data-company-dropdown]')) {
+          setShowCompanyDropdown(false);
+        }
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [showCompanyDropdown]);
+
   const loadGames = async () => {
     try {
       setIsLoading(true);
@@ -87,15 +106,70 @@ const GameManagement: React.FC = () => {
     try {
       const response = await companyAPI.getAll();
       if (response.data.success) {
-        setCompanies(response.data.companies);
+        const companies = response.data.companies || [];
+        // Alfabetik sıralama
+        const sortedCompanies = companies.sort((a: Company, b: Company) => 
+          a.firmName.localeCompare(b.firmName, 'tr')
+        );
+        setCompanies(sortedCompanies);
+        setFilteredCompanies(sortedCompanies);
       }
     } catch (error) {
       console.error('Firmalar yüklenirken hata:', error);
     }
   };
 
+  // Firma arama fonksiyonu
+  const handleCompanySearch = (searchTerm: string) => {
+    setCompanySearchTerm(searchTerm);
+    if (searchTerm.trim() === '') {
+      setFilteredCompanies(companies);
+    } else {
+      // Türkçe karakterleri normalize et
+      const normalizeText = (text: string) => {
+        return text
+          .trim()
+          .replace(/İ/g, 'i') // Büyük İ'yi noktasız i'ye çevir
+          .replace(/I/g, 'i') // Büyük I'yi noktasız i'ye çevir
+          .replace(/Ç/g, 'c') // Ç'yi c'ye çevir
+          .replace(/Ğ/g, 'g') // Ğ'yi g'ye çevir
+          .replace(/Ö/g, 'o') // Ö'yi o'ya çevir
+          .replace(/Ş/g, 's') // Ş'yi s'ye çevir
+          .replace(/Ü/g, 'u') // Ü'yi u'ya çevir
+          .toLowerCase()
+          .replace(/i̇/g, 'i') // Noktalı küçük i'yi noktasız i'ye çevir
+          .replace(/ı/g, 'i') // Noktasız küçük i'yi noktasız i'ye çevir
+          .replace(/ç/g, 'c') // Ç'yi c'ye çevir
+          .replace(/ğ/g, 'g') // Ğ'yi g'ye çevir
+          .replace(/ö/g, 'o') // Ö'yi o'ya çevir
+          .replace(/ş/g, 's') // Ş'yi s'ye çevir
+          .replace(/ü/g, 'u'); // Ü'yi u'ya çevir
+      };
+      
+      const searchNormalized = normalizeText(searchTerm);
+      
+      const filtered = companies.filter(company => {
+        const nameNormalized = normalizeText(company.firmName);
+        return nameNormalized.includes(searchNormalized);
+      });
+      
+      setFilteredCompanies(filtered);
+    }
+  };
+
+  // Firma seçme fonksiyonu
+  const handleCompanySelect = (firmName: string) => {
+    setFormData({ ...formData, firmName: firmName });
+    setCompanySearchTerm(firmName);
+    setShowCompanyDropdown(false);
+    setFilteredCompanies(companies); // Reset filter
+  };
+
   const handleAddGame = () => {
     setFormData({ firmName: '', invoiceNo: '', credit: '', invoiceFile: null });
+    setCompanySearchTerm('');
+    setShowCompanyDropdown(false);
+    setFilteredCompanies(companies);
     setShowAddPopup(true);
   };
 
@@ -299,9 +373,6 @@ const GameManagement: React.FC = () => {
     game.invoiceNo.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  const filteredCompanies = companies.filter(company =>
-    company.firmName.toLowerCase().includes(searchTerm.toLowerCase())
-  );
 
   if (isLoading) {
     return (
@@ -883,12 +954,15 @@ const GameManagement: React.FC = () => {
                 }}>
                   Firma Adı
                 </label>
-                <div style={{ position: 'relative' }}>
+                <div style={{ position: 'relative' }} data-company-dropdown>
                   <input
                     type="text"
-                    value={formData.firmName}
-                    onChange={(e) => setFormData({...formData, firmName: e.target.value})}
-                    placeholder="Firma adını seçiniz"
+                    value={companySearchTerm}
+                    onChange={(e) => {
+                      handleCompanySearch(e.target.value);
+                      setShowCompanyDropdown(true);
+                    }}
+                    placeholder="Firma adını arayın"
                     style={{
                       width: '100%',
                       padding: '8px 16px',
@@ -917,10 +991,7 @@ const GameManagement: React.FC = () => {
                       {filteredCompanies.map((company) => (
                         <div
                           key={company._id}
-                          onClick={() => {
-                            setFormData({...formData, firmName: company.firmName});
-                            setShowCompanyDropdown(false);
-                          }}
+                          onClick={() => handleCompanySelect(company.firmName)}
                           style={{
                             padding: '8px 16px',
                             cursor: 'pointer',
