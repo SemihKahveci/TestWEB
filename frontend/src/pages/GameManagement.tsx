@@ -39,6 +39,10 @@ const GameManagement: React.FC = () => {
   const [successMessage, setSuccessMessage] = useState('');
   const [isMobile, setIsMobile] = useState(false);
   
+  // Error popup states
+  const [showErrorPopup, setShowErrorPopup] = useState(false);
+  const [errorMessage, setErrorMessage] = useState('');
+  
   // Form states
   const [formData, setFormData] = useState({
     firmName: '',
@@ -46,6 +50,12 @@ const GameManagement: React.FC = () => {
     credit: '',
     invoiceFile: null as File | null
   });
+
+  // Error popup function
+  const showError = (message: string) => {
+    setErrorMessage(message);
+    setShowErrorPopup(true);
+  };
 
   // Responsive kontrolü
   useEffect(() => {
@@ -214,7 +224,7 @@ const GameManagement: React.FC = () => {
       const gameData = await response.json();
       
       if (!gameData.game.invoiceFile) {
-        alert('Bu oyun için fatura dosyası bulunamadı!');
+        showError('Bu oyun için fatura dosyası bulunamadı!');
         return;
       }
       
@@ -229,7 +239,7 @@ const GameManagement: React.FC = () => {
       
     } catch (error: any) {
       console.error('💥 Fatura görüntüleme hatası:', error);
-      alert(error.message || 'Fatura görüntülenirken bir hata oluştu');
+      showError(error.message || 'Fatura görüntülenirken bir hata oluştu');
     } finally {
       setIsLoadingInvoice(false);
     }
@@ -253,6 +263,19 @@ const GameManagement: React.FC = () => {
 
   const handleSubmitAdd = async () => {
     try {
+      // Form validation
+      if (!formData.firmName.trim()) {
+        showError('Firma adı zorunludur!');
+        return;
+      }
+      if (!formData.invoiceNo.trim()) {
+        showError('Fatura numarası zorunludur!');
+        return;
+      }
+      if (!formData.credit || Number(formData.credit) <= 0) {
+        showError('Geçerli bir kredi miktarı giriniz!');
+        return;
+      }
       
       let invoiceFileData: { fileName: string; fileType: string; fileData: string } | null = null;
       if (formData.invoiceFile) {
@@ -292,13 +315,23 @@ const GameManagement: React.FC = () => {
       loadGames();
     } catch (error: any) {
       console.error('💥 Oyun ekleme hatası:', error);
-      alert(error.message || 'Oyun eklenirken bir hata oluştu');
+      showError(error.message || 'Oyun eklenirken bir hata oluştu');
     }
   };
 
   const handleSubmitEdit = async () => {
     try {
       if (!selectedGame) return;
+      
+      // Form validation
+      if (!formData.invoiceNo.trim()) {
+        showError('Fatura numarası zorunludur!');
+        return;
+      }
+      if (!formData.credit || Number(formData.credit) <= 0) {
+        showError('Geçerli bir kredi miktarı giriniz!');
+        return;
+      }
       
       const updateData: any = {
         firmName: formData.firmName,
@@ -338,7 +371,7 @@ const GameManagement: React.FC = () => {
       loadGames();
     } catch (error: any) {
       console.error('💥 Oyun güncelleme hatası:', error);
-      alert(error.message || 'Oyun güncellenirken bir hata oluştu');
+      showError(error.message || 'Oyun güncellenirken bir hata oluştu');
     }
   };
 
@@ -364,7 +397,7 @@ const GameManagement: React.FC = () => {
       loadGames();
     } catch (error: any) {
       console.error('💥 Oyun silme hatası:', error);
-      alert(error.message || 'Oyun silinirken bir hata oluştu');
+      showError(error.message || 'Oyun silinirken bir hata oluştu');
     }
   };
 
@@ -952,7 +985,7 @@ const GameManagement: React.FC = () => {
                   fontFamily: 'Inter',
                   fontSize: '14px'
                 }}>
-                  Firma Adı
+                  Firma Adı *
                 </label>
                 <div style={{ position: 'relative' }} data-company-dropdown>
                   <input
@@ -963,6 +996,7 @@ const GameManagement: React.FC = () => {
                       setShowCompanyDropdown(true);
                     }}
                     placeholder="Firma adını arayın"
+                    required
                     style={{
                       width: '100%',
                       padding: '8px 16px',
@@ -1022,13 +1056,14 @@ const GameManagement: React.FC = () => {
                   fontFamily: 'Inter',
                   fontSize: '14px'
                 }}>
-                  Fatura No
+                  Fatura No *
                 </label>
                 <input
                   type="text"
                   value={formData.invoiceNo}
                   onChange={(e) => setFormData({...formData, invoiceNo: e.target.value})}
                   placeholder="Fatura numarasını giriniz"
+                  required
                   style={{
                     width: '100%',
                     padding: '8px 16px',
@@ -1049,13 +1084,15 @@ const GameManagement: React.FC = () => {
                   fontFamily: 'Inter',
                   fontSize: '14px'
                 }}>
-                  Kredi
+                  Kredi *
                 </label>
                 <input
                   type="number"
                   value={formData.credit}
                   onChange={(e) => setFormData({...formData, credit: e.target.value})}
                   placeholder="Kredi miktarını giriniz"
+                  required
+                  min="1"
                   style={{
                     width: '100%',
                     padding: '8px 16px',
@@ -1217,7 +1254,7 @@ const GameManagement: React.FC = () => {
                   fontFamily: 'Inter',
                   fontSize: '14px'
                 }}>
-                  Firma Adı
+                  Firma Adı *
                 </label>
                 <input
                   type="text"
@@ -1245,13 +1282,14 @@ const GameManagement: React.FC = () => {
                   fontFamily: 'Inter',
                   fontSize: '14px'
                 }}>
-                  Fatura No
+                  Fatura No *
                 </label>
                 <input
                   type="text"
                   value={formData.invoiceNo}
                   onChange={(e) => setFormData({...formData, invoiceNo: e.target.value})}
                   placeholder="Fatura numarasını giriniz"
+                  required
                   style={{
                     width: '100%',
                     padding: '8px 16px',
@@ -1272,13 +1310,15 @@ const GameManagement: React.FC = () => {
                   fontFamily: 'Inter',
                   fontSize: '14px'
                 }}>
-                  Kredi
+                  Kredi *
                 </label>
                 <input
                   type="number"
                   value={formData.credit}
                   onChange={(e) => setFormData({...formData, credit: e.target.value})}
                   placeholder="Kredi miktarını giriniz"
+                  required
+                  min="1"
                   style={{
                     width: '100%',
                     padding: '8px 16px',
@@ -1754,6 +1794,91 @@ const GameManagement: React.FC = () => {
             </div>
           </div>
         </>
+      )}
+
+      {/* Error Popup */}
+      {showErrorPopup && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          backgroundColor: 'rgba(0, 0, 0, 0.5)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 10000
+        }}>
+          <div style={{
+            backgroundColor: 'white',
+            borderRadius: '12px',
+            padding: '32px',
+            maxWidth: '400px',
+            width: '90%',
+            textAlign: 'center',
+            boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)'
+          }}>
+            {/* Error Icon */}
+            <div style={{
+              width: '64px',
+              height: '64px',
+              backgroundColor: '#FEE2E2',
+              borderRadius: '50%',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              margin: '0 auto 24px',
+              fontSize: '32px',
+              color: '#DC2626'
+            }}>
+              ⚠️
+            </div>
+            
+            {/* Error Title */}
+            <h3 style={{
+              fontSize: '20px',
+              fontWeight: 600,
+              color: '#1F2937',
+              margin: '0 0 16px',
+              fontFamily: 'Inter, sans-serif'
+            }}>
+              Hata
+            </h3>
+            
+            {/* Error Message */}
+            <p style={{
+              fontSize: '16px',
+              color: '#6B7280',
+              margin: '0 0 32px',
+              lineHeight: '1.5',
+              fontFamily: 'Inter, sans-serif'
+            }}>
+              {errorMessage}
+            </p>
+            
+            {/* Close Button */}
+            <button
+              onClick={() => setShowErrorPopup(false)}
+              style={{
+                backgroundColor: '#DC2626',
+                color: 'white',
+                border: 'none',
+                borderRadius: '8px',
+                padding: '12px 24px',
+                fontSize: '16px',
+                fontWeight: 500,
+                cursor: 'pointer',
+                fontFamily: 'Inter, sans-serif',
+                transition: 'background-color 0.2s'
+              }}
+              onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#B91C1C'}
+              onMouseOut={(e) => e.currentTarget.style.backgroundColor = '#DC2626'}
+            >
+              Tamam
+            </button>
+          </div>
+        </div>
       )}
     </>
   );
