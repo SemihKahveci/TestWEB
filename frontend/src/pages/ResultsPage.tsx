@@ -36,18 +36,19 @@ const ResultsPage: React.FC = () => {
   const [showFilterPopup, setShowFilterPopup] = useState(false);
   const [selectedUser, setSelectedUser] = useState<UserResult | null>(null);
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
+  const [showErrorPopup, setShowErrorPopup] = useState(false);
+  const [errorMessage, setErrorMessage] = useState('');
   
   // Filter states
   const [filters, setFilters] = useState({
-    nameSearch: '',
-    customerFocusMin: 0,
-    customerFocusMax: 100,
-    uncertaintyMin: 0,
-    uncertaintyMax: 100,
-    ieMin: 0,
-    ieMax: 100,
-    idikMin: 0,
-    idikMax: 100
+    customerFocusMin: 5,
+    customerFocusMax: 95,
+    uncertaintyMin: 5,
+    uncertaintyMax: 95,
+    ieMin: 5,
+    ieMax: 95,
+    idikMin: 5,
+    idikMax: 95
   });
   const [isMobile, setIsMobile] = useState(false);
   
@@ -152,12 +153,12 @@ const ResultsPage: React.FC = () => {
   };
 
   const formatScore = (score: number | string) => {
-    if (score === null || score === undefined || score === '-') return '-';
+    if (score === null || score === undefined || score === '-' || score === 0 || score === '0') return '-';
     return typeof score === 'number' ? score.toFixed(1) : score;
   };
 
   const getScoreColorClass = (score: number | string) => {
-    if (score === '-' || isNaN(Number(score))) return '';
+    if (score === '-' || score === 0 || score === '0' || isNaN(Number(score))) return '';
     const numScore = parseFloat(score.toString());
     if (numScore <= 37) return 'red';
     if (numScore <= 65) return 'yellow';
@@ -227,6 +228,28 @@ const ResultsPage: React.FC = () => {
     try {
       console.log('Filtreler:', filters);
 
+      // Minimum ve maksimum değer kontrolü
+      if (filters.customerFocusMin >= filters.customerFocusMax) {
+        setErrorMessage('Müşteri Odaklılık Skoru: Minimum değer maksimum değerden küçük olmalıdır!');
+        setShowErrorPopup(true);
+        return;
+      }
+      if (filters.uncertaintyMin >= filters.uncertaintyMax) {
+        setErrorMessage('Belirsizlik Yönetimi Skoru: Minimum değer maksimum değerden küçük olmalıdır!');
+        setShowErrorPopup(true);
+        return;
+      }
+      if (filters.ieMin >= filters.ieMax) {
+        setErrorMessage('İnsanları Etkileme Skoru: Minimum değer maksimum değerden küçük olmalıdır!');
+        setShowErrorPopup(true);
+        return;
+      }
+      if (filters.idikMin >= filters.idikMax) {
+        setErrorMessage('Güven Veren İşbirliği ve Sinerji Skoru: Minimum değer maksimum değerden küçük olmalıdır!');
+        setShowErrorPopup(true);
+        return;
+      }
+
       const filteredItems = results.filter(item => {
         try {
           if (!item || !item.name) {
@@ -240,11 +263,8 @@ const ResultsPage: React.FC = () => {
           const ieScore = item.ieScore === '-' ? null : parseFloat(item.ieScore.toString());
           const idikScore = item.idikScore === '-' ? null : parseFloat(item.idikScore.toString());
 
-          // İsim araması
+          // İsim araması (kaldırıldı - sadece üstteki arama kutusu kullanılıyor)
           let nameMatch = true;
-          if (filters.nameSearch) {
-            nameMatch = itemName.includes(filters.nameSearch.toLowerCase());
-          }
 
           // Müşteri Odaklılık Skoru filtresi
           let customerFocusMatch = true;
@@ -292,15 +312,14 @@ const ResultsPage: React.FC = () => {
   // Filtreleri temizle
   const clearFilters = () => {
     setFilters({
-      nameSearch: '',
-      customerFocusMin: 0,
-      customerFocusMax: 100,
-      uncertaintyMin: 0,
-      uncertaintyMax: 100,
-      ieMin: 0,
-      ieMax: 100,
-      idikMin: 0,
-      idikMax: 100
+      customerFocusMin: 5,
+      customerFocusMax: 95,
+      uncertaintyMin: 5,
+      uncertaintyMax: 95,
+      ieMin: 5,
+      ieMax: 95,
+      idikMin: 5,
+      idikMax: 95
     });
     setFilteredResults(results);
     setCurrentPage(1);
@@ -311,9 +330,21 @@ const ResultsPage: React.FC = () => {
     setShowFilterPopup(false);
   };
 
+  // Hata popup'ını kapat
+  const closeErrorPopup = () => {
+    setShowErrorPopup(false);
+    setErrorMessage('');
+  };
+
 
   const handleDownloadExcel = () => {
     try {
+      // Skor değerini formatla - 0 ise "-" göster
+      const formatScoreForExcel = (score: number | string) => {
+        if (score === null || score === undefined || score === '-' || score === 0 || score === '0') return '-';
+        return typeof score === 'number' ? score.toFixed(1) : score;
+      };
+
       // Tüm sonuçları al (sadece tamamlanmış oyunlar)
       let dataToExport = results
         .filter(item => item.status === 'Tamamlandı')
@@ -321,10 +352,10 @@ const ResultsPage: React.FC = () => {
           'Ad Soyad': item.name || '-',
           'E-posta': item.email || '-',
           'Tamamlanma Tarihi': formatDate(item.completionDate) || '-',
-          'Müşteri Odaklılık Skoru': item.customerFocusScore || '-',
-          'Belirsizlik Yönetimi Skoru': item.uncertaintyScore || '-',
-          'İnsanları Etkileme Skoru': item.ieScore || '-',
-          'Güven Veren İşbirliği ve Sinerji Skoru': item.idikScore || '-'
+          'Müşteri Odaklılık Skoru': formatScoreForExcel(item.customerFocusScore),
+          'Belirsizlik Yönetimi Skoru': formatScoreForExcel(item.uncertaintyScore),
+          'İnsanları Etkileme Skoru': formatScoreForExcel(item.ieScore),
+          'Güven Veren İşbirliği ve Sinerji Skoru': formatScoreForExcel(item.idikScore)
         }));
 
       if (dataToExport.length === 0) {
@@ -653,7 +684,7 @@ const ResultsPage: React.FC = () => {
             }}
           >
             <i className="fas fa-download"></i>
-            Excel Yükle
+            Excel İndir
           </button>
         </div>
       </div>
@@ -1248,35 +1279,6 @@ const ResultsPage: React.FC = () => {
             <div style={{
               padding: '24px'
             }}>
-              {/* İsim Ara */}
-              <div style={{ marginBottom: '24px' }}>
-                <label style={{
-                  display: 'block',
-                  marginBottom: '8px',
-                  color: '#232D42',
-                  fontWeight: 500,
-                  fontFamily: 'Inter',
-                  fontSize: '14px'
-                }}>
-                  İsim Ara
-                </label>
-                <input
-                  type="text"
-                  value={filters.nameSearch}
-                  onChange={(e) => setFilters({...filters, nameSearch: e.target.value})}
-                  placeholder="İsim girin..."
-                  style={{
-                    width: '100%',
-                    padding: '12px',
-                    border: '1px solid #D1D5DB',
-                    borderRadius: '6px',
-                    fontSize: '14px',
-                    fontFamily: 'Inter',
-                    outline: 'none'
-                  }}
-                />
-              </div>
-
               {/* Müşteri Odaklılık Skoru */}
               <div style={{ marginBottom: '24px' }}>
                 <label style={{
@@ -1292,8 +1294,8 @@ const ResultsPage: React.FC = () => {
                 <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
                   <input
                     type="range"
-                    min="0"
-                    max="100"
+                    min="5"
+                    max="95"
                     value={filters.customerFocusMin}
                     onChange={(e) => setFilters({...filters, customerFocusMin: parseInt(e.target.value)})}
                     style={{ flex: 1 }}
@@ -1304,8 +1306,8 @@ const ResultsPage: React.FC = () => {
                   <span style={{ fontSize: '14px' }}>-</span>
                   <input
                     type="range"
-                    min="0"
-                    max="100"
+                    min="5"
+                    max="95"
                     value={filters.customerFocusMax}
                     onChange={(e) => setFilters({...filters, customerFocusMax: parseInt(e.target.value)})}
                     style={{ flex: 1 }}
@@ -1331,8 +1333,8 @@ const ResultsPage: React.FC = () => {
                 <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
                   <input
                     type="range"
-                    min="0"
-                    max="100"
+                    min="5"
+                    max="95"
                     value={filters.uncertaintyMin}
                     onChange={(e) => setFilters({...filters, uncertaintyMin: parseInt(e.target.value)})}
                     style={{ flex: 1 }}
@@ -1343,8 +1345,8 @@ const ResultsPage: React.FC = () => {
                   <span style={{ fontSize: '14px' }}>-</span>
                   <input
                     type="range"
-                    min="0"
-                    max="100"
+                    min="5"
+                    max="95"
                     value={filters.uncertaintyMax}
                     onChange={(e) => setFilters({...filters, uncertaintyMax: parseInt(e.target.value)})}
                     style={{ flex: 1 }}
@@ -1370,8 +1372,8 @@ const ResultsPage: React.FC = () => {
                 <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
                   <input
                     type="range"
-                    min="0"
-                    max="100"
+                    min="5"
+                    max="95"
                     value={filters.ieMin}
                     onChange={(e) => setFilters({...filters, ieMin: parseInt(e.target.value)})}
                     style={{ flex: 1 }}
@@ -1382,8 +1384,8 @@ const ResultsPage: React.FC = () => {
                   <span style={{ fontSize: '14px' }}>-</span>
                   <input
                     type="range"
-                    min="0"
-                    max="100"
+                    min="5"
+                    max="95"
                     value={filters.ieMax}
                     onChange={(e) => setFilters({...filters, ieMax: parseInt(e.target.value)})}
                     style={{ flex: 1 }}
@@ -1409,8 +1411,8 @@ const ResultsPage: React.FC = () => {
                 <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
                   <input
                     type="range"
-                    min="0"
-                    max="100"
+                    min="5"
+                    max="95"
                     value={filters.idikMin}
                     onChange={(e) => setFilters({...filters, idikMin: parseInt(e.target.value)})}
                     style={{ flex: 1 }}
@@ -1421,8 +1423,8 @@ const ResultsPage: React.FC = () => {
                   <span style={{ fontSize: '14px' }}>-</span>
                   <input
                     type="range"
-                    min="0"
-                    max="100"
+                    min="5"
+                    max="95"
                     value={filters.idikMax}
                     onChange={(e) => setFilters({...filters, idikMax: parseInt(e.target.value)})}
                     style={{ flex: 1 }}
@@ -1495,10 +1497,155 @@ const ResultsPage: React.FC = () => {
         </div>
       )}
 
+      {/* Hata Popup */}
+      {showErrorPopup && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          width: '100%',
+          height: '100%',
+          background: 'rgba(0, 0, 0, 0.5)',
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+          zIndex: 1001
+        }}>
+          <div style={{
+            background: 'white',
+            borderRadius: '12px',
+            padding: '0',
+            maxWidth: '500px',
+            width: '90%',
+            boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)',
+            animation: 'slideIn 0.3s ease-out'
+          }}>
+            {/* Header */}
+            <div style={{
+              padding: '20px 24px',
+              borderBottom: '1px solid #E5E7EB',
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              background: '#FEF2F2'
+            }}>
+              <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '12px'
+              }}>
+                <div style={{
+                  width: '24px',
+                  height: '24px',
+                  borderRadius: '50%',
+                  background: '#FCA5A5',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  color: '#DC2626',
+                  fontSize: '14px',
+                  fontWeight: 'bold'
+                }}>
+                  !
+                </div>
+                <h3 style={{
+                  margin: 0,
+                  color: '#DC2626',
+                  fontFamily: 'Inter',
+                  fontSize: '18px',
+                  fontWeight: 600
+                }}>
+                  Filtre Hatası
+                </h3>
+              </div>
+              <button
+                onClick={closeErrorPopup}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  fontSize: '24px',
+                  color: '#6B7280',
+                  cursor: 'pointer',
+                  padding: '4px',
+                  lineHeight: 1,
+                  borderRadius: '4px',
+                  transition: 'background-color 0.2s'
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.backgroundColor = '#F3F4F6';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.backgroundColor = 'transparent';
+                }}
+              >
+                ×
+              </button>
+            </div>
+
+            {/* Body */}
+            <div style={{
+              padding: '24px'
+            }}>
+              <p style={{
+                margin: 0,
+                color: '#374151',
+                fontFamily: 'Inter',
+                fontSize: '16px',
+                lineHeight: '1.5'
+              }}>
+                {errorMessage}
+              </p>
+            </div>
+
+            {/* Footer */}
+            <div style={{
+              padding: '20px 24px',
+              borderTop: '1px solid #E5E7EB',
+              display: 'flex',
+              justifyContent: 'flex-end'
+            }}>
+              <button
+                onClick={closeErrorPopup}
+                style={{
+                  padding: '10px 20px',
+                  border: 'none',
+                  borderRadius: '8px',
+                  background: '#DC2626',
+                  color: 'white',
+                  fontFamily: 'Inter',
+                  fontSize: '14px',
+                  fontWeight: 500,
+                  cursor: 'pointer',
+                  transition: 'background-color 0.2s'
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.backgroundColor = '#B91C1C';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.backgroundColor = '#DC2626';
+                }}
+              >
+                Tamam
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <style>{`
         @keyframes spin {
           0% { transform: rotate(0deg); }
           100% { transform: rotate(360deg); }
+        }
+        @keyframes slideIn {
+          0% { 
+            opacity: 0;
+            transform: translateY(-20px) scale(0.95);
+          }
+          100% { 
+            opacity: 1;
+            transform: translateY(0) scale(1);
+          }
         }
       `}</style>
     </div>
