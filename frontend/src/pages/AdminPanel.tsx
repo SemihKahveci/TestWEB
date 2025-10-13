@@ -161,9 +161,10 @@ const AdminPanel: React.FC = () => {
 
   const getStatusBadge = (status: string) => {
     const statusClasses = {
+      'Oyun Devam ediyor': { bg: '#E0F2FE', text: '#0C4A6E', border: '#BAE6FD' },
       'Tamamlandı': { bg: '#D1FAE5', text: '#065F46', border: '#A7F3D0' },
       'Beklemede': { bg: '#FEF3C7', text: '#92400E', border: '#FDE68A' },
-      'Süresi Dolmuş': { bg: '#FEE2E2', text: '#991B1B', border: '#FECACA' }
+      'Süresi Doldu': { bg: '#FEE2E2', text: '#991B1B', border: '#FECACA' }
     };
 
     const statusStyle = statusClasses[status as keyof typeof statusClasses] || { bg: '#F3F4F6', text: '#374151', border: '#D1D5DB' };
@@ -192,6 +193,30 @@ const AdminPanel: React.FC = () => {
     });
   };
 
+  // Statü sıralama fonksiyonu
+  const getStatusOrder = (status: string): number => {
+    // Statü isimlerini normalize et (büyük/küçük harf duyarsız)
+    const normalizedStatus = status.toLowerCase().trim();
+    
+    // Oyun devam ediyor için farklı varyasyonları kontrol et
+    if (normalizedStatus.includes('devam') || normalizedStatus.includes('oyun') && normalizedStatus.includes('ediyor')) {
+      return 1;
+    }
+    
+    // Diğer statüler için exact match
+    const statusOrder = {
+      'beklemede': 2,
+      'tamamlandı': 3,
+      'tamamlandi': 3, // Türkçe karakter olmadan
+      'süresi doldu': 4,
+      'suresi doldu': 4, // Türkçe karakter olmadan
+      'süresi dolmuş': 4,
+      'suresi dolmus': 4 // Türkçe karakter olmadan
+    };
+    
+    return statusOrder[normalizedStatus as keyof typeof statusOrder] || 5;
+  };
+
   // HTML'deki gibi e-posta adresine göre gruplama
   const groupByEmail = (data: UserResult[]): UserResult[] => {
     const emailGroups: { [key: string]: UserResult[] } = {};
@@ -210,6 +235,7 @@ const AdminPanel: React.FC = () => {
     
     Object.keys(emailGroups).forEach(email => {
       const group = emailGroups[email];
+      
       if (group.length === 1) {
         // Tek sonuç varsa normal göster
         const hasExpiredCode = group[0].status === 'Süresi Doldu';
@@ -220,7 +246,7 @@ const AdminPanel: React.FC = () => {
           hasExpiredCode: hasExpiredCode
         });
       } else {
-        // Birden fazla sonuç varsa gruplandır
+        // Birden fazla sonuç varsa gruplandır (sıralama yapmadan)
         const latestItem = group[0]; // En yeni olan
         
         // Grupta süresi dolmuş kod var mı kontrol et
@@ -230,13 +256,37 @@ const AdminPanel: React.FC = () => {
           ...latestItem,
           isGrouped: true,
           groupCount: group.length,
-          allGroupItems: group,
+          allGroupItems: group, // Ham grup (sıralama yapılmamış)
           hasExpiredCode: hasExpiredCode
         });
       }
     });
     
     return groupedData;
+  };
+
+  // Grup içindeki oyunları sıralama fonksiyonu
+  const sortGroupItems = (groupItems: UserResult[]): UserResult[] => {
+    return [...groupItems].sort((a, b) => {
+      const statusOrderA = getStatusOrder(a.status);
+      const statusOrderB = getStatusOrder(b.status);
+      
+      // Debug için console.log (test sonrası kaldırılacak)
+      // console.log('Sıralama:', {
+      //   statusA: a.status,
+      //   orderA: statusOrderA,
+      //   statusB: b.status,
+      //   orderB: statusOrderB
+      // });
+      
+      // Önce statüye göre sırala
+      if (statusOrderA !== statusOrderB) {
+        return statusOrderA - statusOrderB;
+      }
+      
+      // Aynı statüde ise gönderim tarihine göre sırala (en yeni önce)
+      return new Date(b.sentDate).getTime() - new Date(a.sentDate).getTime();
+    });
   };
 
   // Grup açma/kapama fonksiyonu
@@ -990,7 +1040,7 @@ const AdminPanel: React.FC = () => {
                   
                   {/* Alt satırlar (gruplandırılmış ise) */}
                   {result.isGrouped && result.groupCount && result.groupCount > 1 && result.allGroupItems && expandedGroups.has(result.email) && 
-                    result.allGroupItems.slice(1).filter(groupItem => {
+                    sortGroupItems(result.allGroupItems).slice(1).filter(groupItem => {
                       // HTML'deki gibi: switch açık değilse süresi dolanları gizle
                       return showExpiredWarning || groupItem.status !== 'Süresi Doldu';
                     }).map((groupItem) => {
