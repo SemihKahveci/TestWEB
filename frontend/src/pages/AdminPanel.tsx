@@ -373,9 +373,26 @@ const AdminPanel: React.FC = () => {
       
       const blob = await response.blob();
       const url = window.URL.createObjectURL(blob);
+      
+      // Kullanıcı bilgilerini al
+      const userResponse = await fetch(`${API_BASE_URL}/api/user-results?code=${code}`, {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        }
+      });
+      const userData = await userResponse.json();
+      
+      let fileName = `ANDRON_DeğerlendirmeRaporu_${code}.xlsx`;
+      if (userData.success && userData.results && userData.results.length > 0) {
+        const user = userData.results[0];
+        const date = user.completionDate ? new Date(user.completionDate) : new Date();
+        const formattedDate = `${date.getDate().toString().padStart(2, '0')}${(date.getMonth() + 1).toString().padStart(2, '0')}${date.getFullYear()}`;
+        fileName = `ANDRON_DeğerlendirmeRaporu_${user.name.replace(/\s+/g, '_')}_${formattedDate}.xlsx`;
+      }
+      
       const a = document.createElement('a');
       a.href = url;
-      a.download = `degerlendirme_${code}.xlsx`;
+      a.download = fileName;
       document.body.appendChild(a);
       a.click();
       window.URL.revokeObjectURL(url);
@@ -1632,7 +1649,7 @@ const AdminPanel: React.FC = () => {
                     
                     const a = document.createElement('a');
                     a.href = url;
-                    a.download = `Degerlendirme_Raporu_${user.name.replace(/\s+/g, '_')}_${formattedDate}.pdf`;
+                    a.download = `ANDRON_DeğerlendirmeRaporu_${user.name.replace(/\s+/g, '_')}_${formattedDate}.pdf`;
                     document.body.appendChild(a);
                     a.click();
                     window.URL.revokeObjectURL(url);
