@@ -62,10 +62,15 @@ const SubscriptionSettings: React.FC = () => {
       }, games[0].date)
     : null;
   
-  // Sabit toplam kredi limiti (örnek: 10,000)
-  const creditLimit = 10000;
-  const remainingCredits = Math.max(0, creditLimit - totalCredits);
-  const usedPercentage = Math.min((totalCredits / creditLimit) * 100, 100);
+  // Toplam kredi miktarı = Tablodaki kredilerin toplamı (dinamik)
+  const totalCreditAmount = totalCredits; // Toplam kredi
+  
+  // Kullanılan kredi hesaplama
+  // localStorage'dan kullanılan kredi bilgisini al
+  const usedCredits = parseInt(localStorage.getItem('usedCredits') || '0');
+  
+  const remainingCredits = totalCreditAmount - usedCredits; // Kalan kredi
+  const usedPercentage = totalCreditAmount > 0 ? (usedCredits / totalCreditAmount) * 100 : 0; // Kullanım yüzdesi
 
   return (
     <div style={{
@@ -380,7 +385,7 @@ const SubscriptionSettings: React.FC = () => {
                 }}></div>
                 <div style={{
                   position: 'absolute',
-                  width: `${usedPercentage}%`,
+                  width: `${100 - usedPercentage}%`,
                   height: '36px',
                   background: '#3A57E8',
                   borderRadius: '50px'
@@ -396,7 +401,7 @@ const SubscriptionSettings: React.FC = () => {
                   fontWeight: 700,
                   lineHeight: '16px'
                 }}>
-                  {totalCredits.toLocaleString()} Kredi
+                  {remainingCredits.toLocaleString()} Kredi
                 </div>
                 <div style={{
                   position: 'absolute',
@@ -409,7 +414,7 @@ const SubscriptionSettings: React.FC = () => {
                   fontWeight: 700,
                   lineHeight: '16px'
                 }}>
-                  {remainingCredits.toLocaleString()} Kredi
+                  {usedCredits.toLocaleString()} Kredi
                 </div>
               </div>
 

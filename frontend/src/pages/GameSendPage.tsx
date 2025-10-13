@@ -29,6 +29,7 @@ const GameSendPage: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'person' | 'group'>('person');
   const [isLoading, setIsLoading] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [remainingCredits, setRemainingCredits] = useState(0);
   
   // Person tab states
   const [personName, setPersonName] = useState('');
@@ -86,6 +87,61 @@ const GameSendPage: React.FC = () => {
       loadGroups();
     }
   }, [activeTab, groups.length]);
+
+  // Load remaining credits on component mount
+  useEffect(() => {
+    loadRemainingCredits();
+  }, []);
+
+  const loadRemainingCredits = async () => {
+    try {
+      console.log('🔄 Kalan kredi yükleniyor...');
+      
+      // SubscriptionSettings'deki hesaplama mantığını kullan
+      const response = await fetch('/api/game-management/games', {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        }
+      });
+      
+      console.log('📡 API Response Status:', response.status);
+      
+      if (!response.ok) {
+        console.error('❌ API Error:', response.status, response.statusText);
+        throw new Error('Veriler yüklenemedi');
+      }
+      
+      const data = await response.json();
+      console.log('📊 API Data:', data);
+      
+      const games = data.games || [];
+      console.log('🎮 Games:', games);
+      console.log('🎮 Games Count:', games.length);
+      
+      // SubscriptionSettings'deki hesaplama mantığı
+      const totalCredits = games.reduce((sum: number, game: any) => {
+        console.log('💰 Game Credit:', game.credit, 'Type:', typeof game.credit);
+        return sum + (game.credit || 0);
+      }, 0);
+      
+      console.log('💳 Total Credits:', totalCredits);
+      
+      const totalCreditAmount = totalCredits; // Toplam kredi
+      
+      // Kullanılan kredi hesaplama (localStorage'dan)
+      const usedCredits = parseInt(localStorage.getItem('usedCredits') || '0');
+      
+      const remaining = totalCreditAmount - usedCredits; // Kalan kredi
+      
+      console.log('🎯 Total Credit Amount:', totalCreditAmount);
+      console.log('🎯 Used Credits:', usedCredits);
+      console.log('🎯 Remaining Credits:', remaining);
+      
+      setRemainingCredits(remaining);
+    } catch (error) {
+      console.error('💥 Kalan kredi yüklenirken hata:', error);
+    }
+  };
 
   // Load groups from API
   const loadGroups = async () => {
@@ -230,6 +286,11 @@ const GameSendPage: React.FC = () => {
         setPersonName('');
         setPersonEmail('');
         setSelectedPlanets([]);
+        // Kredi düşür (1 kredi)
+        setRemainingCredits(prev => prev - 1);
+        // localStorage'da kullanılan kredi sayısını artır
+        const currentUsed = parseInt(localStorage.getItem('usedCredits') || '0');
+        localStorage.setItem('usedCredits', (currentUsed + 1).toString());
       } else {
         showMessage('Hata', 'Gönderilemedi: ' + sendData.message, 'error');
       }
@@ -485,8 +546,43 @@ const GameSendPage: React.FC = () => {
         width: '90%',
         maxWidth: '800px',
         margin: '0 auto',
-        marginTop: '60px'
+        marginTop: '60px',
+        position: 'relative'
       }}>
+        {/* Kalan Oyun Sayısı - Sağ Üst Çapraz */}
+        <div style={{
+          position: 'absolute',
+          top: '-50px',
+          right: '-200px',
+          background: 'white',
+          borderRadius: '8px',
+          padding: '12px 16px',
+          boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+          border: '1px solid #E9ECEF',
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          gap: '4px',
+          minWidth: '120px',
+          zIndex: 10
+        }}>
+          <div style={{
+            color: '#8A92A6',
+            fontSize: '12px',
+            fontWeight: 500,
+            fontFamily: 'Inter'
+          }}>
+            Kalan Oyun Sayısı
+          </div>
+          <div style={{
+            color: '#3B8AFF',
+            fontSize: '20px',
+            fontWeight: 700,
+            fontFamily: 'Inter'
+          }}>
+            {remainingCredits.toLocaleString()}
+          </div>
+        </div>
         {/* Tab Container */}
         <div style={{
           display: 'flex',
