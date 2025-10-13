@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { evaluationAPI } from '../services/api';
+import { evaluationAPI, creditAPI } from '../services/api';
 
 // Dinamik API base URL - hem local hem live'da çalışır
 const API_BASE_URL = (import.meta as any).env?.DEV 
@@ -415,6 +415,7 @@ const AdminPanel: React.FC = () => {
     setSelectedUser(existingData);
     setShowDeletePopup(true);
   };
+
 
   const confirmDelete = async () => {
     if (!selectedUser) return;

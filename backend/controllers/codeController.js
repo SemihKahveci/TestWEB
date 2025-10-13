@@ -1,6 +1,7 @@
 const UserCode = require('../models/userCode');
 const Game = require('../models/game');
 const EvaluationResult = require('../models/evaluationResult');
+const Credit = require('../models/Credit');
 const mongoose = require('mongoose');
 
 
@@ -179,8 +180,55 @@ class CodeController {
                 status: { $in: ['Beklemede', 'Oyun Devam Ediyor'] }
             });
 
-            // Bu kodları "Süresi Doldu" durumuna güncelle
+            // Bu kodları "Süresi Doldu" durumuna güncelle ve kredi geri yükle
             if (expiredCodes.length > 0) {
+                // Her kod için kredi geri yükleme işlemi
+                for (const code of expiredCodes) {
+                    try {
+                        // Kredi miktarını hesapla (gezegen sayısı)
+                        const planetCount = code.allPlanets ? code.allPlanets.length : 1;
+                        
+                        // Admin ID'yi bul (varsayılan olarak ilk admin'i kullan)
+                        const Admin = require('../models/Admin');
+                        const admin = await Admin.findOne();
+                        
+                        if (admin) {
+                            // Kredi kaydını bul veya oluştur
+                            let credit = await Credit.findOne({ userId: admin._id });
+                            
+                            if (!credit) {
+                                // Yeni kredi kaydı oluştur
+                                credit = new Credit({
+                                    userId: admin._id,
+                                    totalCredits: 0,
+                                    usedCredits: 0,
+                                    remainingCredits: 0,
+                                    transactions: []
+                                });
+                                await credit.save();
+                            }
+                            
+                            // Kredi geri yükle
+                            credit.usedCredits = Math.max(0, credit.usedCredits - planetCount);
+                            credit.remainingCredits = credit.totalCredits - credit.usedCredits;
+                            
+                            // Transaction kaydı ekle
+                            credit.transactions.push({
+                                type: 'credit_restore',
+                                amount: planetCount,
+                                description: `Süresi dolan oyun için otomatik kredi geri yükleme: ${code.name} (${code.code})`,
+                                timestamp: new Date()
+                            });
+                            
+                            await credit.save();
+                            console.log(`✅ ${code.name} için ${planetCount} kredi geri yüklendi`);
+                        }
+                    } catch (creditError) {
+                        console.error(`❌ ${code.name} için kredi geri yükleme hatası:`, creditError);
+                    }
+                }
+
+                // Status'ları güncelle
                 await UserCode.updateMany(
                     {
                         expiryDate: { $lt: earlyExpiryDate },

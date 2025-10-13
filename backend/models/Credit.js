@@ -21,11 +21,11 @@ const creditSchema = new mongoose.Schema({
     default: 0
   },
   transactions: [{
-    type: {
-      type: String,
-      enum: ['game_send', 'credit_purchase', 'credit_refund'],
-      required: true
-    },
+        type: {
+          type: String,
+          enum: ['game_send', 'credit_purchase', 'credit_refund', 'credit_restore'],
+          required: true
+        },
     amount: {
       type: Number,
       required: true

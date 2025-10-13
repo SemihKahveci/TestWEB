@@ -120,10 +120,8 @@ const deductCredits = async (req, res) => {
     }
     
     let credit = await Credit.findOne({ userId });
-    console.log('🔍 Existing credit record:', credit);
     
     if (!credit) {
-      console.log('📝 Creating new credit record...');
       // Create new credit record if doesn't exist
       // Get total credits from game management
       const gameResponse = await fetch(`${process.env.API_BASE_URL || 'http://localhost:5000'}/api/game-management/games`, {
@@ -132,20 +130,11 @@ const deductCredits = async (req, res) => {
         }
       });
       
-      console.log('🎮 Game management response status:', gameResponse.status);
-      
       let totalCredits = 0;
       if (gameResponse.ok) {
         const gameData = await gameResponse.json();
-        console.log('🎮 Game data received:', gameData);
         const games = gameData.games || [];
-        console.log('🎮 Games array:', games);
         totalCredits = games.reduce((sum, game) => sum + (game.credit || 0), 0);
-        console.log('💰 Total credits from games:', totalCredits);
-      } else {
-        console.error('❌ Game management API error:', gameResponse.status);
-        const errorText = await gameResponse.text();
-        console.error('❌ Game management API error response:', errorText);
       }
       
       credit = new Credit({
@@ -156,12 +145,10 @@ const deductCredits = async (req, res) => {
         transactions: []
       });
       await credit.save();
-      console.log('✅ New credit record created:', credit);
     }
     
     // If totalCredits is 0, update it from game management
     if (credit.totalCredits === 0) {
-      console.log('🔄 Updating totalCredits from game management...');
       const gameResponse = await fetch(`${process.env.API_BASE_URL || 'http://localhost:5000'}/api/game-management/games`, {
         headers: {
           'Authorization': req.headers.authorization
@@ -174,7 +161,6 @@ const deductCredits = async (req, res) => {
         const newTotalCredits = games.reduce((sum, game) => sum + (game.credit || 0), 0);
         credit.totalCredits = newTotalCredits;
         credit.remainingCredits = newTotalCredits - credit.usedCredits;
-        console.log('💰 Updated totalCredits:', newTotalCredits);
       }
     }
     
@@ -202,7 +188,7 @@ const deductCredits = async (req, res) => {
     
     res.json({
       success: true,
-      message: 'Kredi düşüldü',
+      message: 'Kredi başarıyla düşürüldü',
       credit: {
         totalCredits: credit.totalCredits,
         usedCredits: credit.usedCredits,
@@ -258,9 +244,68 @@ const getCreditTransactions = async (req, res) => {
   }
 };
 
+// Restore credits for expired games
+const restoreCredits = async (req, res) => {
+  try {
+    const userId = req.admin._id;
+    const { 
+      amount, 
+      type, 
+      description
+    } = req.body;
+
+    if (!amount || amount <= 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'Geçersiz kredi miktarı'
+      });
+    }
+
+    let credit = await Credit.findOne({ userId });
+    
+    if (!credit) {
+      return res.status(404).json({
+        success: false,
+        message: 'Kredi kaydı bulunamadı'
+      });
+    }
+
+    // Restore credits
+    credit.usedCredits = Math.max(0, credit.usedCredits - amount);
+    credit.remainingCredits = credit.totalCredits - credit.usedCredits;
+
+    // Add transaction record
+    credit.transactions.push({
+      type: type || 'credit_restore',
+      amount: amount,
+      description: description,
+      timestamp: new Date()
+    });
+
+    await credit.save();
+
+    res.json({
+      success: true,
+      message: 'Kredi başarıyla geri yüklendi',
+      credit: {
+        totalCredits: credit.totalCredits,
+        usedCredits: credit.usedCredits,
+        remainingCredits: credit.remainingCredits
+      }
+    });
+  } catch (error) {
+    console.error('Restore credits error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Kredi geri yüklenemedi'
+    });
+  }
+};
+
 module.exports = {
   getUserCredits,
   updateTotalCredits,
   deductCredits,
+  restoreCredits,
   getCreditTransactions
 };

@@ -189,7 +189,15 @@ export const creditAPI = {
   
   // Get credit transactions
   getCreditTransactions: (page = 1, limit = 20) =>
-    api.get(`/credit/transactions?page=${page}&limit=${limit}`)
+    api.get(`/credit/transactions?page=${page}&limit=${limit}`),
+  
+  // Restore credits for expired games
+  restoreCredits: (creditData: {
+    amount: number;
+    type?: string;
+    description: string;
+  }) =>
+    api.post('/credit/restore', creditData)
 };
 
 

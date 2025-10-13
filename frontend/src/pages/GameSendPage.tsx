@@ -301,10 +301,7 @@ const GameSendPage: React.FC = () => {
           // UI'yi güncelle - API'den güncel veriyi çek
           await loadRemainingCredits();
         } catch (error) {
-          console.error('Kredi düşürme hatası:', error);
-          console.error('Error response:', error.response?.data);
-          console.error('Error status:', error.response?.status);
-          showMessage('Hata', `Kredi düşürülemedi: ${JSON.stringify(error.response?.data) || error.message}`, 'error');
+          showMessage('Hata', `Kredi düşürülemedi: ${error.response?.data?.message || error.message}`, 'error');
         }
       } else {
         showMessage('Hata', 'Gönderilemedi: ' + sendData.message, 'error');
@@ -467,8 +464,7 @@ const GameSendPage: React.FC = () => {
           // UI'yi güncelle - API'den güncel veriyi çek
           await loadRemainingCredits();
         } catch (error) {
-          console.error('Kredi düşürme hatası:', error);
-          showMessage('Hata', 'Kredi düşürülemedi', 'error');
+          showMessage('Hata', `Kredi düşürülemedi: ${error.response?.data?.message || error.message}`, 'error');
         }
       } else if (successCount > 0 && errorCount > 0) {
         showMessage('Kısmi Başarı', `${successCount} kişiye gönderildi, ${errorCount} kişiye gönderilemedi. (${totalCreditCost} kredi düşüldü)`, 'warning');
@@ -484,8 +480,7 @@ const GameSendPage: React.FC = () => {
           // UI'yi güncelle - API'den güncel veriyi çek
           await loadRemainingCredits();
         } catch (error) {
-          console.error('Kredi düşürme hatası:', error);
-          showMessage('Hata', 'Kredi düşürülemedi', 'error');
+          showMessage('Hata', `Kredi düşürülemedi: ${error.response?.data?.message || error.message}`, 'error');
         }
       } else {
         showMessage('Hata', 'Hiçbir kişiye gönderilemedi!', 'error');
