@@ -281,16 +281,17 @@ const GameSendPage: React.FC = () => {
 
       const sendData = await sendResponse.json();
       if (sendData.success) {
-        showMessage('Başarılı', 'Kod başarıyla gönderildi!', 'success');
+        const creditCost = selectedPlanets.length;
+        showMessage('Başarılı', `Kod başarıyla gönderildi! (${creditCost} kredi düşüldü)`, 'success');
         // Clear form
         setPersonName('');
         setPersonEmail('');
         setSelectedPlanets([]);
-        // Kredi düşür (1 kredi)
-        setRemainingCredits(prev => prev - 1);
+        // Kredi düşür (seçilen gezegen sayısı kadar)
+        setRemainingCredits(prev => prev - creditCost);
         // localStorage'da kullanılan kredi sayısını artır
         const currentUsed = parseInt(localStorage.getItem('usedCredits') || '0');
-        localStorage.setItem('usedCredits', (currentUsed + 1).toString());
+        localStorage.setItem('usedCredits', (currentUsed + creditCost).toString());
       } else {
         showMessage('Hata', 'Gönderilemedi: ' + sendData.message, 'error');
       }
@@ -426,12 +427,33 @@ const GameSendPage: React.FC = () => {
         }
       }
 
+      // Kredi hesaplama (başarılı gönderim sayısı * gezegen sayısı)
+      // Her kişi için grup gezegen sayısını kullan
+      let totalCreditCost = 0;
+      for (const groupId of selectedGroups) {
+        const group = groups.find(g => g._id === groupId);
+        if (group && group.planets) {
+          // Bu gruptaki kişi sayısı * gezegen sayısı
+          const groupPersonCount = group.persons ? group.persons.length : 0;
+          totalCreditCost += groupPersonCount * group.planets.length;
+        }
+      }
+      
       // Show results
       if (successCount > 0 && errorCount === 0) {
-        showMessage('Başarılı', `${successCount} kişiye başarıyla gönderildi!`, 'success');
+        showMessage('Başarılı', `${successCount} kişiye başarıyla gönderildi! (${totalCreditCost} kredi düşüldü)`, 'success');
+        // Kredi düşür
+        setRemainingCredits(prev => prev - totalCreditCost);
+        // localStorage'da kullanılan kredi sayısını artır
+        const currentUsed = parseInt(localStorage.getItem('usedCredits') || '0');
+        localStorage.setItem('usedCredits', (currentUsed + totalCreditCost).toString());
       } else if (successCount > 0 && errorCount > 0) {
-        showMessage('Kısmi Başarı', `${successCount} kişiye gönderildi, ${errorCount} kişiye gönderilemedi.`, 'warning');
+        showMessage('Kısmi Başarı', `${successCount} kişiye gönderildi, ${errorCount} kişiye gönderilemedi. (${totalCreditCost} kredi düşüldü)`, 'warning');
         console.error('Gönderim hataları:', errors);
+        // Kredi düşür (sadece başarılı gönderimler için)
+        setRemainingCredits(prev => prev - totalCreditCost);
+        const currentUsed = parseInt(localStorage.getItem('usedCredits') || '0');
+        localStorage.setItem('usedCredits', (currentUsed + totalCreditCost).toString());
       } else {
         showMessage('Hata', 'Hiçbir kişiye gönderilemedi!', 'error');
         console.error('Tüm gönderim hataları:', errors);
@@ -583,6 +605,41 @@ const GameSendPage: React.FC = () => {
             {remainingCredits.toLocaleString()}
           </div>
         </div>
+        {/* Kredi Bilgi Notu */}
+        <div style={{
+          background: 'linear-gradient(135deg, #E3F2FD 0%, #F3E5F5 100%)',
+          border: '1px solid #BBDEFB',
+          borderRadius: '8px',
+          padding: '16px 20px',
+          marginBottom: '20px',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '12px',
+          boxShadow: '0 2px 8px rgba(0,0,0,0.05)'
+        }}>
+          <div style={{
+            width: '24px',
+            height: '24px',
+            borderRadius: '50%',
+            background: '#3A57E8',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            flexShrink: 0
+          }}>
+            <i className="fas fa-info" style={{ color: 'white', fontSize: '12px' }}></i>
+          </div>
+          <div style={{
+            color: '#1976D2',
+            fontSize: '14px',
+            fontWeight: 500,
+            lineHeight: '1.4'
+          }}>
+            <strong>Kredi Bilgisi:</strong> Kişi ve gezegen başına 1 kredi düşülür. 
+            Örnek: 2 kişiye 2 gezegen gönderilirse 4 kredi düşer.
+          </div>
+        </div>
+
         {/* Tab Container */}
         <div style={{
           display: 'flex',
