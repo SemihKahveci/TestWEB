@@ -1,5 +1,49 @@
 const Credit = require('../models/Credit');
 
+// Cache for total credits to avoid repeated API calls
+let totalCreditsCache = {
+  value: 0,
+  lastUpdated: null,
+  ttl: 5 * 60 * 1000 // 5 minutes cache
+};
+
+// Helper function to get total credits with caching
+const getTotalCreditsFromCache = async (req) => {
+  const now = new Date();
+  
+  // If cache is valid, return cached value
+  if (totalCreditsCache.lastUpdated && 
+      (now - totalCreditsCache.lastUpdated) < totalCreditsCache.ttl) {
+    return totalCreditsCache.value;
+  }
+  
+  // Cache expired or doesn't exist, fetch from API
+  try {
+    const gameResponse = await fetch(`${process.env.API_BASE_URL || 'http://localhost:5000'}/api/game-management/games`, {
+      headers: {
+        'Authorization': req.headers.authorization
+      }
+    });
+    
+    let totalCredits = 0;
+    if (gameResponse.ok) {
+      const gameData = await gameResponse.json();
+      const games = gameData.games || [];
+      totalCredits = games.reduce((sum, game) => sum + (game.credit || 0), 0);
+    }
+    
+    // Update cache
+    totalCreditsCache.value = totalCredits;
+    totalCreditsCache.lastUpdated = now;
+    
+    return totalCredits;
+  } catch (error) {
+    console.error('Error fetching total credits:', error);
+    // Return cached value if available, otherwise 0
+    return totalCreditsCache.value || 0;
+  }
+};
+
 // Get user's credit information
 const getUserCredits = async (req, res) => {
   try {
@@ -9,19 +53,8 @@ const getUserCredits = async (req, res) => {
     
     if (!credit) {
       // Create new credit record if doesn't exist
-      // Get total credits from game management
-      const gameResponse = await fetch(`${process.env.API_BASE_URL || 'http://localhost:5000'}/api/game-management/games`, {
-        headers: {
-          'Authorization': req.headers.authorization
-        }
-      });
-      
-      let totalCredits = 0;
-      if (gameResponse.ok) {
-        const gameData = await gameResponse.json();
-        const games = gameData.games || [];
-        totalCredits = games.reduce((sum, game) => sum + (game.credit || 0), 0);
-      }
+      // Use cached total credits for faster response
+      const totalCredits = await getTotalCreditsFromCache(req);
       
       credit = new Credit({
         userId,
@@ -73,6 +106,9 @@ const updateTotalCredits = async (req, res) => {
     credit.totalCredits += amount;
     credit.remainingCredits = credit.totalCredits - credit.usedCredits;
     
+    // Invalidate cache since total credits changed
+    totalCreditsCache.lastUpdated = null;
+    
     // Add transaction
     credit.transactions.push({
       type: 'credit_purchase',
@@ -123,19 +159,8 @@ const deductCredits = async (req, res) => {
     
     if (!credit) {
       // Create new credit record if doesn't exist
-      // Get total credits from game management
-      const gameResponse = await fetch(`${process.env.API_BASE_URL || 'http://localhost:5000'}/api/game-management/games`, {
-        headers: {
-          'Authorization': req.headers.authorization
-        }
-      });
-      
-      let totalCredits = 0;
-      if (gameResponse.ok) {
-        const gameData = await gameResponse.json();
-        const games = gameData.games || [];
-        totalCredits = games.reduce((sum, game) => sum + (game.credit || 0), 0);
-      }
+      // Use cached total credits for faster response
+      const totalCredits = await getTotalCreditsFromCache(req);
       
       credit = new Credit({
         userId,
@@ -147,21 +172,11 @@ const deductCredits = async (req, res) => {
       await credit.save();
     }
     
-    // If totalCredits is 0, update it from game management
+    // If totalCredits is 0, update it from cache
     if (credit.totalCredits === 0) {
-      const gameResponse = await fetch(`${process.env.API_BASE_URL || 'http://localhost:5000'}/api/game-management/games`, {
-        headers: {
-          'Authorization': req.headers.authorization
-        }
-      });
-      
-      if (gameResponse.ok) {
-        const gameData = await gameResponse.json();
-        const games = gameData.games || [];
-        const newTotalCredits = games.reduce((sum, game) => sum + (game.credit || 0), 0);
-        credit.totalCredits = newTotalCredits;
-        credit.remainingCredits = newTotalCredits - credit.usedCredits;
-      }
+      const newTotalCredits = await getTotalCreditsFromCache(req);
+      credit.totalCredits = newTotalCredits;
+      credit.remainingCredits = newTotalCredits - credit.usedCredits;
     }
     
     // Check if user has enough credits

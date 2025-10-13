@@ -98,45 +98,15 @@ const GameSendPage: React.FC = () => {
     try {
       console.log('🔄 Kalan kredi yükleniyor...');
       
-      // SubscriptionSettings'deki hesaplama mantığını kullan
-      const response = await fetch('/api/game-management/games', {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        }
-      });
+      // Sadece credit API'den veri al (cache'li ve hızlı)
+      const creditResponse = await creditAPI.getUserCredits();
       
-      if (!response.ok) {
-        throw new Error('Veriler yüklenemedi');
-      }
-      
-      const data = await response.json();
-      const games = data.games || [];
-      
-      // Toplam kredi hesapla
-      const totalCredits = games.reduce((sum: number, game: any) => {
-        return sum + (game.credit || 0);
-      }, 0);
-      
-      // Credit API'den kullanılan kredi bilgisini al
-      try {
-        const creditResponse = await creditAPI.getUserCredits();
-        if (creditResponse.data.success) {
-          const { usedCredits } = creditResponse.data.credit;
-          const remaining = totalCredits - usedCredits;
-          console.log('💳 Total Credits:', totalCredits);
-          console.log('💳 Used Credits:', usedCredits);
-          console.log('💳 Remaining Credits:', remaining);
-          setRemainingCredits(remaining);
-        } else {
-          // Fallback: localStorage'dan al
-          const fallbackCredits = parseInt(localStorage.getItem('usedCredits') || '0');
-          setRemainingCredits(totalCredits - fallbackCredits);
-        }
-      } catch (creditError) {
-        console.error('Credit API Error:', creditError);
-        // Fallback: localStorage'dan al
-        const fallbackCredits = parseInt(localStorage.getItem('usedCredits') || '0');
-        setRemainingCredits(totalCredits - fallbackCredits);
+      if (creditResponse.data.success) {
+        const { totalCredits, usedCredits, remainingCredits } = creditResponse.data.credit;
+        setRemainingCredits(remainingCredits);
+        console.log(`✅ Kalan kredi: ${remainingCredits} (Toplam: ${totalCredits}, Kullanılan: ${usedCredits})`);
+      } else {
+        setRemainingCredits(0);
       }
     } catch (error) {
       console.error('💥 Kalan kredi yüklenirken hata:', error);
