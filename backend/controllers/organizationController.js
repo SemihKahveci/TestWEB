@@ -29,14 +29,7 @@ const createOrganization = async (req, res) => {
             pozisyon
         } = req.body;
 
-        // Gerekli alanları kontrol et - sadece Genel Müdür Yardımcılığı ve Pozisyon zorunlu
-        if (!genelMudurYardimciligi || genelMudurYardimciligi.trim() === '') {
-            return res.status(400).json({
-                success: false,
-                message: 'Genel Müdür Yardımcılığı alanı boş olamaz'
-            });
-        }
-        
+        // Gerekli alanları kontrol et - sadece Pozisyon zorunlu
         if (!pozisyon || pozisyon.trim() === '') {
             return res.status(400).json({
                 success: false,
@@ -46,7 +39,7 @@ const createOrganization = async (req, res) => {
 
         // Diğer alanları temizle - boş olanları "-" yap, "-" olanları olduğu gibi bırak
         const cleanedData = {
-            genelMudurYardimciligi: genelMudurYardimciligi.trim(),
+            genelMudurYardimciligi: genelMudurYardimciligi && genelMudurYardimciligi.trim() !== '' ? genelMudurYardimciligi.trim() : '-',
             direktörlük: direktörlük && direktörlük.trim() !== '' ? direktörlük.trim() : '-',
             müdürlük: müdürlük && müdürlük.trim() !== '' ? müdürlük.trim() : '-',
             grupLiderligi: grupLiderligi && grupLiderligi.trim() !== '' ? grupLiderligi.trim() : '-',
@@ -101,14 +94,7 @@ const updateOrganization = async (req, res) => {
             pozisyon
         } = req.body;
 
-        // Gerekli alanları kontrol et - sadece Genel Müdür Yardımcılığı ve Pozisyon zorunlu
-        if (!genelMudurYardimciligi || genelMudurYardimciligi.trim() === '') {
-            return res.status(400).json({
-                success: false,
-                message: 'Genel Müdür Yardımcılığı alanı boş olamaz'
-            });
-        }
-        
+        // Gerekli alanları kontrol et - sadece Pozisyon zorunlu
         if (!pozisyon || pozisyon.trim() === '') {
             return res.status(400).json({
                 success: false,
@@ -118,7 +104,7 @@ const updateOrganization = async (req, res) => {
 
         // Diğer alanları temizle - boş olanları "-" yap, "-" olanları olduğu gibi bırak
         const cleanedData = {
-            genelMudurYardimciligi: genelMudurYardimciligi.trim(),
+            genelMudurYardimciligi: genelMudurYardimciligi && genelMudurYardimciligi.trim() !== '' ? genelMudurYardimciligi.trim() : '-',
             direktörlük: direktörlük && direktörlük.trim() !== '' ? direktörlük.trim() : '-',
             müdürlük: müdürlük && müdürlük.trim() !== '' ? müdürlük.trim() : '-',
             grupLiderligi: grupLiderligi && grupLiderligi.trim() !== '' ? grupLiderligi.trim() : '-',
@@ -284,24 +270,20 @@ const bulkCreateOrganizations = async (req, res) => {
 
                 const [genelMudurYardimciligi, direktörlük, müdürlük, grupLiderligi, pozisyon] = row;
 
-                // Zorunlu alan kontrolü: sadece Genel Müdür Yardımcılığı ve Pozisyon zorunlu
+                // Zorunlu alan kontrolü: sadece Pozisyon zorunlu
                 const isEmpty = (value) => !value || value.toString().trim() === '';
                 
-                if (isEmpty(genelMudurYardimciligi) || isEmpty(pozisyon)) {
-                    const missingFields = [];
-                    if (isEmpty(genelMudurYardimciligi)) missingFields.push('Genel Müdür Yardımcılığı');
-                    if (isEmpty(pozisyon)) missingFields.push('Pozisyon');
-                    
+                if (isEmpty(pozisyon)) {
                     errors.push({
                         row: rowNumber,
-                        message: `Zorunlu alanlar eksik: ${missingFields.join(', ')}. Bu alanlar boş olamaz.`
+                        message: 'Pozisyon alanı boş olamaz. Bu alan zorunludur.'
                     });
                     continue;
                 }
 
                 // Diğer alanları temizle - boş olanları "-" yap, "-" olanları olduğu gibi bırak
                 const cleanedOrgData = {
-                    genelMudurYardimciligi: genelMudurYardimciligi.toString().trim(),
+                    genelMudurYardimciligi: genelMudurYardimciligi && genelMudurYardimciligi.toString().trim() !== '' ? genelMudurYardimciligi.toString().trim() : '-',
                     direktörlük: direktörlük && direktörlük.toString().trim() !== '' ? direktörlük.toString().trim() : '-',
                     müdürlük: müdürlük && müdürlük.toString().trim() !== '' ? müdürlük.toString().trim() : '-',
                     grupLiderligi: grupLiderligi && grupLiderligi.toString().trim() !== '' ? grupLiderligi.toString().trim() : '-',

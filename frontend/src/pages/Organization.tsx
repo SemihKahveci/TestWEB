@@ -145,13 +145,7 @@ const Organization: React.FC = () => {
     try {
       setIsSubmitting(true);
       
-      // Form validasyonu
-      if (!formData.genelMudurYardimciligi || formData.genelMudurYardimciligi.trim() === '') {
-        setErrorMessage('Genel Müdür Yardımcılığı alanı boş olamaz!');
-        setShowErrorPopup(true);
-        return;
-      }
-      
+      // Form validasyonu - sadece Pozisyon zorunlu
       if (!formData.pozisyon || formData.pozisyon.trim() === '') {
         setErrorMessage('Pozisyon alanı boş olamaz!');
         setShowErrorPopup(true);
@@ -185,8 +179,8 @@ const Organization: React.FC = () => {
       
       const result = await organizationAPI.create(cleanedFormData);
       
-      // Yeni organizasyonu listeye ekle
-      setOrganizations(prev => [...prev, result.data.organization]);
+      // Yeni organizasyonu listenin en üstüne ekle
+      setOrganizations(prev => [result.data.organization, ...prev]);
       
       // Başarı mesajı göster
       setShowAddPopup(false);
@@ -206,13 +200,7 @@ const Organization: React.FC = () => {
       if (!selectedOrganization) return;
       setIsSubmitting(true);
       
-      // Form validasyonu
-      if (!formData.genelMudurYardimciligi || formData.genelMudurYardimciligi.trim() === '') {
-        setErrorMessage('Genel Müdür Yardımcılığı alanı boş olamaz!');
-        setShowErrorPopup(true);
-        return;
-      }
-      
+      // Form validasyonu - sadece Pozisyon zorunlu
       if (!formData.pozisyon || formData.pozisyon.trim() === '') {
         setErrorMessage('Pozisyon alanı boş olamaz!');
         setShowErrorPopup(true);
@@ -1216,7 +1204,7 @@ const Organization: React.FC = () => {
                     marginBottom: '8px',
                     fontFamily: 'Inter'
                   }}>
-                    Genel Müdür Yardımcılığı <span style={{ color: '#DC2626' }}>*</span>
+                    Genel Müdür Yardımcılığı
                   </label>
                   <input
                     type="text"
@@ -1262,6 +1250,7 @@ const Organization: React.FC = () => {
                     type="text"
                     value={formData.direktörlük}
                     onChange={(e) => setFormData({ ...formData, direktörlük: e.target.value })}
+                    placeholder="Direktörlük girin"
                     style={{
                       width: '100%',
                       padding: '14px 16px',
@@ -1289,6 +1278,7 @@ const Organization: React.FC = () => {
                     type="text"
                     value={formData.müdürlük}
                     onChange={(e) => setFormData({ ...formData, müdürlük: e.target.value })}
+                    placeholder="Müdürlük girin"
                     style={{
                       width: '100%',
                       padding: '14px 16px',
@@ -1316,6 +1306,7 @@ const Organization: React.FC = () => {
                     type="text"
                     value={formData.grupLiderligi}
                     onChange={(e) => setFormData({ ...formData, grupLiderligi: e.target.value })}
+                    placeholder="Departman/Şeflik girin"
                     style={{
                       width: '100%',
                       padding: '14px 16px',
@@ -1343,6 +1334,7 @@ const Organization: React.FC = () => {
                     type="text"
                     value={formData.pozisyon}
                     onChange={(e) => setFormData({ ...formData, pozisyon: e.target.value })}
+                    placeholder="Pozisyon girin"
                     style={{
                       width: '100%',
                       padding: '14px 16px',
