@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { creditAPI } from '../services/api';
 
 interface Planet {
   value: string;
@@ -104,42 +105,44 @@ const GameSendPage: React.FC = () => {
         }
       });
       
-      console.log('📡 API Response Status:', response.status);
-      
       if (!response.ok) {
-        console.error('❌ API Error:', response.status, response.statusText);
         throw new Error('Veriler yüklenemedi');
       }
       
       const data = await response.json();
-      console.log('📊 API Data:', data);
-      
       const games = data.games || [];
-      console.log('🎮 Games:', games);
-      console.log('🎮 Games Count:', games.length);
       
-      // SubscriptionSettings'deki hesaplama mantığı
+      // Toplam kredi hesapla
       const totalCredits = games.reduce((sum: number, game: any) => {
-        console.log('💰 Game Credit:', game.credit, 'Type:', typeof game.credit);
         return sum + (game.credit || 0);
       }, 0);
       
-      console.log('💳 Total Credits:', totalCredits);
-      
-      const totalCreditAmount = totalCredits; // Toplam kredi
-      
-      // Kullanılan kredi hesaplama (localStorage'dan)
-      const usedCredits = parseInt(localStorage.getItem('usedCredits') || '0');
-      
-      const remaining = totalCreditAmount - usedCredits; // Kalan kredi
-      
-      console.log('🎯 Total Credit Amount:', totalCreditAmount);
-      console.log('🎯 Used Credits:', usedCredits);
-      console.log('🎯 Remaining Credits:', remaining);
-      
-      setRemainingCredits(remaining);
+      // Credit API'den kullanılan kredi bilgisini al
+      try {
+        const creditResponse = await creditAPI.getUserCredits();
+        if (creditResponse.data.success) {
+          const { usedCredits } = creditResponse.data.credit;
+          const remaining = totalCredits - usedCredits;
+          console.log('💳 Total Credits:', totalCredits);
+          console.log('💳 Used Credits:', usedCredits);
+          console.log('💳 Remaining Credits:', remaining);
+          setRemainingCredits(remaining);
+        } else {
+          // Fallback: localStorage'dan al
+          const fallbackCredits = parseInt(localStorage.getItem('usedCredits') || '0');
+          setRemainingCredits(totalCredits - fallbackCredits);
+        }
+      } catch (creditError) {
+        console.error('Credit API Error:', creditError);
+        // Fallback: localStorage'dan al
+        const fallbackCredits = parseInt(localStorage.getItem('usedCredits') || '0');
+        setRemainingCredits(totalCredits - fallbackCredits);
+      }
     } catch (error) {
       console.error('💥 Kalan kredi yüklenirken hata:', error);
+      // Fallback: localStorage'dan al
+      const fallbackCredits = parseInt(localStorage.getItem('usedCredits') || '0');
+      setRemainingCredits(123563657 - fallbackCredits); // Total - used
     }
   };
 
@@ -287,11 +290,22 @@ const GameSendPage: React.FC = () => {
         setPersonName('');
         setPersonEmail('');
         setSelectedPlanets([]);
-        // Kredi düşür (seçilen gezegen sayısı kadar)
-        setRemainingCredits(prev => prev - creditCost);
-        // localStorage'da kullanılan kredi sayısını artır
-        const currentUsed = parseInt(localStorage.getItem('usedCredits') || '0');
-        localStorage.setItem('usedCredits', (currentUsed + creditCost).toString());
+        // Kredi düşür (API ile)
+        try {
+          await creditAPI.deductCredits({
+            amount: creditCost,
+            type: 'game_send',
+            description: `Kişi gönderimi: ${personName} (${creditCost} gezegen)`
+          });
+          
+          // UI'yi güncelle - API'den güncel veriyi çek
+          await loadRemainingCredits();
+        } catch (error) {
+          console.error('Kredi düşürme hatası:', error);
+          console.error('Error response:', error.response?.data);
+          console.error('Error status:', error.response?.status);
+          showMessage('Hata', `Kredi düşürülemedi: ${JSON.stringify(error.response?.data) || error.message}`, 'error');
+        }
       } else {
         showMessage('Hata', 'Gönderilemedi: ' + sendData.message, 'error');
       }
@@ -442,18 +456,37 @@ const GameSendPage: React.FC = () => {
       // Show results
       if (successCount > 0 && errorCount === 0) {
         showMessage('Başarılı', `${successCount} kişiye başarıyla gönderildi! (${totalCreditCost} kredi düşüldü)`, 'success');
-        // Kredi düşür
-        setRemainingCredits(prev => prev - totalCreditCost);
-        // localStorage'da kullanılan kredi sayısını artır
-        const currentUsed = parseInt(localStorage.getItem('usedCredits') || '0');
-        localStorage.setItem('usedCredits', (currentUsed + totalCreditCost).toString());
+        // Kredi düşür (API ile)
+        try {
+          await creditAPI.deductCredits({
+            amount: totalCreditCost,
+            type: 'game_send',
+            description: `Grup gönderimi: ${successCount} kişi (${totalCreditCost} kredi)`
+          });
+          
+          // UI'yi güncelle - API'den güncel veriyi çek
+          await loadRemainingCredits();
+        } catch (error) {
+          console.error('Kredi düşürme hatası:', error);
+          showMessage('Hata', 'Kredi düşürülemedi', 'error');
+        }
       } else if (successCount > 0 && errorCount > 0) {
         showMessage('Kısmi Başarı', `${successCount} kişiye gönderildi, ${errorCount} kişiye gönderilemedi. (${totalCreditCost} kredi düşüldü)`, 'warning');
         console.error('Gönderim hataları:', errors);
-        // Kredi düşür (sadece başarılı gönderimler için)
-        setRemainingCredits(prev => prev - totalCreditCost);
-        const currentUsed = parseInt(localStorage.getItem('usedCredits') || '0');
-        localStorage.setItem('usedCredits', (currentUsed + totalCreditCost).toString());
+        // Kredi düşür (sadece başarılı gönderimler için - API ile)
+        try {
+          await creditAPI.deductCredits({
+            amount: totalCreditCost,
+            type: 'game_send',
+            description: `Grup gönderimi (kısmi): ${successCount} kişi (${totalCreditCost} kredi)`
+          });
+          
+          // UI'yi güncelle - API'den güncel veriyi çek
+          await loadRemainingCredits();
+        } catch (error) {
+          console.error('Kredi düşürme hatası:', error);
+          showMessage('Hata', 'Kredi düşürülemedi', 'error');
+        }
       } else {
         showMessage('Hata', 'Hiçbir kişiye gönderilemedi!', 'error');
         console.error('Tüm gönderim hataları:', errors);

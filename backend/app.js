@@ -231,6 +231,10 @@ apiRouter.use('/group', groupRoutes);
 // Authorization işlemleri
 apiRouter.use('/authorization', authorizationRoutes);
 
+// Credit işlemleri
+const creditRoutes = require('./routes/creditRoutes');
+apiRouter.use('/credit', creditRoutes);
+
 // API route'larını uygula
 app.use('/api', apiRouter);
 

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { creditAPI } from '../services/api';
 
 interface Game {
   _id: string;
@@ -19,6 +20,35 @@ const SubscriptionSettings: React.FC = () => {
 
   useEffect(() => {
     loadGames();
+  }, []);
+
+  // Kredi bilgilerini yeniden yükle (GameSendPage'den güncelleme için)
+  useEffect(() => {
+    const handleStorageChange = () => {
+      const loadCreditInfo = async () => {
+        try {
+          const response = await creditAPI.getUserCredits();
+          if (response.data.success) {
+            setUsedCredits(response.data.credit.usedCredits);
+          }
+        } catch (error) {
+          console.error('Kredi bilgisi yüklenirken hata:', error);
+        }
+      };
+      
+      loadCreditInfo();
+    };
+
+    // localStorage değişikliklerini dinle
+    window.addEventListener('storage', handleStorageChange);
+    
+    // Sayfa focus olduğunda kredi bilgilerini yenile
+    window.addEventListener('focus', handleStorageChange);
+    
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+      window.removeEventListener('focus', handleStorageChange);
+    };
   }, []);
 
   const loadGames = async () => {
@@ -66,8 +96,25 @@ const SubscriptionSettings: React.FC = () => {
   const totalCreditAmount = totalCredits; // Toplam kredi
   
   // Kullanılan kredi hesaplama
-  // localStorage'dan kullanılan kredi bilgisini al
-  const usedCredits = parseInt(localStorage.getItem('usedCredits') || '0');
+  // Credit API'den kullanılan kredi bilgisini al
+  const [usedCredits, setUsedCredits] = useState(0);
+  
+  useEffect(() => {
+    const loadCreditInfo = async () => {
+      try {
+        const response = await creditAPI.getUserCredits();
+        if (response.data.success) {
+          setUsedCredits(response.data.credit.usedCredits);
+        }
+      } catch (error) {
+        console.error('Kredi bilgisi yüklenirken hata:', error);
+        // Fallback: localStorage'dan al
+        setUsedCredits(parseInt(localStorage.getItem('usedCredits') || '0'));
+      }
+    };
+    
+    loadCreditInfo();
+  }, []);
   
   const remainingCredits = totalCreditAmount - usedCredits; // Kalan kredi
   const usedPercentage = totalCreditAmount > 0 ? (usedCredits / totalCreditAmount) * 100 : 0; // Kullanım yüzdesi

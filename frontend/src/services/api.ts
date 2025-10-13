@@ -173,5 +173,24 @@ export const companyAPI = {
     api.delete(`/company-management/${vkn}`)
 };
 
+// Credit API
+export const creditAPI = {
+  // Get user's credit information
+  getUserCredits: () =>
+    api.get('/credit'),
+  
+  // Deduct credits for game sending
+  deductCredits: (creditData: {
+    amount: number;
+    type?: string;
+    description: string;
+  }) =>
+    api.post('/credit/deduct', creditData),
+  
+  // Get credit transactions
+  getCreditTransactions: (page = 1, limit = 20) =>
+    api.get(`/credit/transactions?page=${page}&limit=${limit}`)
+};
+
 
 export default api;
