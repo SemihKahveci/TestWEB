@@ -41,14 +41,14 @@ const ResultsPage: React.FC = () => {
   
   // Filter states
   const [filters, setFilters] = useState({
-    customerFocusMin: 5,
-    customerFocusMax: 95,
-    uncertaintyMin: 5,
-    uncertaintyMax: 95,
-    ieMin: 5,
-    ieMax: 95,
-    idikMin: 5,
-    idikMax: 95,
+    customerFocusMin: 5 as number | string,
+    customerFocusMax: 95 as number | string,
+    uncertaintyMin: 5 as number | string,
+    uncertaintyMax: 95 as number | string,
+    ieMin: 5 as number | string,
+    ieMax: 95 as number | string,
+    idikMin: 5 as number | string,
+    idikMax: 95 as number | string,
     startDate: '',
     endDate: ''
   });
@@ -242,22 +242,33 @@ const ResultsPage: React.FC = () => {
       }
 
       // Minimum ve maksimum değer kontrolü
-      if (filters.customerFocusMin >= filters.customerFocusMax) {
+      const customerFocusMin = typeof filters.customerFocusMin === 'string' ? 5 : filters.customerFocusMin;
+      const customerFocusMax = typeof filters.customerFocusMax === 'string' ? 95 : filters.customerFocusMax;
+      if (customerFocusMin >= customerFocusMax) {
         setErrorMessage('Müşteri Odaklılık Skoru: Minimum değer maksimum değerden küçük olmalıdır!');
         setShowErrorPopup(true);
         return;
       }
-      if (filters.uncertaintyMin >= filters.uncertaintyMax) {
+      
+      const uncertaintyMin = typeof filters.uncertaintyMin === 'string' ? 5 : filters.uncertaintyMin;
+      const uncertaintyMax = typeof filters.uncertaintyMax === 'string' ? 95 : filters.uncertaintyMax;
+      if (uncertaintyMin >= uncertaintyMax) {
         setErrorMessage('Belirsizlik Yönetimi Skoru: Minimum değer maksimum değerden küçük olmalıdır!');
         setShowErrorPopup(true);
         return;
       }
-      if (filters.ieMin >= filters.ieMax) {
+      
+      const ieMin = typeof filters.ieMin === 'string' ? 5 : filters.ieMin;
+      const ieMax = typeof filters.ieMax === 'string' ? 95 : filters.ieMax;
+      if (ieMin >= ieMax) {
         setErrorMessage('İnsanları Etkileme Skoru: Minimum değer maksimum değerden küçük olmalıdır!');
         setShowErrorPopup(true);
         return;
       }
-      if (filters.idikMin >= filters.idikMax) {
+      
+      const idikMin = typeof filters.idikMin === 'string' ? 5 : filters.idikMin;
+      const idikMax = typeof filters.idikMax === 'string' ? 95 : filters.idikMax;
+      if (idikMin >= idikMax) {
         setErrorMessage('Güven Veren İşbirliği ve Sinerji Skoru: Minimum değer maksimum değerden küçük olmalıdır!');
         setShowErrorPopup(true);
         return;
@@ -282,25 +293,33 @@ const ResultsPage: React.FC = () => {
           // Müşteri Odaklılık Skoru filtresi
           let customerFocusMatch = true;
           if (customerFocusScore !== null) {
-            customerFocusMatch = customerFocusScore >= filters.customerFocusMin && customerFocusScore <= filters.customerFocusMax;
+            const min = typeof filters.customerFocusMin === 'string' ? 5 : filters.customerFocusMin;
+            const max = typeof filters.customerFocusMax === 'string' ? 95 : filters.customerFocusMax;
+            customerFocusMatch = customerFocusScore >= min && customerFocusScore <= max;
           }
 
           // Belirsizlik Yönetimi Skoru filtresi
           let uncertaintyMatch = true;
           if (uncertaintyScore !== null) {
-            uncertaintyMatch = uncertaintyScore >= filters.uncertaintyMin && uncertaintyScore <= filters.uncertaintyMax;
+            const min = typeof filters.uncertaintyMin === 'string' ? 5 : filters.uncertaintyMin;
+            const max = typeof filters.uncertaintyMax === 'string' ? 95 : filters.uncertaintyMax;
+            uncertaintyMatch = uncertaintyScore >= min && uncertaintyScore <= max;
           }
 
           // IE Skoru filtresi
           let ieMatch = true;
           if (ieScore !== null) {
-            ieMatch = ieScore >= filters.ieMin && ieScore <= filters.ieMax;
+            const min = typeof filters.ieMin === 'string' ? 5 : filters.ieMin;
+            const max = typeof filters.ieMax === 'string' ? 95 : filters.ieMax;
+            ieMatch = ieScore >= min && ieScore <= max;
           }
 
           // IDIK Skoru filtresi
           let idikMatch = true;
           if (idikScore !== null) {
-            idikMatch = idikScore >= filters.idikMin && idikScore <= filters.idikMax;
+            const min = typeof filters.idikMin === 'string' ? 5 : filters.idikMin;
+            const max = typeof filters.idikMax === 'string' ? 95 : filters.idikMax;
+            idikMatch = idikScore >= min && idikScore <= max;
           }
 
           // Tarih filtresi
@@ -416,7 +435,7 @@ const ResultsPage: React.FC = () => {
       const now = new Date();
       const dateStr = now.toISOString().split('T')[0];
       const timeStr = now.toTimeString().split(' ')[0].replace(/:/g, '-');
-      const fileName = `kişi_skorları_${dateStr}_${timeStr}.xlsx`;
+      const fileName = `Andron_Yetkinlik_Sonuçları_${dateStr}_${timeStr}.xlsx`;
 
       // Excel dosyasını indir
       XLSX.writeFile(workbook, fileName);
@@ -1383,9 +1402,46 @@ const ResultsPage: React.FC = () => {
                       onChange={(e) => setFilters({...filters, customerFocusMin: parseInt(e.target.value)})}
                       style={{ width: '100%' }}
                     />
-                    <span style={{ minWidth: '30px', textAlign: 'center', fontSize: '14px', fontWeight: 600 }}>
-                      {filters.customerFocusMin}
-                    </span>
+                    <input
+                      type="number"
+                      min="5"
+                      max="95"
+                      value={filters.customerFocusMin}
+                      onChange={(e) => {
+                        const value = e.target.value;
+                        if (value === '') {
+                          setFilters({...filters, customerFocusMin: '' as any});
+                        } else {
+                          const numValue = parseInt(value);
+                          if (!isNaN(numValue)) {
+                            setFilters({...filters, customerFocusMin: numValue});
+                          } else {
+                            setFilters({...filters, customerFocusMin: value as any});
+                          }
+                        }
+                      }}
+                      onBlur={(e) => {
+                        const value = e.target.value;
+                        if (value !== '') {
+                          const numValue = parseInt(value);
+                          if (!isNaN(numValue)) {
+                            setFilters({...filters, customerFocusMin: Math.min(Math.max(numValue, 5), 95)});
+                          } else {
+                            setFilters({...filters, customerFocusMin: 5});
+                          }
+                        }
+                      }}
+                      style={{
+                        width: '50px',
+                        padding: '4px 6px',
+                        border: '1px solid #D1D5DB',
+                        borderRadius: '4px',
+                        fontSize: '14px',
+                        fontWeight: 600,
+                        textAlign: 'center',
+                        outline: 'none'
+                      }}
+                    />
                   </div>
                   <span style={{ fontSize: '14px', color: '#6B7280', marginTop: '20px' }}>-</span>
                   <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px', flex: 1 }}>
@@ -1398,9 +1454,46 @@ const ResultsPage: React.FC = () => {
                       onChange={(e) => setFilters({...filters, customerFocusMax: parseInt(e.target.value)})}
                       style={{ width: '100%' }}
                     />
-                    <span style={{ minWidth: '30px', textAlign: 'center', fontSize: '14px', fontWeight: 600 }}>
-                      {filters.customerFocusMax}
-                    </span>
+                    <input
+                      type="number"
+                      min="5"
+                      max="95"
+                      value={filters.customerFocusMax}
+                      onChange={(e) => {
+                        const value = e.target.value;
+                        if (value === '') {
+                          setFilters({...filters, customerFocusMax: '' as any});
+                        } else {
+                          const numValue = parseInt(value);
+                          if (!isNaN(numValue)) {
+                            setFilters({...filters, customerFocusMax: numValue});
+                          } else {
+                            setFilters({...filters, customerFocusMax: value as any});
+                          }
+                        }
+                      }}
+                      onBlur={(e) => {
+                        const value = e.target.value;
+                        if (value !== '') {
+                          const numValue = parseInt(value);
+                          if (!isNaN(numValue)) {
+                            setFilters({...filters, customerFocusMax: Math.min(Math.max(numValue, 5), 95)});
+                          } else {
+                            setFilters({...filters, customerFocusMax: 95});
+                          }
+                        }
+                      }}
+                      style={{
+                        width: '50px',
+                        padding: '4px 6px',
+                        border: '1px solid #D1D5DB',
+                        borderRadius: '4px',
+                        fontSize: '14px',
+                        fontWeight: 600,
+                        textAlign: 'center',
+                        outline: 'none'
+                      }}
+                    />
                   </div>
                 </div>
               </div>
@@ -1428,9 +1521,46 @@ const ResultsPage: React.FC = () => {
                       onChange={(e) => setFilters({...filters, uncertaintyMin: parseInt(e.target.value)})}
                       style={{ width: '100%' }}
                     />
-                    <span style={{ minWidth: '30px', textAlign: 'center', fontSize: '14px', fontWeight: 600 }}>
-                      {filters.uncertaintyMin}
-                    </span>
+                    <input
+                      type="number"
+                      min="5"
+                      max="95"
+                      value={filters.uncertaintyMin}
+                      onChange={(e) => {
+                        const value = e.target.value;
+                        if (value === '') {
+                          setFilters({...filters, uncertaintyMin: '' as any});
+                        } else {
+                          const numValue = parseInt(value);
+                          if (!isNaN(numValue)) {
+                            setFilters({...filters, uncertaintyMin: numValue});
+                          } else {
+                            setFilters({...filters, uncertaintyMin: value as any});
+                          }
+                        }
+                      }}
+                      onBlur={(e) => {
+                        const value = e.target.value;
+                        if (value !== '') {
+                          const numValue = parseInt(value);
+                          if (!isNaN(numValue)) {
+                            setFilters({...filters, uncertaintyMin: Math.min(Math.max(numValue, 5), 95)});
+                          } else {
+                            setFilters({...filters, uncertaintyMin: 5});
+                          }
+                        }
+                      }}
+                      style={{
+                        width: '50px',
+                        padding: '4px 6px',
+                        border: '1px solid #D1D5DB',
+                        borderRadius: '4px',
+                        fontSize: '14px',
+                        fontWeight: 600,
+                        textAlign: 'center',
+                        outline: 'none'
+                      }}
+                    />
                   </div>
                   <span style={{ fontSize: '14px', color: '#6B7280', marginTop: '20px' }}>-</span>
                   <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px', flex: 1 }}>
@@ -1443,9 +1573,46 @@ const ResultsPage: React.FC = () => {
                       onChange={(e) => setFilters({...filters, uncertaintyMax: parseInt(e.target.value)})}
                       style={{ width: '100%' }}
                     />
-                    <span style={{ minWidth: '30px', textAlign: 'center', fontSize: '14px', fontWeight: 600 }}>
-                      {filters.uncertaintyMax}
-                    </span>
+                    <input
+                      type="number"
+                      min="5"
+                      max="95"
+                      value={filters.uncertaintyMax}
+                      onChange={(e) => {
+                        const value = e.target.value;
+                        if (value === '') {
+                          setFilters({...filters, uncertaintyMax: '' as any});
+                        } else {
+                          const numValue = parseInt(value);
+                          if (!isNaN(numValue)) {
+                            setFilters({...filters, uncertaintyMax: numValue});
+                          } else {
+                            setFilters({...filters, uncertaintyMax: value as any});
+                          }
+                        }
+                      }}
+                      onBlur={(e) => {
+                        const value = e.target.value;
+                        if (value !== '') {
+                          const numValue = parseInt(value);
+                          if (!isNaN(numValue)) {
+                            setFilters({...filters, uncertaintyMax: Math.min(Math.max(numValue, 5), 95)});
+                          } else {
+                            setFilters({...filters, uncertaintyMax: 95});
+                          }
+                        }
+                      }}
+                      style={{
+                        width: '50px',
+                        padding: '4px 6px',
+                        border: '1px solid #D1D5DB',
+                        borderRadius: '4px',
+                        fontSize: '14px',
+                        fontWeight: 600,
+                        textAlign: 'center',
+                        outline: 'none'
+                      }}
+                    />
                   </div>
                 </div>
               </div>
@@ -1473,9 +1640,46 @@ const ResultsPage: React.FC = () => {
                       onChange={(e) => setFilters({...filters, ieMin: parseInt(e.target.value)})}
                       style={{ width: '100%' }}
                     />
-                    <span style={{ minWidth: '30px', textAlign: 'center', fontSize: '14px', fontWeight: 600 }}>
-                      {filters.ieMin}
-                    </span>
+                    <input
+                      type="number"
+                      min="5"
+                      max="95"
+                      value={filters.ieMin}
+                      onChange={(e) => {
+                        const value = e.target.value;
+                        if (value === '') {
+                          setFilters({...filters, ieMin: '' as any});
+                        } else {
+                          const numValue = parseInt(value);
+                          if (!isNaN(numValue)) {
+                            setFilters({...filters, ieMin: numValue});
+                          } else {
+                            setFilters({...filters, ieMin: value as any});
+                          }
+                        }
+                      }}
+                      onBlur={(e) => {
+                        const value = e.target.value;
+                        if (value !== '') {
+                          const numValue = parseInt(value);
+                          if (!isNaN(numValue)) {
+                            setFilters({...filters, ieMin: Math.min(Math.max(numValue, 5), 95)});
+                          } else {
+                            setFilters({...filters, ieMin: 5});
+                          }
+                        }
+                      }}
+                      style={{
+                        width: '50px',
+                        padding: '4px 6px',
+                        border: '1px solid #D1D5DB',
+                        borderRadius: '4px',
+                        fontSize: '14px',
+                        fontWeight: 600,
+                        textAlign: 'center',
+                        outline: 'none'
+                      }}
+                    />
                   </div>
                   <span style={{ fontSize: '14px', color: '#6B7280', marginTop: '20px' }}>-</span>
                   <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px', flex: 1 }}>
@@ -1488,9 +1692,46 @@ const ResultsPage: React.FC = () => {
                       onChange={(e) => setFilters({...filters, ieMax: parseInt(e.target.value)})}
                       style={{ width: '100%' }}
                     />
-                    <span style={{ minWidth: '30px', textAlign: 'center', fontSize: '14px', fontWeight: 600 }}>
-                      {filters.ieMax}
-                    </span>
+                    <input
+                      type="number"
+                      min="5"
+                      max="95"
+                      value={filters.ieMax}
+                      onChange={(e) => {
+                        const value = e.target.value;
+                        if (value === '') {
+                          setFilters({...filters, ieMax: '' as any});
+                        } else {
+                          const numValue = parseInt(value);
+                          if (!isNaN(numValue)) {
+                            setFilters({...filters, ieMax: numValue});
+                          } else {
+                            setFilters({...filters, ieMax: value as any});
+                          }
+                        }
+                      }}
+                      onBlur={(e) => {
+                        const value = e.target.value;
+                        if (value !== '') {
+                          const numValue = parseInt(value);
+                          if (!isNaN(numValue)) {
+                            setFilters({...filters, ieMax: Math.min(Math.max(numValue, 5), 95)});
+                          } else {
+                            setFilters({...filters, ieMax: 95});
+                          }
+                        }
+                      }}
+                      style={{
+                        width: '50px',
+                        padding: '4px 6px',
+                        border: '1px solid #D1D5DB',
+                        borderRadius: '4px',
+                        fontSize: '14px',
+                        fontWeight: 600,
+                        textAlign: 'center',
+                        outline: 'none'
+                      }}
+                    />
                   </div>
                 </div>
               </div>
@@ -1518,9 +1759,46 @@ const ResultsPage: React.FC = () => {
                       onChange={(e) => setFilters({...filters, idikMin: parseInt(e.target.value)})}
                       style={{ width: '100%' }}
                     />
-                    <span style={{ minWidth: '30px', textAlign: 'center', fontSize: '14px', fontWeight: 600 }}>
-                      {filters.idikMin}
-                    </span>
+                    <input
+                      type="number"
+                      min="5"
+                      max="95"
+                      value={filters.idikMin}
+                      onChange={(e) => {
+                        const value = e.target.value;
+                        if (value === '') {
+                          setFilters({...filters, idikMin: '' as any});
+                        } else {
+                          const numValue = parseInt(value);
+                          if (!isNaN(numValue)) {
+                            setFilters({...filters, idikMin: numValue});
+                          } else {
+                            setFilters({...filters, idikMin: value as any});
+                          }
+                        }
+                      }}
+                      onBlur={(e) => {
+                        const value = e.target.value;
+                        if (value !== '') {
+                          const numValue = parseInt(value);
+                          if (!isNaN(numValue)) {
+                            setFilters({...filters, idikMin: Math.min(Math.max(numValue, 5), 95)});
+                          } else {
+                            setFilters({...filters, idikMin: 5});
+                          }
+                        }
+                      }}
+                      style={{
+                        width: '50px',
+                        padding: '4px 6px',
+                        border: '1px solid #D1D5DB',
+                        borderRadius: '4px',
+                        fontSize: '14px',
+                        fontWeight: 600,
+                        textAlign: 'center',
+                        outline: 'none'
+                      }}
+                    />
                   </div>
                   <span style={{ fontSize: '14px', color: '#6B7280', marginTop: '20px' }}>-</span>
                   <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px', flex: 1 }}>
@@ -1533,9 +1811,46 @@ const ResultsPage: React.FC = () => {
                       onChange={(e) => setFilters({...filters, idikMax: parseInt(e.target.value)})}
                       style={{ width: '100%' }}
                     />
-                    <span style={{ minWidth: '30px', textAlign: 'center', fontSize: '14px', fontWeight: 600 }}>
-                      {filters.idikMax}
-                    </span>
+                    <input
+                      type="number"
+                      min="5"
+                      max="95"
+                      value={filters.idikMax}
+                      onChange={(e) => {
+                        const value = e.target.value;
+                        if (value === '') {
+                          setFilters({...filters, idikMax: '' as any});
+                        } else {
+                          const numValue = parseInt(value);
+                          if (!isNaN(numValue)) {
+                            setFilters({...filters, idikMax: numValue});
+                          } else {
+                            setFilters({...filters, idikMax: value as any});
+                          }
+                        }
+                      }}
+                      onBlur={(e) => {
+                        const value = e.target.value;
+                        if (value !== '') {
+                          const numValue = parseInt(value);
+                          if (!isNaN(numValue)) {
+                            setFilters({...filters, idikMax: Math.min(Math.max(numValue, 5), 95)});
+                          } else {
+                            setFilters({...filters, idikMax: 95});
+                          }
+                        }
+                      }}
+                      style={{
+                        width: '50px',
+                        padding: '4px 6px',
+                        border: '1px solid #D1D5DB',
+                        borderRadius: '4px',
+                        fontSize: '14px',
+                        fontWeight: 600,
+                        textAlign: 'center',
+                        outline: 'none'
+                      }}
+                    />
                   </div>
                 </div>
               </div>

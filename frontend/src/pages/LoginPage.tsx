@@ -266,19 +266,6 @@ const LoginPage: React.FC = () => {
       overflow: 'hidden',
       fontFamily: 'Inter, sans-serif'
     }}>
-      {/* Background Image */}
-      <div style={{
-        position: 'absolute',
-        top: 0,
-        left: 0,
-        right: 0,
-        bottom: 0,
-        display: 'flex',
-        justifyContent: 'center',
-        alignItems: 'center',
-        opacity: 0.05
-      }}>
-      </div>
 
       {/* Login Container */}
       <div style={{
