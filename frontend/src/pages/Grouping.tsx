@@ -71,6 +71,11 @@ const Grouping: React.FC = () => {
   const [persons, setPersons] = useState<Person[]>([]);
   const [planets, setPlanets] = useState<Planet[]>([]);
   
+  // Organization search states
+  const [filteredOrganizations, setFilteredOrganizations] = useState<Organization[]>([]);
+  const [organizationSearchTerm, setOrganizationSearchTerm] = useState('');
+  const [showOrganizationDropdown, setShowOrganizationDropdown] = useState(false);
+  
   // Pagination states
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage] = useState(10);
@@ -132,6 +137,24 @@ const Grouping: React.FC = () => {
     loadPlanets();
   }, []);
 
+  // Handle clicking outside organization dropdown
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target as HTMLElement;
+      if (!target.closest('[data-organization-dropdown]')) {
+        setShowOrganizationDropdown(false);
+      }
+    };
+
+    if (showOrganizationDropdown) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [showOrganizationDropdown]);
+
   const loadGroups = async () => {
     try {
       setIsLoading(true);
@@ -190,12 +213,19 @@ const Grouping: React.FC = () => {
         if (result.success) {
           const orgs: Organization[] = [];
           
-          // Her alan için benzersiz değerleri topla (HTML'deki gibi)
+          // Her alan için benzersiz değerleri topla ve alfabetik sırala
           const genelMudurYardimciliklari = [...new Set(result.organizations?.map((org: any) => org.genelMudurYardimciligi).filter(Boolean) || [])] as string[];
           const direktörlükler = [...new Set(result.organizations?.map((org: any) => org.direktörlük).filter(Boolean) || [])] as string[];
           const müdürlükler = [...new Set(result.organizations?.map((org: any) => org.müdürlük).filter(Boolean) || [])] as string[];
           const grupLiderlikleri = [...new Set(result.organizations?.map((org: any) => org.grupLiderligi).filter(Boolean) || [])] as string[];
           const pozisyonlar = [...new Set(result.organizations?.map((org: any) => org.pozisyon).filter(Boolean) || [])] as string[];
+          
+          // Alfabetik sıralama
+          genelMudurYardimciliklari.sort((a, b) => a.localeCompare(b, 'tr'));
+          direktörlükler.sort((a, b) => a.localeCompare(b, 'tr'));
+          müdürlükler.sort((a, b) => a.localeCompare(b, 'tr'));
+          grupLiderlikleri.sort((a, b) => a.localeCompare(b, 'tr'));
+          pozisyonlar.sort((a, b) => a.localeCompare(b, 'tr'));
           
           // Genel Müdür Yardımcılıkları
           genelMudurYardimciliklari.forEach(value => {
@@ -243,6 +273,7 @@ const Grouping: React.FC = () => {
           });
           
           setOrganizations(orgs);
+          setFilteredOrganizations(orgs); // İlk yüklemede tüm organizasyonları göster
         }
       }
     } catch (error) {
@@ -292,6 +323,56 @@ const Grouping: React.FC = () => {
       setPlanets(planets);
     } catch (error) {
       console.error('❌ Gezegen yükleme hatası:', error);
+    }
+  };
+
+  // Organization search functions
+  const handleOrganizationSearch = (searchTerm: string) => {
+    setOrganizationSearchTerm(searchTerm);
+    if (searchTerm.trim() === '') {
+      setFilteredOrganizations(organizations);
+    } else {
+      // Türkçe karakterleri normalize et
+      const normalizeText = (text: string) => {
+        return text
+          .toLowerCase()
+          .trim()
+          .replace(/i̇/g, 'i') // Noktalı küçük i'yi noktasız i'ye çevir
+          .replace(/ı/g, 'i') // Noktasız küçük i'yi noktasız i'ye çevir
+          .replace(/İ/g, 'i') // Büyük İ'yi noktasız i'ye çevir
+          .replace(/I/g, 'i') // Büyük I'yi noktasız i'ye çevir
+          .replace(/ç/g, 'c') // Ç'yi c'ye çevir
+          .replace(/Ç/g, 'c') // Ç'yi c'ye çevir
+          .replace(/ğ/g, 'g') // Ğ'yi g'ye çevir
+          .replace(/Ğ/g, 'g') // Ğ'yi g'ye çevir
+          .replace(/ö/g, 'o') // Ö'yi o'ya çevir
+          .replace(/Ö/g, 'o') // Ö'yi o'ya çevir
+          .replace(/ş/g, 's') // Ş'yi s'ye çevir
+          .replace(/Ş/g, 's') // Ş'yi s'ye çevir
+          .replace(/ü/g, 'u') // Ü'yi u'ya çevir
+          .replace(/Ü/g, 'u'); // Ü'yi u'ya çevir
+      };
+      
+      const searchNormalized = normalizeText(searchTerm);
+      
+      const filtered = organizations.filter(org => {
+        const labelNormalized = normalizeText(org.label);
+        
+        // Normalize edilmiş metinlerle karşılaştır
+        return labelNormalized.includes(searchNormalized);
+      });
+      
+      setFilteredOrganizations(filtered);
+    }
+  };
+
+  const handleOrganizationSelect = (orgValue: string) => {
+    const selectedOrg = organizations.find(org => org.value === orgValue);
+    if (selectedOrg) {
+      setSelectedOrganizations(prev => [...prev, orgValue]);
+      setOrganizationSearchTerm('');
+      setShowOrganizationDropdown(false);
+      setFilteredOrganizations(organizations); // Reset filter
     }
   };
 
@@ -403,6 +484,10 @@ const Grouping: React.FC = () => {
 
   const handleAddGroup = () => {
     clearForm();
+    // Reset organization search states
+    setOrganizationSearchTerm('');
+    setShowOrganizationDropdown(false);
+    setFilteredOrganizations(organizations);
     setShowAddPopup(true);
   };
 
@@ -454,6 +539,11 @@ const Grouping: React.FC = () => {
         
         // Düzenlenen grubu sakla
         setSelectedGroup(groupData);
+        
+        // Reset organization search states
+        setOrganizationSearchTerm('');
+        setShowOrganizationDropdown(false);
+        setFilteredOrganizations(organizations);
         
         // Modal başlığını değiştir (edit mode)
         setShowEditPopup(true);
@@ -531,6 +621,9 @@ const Grouping: React.FC = () => {
         setShowSuccessPopup(true);
         setShowAddPopup(false);
         setShowEditPopup(false);
+        setOrganizationSearchTerm('');
+        setShowOrganizationDropdown(false);
+        setFilteredOrganizations(organizations);
         clearForm(); // Formu temizle
         loadGroups();
       } else {
@@ -575,6 +668,18 @@ const Grouping: React.FC = () => {
   };
 
   const addOrganization = async () => {
+    // Yeni arama sistemi için - eğer arama terimi varsa ve tek sonuç varsa onu seç
+    if (organizationSearchTerm.trim() !== '') {
+      const exactMatch = filteredOrganizations.find(org => 
+        org.label.toLowerCase() === organizationSearchTerm.toLowerCase()
+      );
+      if (exactMatch) {
+        handleOrganizationSelect(exactMatch.value);
+        return;
+      }
+    }
+
+    // Eski sistem için fallback
     const select = document.getElementById('organizationSelect') as HTMLSelectElement;
     const selectedValue = select.value;
 
@@ -1409,38 +1514,100 @@ const Grouping: React.FC = () => {
                   Organizasyonlar *
                 </label>
                 <div style={{ display: 'flex', gap: '8px', marginBottom: '12px' }}>
-                  <select
-                    id="organizationSelect"
-                    style={{
-                      flex: 1,
-                      padding: '12px 16px',
-                      border: '2px solid #E5E7EB',
-                      borderRadius: '8px',
-                      fontSize: '14px',
-                      outline: 'none',
-                      backgroundColor: 'white'
-                    }}
-                  >
-                    <option value="">Organizasyon seçiniz</option>
-                    {Object.entries(organizations
-                      .filter(org => !selectedOrganizations.includes(org.value))
-                      .reduce((acc: { [key: string]: Organization[] }, org) => {
-                        if (!acc[org.type]) acc[org.type] = [];
-                        acc[org.type].push(org);
-                        return acc;
-                      }, {}))
-                      .map(([type, orgs]) => (
-                        <optgroup key={type} label={type === 'genelMudurYardimciligi' ? 'Genel Müdür Yardımcılıkları' :
-                          type === 'direktörlük' ? 'Direktörlükler' :
-                          type === 'müdürlük' ? 'Müdürlükler' :
-                          type === 'grupLiderligi' ? 'Grup Liderlikleri' :
-                          'Pozisyonlar'}>
-                          {orgs.map(org => (
-                            <option key={org.value} value={org.value}>{org.label}</option>
+                  <div style={{ position: 'relative', flex: 1 }} data-organization-dropdown>
+                    <input
+                      type="text"
+                      value={organizationSearchTerm}
+                      onChange={(e) => {
+                        handleOrganizationSearch(e.target.value);
+                        setShowOrganizationDropdown(true);
+                      }}
+                      onFocus={() => setShowOrganizationDropdown(true)}
+                      placeholder={`Organizasyon arayın (${organizations.length} organizasyon mevcut)`}
+                      style={{
+                        width: '100%',
+                        padding: '12px 16px',
+                        border: '2px solid #E5E7EB',
+                        borderRadius: '8px',
+                        fontSize: '14px',
+                        outline: 'none',
+                        backgroundColor: 'white'
+                      }}
+                    />
+                    {showOrganizationDropdown && (
+                      <div style={{
+                        position: 'absolute',
+                        top: '100%',
+                        left: 0,
+                        right: 0,
+                        backgroundColor: 'white',
+                        border: '1px solid #E5E7EB',
+                        borderRadius: '8px',
+                        boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
+                        zIndex: 1000,
+                        maxHeight: '200px',
+                        overflowY: 'auto',
+                        marginTop: '4px'
+                      }}>
+                        {Object.entries(filteredOrganizations
+                          .filter(org => !selectedOrganizations.includes(org.value))
+                          .reduce((acc: { [key: string]: Organization[] }, org) => {
+                            if (!acc[org.type]) acc[org.type] = [];
+                            acc[org.type].push(org);
+                            return acc;
+                          }, {}))
+                          .map(([type, orgs]) => (
+                            <div key={type}>
+                              <div style={{
+                                padding: '8px 12px',
+                                backgroundColor: '#F3F4F6',
+                                fontSize: '12px',
+                                fontWeight: '600',
+                                color: '#6B7280',
+                                borderBottom: '1px solid #E5E7EB'
+                              }}>
+                                {type === 'genelMudurYardimciligi' ? 'Genel Müdür Yardımcılıkları' :
+                                  type === 'direktörlük' ? 'Direktörlükler' :
+                                  type === 'müdürlük' ? 'Müdürlükler' :
+                                  type === 'grupLiderligi' ? 'Grup Liderlikleri' :
+                                  'Pozisyonlar'}
+                              </div>
+                              {orgs.map(org => (
+                                <div
+                                  key={org.value}
+                                  onClick={() => handleOrganizationSelect(org.value)}
+                                  style={{
+                                    padding: '10px 12px',
+                                    cursor: 'pointer',
+                                    fontSize: '14px',
+                                    color: '#374151',
+                                    borderBottom: '1px solid #F3F4F6'
+                                  }}
+                                  onMouseEnter={(e) => {
+                                    e.currentTarget.style.backgroundColor = '#F9FAFB';
+                                  }}
+                                  onMouseLeave={(e) => {
+                                    e.currentTarget.style.backgroundColor = 'white';
+                                  }}
+                                >
+                                  {org.label}
+                                </div>
+                              ))}
+                            </div>
                           ))}
-                        </optgroup>
-                      ))}
-                  </select>
+                        {filteredOrganizations.filter(org => !selectedOrganizations.includes(org.value)).length === 0 && (
+                          <div style={{
+                            padding: '12px',
+                            textAlign: 'center',
+                            color: '#9CA3AF',
+                            fontSize: '14px'
+                          }}>
+                            Organizasyon bulunamadı
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
                   <button
                     type="button"
                     onClick={addOrganization}
@@ -1753,6 +1920,9 @@ const Grouping: React.FC = () => {
               <button
                 onClick={() => {
                   setShowAddPopup(false);
+                  setOrganizationSearchTerm('');
+                  setShowOrganizationDropdown(false);
+                  setFilteredOrganizations(organizations);
                   clearForm();
                 }}
                 disabled={isSubmitting}
@@ -1979,38 +2149,100 @@ const Grouping: React.FC = () => {
                   Organizasyonlar *
                 </label>
                 <div style={{ display: 'flex', gap: '8px', marginBottom: '12px' }}>
-                  <select
-                    id="organizationSelect"
-                    style={{
-                      flex: 1,
-                      padding: '12px 16px',
-                      border: '2px solid #E5E7EB',
-                      borderRadius: '8px',
-                      fontSize: '14px',
-                      outline: 'none',
-                      backgroundColor: 'white'
-                    }}
-                  >
-                    <option value="">Organizasyon seçiniz</option>
-                    {Object.entries(organizations
-                      .filter(org => !selectedOrganizations.includes(org.value))
-                      .reduce((acc: { [key: string]: Organization[] }, org) => {
-                        if (!acc[org.type]) acc[org.type] = [];
-                        acc[org.type].push(org);
-                        return acc;
-                      }, {}))
-                      .map(([type, orgs]) => (
-                        <optgroup key={type} label={type === 'genelMudurYardimciligi' ? 'Genel Müdür Yardımcılıkları' :
-                          type === 'direktörlük' ? 'Direktörlükler' :
-                          type === 'müdürlük' ? 'Müdürlükler' :
-                          type === 'grupLiderligi' ? 'Grup Liderlikleri' :
-                          'Pozisyonlar'}>
-                          {orgs.map(org => (
-                            <option key={org.value} value={org.value}>{org.label}</option>
+                  <div style={{ position: 'relative', flex: 1 }} data-organization-dropdown>
+                    <input
+                      type="text"
+                      value={organizationSearchTerm}
+                      onChange={(e) => {
+                        handleOrganizationSearch(e.target.value);
+                        setShowOrganizationDropdown(true);
+                      }}
+                      onFocus={() => setShowOrganizationDropdown(true)}
+                      placeholder={`Organizasyon arayın (${organizations.length} organizasyon mevcut)`}
+                      style={{
+                        width: '100%',
+                        padding: '12px 16px',
+                        border: '2px solid #E5E7EB',
+                        borderRadius: '8px',
+                        fontSize: '14px',
+                        outline: 'none',
+                        backgroundColor: 'white'
+                      }}
+                    />
+                    {showOrganizationDropdown && (
+                      <div style={{
+                        position: 'absolute',
+                        top: '100%',
+                        left: 0,
+                        right: 0,
+                        backgroundColor: 'white',
+                        border: '1px solid #E5E7EB',
+                        borderRadius: '8px',
+                        boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
+                        zIndex: 1000,
+                        maxHeight: '200px',
+                        overflowY: 'auto',
+                        marginTop: '4px'
+                      }}>
+                        {Object.entries(filteredOrganizations
+                          .filter(org => !selectedOrganizations.includes(org.value))
+                          .reduce((acc: { [key: string]: Organization[] }, org) => {
+                            if (!acc[org.type]) acc[org.type] = [];
+                            acc[org.type].push(org);
+                            return acc;
+                          }, {}))
+                          .map(([type, orgs]) => (
+                            <div key={type}>
+                              <div style={{
+                                padding: '8px 12px',
+                                backgroundColor: '#F3F4F6',
+                                fontSize: '12px',
+                                fontWeight: '600',
+                                color: '#6B7280',
+                                borderBottom: '1px solid #E5E7EB'
+                              }}>
+                                {type === 'genelMudurYardimciligi' ? 'Genel Müdür Yardımcılıkları' :
+                                  type === 'direktörlük' ? 'Direktörlükler' :
+                                  type === 'müdürlük' ? 'Müdürlükler' :
+                                  type === 'grupLiderligi' ? 'Grup Liderlikleri' :
+                                  'Pozisyonlar'}
+                              </div>
+                              {orgs.map(org => (
+                                <div
+                                  key={org.value}
+                                  onClick={() => handleOrganizationSelect(org.value)}
+                                  style={{
+                                    padding: '10px 12px',
+                                    cursor: 'pointer',
+                                    fontSize: '14px',
+                                    color: '#374151',
+                                    borderBottom: '1px solid #F3F4F6'
+                                  }}
+                                  onMouseEnter={(e) => {
+                                    e.currentTarget.style.backgroundColor = '#F9FAFB';
+                                  }}
+                                  onMouseLeave={(e) => {
+                                    e.currentTarget.style.backgroundColor = 'white';
+                                  }}
+                                >
+                                  {org.label}
+                                </div>
+                              ))}
+                            </div>
                           ))}
-                        </optgroup>
-                      ))}
-                  </select>
+                        {filteredOrganizations.filter(org => !selectedOrganizations.includes(org.value)).length === 0 && (
+                          <div style={{
+                            padding: '12px',
+                            textAlign: 'center',
+                            color: '#9CA3AF',
+                            fontSize: '14px'
+                          }}>
+                            Organizasyon bulunamadı
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
                   <button
                     type="button"
                     onClick={addOrganization}
@@ -2323,6 +2555,9 @@ const Grouping: React.FC = () => {
               <button
                 onClick={() => {
                   setShowEditPopup(false);
+                  setOrganizationSearchTerm('');
+                  setShowOrganizationDropdown(false);
+                  setFilteredOrganizations(organizations);
                   clearForm();
                 }}
                 disabled={isSubmitting}

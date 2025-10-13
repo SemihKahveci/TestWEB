@@ -214,9 +214,34 @@ const AuthorizationPage: React.FC = () => {
     if (searchTerm.trim() === '') {
       setFilteredPositions(positions);
     } else {
-      const filtered = positions.filter(position =>
-        position.toLowerCase().includes(searchTerm.toLowerCase())
-      );
+      // Türkçe karakterleri normalize et
+      const normalizeText = (text: string) => {
+        return text
+          .toLowerCase()
+          .trim()
+          .replace(/i̇/g, 'i') // Noktalı küçük i'yi noktasız i'ye çevir
+          .replace(/ı/g, 'i') // Noktasız küçük i'yi noktasız i'ye çevir
+          .replace(/İ/g, 'i') // Büyük İ'yi noktasız i'ye çevir
+          .replace(/I/g, 'i') // Büyük I'yi noktasız i'ye çevir
+          .replace(/ç/g, 'c') // Ç'yi c'ye çevir
+          .replace(/Ç/g, 'c') // Ç'yi c'ye çevir
+          .replace(/ğ/g, 'g') // Ğ'yi g'ye çevir
+          .replace(/Ğ/g, 'g') // Ğ'yi g'ye çevir
+          .replace(/ö/g, 'o') // Ö'yi o'ya çevir
+          .replace(/Ö/g, 'o') // Ö'yi o'ya çevir
+          .replace(/ş/g, 's') // Ş'yi s'ye çevir
+          .replace(/Ş/g, 's') // Ş'yi s'ye çevir
+          .replace(/ü/g, 'u') // Ü'yi u'ya çevir
+          .replace(/Ü/g, 'u'); // Ü'yi u'ya çevir
+      };
+      
+      const searchNormalized = normalizeText(searchTerm);
+      
+      const filtered = positions.filter(position => {
+        const positionNormalized = normalizeText(position);
+        return positionNormalized.includes(searchNormalized);
+      });
+      
       setFilteredPositions(filtered);
     }
   };
