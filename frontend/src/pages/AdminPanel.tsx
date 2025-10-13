@@ -758,7 +758,8 @@ const AdminPanel: React.FC = () => {
         }}>
           <table style={{
             width: '100%',
-            borderCollapse: 'collapse'
+            borderCollapse: 'collapse',
+            border: '1px solid #E9ECEF'
           }}>
             <thead>
               <tr style={{
@@ -767,59 +768,66 @@ const AdminPanel: React.FC = () => {
               }}>
                 <th style={{
                   padding: '16px',
-                  textAlign: 'left',
+                  textAlign: 'center',
                   fontSize: '14px',
                   fontWeight: 600,
                   color: '#232D42',
-                  fontFamily: 'Inter'
+                  fontFamily: 'Inter',
+                  borderRight: '1px solid #E9ECEF'
                 }}>Ad Soyad</th>
                 <th style={{
                   padding: '16px',
-                  textAlign: 'left',
+                  textAlign: 'center',
                   fontSize: '14px',
                   fontWeight: 600,
                   color: '#232D42',
-                  fontFamily: 'Inter'
+                  fontFamily: 'Inter',
+                  borderRight: '1px solid #E9ECEF'
                 }}>Email</th>
                 <th style={{
                   padding: '16px',
-                  textAlign: 'left',
+                  textAlign: 'center',
                   fontSize: '14px',
                   fontWeight: 600,
                   color: '#232D42',
-                  fontFamily: 'Inter'
+                  fontFamily: 'Inter',
+                  borderRight: '1px solid #E9ECEF'
                 }}>Statü</th>
                 <th style={{
                   padding: '16px',
-                  textAlign: 'left',
+                  textAlign: 'center',
                   fontSize: '14px',
                   fontWeight: 600,
                   color: '#232D42',
-                  fontFamily: 'Inter'
+                  fontFamily: 'Inter',
+                  borderRight: '1px solid #E9ECEF'
                 }}>Gönderim Tarihi</th>
                 <th style={{
                   padding: '16px',
-                  textAlign: 'left',
+                  textAlign: 'center',
                   fontSize: '14px',
                   fontWeight: 600,
                   color: '#232D42',
-                  fontFamily: 'Inter'
+                  fontFamily: 'Inter',
+                  borderRight: '1px solid #E9ECEF'
                 }}>Tamamlama Tarihi</th>
                 <th style={{
                   padding: '16px',
-                  textAlign: 'left',
+                  textAlign: 'center',
                   fontSize: '14px',
                   fontWeight: 600,
                   color: '#232D42',
-                  fontFamily: 'Inter'
+                  fontFamily: 'Inter',
+                  borderRight: '1px solid #E9ECEF'
                 }}>Kod Geçerlilik Tarihi</th>
                 <th style={{
                   padding: '16px',
-                  textAlign: 'left',
+                  textAlign: 'center',
                   fontSize: '14px',
                   fontWeight: 600,
                   color: '#232D42',
-                  fontFamily: 'Inter'
+                  fontFamily: 'Inter',
+                  borderRight: '1px solid #E9ECEF'
                 }}>Rapor Geçerlilik Tarihi</th>
                 <th style={{
                   padding: '16px',
@@ -846,7 +854,9 @@ const AdminPanel: React.FC = () => {
                     fontSize: '14px',
                     color: '#232D42',
                     fontFamily: 'Inter',
-                    fontWeight: 500
+                    fontWeight: 500,
+                    borderRight: '1px solid #E9ECEF',
+                    textAlign: 'left'
                   }}>
                      {result.isGrouped && result.groupCount && result.groupCount > 1 && (() => {
                        // HTML'deki gibi görünür grup sayısını hesapla
@@ -911,12 +921,16 @@ const AdminPanel: React.FC = () => {
                     padding: '16px',
                     fontSize: '14px',
                     color: '#8A92A6',
-                    fontFamily: 'Inter'
+                    fontFamily: 'Inter',
+                    borderRight: '1px solid #E9ECEF',
+                    textAlign: 'center'
                   }}>
                     {result.email}
                   </td>
                   <td style={{
-                    padding: '16px'
+                    padding: '16px',
+                    borderRight: '1px solid #E9ECEF',
+                    textAlign: 'center'
                   }}>
                     {getStatusBadge(result.status)}
                   </td>
@@ -924,7 +938,9 @@ const AdminPanel: React.FC = () => {
                     padding: '16px',
                     fontSize: '14px',
                     color: '#8A92A6',
-                    fontFamily: 'Inter'
+                    fontFamily: 'Inter',
+                    borderRight: '1px solid #E9ECEF',
+                    textAlign: 'center'
                   }}>
                     {formatDate(result.sentDate)}
                   </td>
@@ -932,7 +948,9 @@ const AdminPanel: React.FC = () => {
                     padding: '16px',
                     fontSize: '14px',
                     color: '#8A92A6',
-                    fontFamily: 'Inter'
+                    fontFamily: 'Inter',
+                    borderRight: '1px solid #E9ECEF',
+                    textAlign: 'center'
                   }}>
                     {result.completionDate ? formatDate(result.completionDate) : '-'}
                   </td>
@@ -940,7 +958,9 @@ const AdminPanel: React.FC = () => {
                     padding: '16px',
                     fontSize: '14px',
                     color: '#8A92A6',
-                    fontFamily: 'Inter'
+                    fontFamily: 'Inter',
+                    borderRight: '1px solid #E9ECEF',
+                    textAlign: 'center'
                   }}>
                     {formatDate(result.expiryDate)}
                   </td>
@@ -948,7 +968,9 @@ const AdminPanel: React.FC = () => {
                     padding: '16px',
                     fontSize: '14px',
                     color: '#8A92A6',
-                    fontFamily: 'Inter'
+                    fontFamily: 'Inter',
+                    borderRight: '1px solid #E9ECEF',
+                    textAlign: 'center'
                   }}>
                     {(() => {
                       // Rapor geçerlilik tarihini hesapla (Gönderim tarihi + 6 ay)
@@ -1058,7 +1080,9 @@ const AdminPanel: React.FC = () => {
                             fontSize: '14px',
                             color: '#232D42',
                             fontFamily: 'Inter',
-                            fontWeight: 500
+                            fontWeight: 500,
+                            borderRight: '1px solid #E9ECEF',
+                            textAlign: 'left'
                           }}>
                             {groupItem.name}
                           </td>
@@ -1066,14 +1090,18 @@ const AdminPanel: React.FC = () => {
                             padding: '16px',
                             fontSize: '14px',
                             color: '#8A92A6',
-                            fontFamily: 'Inter'
+                            fontFamily: 'Inter',
+                            borderRight: '1px solid #E9ECEF',
+                            textAlign: 'center'
                           }}>
                             {groupItem.email}
                           </td>
                            <td style={{
                              padding: '16px',
                              fontSize: '14px',
-                             fontFamily: 'Inter'
+                             fontFamily: 'Inter',
+                             borderRight: '1px solid #E9ECEF',
+                             textAlign: 'center'
                            }}>
                              {getStatusBadge(groupItem.status)}
                            </td>
@@ -1081,7 +1109,9 @@ const AdminPanel: React.FC = () => {
                             padding: '16px',
                             fontSize: '14px',
                             color: '#8A92A6',
-                            fontFamily: 'Inter'
+                            fontFamily: 'Inter',
+                            borderRight: '1px solid #E9ECEF',
+                            textAlign: 'center'
                           }}>
                             {formatDate(groupItem.sentDate)}
                           </td>
@@ -1089,7 +1119,9 @@ const AdminPanel: React.FC = () => {
                             padding: '16px',
                             fontSize: '14px',
                             color: '#8A92A6',
-                            fontFamily: 'Inter'
+                            fontFamily: 'Inter',
+                            borderRight: '1px solid #E9ECEF',
+                            textAlign: 'center'
                           }}>
                             {groupItem.completionDate ? formatDate(groupItem.completionDate) : '-'}
                           </td>
@@ -1097,7 +1129,9 @@ const AdminPanel: React.FC = () => {
                             padding: '16px',
                             fontSize: '14px',
                             color: '#8A92A6',
-                            fontFamily: 'Inter'
+                            fontFamily: 'Inter',
+                            borderRight: '1px solid #E9ECEF',
+                            textAlign: 'center'
                           }}>
                             {formatDate(groupItem.expiryDate)}
                           </td>
@@ -1105,7 +1139,9 @@ const AdminPanel: React.FC = () => {
                             padding: '16px',
                             fontSize: '14px',
                             color: '#8A92A6',
-                            fontFamily: 'Inter'
+                            fontFamily: 'Inter',
+                            borderRight: '1px solid #E9ECEF',
+                            textAlign: 'center'
                           }}>
                             {formatDate(subReportExpiryDate.toISOString())}
                           </td>
