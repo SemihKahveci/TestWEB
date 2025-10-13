@@ -843,11 +843,11 @@ const AdminPanel: React.FC = () => {
               {paginatedResults.filter(result => {
                 // HTML'deki gibi: switch açık değilse süresi dolanları gizle
                 return showExpiredWarning || result.status !== 'Süresi Doldu';
-              }).map((result) => (
+              }).map((result, index) => (
                 <React.Fragment key={result.code}>
                   <tr style={{
                     borderBottom: '1px solid #F1F3F4',
-                    background: result.isGrouped && result.groupCount && result.groupCount > 1 ? '#E3F2FD' : 'white'
+                    background: index % 2 === 0 ? '#E3F2FD' : 'white'
                   }}>
                   <td style={{
                     padding: '16px',
@@ -1065,14 +1065,14 @@ const AdminPanel: React.FC = () => {
                     sortGroupItems(result.allGroupItems).slice(1).filter(groupItem => {
                       // HTML'deki gibi: switch açık değilse süresi dolanları gizle
                       return showExpiredWarning || groupItem.status !== 'Süresi Doldu';
-                    }).map((groupItem) => {
+                    }).map((groupItem, subIndex) => {
                       const subReportExpiryDate = new Date(groupItem.sentDate);
                       subReportExpiryDate.setMonth(subReportExpiryDate.getMonth() + 6);
                       
                       return (
                         <tr key={groupItem.code} style={{
                           borderBottom: '1px solid #F1F3F4',
-                          background: '#F8F9FA'
+                          background: subIndex % 2 === 0 ? '#ECECEC' : 'white'
                         }}>
                           <td style={{
                             padding: '16px',
