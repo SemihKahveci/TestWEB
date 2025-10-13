@@ -540,7 +540,7 @@ const ResultsPage: React.FC = () => {
           }} />
           <input
             type="text"
-            placeholder="İsime göre akıllı arama yapın..."
+            placeholder="Kişi adına göre akıllı arama yapın..."
             value={searchTerm}
             onChange={(e) => {
               const value = e.target.value;

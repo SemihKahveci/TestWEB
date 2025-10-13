@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import * as XLSX from 'xlsx';
+import { organizationAPI } from '../services/api';
 
 interface Authorization {
   _id: string;
@@ -8,6 +9,15 @@ interface Authorization {
   personName?: string;
   email?: string;
   title?: string;
+}
+
+interface Organization {
+  _id: string;
+  genelMudurYardimciligi?: string;
+  direktörlük?: string;
+  müdürlük?: string;
+  grupLiderligi?: string;
+  pozisyon?: string;
 }
 
 const AuthorizationPage: React.FC = () => {
@@ -48,6 +58,13 @@ const AuthorizationPage: React.FC = () => {
   const [importMessage, setImportMessage] = useState('');
   const [importMessageType, setImportMessageType] = useState<'success' | 'error'>('success');
   
+  // Organization states
+  const [organizations, setOrganizations] = useState<Organization[]>([]);
+  const [positions, setPositions] = useState<string[]>([]);
+  const [filteredPositions, setFilteredPositions] = useState<string[]>([]);
+  const [positionSearchTerm, setPositionSearchTerm] = useState('');
+  const [showPositionDropdown, setShowPositionDropdown] = useState(false);
+  
   // Form states
   const [formData, setFormData] = useState({
     sicilNo: '',
@@ -80,7 +97,26 @@ const AuthorizationPage: React.FC = () => {
 
   useEffect(() => {
     loadAuthorizations();
+    loadOrganizations();
   }, []);
+
+  // Dropdown dışına tıklandığında kapat
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target as HTMLElement;
+      if (!target.closest('[data-position-dropdown]')) {
+        setShowPositionDropdown(false);
+      }
+    };
+
+    if (showPositionDropdown) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [showPositionDropdown]);
 
   // Debounce search term
   useEffect(() => {
@@ -113,7 +149,15 @@ const AuthorizationPage: React.FC = () => {
       console.log('✅ Yetkilendirmeler yüklendi:', result);
       
       if (result.success) {
-        setAuthorizations(result.authorizations || []);
+        const authorizations = result.authorizations || [];
+        // En son eklenenler en üstte olacak şekilde sırala (MongoDB ObjectId'den tarih çıkar)
+        const sortedAuthorizations = authorizations.sort((a: Authorization, b: Authorization) => {
+          // ObjectId'nin ilk 8 karakteri timestamp'i temsil eder (hex)
+          const timestampA = a._id ? parseInt(a._id.substring(0, 8), 16) : 0;
+          const timestampB = b._id ? parseInt(b._id.substring(0, 8), 16) : 0;
+          return timestampB - timestampA; // En yeni en üstte
+        });
+        setAuthorizations(sortedAuthorizations);
       } else {
         throw new Error(result.message || 'Yetkilendirme listesi alınamadı');
       }
@@ -126,6 +170,64 @@ const AuthorizationPage: React.FC = () => {
     }
   };
 
+  const loadOrganizations = async () => {
+    try {
+      console.log('🔄 Organizasyonlar yükleniyor...');
+      
+      const result = await organizationAPI.getAll();
+      console.log('✅ Organizasyonlar yüklendi:', result);
+      
+      if (result.data.success) {
+        const organizations = result.data.organizations || [];
+        setOrganizations(organizations);
+        
+        // Pozisyonları çıkar ve alfabetik sırala
+        console.log('🔍 Organizasyon verileri:', organizations);
+        console.log('🔍 İlk organizasyon örneği:', organizations[0]);
+        
+        const allPositions = organizations
+          .map(org => {
+            console.log('🔍 Organizasyon pozisyonu:', org.pozisyon);
+            return org.pozisyon;
+          })
+          .filter(pos => pos && pos.trim() !== '')
+          .filter((pos, index, arr) => arr.indexOf(pos) === index) // Tekrarları kaldır
+          .sort((a, b) => a.localeCompare(b, 'tr')); // Türkçe alfabetik sıralama
+        
+        setPositions(allPositions);
+        setFilteredPositions(allPositions); // İlk yüklemede tüm pozisyonları göster
+        console.log('✅ Pozisyonlar hazırlandı:', allPositions);
+        console.log('📊 Toplam organizasyon sayısı:', organizations.length);
+        console.log('📊 Toplam pozisyon sayısı:', allPositions.length);
+      } else {
+        throw new Error(result.data.message || 'Organizasyon listesi alınamadı');
+      }
+    } catch (error) {
+      console.error('❌ Organizasyon yükleme hatası:', error);
+    }
+  };
+
+  // Pozisyon arama fonksiyonu
+  const handlePositionSearch = (searchTerm: string) => {
+    setPositionSearchTerm(searchTerm);
+    
+    if (searchTerm.trim() === '') {
+      setFilteredPositions(positions);
+    } else {
+      const filtered = positions.filter(position =>
+        position.toLowerCase().includes(searchTerm.toLowerCase())
+      );
+      setFilteredPositions(filtered);
+    }
+  };
+
+  // Pozisyon seçme fonksiyonu
+  const handlePositionSelect = (position: string) => {
+    setFormData({ ...formData, title: position });
+    setPositionSearchTerm(position);
+    setShowPositionDropdown(false);
+  };
+
   const handleAddAuthorization = () => {
     setFormData({
       sicilNo: '',
@@ -133,6 +235,8 @@ const AuthorizationPage: React.FC = () => {
       email: '',
       title: ''
     });
+    setPositionSearchTerm('');
+    setShowPositionDropdown(false);
     setShowAddPopup(true);
   };
 
@@ -144,6 +248,8 @@ const AuthorizationPage: React.FC = () => {
       email: authorization.email || '',
       title: authorization.title || ''
     });
+    setPositionSearchTerm(authorization.title || '');
+    setShowPositionDropdown(false);
     setShowEditPopup(true);
   };
 
@@ -175,8 +281,8 @@ const AuthorizationPage: React.FC = () => {
       const responseData = await response.json();
       console.log('✅ Yetkilendirme başarıyla eklendi:', responseData);
       
-      // Yeni yetkilendirmeyi listeye ekle
-      setAuthorizations(prev => [...prev, responseData.authorization]);
+      // Yeni yetkilendirmeyi listenin en üstüne ekle
+      setAuthorizations(prev => [responseData.authorization, ...prev]);
       
       // Başarı mesajı göster
       setShowAddPopup(false);
@@ -275,6 +381,11 @@ const AuthorizationPage: React.FC = () => {
     return (
       auth.personName && auth.personName.toLowerCase().includes(searchLower)
     );
+  }).sort((a, b) => {
+    // Filtrelenmiş sonuçları da tarihe göre sırala
+    const timestampA = a._id ? parseInt(a._id.substring(0, 8), 16) : 0;
+    const timestampB = b._id ? parseInt(b._id.substring(0, 8), 16) : 0;
+    return timestampB - timestampA; // En yeni en üstte
   });
 
   // Highlight search term in text
@@ -1107,7 +1218,7 @@ const AuthorizationPage: React.FC = () => {
                   />
                 </div>
                 
-                <div>
+                <div style={{ position: 'relative' }} data-position-dropdown>
                   <label style={{
                     display: 'block',
                     fontSize: '14px',
@@ -1120,9 +1231,13 @@ const AuthorizationPage: React.FC = () => {
                   </label>
                   <input
                     type="text"
-                    value={formData.title}
-                    onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                    placeholder="Lütfen Pozisyon Giriniz"
+                    value={positionSearchTerm}
+                    onChange={(e) => {
+                      handlePositionSearch(e.target.value);
+                      setShowPositionDropdown(true);
+                    }}
+                    onFocus={() => setShowPositionDropdown(true)}
+                    placeholder={`Pozisyon arayın (${positions.length} pozisyon mevcut)`}
                     style={{
                       width: '100%',
                       padding: '12px 16px',
@@ -1130,9 +1245,60 @@ const AuthorizationPage: React.FC = () => {
                       borderRadius: '6px',
                       fontSize: '14px',
                       fontFamily: 'Inter',
-                      outline: 'none'
+                      outline: 'none',
+                      backgroundColor: 'white'
                     }}
                   />
+                  {showPositionDropdown && (
+                    <div style={{
+                      position: 'absolute',
+                      top: '100%',
+                      left: 0,
+                      right: 0,
+                      backgroundColor: 'white',
+                      border: '1px solid #E9ECEF',
+                      borderTop: 'none',
+                      borderRadius: '0 0 6px 6px',
+                      maxHeight: '200px',
+                      overflowY: 'auto',
+                      zIndex: 1000,
+                      boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)'
+                    }}>
+                      {filteredPositions.length > 0 ? (
+                        filteredPositions.map((position, index) => (
+                          <div
+                            key={index}
+                            onClick={() => handlePositionSelect(position)}
+                            style={{
+                              padding: '12px 16px',
+                              cursor: 'pointer',
+                              fontSize: '14px',
+                              fontFamily: 'Inter',
+                              borderBottom: index < filteredPositions.length - 1 ? '1px solid #F3F4F6' : 'none'
+                            }}
+                            onMouseEnter={(e) => {
+                              e.currentTarget.style.backgroundColor = '#F9FAFB';
+                            }}
+                            onMouseLeave={(e) => {
+                              e.currentTarget.style.backgroundColor = 'white';
+                            }}
+                          >
+                            {position}
+                          </div>
+                        ))
+                      ) : (
+                        <div style={{
+                          padding: '12px 16px',
+                          fontSize: '14px',
+                          fontFamily: 'Inter',
+                          color: '#6B7280',
+                          textAlign: 'center'
+                        }}>
+                          Pozisyon bulunamadı
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </div>
               </div>
               
@@ -1143,7 +1309,10 @@ const AuthorizationPage: React.FC = () => {
                 marginTop: '24px'
               }}>
                 <button
-                  onClick={() => setShowAddPopup(false)}
+                  onClick={() => {
+                    setShowAddPopup(false);
+                    setShowPositionDropdown(false);
+                  }}
                   style={{
                     padding: '12px 24px',
                     border: '1px solid #E9ECEF',
@@ -1297,7 +1466,7 @@ const AuthorizationPage: React.FC = () => {
                   />
                 </div>
                 
-                <div>
+                <div style={{ position: 'relative' }} data-position-dropdown>
                   <label style={{
                     display: 'block',
                     fontSize: '14px',
@@ -1310,9 +1479,13 @@ const AuthorizationPage: React.FC = () => {
                   </label>
                   <input
                     type="text"
-                    value={formData.title}
-                    onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                    placeholder="Lütfen Pozisyon Giriniz"
+                    value={positionSearchTerm}
+                    onChange={(e) => {
+                      handlePositionSearch(e.target.value);
+                      setShowPositionDropdown(true);
+                    }}
+                    onFocus={() => setShowPositionDropdown(true)}
+                    placeholder={`Pozisyon arayın (${positions.length} pozisyon mevcut)`}
                     style={{
                       width: '100%',
                       padding: '12px 16px',
@@ -1320,9 +1493,60 @@ const AuthorizationPage: React.FC = () => {
                       borderRadius: '6px',
                       fontSize: '14px',
                       fontFamily: 'Inter',
-                      outline: 'none'
+                      outline: 'none',
+                      backgroundColor: 'white'
                     }}
                   />
+                  {showPositionDropdown && (
+                    <div style={{
+                      position: 'absolute',
+                      top: '100%',
+                      left: 0,
+                      right: 0,
+                      backgroundColor: 'white',
+                      border: '1px solid #E9ECEF',
+                      borderTop: 'none',
+                      borderRadius: '0 0 6px 6px',
+                      maxHeight: '200px',
+                      overflowY: 'auto',
+                      zIndex: 1000,
+                      boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)'
+                    }}>
+                      {filteredPositions.length > 0 ? (
+                        filteredPositions.map((position, index) => (
+                          <div
+                            key={index}
+                            onClick={() => handlePositionSelect(position)}
+                            style={{
+                              padding: '12px 16px',
+                              cursor: 'pointer',
+                              fontSize: '14px',
+                              fontFamily: 'Inter',
+                              borderBottom: index < filteredPositions.length - 1 ? '1px solid #F3F4F6' : 'none'
+                            }}
+                            onMouseEnter={(e) => {
+                              e.currentTarget.style.backgroundColor = '#F9FAFB';
+                            }}
+                            onMouseLeave={(e) => {
+                              e.currentTarget.style.backgroundColor = 'white';
+                            }}
+                          >
+                            {position}
+                          </div>
+                        ))
+                      ) : (
+                        <div style={{
+                          padding: '12px 16px',
+                          fontSize: '14px',
+                          fontFamily: 'Inter',
+                          color: '#6B7280',
+                          textAlign: 'center'
+                        }}>
+                          Pozisyon bulunamadı
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </div>
               </div>
               
@@ -1333,7 +1557,10 @@ const AuthorizationPage: React.FC = () => {
                 marginTop: '24px'
               }}>
                 <button
-                  onClick={() => setShowEditPopup(false)}
+                  onClick={() => {
+                    setShowEditPopup(false);
+                    setShowPositionDropdown(false);
+                  }}
                   style={{
                     padding: '12px 24px',
                     border: '1px solid #E9ECEF',
