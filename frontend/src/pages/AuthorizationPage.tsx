@@ -207,22 +207,22 @@ const AuthorizationPage: React.FC = () => {
       // Türkçe karakterleri normalize et
       const normalizeText = (text: string) => {
         return text
-          .toLowerCase()
           .trim()
-          .replace(/i̇/g, 'i') // Noktalı küçük i'yi noktasız i'ye çevir
-          .replace(/ı/g, 'i') // Noktasız küçük i'yi noktasız i'ye çevir
           .replace(/İ/g, 'i') // Büyük İ'yi noktasız i'ye çevir
           .replace(/I/g, 'i') // Büyük I'yi noktasız i'ye çevir
-          .replace(/ç/g, 'c') // Ç'yi c'ye çevir
           .replace(/Ç/g, 'c') // Ç'yi c'ye çevir
-          .replace(/ğ/g, 'g') // Ğ'yi g'ye çevir
           .replace(/Ğ/g, 'g') // Ğ'yi g'ye çevir
-          .replace(/ö/g, 'o') // Ö'yi o'ya çevir
           .replace(/Ö/g, 'o') // Ö'yi o'ya çevir
-          .replace(/ş/g, 's') // Ş'yi s'ye çevir
           .replace(/Ş/g, 's') // Ş'yi s'ye çevir
-          .replace(/ü/g, 'u') // Ü'yi u'ya çevir
-          .replace(/Ü/g, 'u'); // Ü'yi u'ya çevir
+          .replace(/Ü/g, 'u') // Ü'yi u'ya çevir
+          .toLowerCase()
+          .replace(/i̇/g, 'i') // Noktalı küçük i'yi noktasız i'ye çevir
+          .replace(/ı/g, 'i') // Noktasız küçük i'yi noktasız i'ye çevir
+          .replace(/ç/g, 'c') // Ç'yi c'ye çevir
+          .replace(/ğ/g, 'g') // Ğ'yi g'ye çevir
+          .replace(/ö/g, 'o') // Ö'yi o'ya çevir
+          .replace(/ş/g, 's') // Ş'yi s'ye çevir
+          .replace(/ü/g, 'u'); // Ü'yi u'ya çevir
       };
       
       const searchNormalized = normalizeText(searchTerm);
@@ -386,9 +386,31 @@ const AuthorizationPage: React.FC = () => {
 
   // Filter authorizations based on search term (sadece kişi adına göre)
   const filteredAuthorizations = authorizations.filter(auth => {
-    const searchLower = debouncedSearchTerm.toLowerCase();
+    // Türkçe karakterleri normalize et
+    const normalizeText = (text: string) => {
+      return text
+        .trim()
+        .replace(/İ/g, 'i') // Büyük İ'yi noktasız i'ye çevir
+        .replace(/I/g, 'i') // Büyük I'yi noktasız i'ye çevir
+        .replace(/Ç/g, 'c') // Ç'yi c'ye çevir
+        .replace(/Ğ/g, 'g') // Ğ'yi g'ye çevir
+        .replace(/Ö/g, 'o') // Ö'yi o'ya çevir
+        .replace(/Ş/g, 's') // Ş'yi s'ye çevir
+        .replace(/Ü/g, 'u') // Ü'yi u'ya çevir
+        .toLowerCase()
+        .replace(/i̇/g, 'i') // Noktalı küçük i'yi noktasız i'ye çevir
+        .replace(/ı/g, 'i') // Noktasız küçük i'yi noktasız i'ye çevir
+        .replace(/ç/g, 'c') // Ç'yi c'ye çevir
+        .replace(/ğ/g, 'g') // Ğ'yi g'ye çevir
+        .replace(/ö/g, 'o') // Ö'yi o'ya çevir
+        .replace(/ş/g, 's') // Ş'yi s'ye çevir
+        .replace(/ü/g, 'u'); // Ü'yi u'ya çevir
+    };
+    
+    const searchNormalized = normalizeText(debouncedSearchTerm);
+    
     return (
-      auth.personName && auth.personName.toLowerCase().includes(searchLower)
+      auth.personName && normalizeText(auth.personName).includes(searchNormalized)
     );
   }).sort((a, b) => {
     // Filtrelenmiş sonuçları da tarihe göre sırala
@@ -401,21 +423,54 @@ const AuthorizationPage: React.FC = () => {
   const highlightText = (text: string, searchTerm: string) => {
     if (!searchTerm || !text) return text;
     
-    const regex = new RegExp(`(${searchTerm})`, 'gi');
-    const parts = text.split(regex);
+    // Türkçe karakterleri normalize et
+    const normalizeText = (text: string) => {
+      return text
+        .trim()
+        .replace(/İ/g, 'i') // Büyük İ'yi noktasız i'ye çevir
+        .replace(/I/g, 'i') // Büyük I'yi noktasız i'ye çevir
+        .replace(/Ç/g, 'c') // Ç'yi c'ye çevir
+        .replace(/Ğ/g, 'g') // Ğ'yi g'ye çevir
+        .replace(/Ö/g, 'o') // Ö'yi o'ya çevir
+        .replace(/Ş/g, 's') // Ş'yi s'ye çevir
+        .replace(/Ü/g, 'u') // Ü'yi u'ya çevir
+        .toLowerCase()
+        .replace(/i̇/g, 'i') // Noktalı küçük i'yi noktasız i'ye çevir
+        .replace(/ı/g, 'i') // Noktasız küçük i'yi noktasız i'ye çevir
+        .replace(/ç/g, 'c') // Ç'yi c'ye çevir
+        .replace(/ğ/g, 'g') // Ğ'yi g'ye çevir
+        .replace(/ö/g, 'o') // Ö'yi o'ya çevir
+        .replace(/ş/g, 's') // Ş'yi s'ye çevir
+        .replace(/ü/g, 'u'); // Ü'yi u'ya çevir
+    };
     
-    return parts.map((part, index) => 
-      regex.test(part) ? (
-        <span key={index} style={{ 
+    const normalizedText = normalizeText(text);
+    const normalizedSearchTerm = normalizeText(searchTerm);
+    
+    // Normalize edilmiş metinde arama yap
+    const searchIndex = normalizedText.indexOf(normalizedSearchTerm);
+    if (searchIndex === -1) return text;
+    
+    // Orijinal metinde eşleşen kısmı bul
+    const beforeMatch = text.substring(0, searchIndex);
+    const matchLength = searchTerm.length;
+    const match = text.substring(searchIndex, searchIndex + matchLength);
+    const afterMatch = text.substring(searchIndex + matchLength);
+    
+    return (
+      <>
+        {beforeMatch}
+        <span style={{ 
           backgroundColor: '#FEF3C7', 
           color: '#92400E',
           fontWeight: '600',
           padding: '2px 4px',
           borderRadius: '4px'
         }}>
-          {part}
+          {match}
         </span>
-      ) : part
+        {afterMatch}
+      </>
     );
   };
 

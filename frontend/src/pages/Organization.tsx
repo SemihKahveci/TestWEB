@@ -290,13 +290,35 @@ const Organization: React.FC = () => {
 
   // Filter organizations based on search term
   const filteredOrganizations = organizations.filter(org => {
-    const searchLower = debouncedSearchTerm.toLowerCase();
+    // Türkçe karakterleri normalize et
+    const normalizeText = (text: string) => {
+      return text
+        .trim()
+        .replace(/İ/g, 'i') // Büyük İ'yi noktasız i'ye çevir
+        .replace(/I/g, 'i') // Büyük I'yi noktasız i'ye çevir
+        .replace(/Ç/g, 'c') // Ç'yi c'ye çevir
+        .replace(/Ğ/g, 'g') // Ğ'yi g'ye çevir
+        .replace(/Ö/g, 'o') // Ö'yi o'ya çevir
+        .replace(/Ş/g, 's') // Ş'yi s'ye çevir
+        .replace(/Ü/g, 'u') // Ü'yi u'ya çevir
+        .toLowerCase()
+        .replace(/i̇/g, 'i') // Noktalı küçük i'yi noktasız i'ye çevir
+        .replace(/ı/g, 'i') // Noktasız küçük i'yi noktasız i'ye çevir
+        .replace(/ç/g, 'c') // Ç'yi c'ye çevir
+        .replace(/ğ/g, 'g') // Ğ'yi g'ye çevir
+        .replace(/ö/g, 'o') // Ö'yi o'ya çevir
+        .replace(/ş/g, 's') // Ş'yi s'ye çevir
+        .replace(/ü/g, 'u'); // Ü'yi u'ya çevir
+    };
+    
+    const searchNormalized = normalizeText(debouncedSearchTerm);
+    
     return (
-      (org.genelMudurYardimciligi && org.genelMudurYardimciligi.toLowerCase().includes(searchLower)) ||
-      (org.direktörlük && org.direktörlük.toLowerCase().includes(searchLower)) ||
-      (org.müdürlük && org.müdürlük.toLowerCase().includes(searchLower)) ||
-      (org.grupLiderligi && org.grupLiderligi.toLowerCase().includes(searchLower)) ||
-      (org.pozisyon && org.pozisyon.toLowerCase().includes(searchLower))
+      (org.genelMudurYardimciligi && normalizeText(org.genelMudurYardimciligi).includes(searchNormalized)) ||
+      (org.direktörlük && normalizeText(org.direktörlük).includes(searchNormalized)) ||
+      (org.müdürlük && normalizeText(org.müdürlük).includes(searchNormalized)) ||
+      (org.grupLiderligi && normalizeText(org.grupLiderligi).includes(searchNormalized)) ||
+      (org.pozisyon && normalizeText(org.pozisyon).includes(searchNormalized))
     );
   });
 
@@ -304,21 +326,54 @@ const Organization: React.FC = () => {
   const highlightText = (text: string, searchTerm: string) => {
     if (!searchTerm || !text) return text;
     
-    const regex = new RegExp(`(${searchTerm})`, 'gi');
-    const parts = text.split(regex);
+    // Türkçe karakterleri normalize et
+    const normalizeText = (text: string) => {
+      return text
+        .trim()
+        .replace(/İ/g, 'i') // Büyük İ'yi noktasız i'ye çevir
+        .replace(/I/g, 'i') // Büyük I'yi noktasız i'ye çevir
+        .replace(/Ç/g, 'c') // Ç'yi c'ye çevir
+        .replace(/Ğ/g, 'g') // Ğ'yi g'ye çevir
+        .replace(/Ö/g, 'o') // Ö'yi o'ya çevir
+        .replace(/Ş/g, 's') // Ş'yi s'ye çevir
+        .replace(/Ü/g, 'u') // Ü'yi u'ya çevir
+        .toLowerCase()
+        .replace(/i̇/g, 'i') // Noktalı küçük i'yi noktasız i'ye çevir
+        .replace(/ı/g, 'i') // Noktasız küçük i'yi noktasız i'ye çevir
+        .replace(/ç/g, 'c') // Ç'yi c'ye çevir
+        .replace(/ğ/g, 'g') // Ğ'yi g'ye çevir
+        .replace(/ö/g, 'o') // Ö'yi o'ya çevir
+        .replace(/ş/g, 's') // Ş'yi s'ye çevir
+        .replace(/ü/g, 'u'); // Ü'yi u'ya çevir
+    };
     
-    return parts.map((part, index) => 
-      regex.test(part) ? (
-        <span key={index} style={{ 
+    const normalizedText = normalizeText(text);
+    const normalizedSearchTerm = normalizeText(searchTerm);
+    
+    // Normalize edilmiş metinde arama yap
+    const searchIndex = normalizedText.indexOf(normalizedSearchTerm);
+    if (searchIndex === -1) return text;
+    
+    // Orijinal metinde eşleşen kısmı bul
+    const beforeMatch = text.substring(0, searchIndex);
+    const matchLength = searchTerm.length;
+    const match = text.substring(searchIndex, searchIndex + matchLength);
+    const afterMatch = text.substring(searchIndex + matchLength);
+    
+    return (
+      <>
+        {beforeMatch}
+        <span style={{ 
           backgroundColor: '#FEF3C7', 
           color: '#92400E',
           fontWeight: '600',
           padding: '2px 4px',
           borderRadius: '4px'
         }}>
-          {part}
+          {match}
         </span>
-      ) : part
+        {afterMatch}
+      </>
     );
   };
 

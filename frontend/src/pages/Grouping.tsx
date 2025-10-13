@@ -530,22 +530,22 @@ const Grouping: React.FC = () => {
       // Türkçe karakterleri normalize et
       const normalizeText = (text: string) => {
         return text
-          .toLowerCase()
           .trim()
-          .replace(/i̇/g, 'i') // Noktalı küçük i'yi noktasız i'ye çevir
-          .replace(/ı/g, 'i') // Noktasız küçük i'yi noktasız i'ye çevir
           .replace(/İ/g, 'i') // Büyük İ'yi noktasız i'ye çevir
           .replace(/I/g, 'i') // Büyük I'yi noktasız i'ye çevir
-          .replace(/ç/g, 'c') // Ç'yi c'ye çevir
           .replace(/Ç/g, 'c') // Ç'yi c'ye çevir
-          .replace(/ğ/g, 'g') // Ğ'yi g'ye çevir
           .replace(/Ğ/g, 'g') // Ğ'yi g'ye çevir
-          .replace(/ö/g, 'o') // Ö'yi o'ya çevir
           .replace(/Ö/g, 'o') // Ö'yi o'ya çevir
-          .replace(/ş/g, 's') // Ş'yi s'ye çevir
           .replace(/Ş/g, 's') // Ş'yi s'ye çevir
-          .replace(/ü/g, 'u') // Ü'yi u'ya çevir
-          .replace(/Ü/g, 'u'); // Ü'yi u'ya çevir
+          .replace(/Ü/g, 'u') // Ü'yi u'ya çevir
+          .toLowerCase()
+          .replace(/i̇/g, 'i') // Noktalı küçük i'yi noktasız i'ye çevir
+          .replace(/ı/g, 'i') // Noktasız küçük i'yi noktasız i'ye çevir
+          .replace(/ç/g, 'c') // Ç'yi c'ye çevir
+          .replace(/ğ/g, 'g') // Ğ'yi g'ye çevir
+          .replace(/ö/g, 'o') // Ö'yi o'ya çevir
+          .replace(/ş/g, 's') // Ş'yi s'ye çevir
+          .replace(/ü/g, 'u'); // Ü'yi u'ya çevir
       };
       
       const searchNormalized = normalizeText(searchTerm);
@@ -632,11 +632,34 @@ const Grouping: React.FC = () => {
     if (searchTerm.trim() === '') {
       setFilteredPlanets(planets);
     } else {
-      // Büyük/küçük harf duyarsız arama
-      const searchLower = searchTerm.toLowerCase();
-      const filtered = planets.filter(planet => 
-        planet.label.toLowerCase().includes(searchLower)
-      );
+      // Türkçe karakterleri normalize et
+      const normalizeText = (text: string) => {
+        return text
+          .trim()
+          .replace(/İ/g, 'i') // Büyük İ'yi noktasız i'ye çevir
+          .replace(/I/g, 'i') // Büyük I'yi noktasız i'ye çevir
+          .replace(/Ç/g, 'c') // Ç'yi c'ye çevir
+          .replace(/Ğ/g, 'g') // Ğ'yi g'ye çevir
+          .replace(/Ö/g, 'o') // Ö'yi o'ya çevir
+          .replace(/Ş/g, 's') // Ş'yi s'ye çevir
+          .replace(/Ü/g, 'u') // Ü'yi u'ya çevir
+          .toLowerCase()
+          .replace(/i̇/g, 'i') // Noktalı küçük i'yi noktasız i'ye çevir
+          .replace(/ı/g, 'i') // Noktasız küçük i'yi noktasız i'ye çevir
+          .replace(/ç/g, 'c') // Ç'yi c'ye çevir
+          .replace(/ğ/g, 'g') // Ğ'yi g'ye çevir
+          .replace(/ö/g, 'o') // Ö'yi o'ya çevir
+          .replace(/ş/g, 's') // Ş'yi s'ye çevir
+          .replace(/ü/g, 'u'); // Ü'yi u'ya çevir
+      };
+      
+      const searchNormalized = normalizeText(searchTerm);
+      
+      const filtered = planets.filter(planet => {
+        const labelNormalized = normalizeText(planet.label);
+        return labelNormalized.includes(searchNormalized);
+      });
+      
       setFilteredPlanets(filtered);
     }
   };
