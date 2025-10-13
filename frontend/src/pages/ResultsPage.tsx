@@ -349,13 +349,13 @@ const ResultsPage: React.FC = () => {
       worksheet['!cols'] = columnWidths;
 
       // Worksheet'i workbook'a ekle
-      XLSX.utils.book_append_sheet(workbook, worksheet, 'Kişi Sonuçları');
+      XLSX.utils.book_append_sheet(workbook, worksheet, 'Kişi Skorları');
 
       // Dosya adını oluştur
       const now = new Date();
       const dateStr = now.toISOString().split('T')[0];
       const timeStr = now.toTimeString().split(' ')[0].replace(/:/g, '-');
-      const fileName = `kişi_sonuçları_${dateStr}_${timeStr}.xlsx`;
+      const fileName = `kişi_skorları_${dateStr}_${timeStr}.xlsx`;
 
       // Excel dosyasını indir
       XLSX.writeFile(workbook, fileName);
@@ -435,7 +435,7 @@ const ResultsPage: React.FC = () => {
             fontFamily: 'Inter',
             fontWeight: 700
           }}>
-            Kişi Sonuçları Sayfası
+            Kişi Skorları Sayfası
           </div>
         </div>
       </div>
@@ -670,7 +670,8 @@ const ResultsPage: React.FC = () => {
         }}>
           <table style={{
             width: '100%',
-            borderCollapse: 'collapse'
+            borderCollapse: 'collapse',
+            border: '1px solid #E9ECEF'
           }}>
             <thead>
               <tr style={{
@@ -679,47 +680,52 @@ const ResultsPage: React.FC = () => {
               }}>
                 <th style={{
                   padding: '16px',
-                  textAlign: 'left',
+                  textAlign: 'center',
                   fontSize: '14px',
                   fontWeight: 600,
                   color: '#232D42',
-                  fontFamily: 'Inter'
+                  fontFamily: 'Inter',
+                  borderRight: '1px solid #E9ECEF'
                 }}>Ad Soyad</th>
                 <th style={{
                   padding: '16px',
-                  textAlign: 'left',
+                  textAlign: 'center',
                   fontSize: '14px',
                   fontWeight: 600,
                   color: '#232D42',
-                  fontFamily: 'Inter'
+                  fontFamily: 'Inter',
+                  borderRight: '1px solid #E9ECEF'
                 }}>Tamamlanma Tarihi</th>
                 <th style={{
                   padding: '16px',
-                  textAlign: 'left',
+                  textAlign: 'center',
                   fontSize: '14px',
                   fontWeight: 600,
                   color: '#232D42',
-                  fontFamily: 'Inter'
+                  fontFamily: 'Inter',
+                  borderRight: '1px solid #E9ECEF'
                 }}>Müşteri Odaklılık Skoru</th>
                 <th style={{
                   padding: '16px',
-                  textAlign: 'left',
+                  textAlign: 'center',
                   fontSize: '14px',
                   fontWeight: 600,
                   color: '#232D42',
-                  fontFamily: 'Inter'
+                  fontFamily: 'Inter',
+                  borderRight: '1px solid #E9ECEF'
                 }}>Belirsizlik Yönetimi Skoru</th>
                 <th style={{
                   padding: '16px',
-                  textAlign: 'left',
+                  textAlign: 'center',
                   fontSize: '14px',
                   fontWeight: 600,
                   color: '#232D42',
-                  fontFamily: 'Inter'
+                  fontFamily: 'Inter',
+                  borderRight: '1px solid #E9ECEF'
                 }}>İnsanları Etkileme Skoru</th>
                 <th style={{
                   padding: '16px',
-                  textAlign: 'left',
+                  textAlign: 'center',
                   fontSize: '14px',
                   fontWeight: 600,
                   color: '#232D42',
@@ -728,18 +734,20 @@ const ResultsPage: React.FC = () => {
               </tr>
             </thead>
             <tbody>
-              {paginatedResults.map((result) => (
+              {paginatedResults.map((result, index) => (
                 <React.Fragment key={result.code}>
                   <tr style={{
                     borderBottom: '1px solid #F1F3F4',
-                    background: result.isGrouped && result.groupCount && result.groupCount > 1 ? '#E3F2FD' : 'white'
+                    background: index % 2 === 0 ? '#E3F2FD' : 'white'
                   }}>
                     <td style={{
                       padding: '16px',
                       fontSize: '14px',
                       color: '#232D42',
                       fontFamily: 'Inter',
-                      fontWeight: 500
+                      fontWeight: 500,
+                      textAlign: 'left',
+                      borderRight: '1px solid #E9ECEF'
                     }}>
                       {result.isGrouped && result.groupCount && result.groupCount > 1 && (
                         <span
@@ -777,14 +785,18 @@ const ResultsPage: React.FC = () => {
                     padding: '16px',
                     fontSize: '14px',
                     color: '#8A92A6',
-                    fontFamily: 'Inter'
+                    fontFamily: 'Inter',
+                    textAlign: 'center',
+                    borderRight: '1px solid #E9ECEF'
                   }}>
                     {formatDate(result.completionDate)}
                   </td>
                   <td style={{
                     padding: '16px',
                     fontSize: '14px',
-                    fontFamily: 'Inter'
+                    fontFamily: 'Inter',
+                    textAlign: 'center',
+                    borderRight: '1px solid #E9ECEF'
                   }}>
                     <span style={{
                       padding: '4px 8px',
@@ -804,7 +816,9 @@ const ResultsPage: React.FC = () => {
                   <td style={{
                     padding: '16px',
                     fontSize: '14px',
-                    fontFamily: 'Inter'
+                    fontFamily: 'Inter',
+                    textAlign: 'center',
+                    borderRight: '1px solid #E9ECEF'
                   }}>
                     <span style={{
                       padding: '4px 8px',
@@ -824,7 +838,9 @@ const ResultsPage: React.FC = () => {
                   <td style={{
                     padding: '16px',
                     fontSize: '14px',
-                    fontFamily: 'Inter'
+                    fontFamily: 'Inter',
+                    textAlign: 'center',
+                    borderRight: '1px solid #E9ECEF'
                   }}>
                     <span style={{
                       padding: '4px 8px',
@@ -844,7 +860,8 @@ const ResultsPage: React.FC = () => {
                   <td style={{
                     padding: '16px',
                     fontSize: '14px',
-                    fontFamily: 'Inter'
+                    fontFamily: 'Inter',
+                    textAlign: 'center'
                   }}>
                     <span style={{
                       padding: '4px 8px',
@@ -865,10 +882,10 @@ const ResultsPage: React.FC = () => {
                   
                   {/* Alt satırlar (gruplandırılmış ise) */}
                   {result.isGrouped && result.groupCount && result.groupCount > 1 && result.allGroupItems && expandedGroups.has(result.email) && 
-                    result.allGroupItems.slice(1).map((groupItem) => (
+                    result.allGroupItems.slice(1).map((groupItem, subIndex) => (
                       <tr key={groupItem.code} style={{
                         borderBottom: '1px solid #F1F3F4',
-                        background: '#F8F9FA'
+                        background: subIndex % 2 === 0 ? '#ECECEC' : 'white'
                       }}>
                         <td style={{
                           padding: '16px',
@@ -876,7 +893,9 @@ const ResultsPage: React.FC = () => {
                           fontSize: '14px',
                           color: '#232D42',
                           fontFamily: 'Inter',
-                          fontWeight: 500
+                          fontWeight: 500,
+                          textAlign: 'left',
+                          borderRight: '1px solid #E9ECEF'
                         }}>
                           {groupItem.name}
                         </td>
@@ -884,14 +903,18 @@ const ResultsPage: React.FC = () => {
                           padding: '16px',
                           fontSize: '14px',
                           color: '#8A92A6',
-                          fontFamily: 'Inter'
+                          fontFamily: 'Inter',
+                          textAlign: 'center',
+                          borderRight: '1px solid #E9ECEF'
                         }}>
                           {formatDate(groupItem.completionDate)}
                         </td>
                         <td style={{
                           padding: '16px',
                           fontSize: '14px',
-                          fontFamily: 'Inter'
+                          fontFamily: 'Inter',
+                          textAlign: 'center',
+                          borderRight: '1px solid #E9ECEF'
                         }}>
                           <span style={{
                             padding: '4px 8px',
@@ -911,7 +934,9 @@ const ResultsPage: React.FC = () => {
                         <td style={{
                           padding: '16px',
                           fontSize: '14px',
-                          fontFamily: 'Inter'
+                          fontFamily: 'Inter',
+                          textAlign: 'center',
+                          borderRight: '1px solid #E9ECEF'
                         }}>
                           <span style={{
                             padding: '4px 8px',
@@ -931,7 +956,9 @@ const ResultsPage: React.FC = () => {
                         <td style={{
                           padding: '16px',
                           fontSize: '14px',
-                          fontFamily: 'Inter'
+                          fontFamily: 'Inter',
+                          textAlign: 'center',
+                          borderRight: '1px solid #E9ECEF'
                         }}>
                           <span style={{
                             padding: '4px 8px',
@@ -951,7 +978,8 @@ const ResultsPage: React.FC = () => {
                         <td style={{
                           padding: '16px',
                           fontSize: '14px',
-                          fontFamily: 'Inter'
+                          fontFamily: 'Inter',
+                          textAlign: 'center'
                         }}>
                           <span style={{
                             padding: '4px 8px',
