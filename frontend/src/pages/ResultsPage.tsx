@@ -48,7 +48,9 @@ const ResultsPage: React.FC = () => {
     ieMin: 5,
     ieMax: 95,
     idikMin: 5,
-    idikMax: 95
+    idikMax: 95,
+    startDate: '',
+    endDate: ''
   });
   const [isMobile, setIsMobile] = useState(false);
   
@@ -228,6 +230,17 @@ const ResultsPage: React.FC = () => {
     try {
       console.log('Filtreler:', filters);
 
+      // Tarih kontrolü
+      if (filters.startDate && filters.endDate) {
+        const startDate = new Date(filters.startDate);
+        const endDate = new Date(filters.endDate);
+        if (startDate > endDate) {
+          setErrorMessage('Başlangıç tarihi bitiş tarihinden sonra olamaz!');
+          setShowErrorPopup(true);
+          return;
+        }
+      }
+
       // Minimum ve maksimum değer kontrolü
       if (filters.customerFocusMin >= filters.customerFocusMax) {
         setErrorMessage('Müşteri Odaklılık Skoru: Minimum değer maksimum değerden küçük olmalıdır!');
@@ -290,7 +303,22 @@ const ResultsPage: React.FC = () => {
             idikMatch = idikScore >= filters.idikMin && idikScore <= filters.idikMax;
           }
 
-          return nameMatch && customerFocusMatch && uncertaintyMatch && ieMatch && idikMatch;
+          // Tarih filtresi
+          let dateMatch = true;
+          if (filters.startDate || filters.endDate) {
+            const completionDate = new Date(item.completionDate);
+            if (filters.startDate) {
+              const startDate = new Date(filters.startDate);
+              dateMatch = dateMatch && completionDate >= startDate;
+            }
+            if (filters.endDate) {
+              const endDate = new Date(filters.endDate);
+              endDate.setHours(23, 59, 59, 999); // Günün sonuna kadar
+              dateMatch = dateMatch && completionDate <= endDate;
+            }
+          }
+
+          return nameMatch && customerFocusMatch && uncertaintyMatch && ieMatch && idikMatch && dateMatch;
         } catch (error) {
           console.error('Öğe filtreleme hatası:', error, item);
           return false;
@@ -319,7 +347,9 @@ const ResultsPage: React.FC = () => {
       ieMin: 5,
       ieMax: 95,
       idikMin: 5,
-      idikMax: 95
+      idikMax: 95,
+      startDate: '',
+      endDate: ''
     });
     setFilteredResults(results);
     setCurrentPage(1);
@@ -345,8 +375,8 @@ const ResultsPage: React.FC = () => {
         return typeof score === 'number' ? score.toFixed(1) : score;
       };
 
-      // Tüm sonuçları al (sadece tamamlanmış oyunlar)
-      let dataToExport = results
+      // Filtrelenmiş sonuçları al (sadece tamamlanmış oyunlar)
+      let dataToExport = filteredResults
         .filter(item => item.status === 'Tamamlandı')
         .map(item => ({
           'Ad Soyad': item.name || '-',
@@ -491,7 +521,7 @@ const ResultsPage: React.FC = () => {
           }} />
           <input
             type="text"
-            placeholder="Tüm sütunlarda akıllı arama yapın..."
+            placeholder="İsime göre akıllı arama yapın..."
             value={searchTerm}
             onChange={(e) => {
               const value = e.target.value;
@@ -1279,6 +1309,57 @@ const ResultsPage: React.FC = () => {
             <div style={{
               padding: '24px'
             }}>
+              {/* Tarih Filtresi */}
+              <div style={{ marginBottom: '24px' }}>
+                <label style={{
+                  display: 'block',
+                  marginBottom: '8px',
+                  color: '#232D42',
+                  fontWeight: 500,
+                  fontFamily: 'Inter',
+                  fontSize: '14px'
+                }}>
+                  Tamamlanma Tarihi
+                </label>
+                <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', flex: 1 }}>
+                    <span style={{ fontSize: '12px', color: '#6B7280', fontWeight: 500 }}>Başlangıç Tarihi</span>
+                    <input
+                      type="date"
+                      value={filters.startDate}
+                      onChange={(e) => setFilters({...filters, startDate: e.target.value})}
+                      style={{
+                        padding: '8px 12px',
+                        border: '1px solid #D1D5DB',
+                        borderRadius: '6px',
+                        fontSize: '14px',
+                        fontFamily: 'Inter',
+                        outline: 'none',
+                        width: '100%'
+                      }}
+                    />
+                  </div>
+                  <span style={{ fontSize: '14px', color: '#6B7280', marginTop: '20px' }}>-</span>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', flex: 1 }}>
+                    <span style={{ fontSize: '12px', color: '#6B7280', fontWeight: 500 }}>Bitiş Tarihi</span>
+                    <input
+                      type="date"
+                      value={filters.endDate}
+                      onChange={(e) => setFilters({...filters, endDate: e.target.value})}
+                      style={{
+                        padding: '8px 12px',
+                        border: '1px solid #D1D5DB',
+                        borderRadius: '6px',
+                        fontSize: '14px',
+                        fontFamily: 'Inter',
+                        outline: 'none',
+                        width: '100%'
+                      }}
+                    />
+                  </div>
+                </div>
+              </div>
+
               {/* Müşteri Odaklılık Skoru */}
               <div style={{ marginBottom: '24px' }}>
                 <label style={{
@@ -1292,29 +1373,35 @@ const ResultsPage: React.FC = () => {
                   Müşteri Odaklılık Skoru
                 </label>
                 <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
-                  <input
-                    type="range"
-                    min="5"
-                    max="95"
-                    value={filters.customerFocusMin}
-                    onChange={(e) => setFilters({...filters, customerFocusMin: parseInt(e.target.value)})}
-                    style={{ flex: 1 }}
-                  />
-                  <span style={{ minWidth: '30px', textAlign: 'center', fontSize: '14px' }}>
-                    {filters.customerFocusMin}
-                  </span>
-                  <span style={{ fontSize: '14px' }}>-</span>
-                  <input
-                    type="range"
-                    min="5"
-                    max="95"
-                    value={filters.customerFocusMax}
-                    onChange={(e) => setFilters({...filters, customerFocusMax: parseInt(e.target.value)})}
-                    style={{ flex: 1 }}
-                  />
-                  <span style={{ minWidth: '30px', textAlign: 'center', fontSize: '14px' }}>
-                    {filters.customerFocusMax}
-                  </span>
+                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px', flex: 1 }}>
+                    <span style={{ fontSize: '12px', color: '#6B7280', fontWeight: 500 }}>Minimum</span>
+                    <input
+                      type="range"
+                      min="5"
+                      max="95"
+                      value={filters.customerFocusMin}
+                      onChange={(e) => setFilters({...filters, customerFocusMin: parseInt(e.target.value)})}
+                      style={{ width: '100%' }}
+                    />
+                    <span style={{ minWidth: '30px', textAlign: 'center', fontSize: '14px', fontWeight: 600 }}>
+                      {filters.customerFocusMin}
+                    </span>
+                  </div>
+                  <span style={{ fontSize: '14px', color: '#6B7280', marginTop: '20px' }}>-</span>
+                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px', flex: 1 }}>
+                    <span style={{ fontSize: '12px', color: '#6B7280', fontWeight: 500 }}>Maksimum</span>
+                    <input
+                      type="range"
+                      min="5"
+                      max="95"
+                      value={filters.customerFocusMax}
+                      onChange={(e) => setFilters({...filters, customerFocusMax: parseInt(e.target.value)})}
+                      style={{ width: '100%' }}
+                    />
+                    <span style={{ minWidth: '30px', textAlign: 'center', fontSize: '14px', fontWeight: 600 }}>
+                      {filters.customerFocusMax}
+                    </span>
+                  </div>
                 </div>
               </div>
 
@@ -1331,29 +1418,35 @@ const ResultsPage: React.FC = () => {
                   Belirsizlik Yönetimi Skoru
                 </label>
                 <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
-                  <input
-                    type="range"
-                    min="5"
-                    max="95"
-                    value={filters.uncertaintyMin}
-                    onChange={(e) => setFilters({...filters, uncertaintyMin: parseInt(e.target.value)})}
-                    style={{ flex: 1 }}
-                  />
-                  <span style={{ minWidth: '30px', textAlign: 'center', fontSize: '14px' }}>
-                    {filters.uncertaintyMin}
-                  </span>
-                  <span style={{ fontSize: '14px' }}>-</span>
-                  <input
-                    type="range"
-                    min="5"
-                    max="95"
-                    value={filters.uncertaintyMax}
-                    onChange={(e) => setFilters({...filters, uncertaintyMax: parseInt(e.target.value)})}
-                    style={{ flex: 1 }}
-                  />
-                  <span style={{ minWidth: '30px', textAlign: 'center', fontSize: '14px' }}>
-                    {filters.uncertaintyMax}
-                  </span>
+                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px', flex: 1 }}>
+                    <span style={{ fontSize: '12px', color: '#6B7280', fontWeight: 500 }}>Minimum</span>
+                    <input
+                      type="range"
+                      min="5"
+                      max="95"
+                      value={filters.uncertaintyMin}
+                      onChange={(e) => setFilters({...filters, uncertaintyMin: parseInt(e.target.value)})}
+                      style={{ width: '100%' }}
+                    />
+                    <span style={{ minWidth: '30px', textAlign: 'center', fontSize: '14px', fontWeight: 600 }}>
+                      {filters.uncertaintyMin}
+                    </span>
+                  </div>
+                  <span style={{ fontSize: '14px', color: '#6B7280', marginTop: '20px' }}>-</span>
+                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px', flex: 1 }}>
+                    <span style={{ fontSize: '12px', color: '#6B7280', fontWeight: 500 }}>Maksimum</span>
+                    <input
+                      type="range"
+                      min="5"
+                      max="95"
+                      value={filters.uncertaintyMax}
+                      onChange={(e) => setFilters({...filters, uncertaintyMax: parseInt(e.target.value)})}
+                      style={{ width: '100%' }}
+                    />
+                    <span style={{ minWidth: '30px', textAlign: 'center', fontSize: '14px', fontWeight: 600 }}>
+                      {filters.uncertaintyMax}
+                    </span>
+                  </div>
                 </div>
               </div>
 
@@ -1370,29 +1463,35 @@ const ResultsPage: React.FC = () => {
                   IE Skoru
                 </label>
                 <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
-                  <input
-                    type="range"
-                    min="5"
-                    max="95"
-                    value={filters.ieMin}
-                    onChange={(e) => setFilters({...filters, ieMin: parseInt(e.target.value)})}
-                    style={{ flex: 1 }}
-                  />
-                  <span style={{ minWidth: '30px', textAlign: 'center', fontSize: '14px' }}>
-                    {filters.ieMin}
-                  </span>
-                  <span style={{ fontSize: '14px' }}>-</span>
-                  <input
-                    type="range"
-                    min="5"
-                    max="95"
-                    value={filters.ieMax}
-                    onChange={(e) => setFilters({...filters, ieMax: parseInt(e.target.value)})}
-                    style={{ flex: 1 }}
-                  />
-                  <span style={{ minWidth: '30px', textAlign: 'center', fontSize: '14px' }}>
-                    {filters.ieMax}
-                  </span>
+                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px', flex: 1 }}>
+                    <span style={{ fontSize: '12px', color: '#6B7280', fontWeight: 500 }}>Minimum</span>
+                    <input
+                      type="range"
+                      min="5"
+                      max="95"
+                      value={filters.ieMin}
+                      onChange={(e) => setFilters({...filters, ieMin: parseInt(e.target.value)})}
+                      style={{ width: '100%' }}
+                    />
+                    <span style={{ minWidth: '30px', textAlign: 'center', fontSize: '14px', fontWeight: 600 }}>
+                      {filters.ieMin}
+                    </span>
+                  </div>
+                  <span style={{ fontSize: '14px', color: '#6B7280', marginTop: '20px' }}>-</span>
+                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px', flex: 1 }}>
+                    <span style={{ fontSize: '12px', color: '#6B7280', fontWeight: 500 }}>Maksimum</span>
+                    <input
+                      type="range"
+                      min="5"
+                      max="95"
+                      value={filters.ieMax}
+                      onChange={(e) => setFilters({...filters, ieMax: parseInt(e.target.value)})}
+                      style={{ width: '100%' }}
+                    />
+                    <span style={{ minWidth: '30px', textAlign: 'center', fontSize: '14px', fontWeight: 600 }}>
+                      {filters.ieMax}
+                    </span>
+                  </div>
                 </div>
               </div>
 
@@ -1409,29 +1508,35 @@ const ResultsPage: React.FC = () => {
                   IDIK Skoru
                 </label>
                 <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
-                  <input
-                    type="range"
-                    min="5"
-                    max="95"
-                    value={filters.idikMin}
-                    onChange={(e) => setFilters({...filters, idikMin: parseInt(e.target.value)})}
-                    style={{ flex: 1 }}
-                  />
-                  <span style={{ minWidth: '30px', textAlign: 'center', fontSize: '14px' }}>
-                    {filters.idikMin}
-                  </span>
-                  <span style={{ fontSize: '14px' }}>-</span>
-                  <input
-                    type="range"
-                    min="5"
-                    max="95"
-                    value={filters.idikMax}
-                    onChange={(e) => setFilters({...filters, idikMax: parseInt(e.target.value)})}
-                    style={{ flex: 1 }}
-                  />
-                  <span style={{ minWidth: '30px', textAlign: 'center', fontSize: '14px' }}>
-                    {filters.idikMax}
-                  </span>
+                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px', flex: 1 }}>
+                    <span style={{ fontSize: '12px', color: '#6B7280', fontWeight: 500 }}>Minimum</span>
+                    <input
+                      type="range"
+                      min="5"
+                      max="95"
+                      value={filters.idikMin}
+                      onChange={(e) => setFilters({...filters, idikMin: parseInt(e.target.value)})}
+                      style={{ width: '100%' }}
+                    />
+                    <span style={{ minWidth: '30px', textAlign: 'center', fontSize: '14px', fontWeight: 600 }}>
+                      {filters.idikMin}
+                    </span>
+                  </div>
+                  <span style={{ fontSize: '14px', color: '#6B7280', marginTop: '20px' }}>-</span>
+                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px', flex: 1 }}>
+                    <span style={{ fontSize: '12px', color: '#6B7280', fontWeight: 500 }}>Maksimum</span>
+                    <input
+                      type="range"
+                      min="5"
+                      max="95"
+                      value={filters.idikMax}
+                      onChange={(e) => setFilters({...filters, idikMax: parseInt(e.target.value)})}
+                      style={{ width: '100%' }}
+                    />
+                    <span style={{ minWidth: '30px', textAlign: 'center', fontSize: '14px', fontWeight: 600 }}>
+                      {filters.idikMax}
+                    </span>
+                  </div>
                 </div>
               </div>
             </div>
