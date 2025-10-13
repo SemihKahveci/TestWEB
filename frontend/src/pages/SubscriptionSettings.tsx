@@ -1,6 +1,72 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
+
+interface Game {
+  _id: string;
+  firmName: string;
+  invoiceNo: string;
+  credit: number;
+  date: string;
+  invoiceFile?: {
+    fileName: string;
+    fileType: string;
+    fileData: string;
+  };
+}
 
 const SubscriptionSettings: React.FC = () => {
+  const [games, setGames] = useState<Game[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    loadGames();
+  }, []);
+
+  const loadGames = async () => {
+    try {
+      setIsLoading(true);
+      const response = await fetch('/api/game-management/games', {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        }
+      });
+      if (!response.ok) throw new Error('Veriler yüklenemedi');
+      
+      const data = await response.json();
+      setGames(data.games || []);
+    } catch (error) {
+      console.error('Oyunlar yüklenirken hata:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Tarih formatını düzenle
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
+    return date.toLocaleDateString('tr-TR', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric'
+    });
+  };
+
+  // Toplam kredi hesapla
+  const totalCredits = games.reduce((sum, game) => sum + game.credit, 0);
+  
+  // En eski tarihi bul
+  const oldestDate = games.length > 0 
+    ? games.reduce((oldest, game) => {
+        const gameDate = new Date(game.date);
+        const oldestDate = new Date(oldest);
+        return gameDate < oldestDate ? game.date : oldest;
+      }, games[0].date)
+    : null;
+  
+  // Sabit toplam kredi limiti (örnek: 10,000)
+  const creditLimit = 10000;
+  const remainingCredits = Math.max(0, creditLimit - totalCredits);
+  const usedPercentage = Math.min((totalCredits / creditLimit) * 100, 100);
+
   return (
     <div style={{
       width: '100%',
@@ -119,50 +185,7 @@ const SubscriptionSettings: React.FC = () => {
         flexDirection: 'column',
         gap: '16px'
       }}>
-        {/* Search Box */}
-        <div style={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          marginBottom: '16px'
-        }}>
-          <div style={{
-            padding: '4px 16px',
-            background: 'white',
-            borderRadius: '4px',
-            outline: '1px #E9ECEF solid',
-            display: 'flex',
-            justifyContent: 'flex-start',
-            alignItems: 'center',
-            gap: '8px'
-          }}>
-            <div style={{
-              width: '24px',
-              height: '24px',
-              display: 'flex',
-              justifyContent: 'center',
-              alignItems: 'center'
-            }}>
-              <i className="fas fa-search" style={{ color: '#ADB5BD' }}></i>
-            </div>
-            <input
-              type="text"
-              placeholder="Arama yapın..."
-              style={{
-                width: '240px',
-                border: 'none',
-                outline: 'none',
-                background: 'transparent',
-                color: '#232D42',
-                fontSize: '16px',
-                fontFamily: 'Inter',
-                fontWeight: 400,
-                lineHeight: '28px'
-              }}
-            />
-          </div>
-        </div>
-
+    
         {/* Main Content Card */}
         <div style={{
           width: '100%',
@@ -207,7 +230,7 @@ const SubscriptionSettings: React.FC = () => {
                 fontWeight: 600,
                 wordWrap: 'break-word'
               }}>
-                10/10/2023
+                {oldestDate ? formatDate(oldestDate) : 'Veri yok'}
               </div>
             </div>
             <div style={{
@@ -235,7 +258,7 @@ const SubscriptionSettings: React.FC = () => {
                 fontWeight: 600,
                 wordWrap: 'break-word'
               }}>
-                10,000 Kredi
+                {totalCredits.toLocaleString()} Kredi
               </div>
             </div>
             <div style={{
@@ -314,24 +337,17 @@ const SubscriptionSettings: React.FC = () => {
                 width: 'fit-content',
                 padding: '6px 20px',
                 borderRadius: '4px',
-                border: '1px solid #3A57E8',
+                border: '1px solid #D1D5DB',
+                background: '#F3F4F6',
                 display: 'flex',
                 justifyContent: 'center',
                 alignItems: 'center',
-                cursor: 'pointer',
-                transition: 'all 0.3s ease'
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.background = '#3A57E8';
-                e.currentTarget.querySelector('div').style.color = 'white';
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.background = 'transparent';
-                e.currentTarget.querySelector('div').style.color = '#3A57E8';
+                cursor: 'not-allowed',
+                opacity: 0.6
               }}
               >
                 <div style={{
-                  color: '#3A57E8',
+                  color: '#9CA3AF',
                   fontSize: '14px',
                   fontFamily: 'Poppins',
                   fontWeight: 600,
@@ -364,7 +380,7 @@ const SubscriptionSettings: React.FC = () => {
                 }}></div>
                 <div style={{
                   position: 'absolute',
-                  width: '78%',
+                  width: `${usedPercentage}%`,
                   height: '36px',
                   background: '#3A57E8',
                   borderRadius: '50px'
@@ -380,7 +396,7 @@ const SubscriptionSettings: React.FC = () => {
                   fontWeight: 700,
                   lineHeight: '16px'
                 }}>
-                  7800 Kredi
+                  {totalCredits.toLocaleString()} Kredi
                 </div>
                 <div style={{
                   position: 'absolute',
@@ -393,7 +409,7 @@ const SubscriptionSettings: React.FC = () => {
                   fontWeight: 700,
                   lineHeight: '16px'
                 }}>
-                  2200 Kredi
+                  {remainingCredits.toLocaleString()} Kredi
                 </div>
               </div>
 
@@ -542,7 +558,7 @@ const SubscriptionSettings: React.FC = () => {
               fontWeight: 700,
               lineHeight: '18px'
             }}>
-              Ücret
+              Kredi
             </div>
             <div style={{
               padding: '12px',
@@ -557,19 +573,36 @@ const SubscriptionSettings: React.FC = () => {
               fontWeight: 700,
               lineHeight: '18px'
             }}>
-              İşlemler
+              Ücret
             </div>
           </div>
 
           {/* Table Rows */}
-          {[
-            { id: 1, date: '10/04/2025', invoice: 'EF012023021', amount: '120$' },
-            { id: 2, date: '10/03/2025', invoice: 'EF012023074', amount: '120$' },
-            { id: 3, date: '10/02/2025', invoice: 'EF012023153', amount: '120$' }
-          ].map((row, index) => (
-            <div key={row.id} style={{
+          {isLoading ? (
+            <div style={{
+              padding: '20px',
+              textAlign: 'center',
+              color: '#8A92A6',
+              fontSize: '14px',
+              fontFamily: 'Inter'
+            }}>
+              Yükleniyor...
+            </div>
+          ) : games.length === 0 ? (
+            <div style={{
+              padding: '20px',
+              textAlign: 'center',
+              color: '#8A92A6',
+              fontSize: '14px',
+              fontFamily: 'Inter'
+            }}>
+              Henüz oyun verisi bulunmuyor
+            </div>
+          ) : (
+            games.map((game, index) => (
+            <div key={game._id} style={{
               display: 'flex',
-              borderBottom: index === 2 ? 'none' : '1px solid rgba(0, 0, 0, 0.30)'
+              borderBottom: index === games.length - 1 ? 'none' : '1px solid rgba(0, 0, 0, 0.30)'
             }}>
               <div style={{
                 padding: '12px',
@@ -584,7 +617,7 @@ const SubscriptionSettings: React.FC = () => {
                 fontWeight: 500,
                 lineHeight: '18px'
               }}>
-                {row.id}
+                {index + 1}
               </div>
               <div style={{
                 padding: '12px',
@@ -599,7 +632,7 @@ const SubscriptionSettings: React.FC = () => {
                 fontWeight: 500,
                 lineHeight: '18px'
               }}>
-                {row.date}
+                {formatDate(game.date)}
               </div>
               <div style={{
                 padding: '12px',
@@ -614,7 +647,7 @@ const SubscriptionSettings: React.FC = () => {
                 fontWeight: 500,
                 lineHeight: '18px'
               }}>
-                {row.invoice}
+                {game.invoiceNo}
               </div>
               <div style={{
                 padding: '12px',
@@ -636,7 +669,7 @@ const SubscriptionSettings: React.FC = () => {
                 fontWeight: 500,
                 lineHeight: '18px'
               }}>
-                {row.amount}
+                {game.credit.toLocaleString()}
               </div>
               <div style={{
                 padding: '12px',
@@ -644,21 +677,18 @@ const SubscriptionSettings: React.FC = () => {
                 alignItems: 'center',
                 justifyContent: 'center',
                 width: '97px',
-                flexShrink: 0
+                flexShrink: 0,
+                color: 'black',
+                fontSize: '13px',
+                fontFamily: 'Poppins',
+                fontWeight: 500,
+                lineHeight: '18px'
               }}>
-                <div style={{
-                  width: '24px',
-                  height: '22px',
-                  backgroundImage: 'url(/images/download.svg)',
-                  backgroundSize: 'contain',
-                  backgroundRepeat: 'no-repeat',
-                  backgroundPosition: 'center',
-                  cursor: 'pointer',
-                  borderRadius: '4px'
-                }}></div>
+                120$
               </div>
             </div>
-          ))}
+            ))
+          )}
         </div>
       </div>
     </div>
