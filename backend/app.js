@@ -208,6 +208,11 @@ apiRouter.get('/preview-pdf', evaluationController.previewPDF);
 // Admin işlemleri
 apiRouter.use('/admin', adminRoutes);
 
+// Auth işlemleri (şifremi unuttum)
+apiRouter.post('/auth/forgot-password', adminController.forgotPassword.bind(adminController));
+apiRouter.post('/auth/verify-reset-code', adminController.verifyResetCode.bind(adminController));
+apiRouter.post('/auth/reset-password', adminController.resetPassword.bind(adminController));
+
 // Game Management işlemleri
 apiRouter.use('/game-management', gameManagementRoutes);
 

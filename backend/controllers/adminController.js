@@ -839,6 +839,205 @@ const adminController = {
                 error: error.message 
             });
         }
+    },
+
+    // Şifremi Unuttum - E-posta gönderme
+    forgotPassword: async (req, res) => {
+        try {
+            const { email } = req.body;
+
+            if (!email) {
+                return res.status(400).json({ 
+                    success: false, 
+                    message: 'E-posta adresi gereklidir' 
+                });
+            }
+
+            // Admin'i bul
+            const admin = await Admin.findOne({ email });
+            if (!admin) {
+                return res.status(404).json({ 
+                    success: false, 
+                    message: 'Bu e-posta adresi ile kayıtlı admin bulunamadı' 
+                });
+            }
+
+            // 6 haneli rastgele kod oluştur
+            const resetCode = Math.floor(100000 + Math.random() * 900000).toString();
+
+            // Reset kodunu veritabanına kaydet (5 dakika geçerli)
+            const resetCodeData = {
+                email,
+                code: resetCode,
+                expiresAt: new Date(Date.now() + 5 * 60 * 1000), // 5 dakika
+                used: false
+            };
+
+            // Eski kodları sil
+            await mongoose.connection.db.collection('resetcodes').deleteMany({ email });
+
+            // Yeni kodu kaydet
+            await mongoose.connection.db.collection('resetcodes').insertOne(resetCodeData);
+
+            // E-posta içeriği
+            const emailHtml = `
+                <div style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
+                    <p><strong>Merhaba ${admin.name},</strong></p>
+
+                    <p>Şifre sıfırlama talebiniz alınmıştır. Aşağıdaki kodu kullanarak şifrenizi sıfırlayabilirsiniz:</p>
+
+                    <div style="background-color: #f8f9fa; border: 1px solid #dee2e6; border-radius: 8px; padding: 20px; text-align: center; margin: 20px 0;">
+                        <h2 style="color: #3B82F6; margin: 0; font-size: 32px; letter-spacing: 5px;">${resetCode}</h2>
+                    </div>
+
+                    <p><strong>Önemli:</strong></p>
+                    <ul>
+                        <li>Bu kod 5 dakika geçerlidir</li>
+                        <li>Kodu kimseyle paylaşmayın</li>
+                        <li>Eğer bu talebi siz yapmadıysanız, bu e-postayı görmezden gelebilirsiniz</li>
+                    </ul>
+
+                    <p>Herhangi bir sorunuz varsa lütfen bizimle iletişime geçin.</p>
+
+                    <p>İyi günler,<br>
+                    <strong>Admin Paneli Ekibi</strong></p>
+                </div>
+            `;
+
+            // E-posta gönder
+            const emailResult = await sendEmail(
+                email,
+                'Şifre Sıfırlama Kodu',
+                emailHtml
+            );
+
+            if (emailResult.success) {
+                res.json({ 
+                    success: true, 
+                    message: 'Şifre sıfırlama kodu e-posta adresinize gönderildi' 
+                });
+            } else {
+                res.status(500).json({ 
+                    success: false, 
+                    message: 'E-posta gönderilirken bir hata oluştu' 
+                });
+            }
+
+        } catch (error) {
+            console.error('Şifre sıfırlama kodu gönderme hatası:', error);
+            res.status(500).json({ 
+                success: false, 
+                message: 'Şifre sıfırlama kodu gönderilirken bir hata oluştu' 
+            });
+        }
+    },
+
+    // Şifremi Unuttum - Kod doğrulama
+    verifyResetCode: async (req, res) => {
+        try {
+            const { email, code } = req.body;
+
+            if (!email || !code) {
+                return res.status(400).json({ 
+                    success: false, 
+                    message: 'E-posta adresi ve kod gereklidir' 
+                });
+            }
+
+            // Reset kodunu bul
+            const resetCodeData = await mongoose.connection.db.collection('resetcodes').findOne({
+                email,
+                code,
+                used: false,
+                expiresAt: { $gt: new Date() }
+            });
+
+            if (!resetCodeData) {
+                return res.status(400).json({ 
+                    success: false, 
+                    message: 'Geçersiz veya süresi dolmuş kod' 
+                });
+            }
+
+            res.json({ 
+                success: true, 
+                message: 'Kod doğrulandı' 
+            });
+
+        } catch (error) {
+            console.error('Kod doğrulama hatası:', error);
+            res.status(500).json({ 
+                success: false, 
+                message: 'Kod doğrulanırken bir hata oluştu' 
+            });
+        }
+    },
+
+    // Şifremi Unuttum - Şifre sıfırlama
+    resetPassword: async (req, res) => {
+        try {
+            const { email, code, newPassword } = req.body;
+
+            if (!email || !code || !newPassword) {
+                return res.status(400).json({ 
+                    success: false, 
+                    message: 'E-posta adresi, kod ve yeni şifre gereklidir' 
+                });
+            }
+
+            if (newPassword.length < 6) {
+                return res.status(400).json({ 
+                    success: false, 
+                    message: 'Şifre en az 6 karakter olmalıdır' 
+                });
+            }
+
+            // Reset kodunu bul ve doğrula
+            const resetCodeData = await mongoose.connection.db.collection('resetcodes').findOne({
+                email,
+                code,
+                used: false,
+                expiresAt: { $gt: new Date() }
+            });
+
+            if (!resetCodeData) {
+                return res.status(400).json({ 
+                    success: false, 
+                    message: 'Geçersiz veya süresi dolmuş kod' 
+                });
+            }
+
+            // Admin'i bul
+            const admin = await Admin.findOne({ email });
+            if (!admin) {
+                return res.status(404).json({ 
+                    success: false, 
+                    message: 'Admin bulunamadı' 
+                });
+            }
+
+            // Şifreyi güncelle
+            admin.password = newPassword;
+            await admin.save();
+
+            // Reset kodunu kullanıldı olarak işaretle
+            await mongoose.connection.db.collection('resetcodes').updateOne(
+                { _id: resetCodeData._id },
+                { $set: { used: true } }
+            );
+
+            res.json({ 
+                success: true, 
+                message: 'Şifreniz başarıyla güncellendi' 
+            });
+
+        } catch (error) {
+            console.error('Şifre sıfırlama hatası:', error);
+            res.status(500).json({ 
+                success: false, 
+                message: 'Şifre sıfırlanırken bir hata oluştu' 
+            });
+        }
     }
 };
 

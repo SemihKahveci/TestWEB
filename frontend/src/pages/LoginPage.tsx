@@ -10,6 +10,13 @@ const LoginPage: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   
+  // Şifremi Unuttum states
+  const [forgotPasswordStep, setForgotPasswordStep] = useState<'login' | 'email' | 'code' | 'reset'>('login');
+  const [resetCode, setResetCode] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [successMessage, setSuccessMessage] = useState('');
+  
   const { login } = useAuth();
   const navigate = useNavigate();
 
@@ -64,6 +71,137 @@ const LoginPage: React.FC = () => {
     } finally {
       setIsLoading(false);
     }
+  };
+
+  // Şifremi Unuttum fonksiyonları
+  const handleForgotPassword = () => {
+    setForgotPasswordStep('email');
+    setError('');
+    setSuccessMessage('');
+  };
+
+  const handleSendResetCode = async () => {
+    if (!email) {
+      setError('Lütfen e-posta adresinizi girin');
+      return;
+    }
+
+    setError('');
+    setIsLoading(true);
+
+    try {
+      const response = await fetch('/api/auth/forgot-password', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email }),
+      });
+
+      const result = await response.json();
+
+      if (result.success) {
+        setSuccessMessage('Şifre sıfırlama kodu e-posta adresinize gönderildi');
+        setForgotPasswordStep('code');
+      } else {
+        setError(result.message || 'Kod gönderilirken bir hata oluştu');
+      }
+    } catch (error) {
+      setError('Kod gönderilirken bir hata oluştu');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleVerifyCode = async () => {
+    if (!resetCode) {
+      setError('Lütfen doğrulama kodunu girin');
+      return;
+    }
+
+    setError('');
+    setIsLoading(true);
+
+    try {
+      const response = await fetch('/api/auth/verify-reset-code', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email, code: resetCode }),
+      });
+
+      const result = await response.json();
+
+      if (result.success) {
+        setSuccessMessage('Kod doğrulandı. Yeni şifrenizi belirleyin');
+        setForgotPasswordStep('reset');
+      } else {
+        setError(result.message || 'Doğrulama kodu hatalı');
+      }
+    } catch (error) {
+      setError('Kod doğrulanırken bir hata oluştu');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleResetPassword = async () => {
+    if (!newPassword || !confirmPassword) {
+      setError('Lütfen tüm alanları doldurun');
+      return;
+    }
+
+    if (newPassword !== confirmPassword) {
+      setError('Şifreler eşleşmiyor');
+      return;
+    }
+
+    if (newPassword.length < 6) {
+      setError('Şifre en az 6 karakter olmalıdır');
+      return;
+    }
+
+    setError('');
+    setIsLoading(true);
+
+    try {
+      const response = await fetch('/api/auth/reset-password', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email, code: resetCode, newPassword }),
+      });
+
+      const result = await response.json();
+
+      if (result.success) {
+        setSuccessMessage('Şifreniz başarıyla güncellendi. Giriş yapabilirsiniz');
+        // Reset form
+        setForgotPasswordStep('login');
+        setEmail('');
+        setPassword('');
+        setResetCode('');
+        setNewPassword('');
+        setConfirmPassword('');
+      } else {
+        setError(result.message || 'Şifre güncellenirken bir hata oluştu');
+      }
+    } catch (error) {
+      setError('Şifre güncellenirken bir hata oluştu');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleBackToLogin = () => {
+    setForgotPasswordStep('login');
+    setError('');
+    setSuccessMessage('');
+    setResetCode('');
+    setNewPassword('');
+    setConfirmPassword('');
   };
 
   return (
@@ -136,7 +274,10 @@ const LoginPage: React.FC = () => {
             textAlign: 'center',
             margin: 0
           }}>
-            Hoş Geldiniz
+            {forgotPasswordStep === 'login' && 'Hoş Geldiniz'}
+            {forgotPasswordStep === 'email' && 'Şifremi Unuttum'}
+            {forgotPasswordStep === 'code' && 'Kod Doğrulama'}
+            {forgotPasswordStep === 'reset' && 'Şifre Belirleme'}
           </h1>
           <p style={{
             color: '#8A92A6',
@@ -147,10 +288,13 @@ const LoginPage: React.FC = () => {
             textAlign: 'center',
             margin: 0
           }}>
-            Devam etmek için lütfen giriş yapın
+            {forgotPasswordStep === 'login' && 'Devam etmek için lütfen giriş yapın'}
+            {forgotPasswordStep === 'email' && 'E-posta adresinizi girin, size şifre sıfırlama kodu gönderelim'}
+            {forgotPasswordStep === 'code' && 'E-posta adresinize gönderilen doğrulama kodunu girin'}
+            {forgotPasswordStep === 'reset' && 'Yeni şifrenizi belirleyin'}
           </p>
 
-          {/* Email Input */}
+          {/* Email Input - Her aşamada göster */}
           <div style={{
             display: 'flex',
             flexDirection: 'column',
@@ -173,11 +317,12 @@ const LoginPage: React.FC = () => {
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
+              disabled={forgotPasswordStep === 'code' || forgotPasswordStep === 'reset'}
               style={{
                 width: '100%',
                 height: '48px',
                 padding: '12px 16px',
-                backgroundColor: 'white',
+                backgroundColor: (forgotPasswordStep === 'code' || forgotPasswordStep === 'reset') ? '#F9FAFB' : 'white',
                 border: '1px solid #E9ECEF',
                 borderRadius: '8px',
                 color: 'black',
@@ -191,87 +336,276 @@ const LoginPage: React.FC = () => {
             />
           </div>
 
-          {/* Password Input */}
-          <div style={{
-            display: 'flex',
-            flexDirection: 'column',
-            justifyContent: 'flex-start',
-            alignItems: 'flex-start',
-            gap: '8px',
-            width: '100%'
-          }}>
-            <label htmlFor="password" style={{
-              color: 'black',
-              fontSize: '14px',
-              fontFamily: 'Inter, sans-serif',
-              fontWeight: 500,
-              lineHeight: '20px'
+          {/* Password Input - Sadece login aşamasında göster */}
+          {forgotPasswordStep === 'login' && (
+            <div style={{
+              display: 'flex',
+              flexDirection: 'column',
+              justifyContent: 'flex-start',
+              alignItems: 'flex-start',
+              gap: '8px',
+              width: '100%'
             }}>
-              Şifre
-            </label>
-            <input
-              id="password"
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              style={{
-                width: '100%',
-                height: '48px',
-                padding: '12px 16px',
-                backgroundColor: 'white',
-                border: '1px solid #E9ECEF',
-                borderRadius: '8px',
-                color: 'black',
-                fontSize: '16px',
-                fontFamily: 'Inter, sans-serif',
-                fontWeight: 400,
-                lineHeight: '24px',
-                outline: 'none'
-              }}
-              placeholder="Şifrenizi girin"
-            />
-          </div>
-
-          {/* Remember Me & Forgot Password */}
-          <div style={{
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            width: '100%'
-          }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <input
-                type="checkbox"
-                id="remember"
-                checked={remember}
-                onChange={(e) => setRemember(e.target.checked)}
-                style={{
-                  width: '16px',
-                  height: '16px',
-                  accentColor: '#3B82F6'
-                }}
-              />
-              <label htmlFor="remember" style={{
+              <label htmlFor="password" style={{
                 color: 'black',
                 fontSize: '14px',
                 fontFamily: 'Inter, sans-serif',
-                fontWeight: 400,
+                fontWeight: 500,
                 lineHeight: '20px'
               }}>
-                Beni Hatırla
+                Şifre
               </label>
+              <input
+                id="password"
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                style={{
+                  width: '100%',
+                  height: '48px',
+                  padding: '12px 16px',
+                  backgroundColor: 'white',
+                  border: '1px solid #E9ECEF',
+                  borderRadius: '8px',
+                  color: 'black',
+                  fontSize: '16px',
+                  fontFamily: 'Inter, sans-serif',
+                  fontWeight: 400,
+                  lineHeight: '24px',
+                  outline: 'none'
+                }}
+                placeholder="Şifrenizi girin"
+              />
             </div>
-            <a href="#" style={{
-              color: '#8A92A6',
+          )}
+
+          {/* Reset Code Input - Sadece code aşamasında göster */}
+          {forgotPasswordStep === 'code' && (
+            <div style={{
+              display: 'flex',
+              flexDirection: 'column',
+              justifyContent: 'flex-start',
+              alignItems: 'flex-start',
+              gap: '8px',
+              width: '100%'
+            }}>
+              <label htmlFor="resetCode" style={{
+                color: 'black',
+                fontSize: '14px',
+                fontFamily: 'Inter, sans-serif',
+                fontWeight: 500,
+                lineHeight: '20px'
+              }}>
+                Doğrulama Kodu
+              </label>
+              <input
+                id="resetCode"
+                type="text"
+                value={resetCode}
+                onChange={(e) => setResetCode(e.target.value)}
+                style={{
+                  width: '100%',
+                  height: '48px',
+                  padding: '12px 16px',
+                  backgroundColor: 'white',
+                  border: '1px solid #E9ECEF',
+                  borderRadius: '8px',
+                  color: 'black',
+                  fontSize: '16px',
+                  fontFamily: 'Inter, sans-serif',
+                  fontWeight: 400,
+                  lineHeight: '24px',
+                  outline: 'none'
+                }}
+                placeholder="6 haneli doğrulama kodunu girin"
+                maxLength={6}
+              />
+            </div>
+          )}
+
+          {/* New Password Input - Sadece reset aşamasında göster */}
+          {forgotPasswordStep === 'reset' && (
+            <>
+              <div style={{
+                display: 'flex',
+                flexDirection: 'column',
+                justifyContent: 'flex-start',
+                alignItems: 'flex-start',
+                gap: '8px',
+                width: '100%'
+              }}>
+                <label htmlFor="newPassword" style={{
+                  color: 'black',
+                  fontSize: '14px',
+                  fontFamily: 'Inter, sans-serif',
+                  fontWeight: 500,
+                  lineHeight: '20px'
+                }}>
+                  Yeni Şifre
+                </label>
+                <input
+                  id="newPassword"
+                  type="password"
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
+                  style={{
+                    width: '100%',
+                    height: '48px',
+                    padding: '12px 16px',
+                    backgroundColor: 'white',
+                    border: '1px solid #E9ECEF',
+                    borderRadius: '8px',
+                    color: 'black',
+                    fontSize: '16px',
+                    fontFamily: 'Inter, sans-serif',
+                    fontWeight: 400,
+                    lineHeight: '24px',
+                    outline: 'none'
+                  }}
+                  placeholder="Yeni şifrenizi girin"
+                />
+              </div>
+
+              <div style={{
+                display: 'flex',
+                flexDirection: 'column',
+                justifyContent: 'flex-start',
+                alignItems: 'flex-start',
+                gap: '8px',
+                width: '100%'
+              }}>
+                <label htmlFor="confirmPassword" style={{
+                  color: 'black',
+                  fontSize: '14px',
+                  fontFamily: 'Inter, sans-serif',
+                  fontWeight: 500,
+                  lineHeight: '20px'
+                }}>
+                  Şifre Tekrar
+                </label>
+                <input
+                  id="confirmPassword"
+                  type="password"
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  style={{
+                    width: '100%',
+                    height: '48px',
+                    padding: '12px 16px',
+                    backgroundColor: 'white',
+                    border: '1px solid #E9ECEF',
+                    borderRadius: '8px',
+                    color: 'black',
+                    fontSize: '16px',
+                    fontFamily: 'Inter, sans-serif',
+                    fontWeight: 400,
+                    lineHeight: '24px',
+                    outline: 'none'
+                  }}
+                  placeholder="Şifrenizi tekrar girin"
+                />
+              </div>
+            </>
+          )}
+
+          {/* Remember Me & Forgot Password - Sadece login aşamasında göster */}
+          {forgotPasswordStep === 'login' && (
+            <div style={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              width: '100%'
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <input
+                  type="checkbox"
+                  id="remember"
+                  checked={remember}
+                  onChange={(e) => setRemember(e.target.checked)}
+                  style={{
+                    width: '16px',
+                    height: '16px',
+                    accentColor: '#3B82F6'
+                  }}
+                />
+                <label htmlFor="remember" style={{
+                  color: 'black',
+                  fontSize: '14px',
+                  fontFamily: 'Inter, sans-serif',
+                  fontWeight: 400,
+                  lineHeight: '20px'
+                }}>
+                  Beni Hatırla
+                </label>
+              </div>
+              <button 
+                onClick={handleForgotPassword}
+                style={{
+                  color: '#8A92A6',
+                  fontSize: '14px',
+                  fontFamily: 'Inter, sans-serif',
+                  fontWeight: 400,
+                  lineHeight: '20px',
+                  textDecoration: 'none',
+                  background: 'none',
+                  border: 'none',
+                  cursor: 'pointer',
+                  padding: 0
+                }}
+              >
+                Şifremi Unuttum
+              </button>
+            </div>
+          )}
+
+          {/* Back to Login Button - Şifremi unuttum aşamalarında göster */}
+          {forgotPasswordStep !== 'login' && (
+            <div style={{
+              display: 'flex',
+              justifyContent: 'flex-start',
+              alignItems: 'center',
+              width: '100%'
+            }}>
+              <button 
+                onClick={handleBackToLogin}
+                style={{
+                  color: '#8A92A6',
+                  fontSize: '14px',
+                  fontFamily: 'Inter, sans-serif',
+                  fontWeight: 400,
+                  lineHeight: '20px',
+                  textDecoration: 'none',
+                  background: 'none',
+                  border: 'none',
+                  cursor: 'pointer',
+                  padding: 0,
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px'
+                }}
+              >
+                ← Giriş sayfasına dön
+              </button>
+            </div>
+          )}
+
+          {/* Success Alert */}
+          {successMessage && (
+            <div style={{
+              width: '100%',
+              padding: '12px',
+              backgroundColor: '#F0FDF4',
+              border: '1px solid #86EFAC',
+              borderRadius: '8px',
+              color: '#166534',
               fontSize: '14px',
               fontFamily: 'Inter, sans-serif',
               fontWeight: 400,
-              lineHeight: '20px',
-              textDecoration: 'none'
+              lineHeight: '20px'
             }}>
-              Şifremi Unuttum
-            </a>
-          </div>
+              {successMessage}
+            </div>
+          )}
 
           {/* Error Alert */}
           {error && (
@@ -291,9 +625,14 @@ const LoginPage: React.FC = () => {
             </div>
           )}
 
-          {/* Login Button */}
+          {/* Dynamic Button */}
           <button
-            onClick={handleSubmit}
+            onClick={
+              forgotPasswordStep === 'login' ? handleSubmit :
+              forgotPasswordStep === 'email' ? handleSendResetCode :
+              forgotPasswordStep === 'code' ? handleVerifyCode :
+              handleResetPassword
+            }
             disabled={isLoading}
             style={{
               width: '100%',
@@ -332,10 +671,18 @@ const LoginPage: React.FC = () => {
                   animation: 'spin 1s linear infinite',
                   marginRight: '8px'
                 }}></div>
-                Giriş yapılıyor...
+                {forgotPasswordStep === 'login' && 'Giriş yapılıyor...'}
+                {forgotPasswordStep === 'email' && 'Kod gönderiliyor...'}
+                {forgotPasswordStep === 'code' && 'Kod doğrulanıyor...'}
+                {forgotPasswordStep === 'reset' && 'Şifre güncelleniyor...'}
               </div>
             ) : (
-              'Giriş Yap'
+              <>
+                {forgotPasswordStep === 'login' && 'Giriş Yap'}
+                {forgotPasswordStep === 'email' && 'Kod Gönder'}
+                {forgotPasswordStep === 'code' && 'Kodu Doğrula'}
+                {forgotPasswordStep === 'reset' && 'Şifreyi Güncelle'}
+              </>
             )}
           </button>
         </div>
@@ -356,7 +703,7 @@ const LoginPage: React.FC = () => {
           lineHeight: '20px',
           margin: 0
         }}>
-          © 2024 Tüm Hakları Saklıdır
+          © 2025 Tüm Hakları Saklıdır
         </p>
       </div>
 
