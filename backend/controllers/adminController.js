@@ -10,6 +10,55 @@ const Game = require('../models/game');
 const { answerMultipliers } = require('../config/constants');
 const XLSX = require('xlsx');
 
+// Şifre validasyon fonksiyonu
+const validatePassword = (password) => {
+    const minLength = 8;
+    const hasUpperCase = /[A-Z]/.test(password);
+    const hasLowerCase = /[a-z]/.test(password);
+    const hasNumbers = /\d/.test(password);
+    const hasSymbols = /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(password);
+
+    if (password.length < minLength) {
+        return {
+            isValid: false,
+            message: `Şifre en az ${minLength} karakter olmalıdır`
+        };
+    }
+
+    if (!hasUpperCase) {
+        return {
+            isValid: false,
+            message: 'Şifre en az 1 büyük harf içermelidir'
+        };
+    }
+
+    if (!hasLowerCase) {
+        return {
+            isValid: false,
+            message: 'Şifre en az 1 küçük harf içermelidir'
+        };
+    }
+
+    if (!hasNumbers) {
+        return {
+            isValid: false,
+            message: 'Şifre en az 1 sayı içermelidir'
+        };
+    }
+
+    if (!hasSymbols) {
+        return {
+            isValid: false,
+            message: 'Şifre en az 1 özel karakter (!@#$%^&* vb.) içermelidir'
+        };
+    }
+
+    return {
+        isValid: true,
+        message: 'Şifre geçerli'
+    };
+};
+
 const adminController = {
     login: async (req, res) => {
         try {
@@ -263,10 +312,16 @@ const adminController = {
                 return res.status(400).json({ success: false, message: 'Kod bulunamadı' });
             }
 
+            // Admin adının ilk harfini büyük yap
+            const capitalizeName = (name) => {
+                if (!name) return '';
+                return name.charAt(0).toUpperCase() + name.slice(1).toLowerCase();
+            };
+
             // E-posta içeriği
             const emailHtml = `
                 <div style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
-                    <p><strong>Kaptan ${name},</strong></p>
+                    <p><strong>Kaptan ${capitalizeName(name)},</strong></p>
 
                     <p>Artık komuta sende, yeni yetkinlik değerlendirme çözümümüz ile ANDRON Evreni'ne ilk adımını at ve 15-20 dakikalık maceraya hazır ol! 🚀</p>
 
@@ -676,9 +731,15 @@ const adminController = {
                 });
             }
 
+            // Admin adının ilk harfini büyük yap
+            const capitalizeName = (name) => {
+                if (!name) return '';
+                return name.charAt(0).toUpperCase() + name.slice(1).toLowerCase();
+            };
+
             const completionEmailHtml = `
                 <div style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
-                    <p><strong>Kaptan ${name},</strong></p>
+                    <p><strong>Kaptan ${capitalizeName(name)},</strong></p>
 
                     <p>Tebrikler, ANDRON Evreni'ndeki keşif maceranı başarıyla tamamladın! 🚀</p>
 
@@ -879,10 +940,16 @@ const adminController = {
             // Yeni kodu kaydet
             await mongoose.connection.db.collection('resetcodes').insertOne(resetCodeData);
 
+            // Admin adının ilk harfini büyük yap
+            const capitalizeName = (name) => {
+                if (!name) return '';
+                return name.charAt(0).toUpperCase() + name.slice(1).toLowerCase();
+            };
+
             // E-posta içeriği
             const emailHtml = `
                 <div style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
-                    <p><strong>Merhaba ${admin.name},</strong></p>
+                    <p><strong>Merhaba ${capitalizeName(admin.name)},</strong></p>
 
                     <p>Şifre sıfırlama talebiniz alınmıştır. Aşağıdaki kodu kullanarak şifrenizi sıfırlayabilirsiniz:</p>
 
@@ -985,10 +1052,12 @@ const adminController = {
                 });
             }
 
-            if (newPassword.length < 6) {
+            // Şifre kriterleri kontrolü
+            const passwordValidation = validatePassword(newPassword);
+            if (!passwordValidation.isValid) {
                 return res.status(400).json({ 
                     success: false, 
-                    message: 'Şifre en az 6 karakter olmalıdır' 
+                    message: passwordValidation.message 
                 });
             }
 

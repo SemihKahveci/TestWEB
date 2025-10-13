@@ -157,8 +157,10 @@ const LoginPage: React.FC = () => {
       return;
     }
 
-    if (newPassword.length < 6) {
-      setError('Şifre en az 6 karakter olmalıdır');
+    // Şifre kriterleri kontrolü
+    const passwordValidation = validatePassword(newPassword);
+    if (!passwordValidation.isValid) {
+      setError(passwordValidation.message);
       return;
     }
 
@@ -202,6 +204,55 @@ const LoginPage: React.FC = () => {
     setResetCode('');
     setNewPassword('');
     setConfirmPassword('');
+  };
+
+  // Şifre validasyon fonksiyonu
+  const validatePassword = (password: string) => {
+    const minLength = 8;
+    const hasUpperCase = /[A-Z]/.test(password);
+    const hasLowerCase = /[a-z]/.test(password);
+    const hasNumbers = /\d/.test(password);
+    const hasSymbols = /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(password);
+
+    if (password.length < minLength) {
+      return {
+        isValid: false,
+        message: `Şifre en az ${minLength} karakter olmalıdır`
+      };
+    }
+
+    if (!hasUpperCase) {
+      return {
+        isValid: false,
+        message: 'Şifre en az 1 büyük harf içermelidir'
+      };
+    }
+
+    if (!hasLowerCase) {
+      return {
+        isValid: false,
+        message: 'Şifre en az 1 küçük harf içermelidir'
+      };
+    }
+
+    if (!hasNumbers) {
+      return {
+        isValid: false,
+        message: 'Şifre en az 1 sayı içermelidir'
+      };
+    }
+
+    if (!hasSymbols) {
+      return {
+        isValid: false,
+        message: 'Şifre en az 1 özel karakter (!@#$%^&* vb.) içermelidir'
+      };
+    }
+
+    return {
+      isValid: true,
+      message: 'Şifre geçerli'
+    };
   };
 
   return (
@@ -464,6 +515,28 @@ const LoginPage: React.FC = () => {
                   }}
                   placeholder="Yeni şifrenizi girin"
                 />
+                {/* Şifre Kriterleri */}
+                <div style={{
+                  marginTop: '8px',
+                  padding: '12px',
+                  backgroundColor: '#F8F9FA',
+                  border: '1px solid #E9ECEF',
+                  borderRadius: '6px',
+                  fontSize: '12px',
+                  color: '#6B7280',
+                  fontFamily: 'Inter, sans-serif'
+                }}>
+                  <div style={{ fontWeight: 600, marginBottom: '6px', color: '#374151' }}>
+                    Şifre Kriterleri:
+                  </div>
+                  <div style={{ lineHeight: '1.4' }}>
+                    • En az 8 karakter<br/>
+                    • En az 1 büyük harf (A-Z)<br/>
+                    • En az 1 küçük harf (a-z)<br/>
+                    • En az 1 sayı (0-9)<br/>
+                    • En az 1 özel karakter (!@#$%^&* vb.)
+                  </div>
+                </div>
               </div>
 
               <div style={{
