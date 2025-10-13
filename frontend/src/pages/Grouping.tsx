@@ -76,6 +76,16 @@ const Grouping: React.FC = () => {
   const [organizationSearchTerm, setOrganizationSearchTerm] = useState('');
   const [showOrganizationDropdown, setShowOrganizationDropdown] = useState(false);
   
+  // Person search states
+  const [filteredPersons, setFilteredPersons] = useState<Person[]>([]);
+  const [personSearchTerm, setPersonSearchTerm] = useState('');
+  const [showPersonDropdown, setShowPersonDropdown] = useState(false);
+  
+  // Planet search states
+  const [filteredPlanets, setFilteredPlanets] = useState<Planet[]>([]);
+  const [planetSearchTerm, setPlanetSearchTerm] = useState('');
+  const [showPlanetDropdown, setShowPlanetDropdown] = useState(false);
+  
   // Pagination states
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage] = useState(10);
@@ -137,28 +147,33 @@ const Grouping: React.FC = () => {
     loadPlanets();
   }, []);
 
-  // Handle clicking outside organization dropdown
+  // Handle clicking outside dropdowns
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       const target = event.target as HTMLElement;
       if (!target.closest('[data-organization-dropdown]')) {
         setShowOrganizationDropdown(false);
       }
+      if (!target.closest('[data-person-dropdown]')) {
+        setShowPersonDropdown(false);
+      }
+      if (!target.closest('[data-planet-dropdown]')) {
+        setShowPlanetDropdown(false);
+      }
     };
 
-    if (showOrganizationDropdown) {
+    if (showOrganizationDropdown || showPersonDropdown || showPlanetDropdown) {
       document.addEventListener('mousedown', handleClickOutside);
     }
 
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
     };
-  }, [showOrganizationDropdown]);
+  }, [showOrganizationDropdown, showPersonDropdown, showPlanetDropdown]);
 
   const loadGroups = async () => {
     try {
       setIsLoading(true);
-      console.log('🔄 Gruplar yükleniyor...');
       
       const token = localStorage.getItem('token');
       const response = await fetch('/api/group', {
@@ -186,7 +201,6 @@ const Grouping: React.FC = () => {
         });
         
         setGroups(sortedGroups);
-        console.log('✅ Gruplar yüklendi:', sortedGroups.length);
       } else {
         throw new Error(result.message || 'Grup listesi alınamadı');
       }
@@ -254,7 +268,7 @@ const Grouping: React.FC = () => {
             });
           });
           
-          // Grup Liderlikleri
+          // Departman/Şeflik
           grupLiderlikleri.forEach(value => {
             orgs.push({
               value: `grupLiderligi:${value}`,
@@ -298,6 +312,9 @@ const Grouping: React.FC = () => {
           // Sadece ad soyadları topla (benzersiz değerler)
           const adSoyadlar = [...new Set(result.authorizations?.map((auth: any) => auth.personName).filter(Boolean) || [])] as string[];
           
+          // Alfabetik sıralama (Türkçe karakter desteği ile)
+          adSoyadlar.sort((a, b) => a.localeCompare(b, 'tr'));
+          
           adSoyadlar.forEach(value => {
             persons.push({
               value: `personName:${value}`,
@@ -306,10 +323,187 @@ const Grouping: React.FC = () => {
           });
           
           setPersons(persons);
+          setFilteredPersons(persons); // İlk yüklemede tüm kişileri göster
         }
       }
     } catch (error) {
       console.error('❌ Kişi yükleme hatası:', error);
+    }
+  };
+
+  const loadPersonsForOrganization = async (organizationValue: string) => {
+    try {
+      // Organizasyon değerini parse et (genelMudurYardimciligi:A -> A)
+      const orgType = organizationValue.split(':')[0];
+      const orgName = organizationValue.split(':')[1];
+      
+      const token = localStorage.getItem('token');
+      
+      // 1. Önce Organization API'sinden pozisyonları bul
+      const orgResponse = await fetch('/api/organization', {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      
+      if (!orgResponse.ok) {
+        throw new Error('Organizasyon verileri alınamadı');
+      }
+      
+      const orgResult = await orgResponse.json();
+      
+      if (!orgResult.success) {
+        throw new Error(orgResult.message || 'Organizasyon verileri alınamadı');
+      }
+      
+      const organizations = orgResult.organizations || [];
+      
+      // Seçilen organizasyona ait pozisyonları bul
+      const matchingOrgs = organizations.filter((org: any) => {
+        if (orgType === 'genelMudurYardimciligi') return org.genelMudurYardimciligi === orgName;
+        if (orgType === 'direktörlük') return org.direktörlük === orgName;
+        if (orgType === 'müdürlük') return org.müdürlük === orgName;
+        if (orgType === 'grupLiderligi') return org.grupLiderligi === orgName;
+        if (orgType === 'pozisyon') return org.pozisyon === orgName;
+        return false;
+      });
+      
+      const orgPositions = matchingOrgs
+        .map((org: any) => org.pozisyon)
+        .filter(Boolean)
+        .filter((position: string, index: number, arr: string[]) => arr.indexOf(position) === index); // Tekrarları kaldır
+      
+      if (orgPositions.length === 0) {
+        return;
+      }
+      
+      // 2. Authorization API'sinden bu pozisyonlara sahip kişileri bul
+      const authResponse = await fetch('/api/authorization', {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      
+      if (!authResponse.ok) {
+        throw new Error('Yetkilendirme verileri alınamadı');
+      }
+      
+      const authResult = await authResponse.json();
+      
+      if (!authResult.success) {
+        throw new Error(authResult.message || 'Yetkilendirme verileri alınamadı');
+      }
+      
+      const authorizations = authResult.authorizations || [];
+      
+      // Bu pozisyonlara sahip tüm kişileri bul
+      const matchingPersons = authorizations
+        .filter((auth: any) => orgPositions.includes(auth.title))
+        .map((auth: any) => auth.personName)
+        .filter(Boolean)
+        .filter((name: string, index: number, arr: string[]) => arr.indexOf(name) === index); // Tekrarları kaldır
+      
+      // Bu kişileri otomatik olarak seçili kişilere ekle
+      const newPersonValues = matchingPersons.map(name => `personName:${name}`);
+      const uniqueNewPersons = newPersonValues.filter(personValue => !selectedPersons.includes(personValue));
+      
+      if (uniqueNewPersons.length > 0) {
+        setSelectedPersons(prev => [...prev, ...uniqueNewPersons]);
+        setManualPersons(prev => [...prev, ...uniqueNewPersons]);
+      }
+      
+    } catch (error) {
+      console.error('❌ Organizasyon kişileri yükleme hatası:', error);
+    }
+  };
+
+  const removePersonsForOrganization = async (organizationValue: string) => {
+    try {
+      // Organizasyon değerini parse et (genelMudurYardimciligi:A -> A)
+      const orgType = organizationValue.split(':')[0];
+      const orgName = organizationValue.split(':')[1];
+      
+      const token = localStorage.getItem('token');
+      
+      // 1. Önce Organization API'sinden pozisyonları bul
+      const orgResponse = await fetch('/api/organization', {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      
+      if (!orgResponse.ok) {
+        throw new Error('Organizasyon verileri alınamadı');
+      }
+      
+      const orgResult = await orgResponse.json();
+      
+      if (!orgResult.success) {
+        throw new Error(orgResult.message || 'Organizasyon verileri alınamadı');
+      }
+      
+      const organizations = orgResult.organizations || [];
+      
+      // Seçilen organizasyona ait pozisyonları bul
+      const matchingOrgs = organizations.filter((org: any) => {
+        if (orgType === 'genelMudurYardimciligi') return org.genelMudurYardimciligi === orgName;
+        if (orgType === 'direktörlük') return org.direktörlük === orgName;
+        if (orgType === 'müdürlük') return org.müdürlük === orgName;
+        if (orgType === 'grupLiderligi') return org.grupLiderligi === orgName;
+        if (orgType === 'pozisyon') return org.pozisyon === orgName;
+        return false;
+      });
+      
+      const orgPositions = matchingOrgs
+        .map((org: any) => org.pozisyon)
+        .filter(Boolean)
+        .filter((position: string, index: number, arr: string[]) => arr.indexOf(position) === index); // Tekrarları kaldır
+      
+      if (orgPositions.length === 0) {
+        return;
+      }
+      
+      // 2. Authorization API'sinden bu pozisyonlara sahip kişileri bul
+      const authResponse = await fetch('/api/authorization', {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      
+      if (!authResponse.ok) {
+        throw new Error('Yetkilendirme verileri alınamadı');
+      }
+      
+      const authResult = await authResponse.json();
+      
+      if (!authResult.success) {
+        throw new Error(authResult.message || 'Yetkilendirme verileri alınamadı');
+      }
+      
+      const authorizations = authResult.authorizations || [];
+      
+      // Bu pozisyonlara sahip tüm kişileri bul
+      const matchingPersons = authorizations
+        .filter((auth: any) => orgPositions.includes(auth.title))
+        .map((auth: any) => auth.personName)
+        .filter(Boolean)
+        .filter((name: string, index: number, arr: string[]) => arr.indexOf(name) === index); // Tekrarları kaldır
+      
+      // Bu kişileri seçili kişiler listesinden kaldır
+      const personValuesToRemove = matchingPersons.map(name => `personName:${name}`);
+      
+      setSelectedPersons(prev => {
+        const remainingPersons = prev.filter(personValue => !personValuesToRemove.includes(personValue));
+        return remainingPersons;
+      });
+      
+      setManualPersons(prev => {
+        const remainingManualPersons = prev.filter(personValue => !personValuesToRemove.includes(personValue));
+        return remainingManualPersons;
+      });
+      
+    } catch (error) {
+      console.error('❌ Organizasyon kişileri kaldırma hatası:', error);
     }
   };
 
@@ -321,6 +515,7 @@ const Grouping: React.FC = () => {
         { value: 'titan', label: 'Titan (İnsanları Etkileme - Güven Veren İşbirlikçi ve Sinerji)' }
       ];
       setPlanets(planets);
+      setFilteredPlanets(planets); // İlk yüklemede tüm gezegenleri göster
     } catch (error) {
       console.error('❌ Gezegen yükleme hatası:', error);
     }
@@ -373,6 +568,86 @@ const Grouping: React.FC = () => {
       setOrganizationSearchTerm('');
       setShowOrganizationDropdown(false);
       setFilteredOrganizations(organizations); // Reset filter
+      
+      // Organizasyon seçildiğinde o organizasyona ait kişileri otomatik ekle
+      loadPersonsForOrganization(orgValue);
+    }
+  };
+
+  // Person search functions
+  const handlePersonSearch = (searchTerm: string) => {
+    setPersonSearchTerm(searchTerm);
+    if (searchTerm.trim() === '') {
+      setFilteredPersons(persons);
+    } else {
+      // Türkçe karakterleri normalize et ve büyük/küçük harf farkını kaldır
+      const normalizeText = (text: string) => {
+        return text
+          .toLowerCase()
+          .trim()
+          .replace(/i̇/g, 'i') // Noktalı küçük i'yi noktasız i'ye çevir
+          .replace(/ı/g, 'i') // Noktasız küçük i'yi noktasız i'ye çevir
+          .replace(/İ/g, 'i') // Büyük İ'yi noktasız i'ye çevir
+          .replace(/I/g, 'i') // Büyük I'yi noktasız i'ye çevir
+          .replace(/ç/g, 'c') // Ç'yi c'ye çevir
+          .replace(/Ç/g, 'c') // Ç'yi c'ye çevir
+          .replace(/ğ/g, 'g') // Ğ'yi g'ye çevir
+          .replace(/Ğ/g, 'g') // Ğ'yi g'ye çevir
+          .replace(/ö/g, 'o') // Ö'yi o'ya çevir
+          .replace(/Ö/g, 'o') // Ö'yi o'ya çevir
+          .replace(/ş/g, 's') // Ş'yi s'ye çevir
+          .replace(/Ş/g, 's') // Ş'yi s'ye çevir
+          .replace(/ü/g, 'u') // Ü'yi u'ya çevir
+          .replace(/Ü/g, 'u'); // Ü'yi u'ya çevir
+      };
+      
+      const searchNormalized = normalizeText(searchTerm);
+      
+      const filtered = persons.filter(person => {
+        const labelNormalized = normalizeText(person.label);
+        return labelNormalized.includes(searchNormalized);
+      });
+      
+      // Filtrelenmiş sonuçları da alfabetik sırala
+      filtered.sort((a, b) => a.label.localeCompare(b.label, 'tr'));
+      
+      setFilteredPersons(filtered);
+    }
+  };
+
+  const handlePersonSelect = (personValue: string) => {
+    const selectedPerson = persons.find(person => person.value === personValue);
+    if (selectedPerson) {
+      setSelectedPersons(prev => [...prev, personValue]);
+      setManualPersons(prev => [...prev, personValue]);
+      setPersonSearchTerm('');
+      setShowPersonDropdown(false);
+      setFilteredPersons(persons); // Reset filter
+    }
+  };
+
+  // Planet search functions
+  const handlePlanetSearch = (searchTerm: string) => {
+    setPlanetSearchTerm(searchTerm);
+    if (searchTerm.trim() === '') {
+      setFilteredPlanets(planets);
+    } else {
+      // Büyük/küçük harf duyarsız arama
+      const searchLower = searchTerm.toLowerCase();
+      const filtered = planets.filter(planet => 
+        planet.label.toLowerCase().includes(searchLower)
+      );
+      setFilteredPlanets(filtered);
+    }
+  };
+
+  const handlePlanetSelect = (planetValue: string) => {
+    const selectedPlanet = planets.find(planet => planet.value === planetValue);
+    if (selectedPlanet) {
+      setSelectedPlanets(prev => [...prev, planetValue]);
+      setPlanetSearchTerm('');
+      setShowPlanetDropdown(false);
+      setFilteredPlanets(planets); // Reset filter
     }
   };
 
@@ -480,14 +755,19 @@ const Grouping: React.FC = () => {
     setManualPersons([]);
     setAutoPersons([]);
     setSelectedGroup(null);
+    setOrganizationSearchTerm('');
+    setShowOrganizationDropdown(false);
+    setFilteredOrganizations(organizations);
+    setPersonSearchTerm('');
+    setShowPersonDropdown(false);
+    setFilteredPersons(persons);
+    setPlanetSearchTerm('');
+    setShowPlanetDropdown(false);
+    setFilteredPlanets(planets);
   };
 
   const handleAddGroup = () => {
     clearForm();
-    // Reset organization search states
-    setOrganizationSearchTerm('');
-    setShowOrganizationDropdown(false);
-    setFilteredOrganizations(organizations);
     setShowAddPopup(true);
   };
 
@@ -540,10 +820,16 @@ const Grouping: React.FC = () => {
         // Düzenlenen grubu sakla
         setSelectedGroup(groupData);
         
-        // Reset organization search states
+        // Reset search states
         setOrganizationSearchTerm('');
         setShowOrganizationDropdown(false);
         setFilteredOrganizations(organizations);
+        setPersonSearchTerm('');
+        setShowPersonDropdown(false);
+        setFilteredPersons(persons);
+        setPlanetSearchTerm('');
+        setShowPlanetDropdown(false);
+        setFilteredPlanets(planets);
         
         // Modal başlığını değiştir (edit mode)
         setShowEditPopup(true);
@@ -621,9 +907,6 @@ const Grouping: React.FC = () => {
         setShowSuccessPopup(true);
         setShowAddPopup(false);
         setShowEditPopup(false);
-        setOrganizationSearchTerm('');
-        setShowOrganizationDropdown(false);
-        setFilteredOrganizations(organizations);
         clearForm(); // Formu temizle
         loadGroups();
       } else {
@@ -704,11 +987,15 @@ const Grouping: React.FC = () => {
   };
 
   const removeOrganization = async (orgValue: string) => {
+    // Önce organizasyonu listeden kaldır
     const newOrganizations = selectedOrganizations.filter(org => org !== orgValue);
     setSelectedOrganizations(newOrganizations);
     
-    // Organizasyon çıkarıldığında eşleşen kişileri güncelle
-    await updateMatchingPersonsForOrganizations(newOrganizations);
+    // Kaldırılan organizasyona ait kişileri bul ve kaldır
+    await removePersonsForOrganization(orgValue);
+    
+    // Eski API endpoint'i kullanmayı bırak, yeni mantıkla çalışıyoruz
+    // await updateMatchingPersonsForOrganizations(newOrganizations);
   };
 
   // Eşleşen kişileri otomatik ekle (belirli organizasyon listesi ile)
@@ -828,6 +1115,40 @@ const Grouping: React.FC = () => {
 
 
   const addPerson = () => {
+    // Yeni arama sistemi için - eğer arama terimi varsa ve tek sonuç varsa onu seç
+    if (personSearchTerm.trim() !== '') {
+      // Türkçe karakterleri normalize et
+      const normalizeText = (text: string) => {
+        return text
+          .toLowerCase()
+          .trim()
+          .replace(/i̇/g, 'i')
+          .replace(/ı/g, 'i')
+          .replace(/İ/g, 'i')
+          .replace(/I/g, 'i')
+          .replace(/ç/g, 'c')
+          .replace(/Ç/g, 'c')
+          .replace(/ğ/g, 'g')
+          .replace(/Ğ/g, 'g')
+          .replace(/ö/g, 'o')
+          .replace(/Ö/g, 'o')
+          .replace(/ş/g, 's')
+          .replace(/Ş/g, 's')
+          .replace(/ü/g, 'u')
+          .replace(/Ü/g, 'u');
+      };
+      
+      const searchNormalized = normalizeText(personSearchTerm);
+      const exactMatch = filteredPersons.find(person => 
+        normalizeText(person.label) === searchNormalized
+      );
+      if (exactMatch) {
+        handlePersonSelect(exactMatch.value);
+        return;
+      }
+    }
+
+    // Eski sistem için fallback
     const select = document.getElementById('personSelect') as HTMLSelectElement;
     const selectedValue = select.value;
     
@@ -1523,7 +1844,7 @@ const Grouping: React.FC = () => {
                         setShowOrganizationDropdown(true);
                       }}
                       onFocus={() => setShowOrganizationDropdown(true)}
-                      placeholder={`Organizasyon arayın (${organizations.length} organizasyon mevcut)`}
+                      placeholder={`Organizasyon arayın (${organizations.length - selectedOrganizations.length} organizasyon mevcut)`}
                       style={{
                         width: '100%',
                         padding: '12px 16px',
@@ -1569,7 +1890,7 @@ const Grouping: React.FC = () => {
                                 {type === 'genelMudurYardimciligi' ? 'Genel Müdür Yardımcılıkları' :
                                   type === 'direktörlük' ? 'Direktörlükler' :
                                   type === 'müdürlük' ? 'Müdürlükler' :
-                                  type === 'grupLiderligi' ? 'Grup Liderlikleri' :
+                                  type === 'grupLiderligi' ? 'Departman/Şeflik' :
                                   'Pozisyonlar'}
                               </div>
                               {orgs.map(org => (
@@ -1608,33 +1929,6 @@ const Grouping: React.FC = () => {
                       </div>
                     )}
                   </div>
-                  <button
-                    type="button"
-                    onClick={addOrganization}
-                    style={{
-                      padding: '12px 16px',
-                      backgroundColor: '#3B82F6',
-                      color: 'white',
-                      border: 'none',
-                      borderRadius: '8px',
-                      cursor: 'pointer',
-                      fontSize: '14px',
-                      fontWeight: '600',
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '8px',
-                      transition: 'all 0.2s ease'
-                    }}
-                    onMouseEnter={(e) => {
-                      (e.target as HTMLButtonElement).style.backgroundColor = '#2563EB';
-                    }}
-                    onMouseLeave={(e) => {
-                      (e.target as HTMLButtonElement).style.backgroundColor = '#3B82F6';
-                    }}
-                  >
-                    <i className="fas fa-plus" style={{ fontSize: '12px' }}></i>
-                    Ekle
-                  </button>
                 </div>
                 <div style={{
                   minHeight: '40px',
@@ -1697,52 +1991,77 @@ const Grouping: React.FC = () => {
                   Kişiler *
                 </label>
                 <div style={{ display: 'flex', gap: '8px', marginBottom: '12px' }}>
-                  <select
-                    id="personSelect"
-                    style={{
-                      flex: 1,
-                      padding: '12px 16px',
-                      border: '2px solid #E5E7EB',
-                      borderRadius: '8px',
-                      fontSize: '14px',
-                      outline: 'none',
-                      backgroundColor: 'white'
-                    }}
-                  >
-                    <option value="">Kişi seçiniz</option>
-                    {persons
-                      .filter(person => !selectedPersons.includes(person.value))
-                      .map(person => (
-                        <option key={person.value} value={person.value}>{person.label}</option>
-                      ))}
-                  </select>
-                  <button
-                    type="button"
-                    onClick={addPerson}
-                    style={{
-                      padding: '12px 16px',
-                      backgroundColor: '#3B82F6',
-                      color: 'white',
-                      border: 'none',
-                      borderRadius: '8px',
-                      cursor: 'pointer',
-                      fontSize: '14px',
-                      fontWeight: '600',
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '8px',
-                      transition: 'all 0.2s ease'
-                    }}
-                    onMouseEnter={(e) => {
-                      (e.target as HTMLButtonElement).style.backgroundColor = '#2563EB';
-                    }}
-                    onMouseLeave={(e) => {
-                      (e.target as HTMLButtonElement).style.backgroundColor = '#3B82F6';
-                    }}
-                  >
-                    <i className="fas fa-plus" style={{ fontSize: '12px' }}></i>
-                    Ekle
-                  </button>
+                  <div style={{ position: 'relative', flex: 1 }} data-person-dropdown>
+                    <input
+                      type="text"
+                      value={personSearchTerm}
+                      onChange={(e) => {
+                        handlePersonSearch(e.target.value);
+                        setShowPersonDropdown(true);
+                      }}
+                      onFocus={() => setShowPersonDropdown(true)}
+                      placeholder={`Kişi arayın (${persons.length - selectedPersons.length} kişi mevcut)`}
+                      style={{
+                        width: '100%',
+                        padding: '12px 16px',
+                        border: '2px solid #E5E7EB',
+                        borderRadius: '8px',
+                        fontSize: '14px',
+                        outline: 'none',
+                        backgroundColor: 'white'
+                      }}
+                    />
+                    {showPersonDropdown && (
+                      <div style={{
+                        position: 'absolute',
+                        top: '100%',
+                        left: 0,
+                        right: 0,
+                        backgroundColor: 'white',
+                        border: '1px solid #E5E7EB',
+                        borderRadius: '8px',
+                        boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
+                        zIndex: 1000,
+                        maxHeight: '200px',
+                        overflowY: 'auto',
+                        marginTop: '4px'
+                      }}>
+                        {filteredPersons
+                          .filter(person => !selectedPersons.includes(person.value))
+                          .map(person => (
+                            <div
+                              key={person.value}
+                              onClick={() => handlePersonSelect(person.value)}
+                              style={{
+                                padding: '10px 12px',
+                                cursor: 'pointer',
+                                fontSize: '14px',
+                                color: '#374151',
+                                borderBottom: '1px solid #F3F4F6'
+                              }}
+                              onMouseEnter={(e) => {
+                                e.currentTarget.style.backgroundColor = '#F9FAFB';
+                              }}
+                              onMouseLeave={(e) => {
+                                e.currentTarget.style.backgroundColor = 'white';
+                              }}
+                            >
+                              {person.label}
+                            </div>
+                          ))}
+                        {filteredPersons.filter(person => !selectedPersons.includes(person.value)).length === 0 && (
+                          <div style={{
+                            padding: '12px',
+                            textAlign: 'center',
+                            color: '#9CA3AF',
+                            fontSize: '14px'
+                          }}>
+                            Kişi bulunamadı
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
                 </div>
                 <div style={{
                   minHeight: '40px',
@@ -1808,52 +2127,77 @@ const Grouping: React.FC = () => {
                   Gezegenler *
                 </label>
                 <div style={{ display: 'flex', gap: '8px', marginBottom: '12px' }}>
-                  <select
-                    id="planetSelect"
-                    style={{
-                      flex: 1,
-                      padding: '12px 16px',
-                      border: '2px solid #E5E7EB',
-                      borderRadius: '8px',
-                      fontSize: '14px',
-                      outline: 'none',
-                      backgroundColor: 'white'
-                    }}
-                  >
-                    <option value="">Gezegen seçiniz</option>
-                    {planets
-                      .filter(planet => !selectedPlanets.includes(planet.value))
-                      .map(planet => (
-                        <option key={planet.value} value={planet.value}>{planet.label}</option>
-                      ))}
-                  </select>
-                  <button
-                    type="button"
-                    onClick={addPlanet}
-                    style={{
-                      padding: '12px 16px',
-                      backgroundColor: '#3B82F6',
-                      color: 'white',
-                      border: 'none',
-                      borderRadius: '8px',
-                      cursor: 'pointer',
-                      fontSize: '14px',
-                      fontWeight: '600',
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '8px',
-                      transition: 'all 0.2s ease'
-                    }}
-                    onMouseEnter={(e) => {
-                      (e.target as HTMLButtonElement).style.backgroundColor = '#2563EB';
-                    }}
-                    onMouseLeave={(e) => {
-                      (e.target as HTMLButtonElement).style.backgroundColor = '#3B82F6';
-                    }}
-                  >
-                    <i className="fas fa-plus" style={{ fontSize: '12px' }}></i>
-                    Ekle
-                  </button>
+                  <div style={{ position: 'relative', flex: 1 }} data-planet-dropdown>
+                    <input
+                      type="text"
+                      value={planetSearchTerm}
+                      onChange={(e) => {
+                        handlePlanetSearch(e.target.value);
+                        setShowPlanetDropdown(true);
+                      }}
+                      onFocus={() => setShowPlanetDropdown(true)}
+                      placeholder={`Gezegen arayın (${planets.length - selectedPlanets.length} gezegen mevcut)`}
+                      style={{
+                        width: '100%',
+                        padding: '12px 16px',
+                        border: '2px solid #E5E7EB',
+                        borderRadius: '8px',
+                        fontSize: '14px',
+                        outline: 'none',
+                        backgroundColor: 'white'
+                      }}
+                    />
+                    {showPlanetDropdown && (
+                      <div style={{
+                        position: 'absolute',
+                        top: '100%',
+                        left: 0,
+                        right: 0,
+                        backgroundColor: 'white',
+                        border: '1px solid #E5E7EB',
+                        borderRadius: '8px',
+                        boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
+                        zIndex: 1000,
+                        maxHeight: '200px',
+                        overflowY: 'auto',
+                        marginTop: '4px'
+                      }}>
+                        {filteredPlanets
+                          .filter(planet => !selectedPlanets.includes(planet.value))
+                          .map(planet => (
+                            <div
+                              key={planet.value}
+                              onClick={() => handlePlanetSelect(planet.value)}
+                              style={{
+                                padding: '10px 12px',
+                                cursor: 'pointer',
+                                fontSize: '14px',
+                                color: '#374151',
+                                borderBottom: '1px solid #F3F4F6'
+                              }}
+                              onMouseEnter={(e) => {
+                                e.currentTarget.style.backgroundColor = '#F9FAFB';
+                              }}
+                              onMouseLeave={(e) => {
+                                e.currentTarget.style.backgroundColor = 'white';
+                              }}
+                            >
+                              {planet.label}
+                            </div>
+                          ))}
+                        {filteredPlanets.filter(planet => !selectedPlanets.includes(planet.value)).length === 0 && (
+                          <div style={{
+                            padding: '12px',
+                            textAlign: 'center',
+                            color: '#9CA3AF',
+                            fontSize: '14px'
+                          }}>
+                            Gezegen bulunamadı
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
                 </div>
                 <div style={{
                   minHeight: '40px',
@@ -1920,9 +2264,6 @@ const Grouping: React.FC = () => {
               <button
                 onClick={() => {
                   setShowAddPopup(false);
-                  setOrganizationSearchTerm('');
-                  setShowOrganizationDropdown(false);
-                  setFilteredOrganizations(organizations);
                   clearForm();
                 }}
                 disabled={isSubmitting}
@@ -2158,7 +2499,7 @@ const Grouping: React.FC = () => {
                         setShowOrganizationDropdown(true);
                       }}
                       onFocus={() => setShowOrganizationDropdown(true)}
-                      placeholder={`Organizasyon arayın (${organizations.length} organizasyon mevcut)`}
+                      placeholder={`Organizasyon arayın (${organizations.length - selectedOrganizations.length} organizasyon mevcut)`}
                       style={{
                         width: '100%',
                         padding: '12px 16px',
@@ -2204,7 +2545,7 @@ const Grouping: React.FC = () => {
                                 {type === 'genelMudurYardimciligi' ? 'Genel Müdür Yardımcılıkları' :
                                   type === 'direktörlük' ? 'Direktörlükler' :
                                   type === 'müdürlük' ? 'Müdürlükler' :
-                                  type === 'grupLiderligi' ? 'Grup Liderlikleri' :
+                                  type === 'grupLiderligi' ? 'Departman/Şeflik' :
                                   'Pozisyonlar'}
                               </div>
                               {orgs.map(org => (
@@ -2243,33 +2584,6 @@ const Grouping: React.FC = () => {
                       </div>
                     )}
                   </div>
-                  <button
-                    type="button"
-                    onClick={addOrganization}
-                    style={{
-                      padding: '12px 16px',
-                      backgroundColor: '#3B82F6',
-                      color: 'white',
-                      border: 'none',
-                      borderRadius: '8px',
-                      cursor: 'pointer',
-                      fontSize: '14px',
-                      fontWeight: '600',
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '8px',
-                      transition: 'all 0.2s ease'
-                    }}
-                    onMouseEnter={(e) => {
-                      (e.target as HTMLButtonElement).style.backgroundColor = '#2563EB';
-                    }}
-                    onMouseLeave={(e) => {
-                      (e.target as HTMLButtonElement).style.backgroundColor = '#3B82F6';
-                    }}
-                  >
-                    <i className="fas fa-plus" style={{ fontSize: '12px' }}></i>
-                    Ekle
-                  </button>
                 </div>
                 <div style={{
                   minHeight: '40px',
@@ -2332,52 +2646,77 @@ const Grouping: React.FC = () => {
                   Kişiler *
                 </label>
                 <div style={{ display: 'flex', gap: '8px', marginBottom: '12px' }}>
-                  <select
-                    id="personSelect"
-                    style={{
-                      flex: 1,
-                      padding: '12px 16px',
-                      border: '2px solid #E5E7EB',
-                      borderRadius: '8px',
-                      fontSize: '14px',
-                      outline: 'none',
-                      backgroundColor: 'white'
-                    }}
-                  >
-                    <option value="">Kişi seçiniz</option>
-                    {persons
-                      .filter(person => !selectedPersons.includes(person.value))
-                      .map(person => (
-                        <option key={person.value} value={person.value}>{person.label}</option>
-                      ))}
-                  </select>
-                  <button
-                    type="button"
-                    onClick={addPerson}
-                    style={{
-                      padding: '12px 16px',
-                      backgroundColor: '#3B82F6',
-                      color: 'white',
-                      border: 'none',
-                      borderRadius: '8px',
-                      cursor: 'pointer',
-                      fontSize: '14px',
-                      fontWeight: '600',
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '8px',
-                      transition: 'all 0.2s ease'
-                    }}
-                    onMouseEnter={(e) => {
-                      (e.target as HTMLButtonElement).style.backgroundColor = '#2563EB';
-                    }}
-                    onMouseLeave={(e) => {
-                      (e.target as HTMLButtonElement).style.backgroundColor = '#3B82F6';
-                    }}
-                  >
-                    <i className="fas fa-plus" style={{ fontSize: '12px' }}></i>
-                    Ekle
-                  </button>
+                  <div style={{ position: 'relative', flex: 1 }} data-person-dropdown>
+                    <input
+                      type="text"
+                      value={personSearchTerm}
+                      onChange={(e) => {
+                        handlePersonSearch(e.target.value);
+                        setShowPersonDropdown(true);
+                      }}
+                      onFocus={() => setShowPersonDropdown(true)}
+                      placeholder={`Kişi arayın (${persons.length - selectedPersons.length} kişi mevcut)`}
+                      style={{
+                        width: '100%',
+                        padding: '12px 16px',
+                        border: '2px solid #E5E7EB',
+                        borderRadius: '8px',
+                        fontSize: '14px',
+                        outline: 'none',
+                        backgroundColor: 'white'
+                      }}
+                    />
+                    {showPersonDropdown && (
+                      <div style={{
+                        position: 'absolute',
+                        top: '100%',
+                        left: 0,
+                        right: 0,
+                        backgroundColor: 'white',
+                        border: '1px solid #E5E7EB',
+                        borderRadius: '8px',
+                        boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
+                        zIndex: 1000,
+                        maxHeight: '200px',
+                        overflowY: 'auto',
+                        marginTop: '4px'
+                      }}>
+                        {filteredPersons
+                          .filter(person => !selectedPersons.includes(person.value))
+                          .map(person => (
+                            <div
+                              key={person.value}
+                              onClick={() => handlePersonSelect(person.value)}
+                              style={{
+                                padding: '10px 12px',
+                                cursor: 'pointer',
+                                fontSize: '14px',
+                                color: '#374151',
+                                borderBottom: '1px solid #F3F4F6'
+                              }}
+                              onMouseEnter={(e) => {
+                                e.currentTarget.style.backgroundColor = '#F9FAFB';
+                              }}
+                              onMouseLeave={(e) => {
+                                e.currentTarget.style.backgroundColor = 'white';
+                              }}
+                            >
+                              {person.label}
+                            </div>
+                          ))}
+                        {filteredPersons.filter(person => !selectedPersons.includes(person.value)).length === 0 && (
+                          <div style={{
+                            padding: '12px',
+                            textAlign: 'center',
+                            color: '#9CA3AF',
+                            fontSize: '14px'
+                          }}>
+                            Kişi bulunamadı
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
                 </div>
                 <div style={{
                   minHeight: '40px',
@@ -2443,52 +2782,77 @@ const Grouping: React.FC = () => {
                   Gezegenler *
                 </label>
                 <div style={{ display: 'flex', gap: '8px', marginBottom: '12px' }}>
-                  <select
-                    id="planetSelect"
-                    style={{
-                      flex: 1,
-                      padding: '12px 16px',
-                      border: '2px solid #E5E7EB',
-                      borderRadius: '8px',
-                      fontSize: '14px',
-                      outline: 'none',
-                      backgroundColor: 'white'
-                    }}
-                  >
-                    <option value="">Gezegen seçiniz</option>
-                    {planets
-                      .filter(planet => !selectedPlanets.includes(planet.value))
-                      .map(planet => (
-                        <option key={planet.value} value={planet.value}>{planet.label}</option>
-                      ))}
-                  </select>
-                  <button
-                    type="button"
-                    onClick={addPlanet}
-                    style={{
-                      padding: '12px 16px',
-                      backgroundColor: '#3B82F6',
-                      color: 'white',
-                      border: 'none',
-                      borderRadius: '8px',
-                      cursor: 'pointer',
-                      fontSize: '14px',
-                      fontWeight: '600',
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '8px',
-                      transition: 'all 0.2s ease'
-                    }}
-                    onMouseEnter={(e) => {
-                      (e.target as HTMLButtonElement).style.backgroundColor = '#2563EB';
-                    }}
-                    onMouseLeave={(e) => {
-                      (e.target as HTMLButtonElement).style.backgroundColor = '#3B82F6';
-                    }}
-                  >
-                    <i className="fas fa-plus" style={{ fontSize: '12px' }}></i>
-                    Ekle
-                  </button>
+                  <div style={{ position: 'relative', flex: 1 }} data-planet-dropdown>
+                    <input
+                      type="text"
+                      value={planetSearchTerm}
+                      onChange={(e) => {
+                        handlePlanetSearch(e.target.value);
+                        setShowPlanetDropdown(true);
+                      }}
+                      onFocus={() => setShowPlanetDropdown(true)}
+                      placeholder={`Gezegen arayın (${planets.length - selectedPlanets.length} gezegen mevcut)`}
+                      style={{
+                        width: '100%',
+                        padding: '12px 16px',
+                        border: '2px solid #E5E7EB',
+                        borderRadius: '8px',
+                        fontSize: '14px',
+                        outline: 'none',
+                        backgroundColor: 'white'
+                      }}
+                    />
+                    {showPlanetDropdown && (
+                      <div style={{
+                        position: 'absolute',
+                        top: '100%',
+                        left: 0,
+                        right: 0,
+                        backgroundColor: 'white',
+                        border: '1px solid #E5E7EB',
+                        borderRadius: '8px',
+                        boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
+                        zIndex: 1000,
+                        maxHeight: '200px',
+                        overflowY: 'auto',
+                        marginTop: '4px'
+                      }}>
+                        {filteredPlanets
+                          .filter(planet => !selectedPlanets.includes(planet.value))
+                          .map(planet => (
+                            <div
+                              key={planet.value}
+                              onClick={() => handlePlanetSelect(planet.value)}
+                              style={{
+                                padding: '10px 12px',
+                                cursor: 'pointer',
+                                fontSize: '14px',
+                                color: '#374151',
+                                borderBottom: '1px solid #F3F4F6'
+                              }}
+                              onMouseEnter={(e) => {
+                                e.currentTarget.style.backgroundColor = '#F9FAFB';
+                              }}
+                              onMouseLeave={(e) => {
+                                e.currentTarget.style.backgroundColor = 'white';
+                              }}
+                            >
+                              {planet.label}
+                            </div>
+                          ))}
+                        {filteredPlanets.filter(planet => !selectedPlanets.includes(planet.value)).length === 0 && (
+                          <div style={{
+                            padding: '12px',
+                            textAlign: 'center',
+                            color: '#9CA3AF',
+                            fontSize: '14px'
+                          }}>
+                            Gezegen bulunamadı
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
                 </div>
                 <div style={{
                   minHeight: '40px',
@@ -2555,9 +2919,6 @@ const Grouping: React.FC = () => {
               <button
                 onClick={() => {
                   setShowEditPopup(false);
-                  setOrganizationSearchTerm('');
-                  setShowOrganizationDropdown(false);
-                  setFilteredOrganizations(organizations);
                   clearForm();
                 }}
                 disabled={isSubmitting}

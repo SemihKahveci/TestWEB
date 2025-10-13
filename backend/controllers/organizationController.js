@@ -268,7 +268,7 @@ const bulkCreateOrganizations = async (req, res) => {
         const organizations = [];
         const errors = [];
 
-        // Sütun sırası: Genel Müdür Yardımcılığı, Direktörlük, Müdürlük, Grup Liderliği, Pozisyon
+        // Sütun sırası: Genel Müdür Yardımcılığı, Direktörlük, Müdürlük, Departman/Şeflik, Pozisyon
         for (let i = 0; i < data.length; i++) {
             const row = data[i];
             const rowNumber = i + 2; // Excel'de satır numarası (header + 1)
@@ -277,7 +277,7 @@ const bulkCreateOrganizations = async (req, res) => {
                 if (row.length < 5) {
                     errors.push({
                         row: rowNumber,
-                        message: 'Satırda yeterli sütun bulunmuyor. 5 sütun gerekli: Genel Müdür Yardımcılığı, Direktörlük, Müdürlük, Grup Liderliği, Pozisyon'
+                        message: 'Satırda yeterli sütun bulunmuyor. 5 sütun gerekli: Genel Müdür Yardımcılığı, Direktörlük, Müdürlük, Departman/Şeflik, Pozisyon'
                     });
                     continue;
                 }

@@ -96,10 +96,8 @@ const Organization: React.FC = () => {
   const loadOrganizations = async () => {
     try {
       setIsLoading(true);
-      console.log('🔄 Organizasyonlar yükleniyor...');
       
       const result = await organizationAPI.getAll();
-      console.log('✅ Organizasyonlar yüklendi:', result);
       
       if (result.data.success) {
         setOrganizations(result.data.organizations || []);
@@ -184,10 +182,8 @@ const Organization: React.FC = () => {
         return;
       }
       
-      console.log('🔄 Yeni organizasyon ekleniyor:', cleanedFormData);
       
       const result = await organizationAPI.create(cleanedFormData);
-      console.log('✅ Organizasyon başarıyla eklendi:', result);
       
       // Yeni organizasyonu listeye ekle
       setOrganizations(prev => [...prev, result.data.organization]);
@@ -248,10 +244,8 @@ const Organization: React.FC = () => {
         return;
       }
       
-      console.log('🔄 Organizasyon güncelleniyor:', selectedOrganization._id, cleanedFormData);
       
       const result = await organizationAPI.update(selectedOrganization._id, cleanedFormData);
-      console.log('✅ Organizasyon başarıyla güncellendi:', result);
       
       // Güncellenen organizasyonu listede güncelle
       setOrganizations(prev => prev.map(org => 
@@ -275,10 +269,8 @@ const Organization: React.FC = () => {
     try {
       if (!selectedOrganization) return;
       setIsSubmitting(true);
-      console.log('🔄 Organizasyon siliniyor:', selectedOrganization._id);
       
       await organizationAPI.delete(selectedOrganization._id);
-      console.log('✅ Organizasyon başarıyla silindi');
       
       // Silinen organizasyonu listeden çıkar
       setOrganizations(prev => prev.filter(org => org._id !== selectedOrganization._id));
@@ -393,7 +385,7 @@ const Organization: React.FC = () => {
         'Genel Müdür Yardımcılığı',
         'Direktörlük',
         'Müdürlük',
-        'Grup Liderliği',
+        'Departman/Şeflik',
         'Pozisyon'
       ];
 
@@ -402,7 +394,7 @@ const Organization: React.FC = () => {
         'Örnek Genel Müdür Yardımcılığı',
         'Örnek Direktörlük',
         'Örnek Müdürlük',
-        'Örnek Grup Liderliği',
+        'Örnek Departman/Şeflik',
         'Örnek Pozisyon'
       ];
 
@@ -426,7 +418,7 @@ const Organization: React.FC = () => {
         { wch: 25 }, // Genel Müdür Yardımcılığı
         { wch: 20 }, // Direktörlük
         { wch: 20 }, // Müdürlük
-        { wch: 20 }, // Grup Liderliği
+        { wch: 20 }, // Departman/Şeflik
         { wch: 20 }  // Pozisyon
       ];
 
@@ -902,7 +894,7 @@ const Organization: React.FC = () => {
                   fontWeight: 700,
                   fontFamily: 'Montserrat'
                 }}>
-                  Grup Liderliği
+                  Departman/Şeflik
                 </th>
                 <th style={{
                   padding: '16px',
@@ -1263,7 +1255,7 @@ const Organization: React.FC = () => {
                     marginBottom: '8px',
                     fontFamily: 'Inter'
                   }}>
-                    Grup Liderliği
+                    Departman/Şeflik
                   </label>
                   <input
                     type="text"
@@ -1518,7 +1510,7 @@ const Organization: React.FC = () => {
                     marginBottom: '8px',
                     fontFamily: 'Inter'
                   }}>
-                    Grup Liderliği
+                    Departman/Şeflik
                   </label>
                   <input
                     type="text"

@@ -145,7 +145,6 @@ export const gameManagementAPI = {
 // Evaluation API
 export const evaluationAPI = {
   getAll: () => {
-    console.log('🌐 API çağrısı: GET /user-results');
     return api.get('/user-results');
   },
   

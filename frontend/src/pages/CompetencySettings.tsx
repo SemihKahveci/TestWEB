@@ -77,7 +77,6 @@ const CompetencySettings: React.FC = () => {
   const loadCompetencies = async () => {
     try {
       setIsLoading(true);
-      console.log('🔄 Yetkinlikler yükleniyor...');
       const token = localStorage.getItem('token');
       const response = await fetch('/api/competency', {
         headers: {
@@ -89,7 +88,6 @@ const CompetencySettings: React.FC = () => {
       
       const data = await response.json();
       setCompetencies(data.competencies || []);
-      console.log('✅ Yetkinlikler başarıyla yüklendi:', data.competencies?.length || 0);
     } catch (error) {
       console.error('💥 Yetkinlikler yüklenirken hata:', error);
     } finally {
@@ -141,7 +139,6 @@ const CompetencySettings: React.FC = () => {
   const handleSubmitAdd = async () => {
     try {
       setIsSubmitting(true);
-      console.log('🔄 Yeni yetkinlik ekleniyor:', formData);
       
       const token = localStorage.getItem('token');
       const response = await fetch('/api/competency', {
@@ -169,7 +166,6 @@ const CompetencySettings: React.FC = () => {
       }
 
       const responseData = await response.json();
-      console.log('✅ Yetkinlik başarıyla eklendi:', responseData);
       
       // Yeni yetkinliği listeye ekle - form verilerinden oluştur
       const newCompetency = {
@@ -212,7 +208,6 @@ const CompetencySettings: React.FC = () => {
     try {
       if (!selectedCompetency) return;
       setIsSubmitting(true);
-      console.log('🔄 Yetkinlik güncelleniyor:', selectedCompetency._id, formData);
       
       const token = localStorage.getItem('token');
       const response = await fetch(`/api/competency/${selectedCompetency._id}`, {
@@ -240,7 +235,6 @@ const CompetencySettings: React.FC = () => {
       }
 
       const responseData = await response.json();
-      console.log('✅ Yetkinlik başarıyla güncellendi:', responseData);
       
       // Güncellenen yetkinliği listede güncelle
       setCompetencies(prev => prev.map(comp => 
@@ -282,7 +276,6 @@ const CompetencySettings: React.FC = () => {
   const handleConfirmDelete = async () => {
     try {
       setIsSubmitting(true);
-      console.log('🔄 Yetkinlikler siliniyor:', selectedItems);
       
       const token = localStorage.getItem('token');
       // Her bir yetkinliği tek tek sil
@@ -303,7 +296,6 @@ const CompetencySettings: React.FC = () => {
         throw new Error('Bazı yetkinlikler silinemedi');
       }
 
-      console.log('✅ Yetkinlikler başarıyla silindi');
       
       // Silinen yetkinlikleri listeden çıkar
       setCompetencies(prev => prev.filter(comp => !selectedItems.includes(comp._id)));
@@ -328,7 +320,6 @@ const CompetencySettings: React.FC = () => {
 
     try {
       setIsImporting(true);
-      console.log('🔄 Excel dosyası import ediliyor:', file.name);
       
       const token = localStorage.getItem('token');
       const formData = new FormData();

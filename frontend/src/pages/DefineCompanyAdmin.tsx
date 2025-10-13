@@ -52,7 +52,6 @@ const DefineCompanyAdmin: React.FC = () => {
   const loadAdmins = async () => {
     try {
       setIsLoading(true);
-      console.log('🔄 Adminler yükleniyor...');
       const response = await fetch('/api/admin/list', {
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token')}`
@@ -61,7 +60,6 @@ const DefineCompanyAdmin: React.FC = () => {
       const data = await response.json();
       if (data.success) {
         setAdmins(data.admins);
-        console.log('✅ Adminler başarıyla yüklendi:', data.admins.length);
       } else {
         console.error('❌ API hatası:', data.message);
       }
@@ -107,7 +105,6 @@ const DefineCompanyAdmin: React.FC = () => {
 
   const handleSubmitAdd = async () => {
     try {
-      console.log('🔄 Yeni admin ekleniyor:', formData);
       const response = await fetch('/api/admin/create', {
         method: 'POST',
         headers: {
@@ -124,7 +121,6 @@ const DefineCompanyAdmin: React.FC = () => {
       });
       const data = await response.json();
       if (data.success) {
-        console.log('✅ Admin başarıyla eklendi');
         setShowAddPopup(false);
         loadAdmins();
       } else {
@@ -141,7 +137,6 @@ const DefineCompanyAdmin: React.FC = () => {
   const handleSubmitEdit = async () => {
     try {
       if (!selectedAdmin) return;
-      console.log('🔄 Admin güncelleniyor:', selectedAdmin._id, formData);
       
       const updateData: any = {
         name: formData.name,
@@ -164,7 +159,6 @@ const DefineCompanyAdmin: React.FC = () => {
       });
       const data = await response.json();
       if (data.success) {
-        console.log('✅ Admin başarıyla güncellendi');
         setShowEditPopup(false);
         loadAdmins();
       } else {
@@ -181,7 +175,6 @@ const DefineCompanyAdmin: React.FC = () => {
   const handleConfirmDelete = async () => {
     try {
       if (!selectedAdmin) return;
-      console.log('🔄 Admin siliniyor:', selectedAdmin._id);
       const response = await fetch(`/api/admin/${selectedAdmin._id}`, {
         method: 'DELETE',
         headers: {
@@ -190,7 +183,6 @@ const DefineCompanyAdmin: React.FC = () => {
       });
       const data = await response.json();
       if (data.success) {
-        console.log('✅ Admin başarıyla silindi');
         setShowDeletePopup(false);
         loadAdmins();
       } else {

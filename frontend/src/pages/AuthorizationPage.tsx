@@ -132,7 +132,6 @@ const AuthorizationPage: React.FC = () => {
   const loadAuthorizations = async () => {
     try {
       setIsLoading(true);
-      console.log('🔄 Yetkilendirmeler yükleniyor...');
       
       const token = localStorage.getItem('token');
       const response = await fetch('/api/authorization', {
@@ -146,7 +145,6 @@ const AuthorizationPage: React.FC = () => {
       }
 
       const result = await response.json();
-      console.log('✅ Yetkilendirmeler yüklendi:', result);
       
       if (result.success) {
         const authorizations = result.authorizations || [];
@@ -172,22 +170,17 @@ const AuthorizationPage: React.FC = () => {
 
   const loadOrganizations = async () => {
     try {
-      console.log('🔄 Organizasyonlar yükleniyor...');
       
       const result = await organizationAPI.getAll();
-      console.log('✅ Organizasyonlar yüklendi:', result);
       
       if (result.data.success) {
         const organizations = result.data.organizations || [];
         setOrganizations(organizations);
         
         // Pozisyonları çıkar ve alfabetik sırala
-        console.log('🔍 Organizasyon verileri:', organizations);
-        console.log('🔍 İlk organizasyon örneği:', organizations[0]);
         
         const allPositions = organizations
           .map(org => {
-            console.log('🔍 Organizasyon pozisyonu:', org.pozisyon);
             return org.pozisyon;
           })
           .filter(pos => pos && pos.trim() !== '')
@@ -196,9 +189,6 @@ const AuthorizationPage: React.FC = () => {
         
         setPositions(allPositions);
         setFilteredPositions(allPositions); // İlk yüklemede tüm pozisyonları göster
-        console.log('✅ Pozisyonlar hazırlandı:', allPositions);
-        console.log('📊 Toplam organizasyon sayısı:', organizations.length);
-        console.log('📊 Toplam pozisyon sayısı:', allPositions.length);
       } else {
         throw new Error(result.data.message || 'Organizasyon listesi alınamadı');
       }
@@ -286,7 +276,6 @@ const AuthorizationPage: React.FC = () => {
   const handleSubmitAdd = async () => {
     try {
       setIsSubmitting(true);
-      console.log('🔄 Yeni yetkilendirme ekleniyor:', formData);
       
       const token = localStorage.getItem('token');
       const response = await fetch('/api/authorization', {
@@ -304,7 +293,6 @@ const AuthorizationPage: React.FC = () => {
       }
 
       const responseData = await response.json();
-      console.log('✅ Yetkilendirme başarıyla eklendi:', responseData);
       
       // Yeni yetkilendirmeyi listenin en üstüne ekle
       setAuthorizations(prev => [responseData.authorization, ...prev]);
@@ -326,7 +314,6 @@ const AuthorizationPage: React.FC = () => {
     try {
       if (!selectedAuthorization) return;
       setIsSubmitting(true);
-      console.log('🔄 Yetkilendirme güncelleniyor:', selectedAuthorization._id, formData);
       
       const token = localStorage.getItem('token');
       const response = await fetch(`/api/authorization/${selectedAuthorization._id}`, {
@@ -344,7 +331,6 @@ const AuthorizationPage: React.FC = () => {
       }
 
       const responseData = await response.json();
-      console.log('✅ Yetkilendirme başarıyla güncellendi:', responseData);
       
       // Güncellenen yetkilendirmeyi listede güncelle
       setAuthorizations(prev => prev.map(auth => 
@@ -368,7 +354,6 @@ const AuthorizationPage: React.FC = () => {
     try {
       if (!selectedAuthorization) return;
       setIsSubmitting(true);
-      console.log('🔄 Yetkilendirme siliniyor:', selectedAuthorization._id);
       
       const token = localStorage.getItem('token');
       const response = await fetch(`/api/authorization/${selectedAuthorization._id}`, {
@@ -382,7 +367,6 @@ const AuthorizationPage: React.FC = () => {
         throw new Error('Silme işlemi başarısız');
       }
 
-      console.log('✅ Yetkilendirme başarıyla silindi');
       
       // Silinen yetkilendirmeyi listeden çıkar
       setAuthorizations(prev => prev.filter(auth => auth._id !== selectedAuthorization._id));

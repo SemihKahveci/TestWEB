@@ -71,13 +71,11 @@ const GameManagement: React.FC = () => {
   const loadGames = async () => {
     try {
       setIsLoading(true);
-      console.log('🔄 Oyunlar yükleniyor...');
       const response = await fetch('/api/game-management/games');
       if (!response.ok) throw new Error('Veriler yüklenemedi');
       
       const data = await response.json();
       setGames(data.games || []);
-      console.log('✅ Oyunlar başarıyla yüklendi:', data.games?.length || 0);
     } catch (error) {
       console.error('💥 Oyunlar yüklenirken hata:', error);
     } finally {
@@ -104,12 +102,10 @@ const GameManagement: React.FC = () => {
   const handleEditGame = async (game: Game) => {
     try {
       setIsLoadingEdit(true);
-      console.log('🔄 Oyun detayları yükleniyor:', game._id);
       const response = await fetch(`/api/game-management/games/${game._id}`);
       if (!response.ok) throw new Error('Oyun verileri alınamadı');
       
       const gameData = await response.json();
-      console.log('✅ Oyun detayları yüklendi:', gameData);
       
       setSelectedGame(gameData.game);
       setFormData({
@@ -134,7 +130,6 @@ const GameManagement: React.FC = () => {
   const handleViewInvoice = async (game: Game) => {
     try {
       setIsLoadingInvoice(true);
-      console.log('🔄 Fatura görüntüleniyor:', game._id);
       
       // API'den oyun verilerini ID'ye göre al
       const response = await fetch(`/api/game-management/games/${game._id}`);
@@ -143,7 +138,6 @@ const GameManagement: React.FC = () => {
       }
       
       const gameData = await response.json();
-      console.log('✅ Oyun verileri yüklendi:', gameData);
       
       if (!gameData.game.invoiceFile) {
         alert('Bu oyun için fatura dosyası bulunamadı!');
@@ -185,7 +179,6 @@ const GameManagement: React.FC = () => {
 
   const handleSubmitAdd = async () => {
     try {
-      console.log('🔄 Yeni oyun ekleniyor:', formData);
       
       let invoiceFileData: { fileName: string; fileType: string; fileData: string } | null = null;
       if (formData.invoiceFile) {
@@ -216,7 +209,6 @@ const GameManagement: React.FC = () => {
       }
 
       const responseData = await response.json();
-      console.log('✅ Oyun başarıyla eklendi:', responseData);
       
       // Başarı mesajı göster - popup ile
       setShowAddPopup(false);
@@ -233,7 +225,6 @@ const GameManagement: React.FC = () => {
   const handleSubmitEdit = async () => {
     try {
       if (!selectedGame) return;
-      console.log('🔄 Oyun güncelleniyor:', selectedGame._id, formData);
       
       const updateData: any = {
         firmName: formData.firmName,
@@ -264,7 +255,6 @@ const GameManagement: React.FC = () => {
       }
 
       const responseData = await response.json();
-      console.log('✅ Oyun başarıyla güncellendi:', responseData);
       
       // Başarı mesajı göster - popup ile
       setShowEditPopup(false);
@@ -281,7 +271,6 @@ const GameManagement: React.FC = () => {
   const handleConfirmDelete = async () => {
     try {
       if (!selectedGame) return;
-      console.log('🔄 Oyun siliniyor:', selectedGame._id);
       
       const response = await fetch(`/api/game-management/games/${selectedGame._id}`, {
         method: 'DELETE'
@@ -292,7 +281,6 @@ const GameManagement: React.FC = () => {
       }
 
       const responseData = await response.json();
-      console.log('✅ Oyun başarıyla silindi:', responseData);
       
       // Başarı mesajı göster - popup ile
       setShowDeletePopup(false);

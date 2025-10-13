@@ -49,11 +49,9 @@ const CompanyIdentification: React.FC = () => {
   const loadCompanies = async () => {
     try {
       setIsLoading(true);
-      console.log('🔄 Firmalar yükleniyor...');
       const response = await companyAPI.getAll();
       if (response.data.success) {
         setCompanies(response.data.companies);
-        console.log('✅ Firmalar başarıyla yüklendi:', response.data.companies.length);
       } else {
         console.error('❌ API hatası:', response.data.message);
       }
@@ -86,10 +84,8 @@ const CompanyIdentification: React.FC = () => {
 
   const handleSubmitAdd = async () => {
     try {
-      console.log('🔄 Yeni firma ekleniyor:', formData);
       const response = await companyAPI.create(formData);
       if (response.data.success) {
-        console.log('✅ Firma başarıyla eklendi');
         setShowAddPopup(false);
         loadCompanies();
       } else {
@@ -106,13 +102,11 @@ const CompanyIdentification: React.FC = () => {
   const handleSubmitEdit = async () => {
     try {
       if (!selectedCompany) return;
-      console.log('🔄 Firma güncelleniyor:', selectedCompany.vkn, formData);
       const response = await companyAPI.update(selectedCompany.vkn, {
         firmName: formData.firmName,
         firmMail: formData.firmMail
       });
       if (response.data.success) {
-        console.log('✅ Firma başarıyla güncellendi');
         setShowEditPopup(false);
         loadCompanies();
       } else {
@@ -129,10 +123,8 @@ const CompanyIdentification: React.FC = () => {
   const handleConfirmDelete = async () => {
     try {
       if (!selectedCompany) return;
-      console.log('🔄 Firma siliniyor:', selectedCompany.vkn);
       const response = await companyAPI.delete(selectedCompany.vkn);
       if (response.data.success) {
-        console.log('✅ Firma başarıyla silindi');
         setShowDeletePopup(false);
         loadCompanies();
       } else {

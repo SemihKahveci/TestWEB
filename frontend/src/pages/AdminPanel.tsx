@@ -106,18 +106,12 @@ const AdminPanel: React.FC = () => {
 
   const loadData = async () => {
     try {
-      console.log('🔄 Veri yükleme başladı...');
       setIsLoading(true);
       
-      console.log('📡 API çağrısı yapılıyor...');
       const response = await evaluationAPI.getAll();
       
-      console.log('📥 API yanıtı alındı:', response);
-      console.log('📊 Response data:', response.data);
       
       if (response.data.success) {
-        console.log('✅ API başarılı, veriler:', response.data.results);
-        console.log('📈 Veri sayısı:', response.data.results?.length || 0);
         // HTML'deki gibi gruplama uygula
         const groupedResults = groupByEmail(response.data.results);
         setResults(groupedResults);
@@ -131,7 +125,6 @@ const AdminPanel: React.FC = () => {
       console.error('💥 Hata detayı:', error.response?.data);
       console.error('💥 Hata status:', error.response?.status);
     } finally {
-      console.log('🏁 Veri yükleme tamamlandı');
       setIsLoading(false);
     }
   };
@@ -271,9 +264,6 @@ const AdminPanel: React.FC = () => {
       const statusOrderA = getStatusOrder(a.status);
       const statusOrderB = getStatusOrder(b.status);
       
-      // Debug için console.log (test sonrası kaldırılacak)
-      // console.log('Sıralama:', {
-      //   statusA: a.status,
       //   orderA: statusOrderA,
       //   statusB: b.status,
       //   orderB: statusOrderB
@@ -301,7 +291,6 @@ const AdminPanel: React.FC = () => {
   };
 
   const handleView = async (code: string) => {
-    console.log('Cevapları Görüntüle:', code);
     
     try {
       // Backend'den cevapları çek
@@ -331,7 +320,6 @@ const AdminPanel: React.FC = () => {
   };
 
   const handlePDF = (code: string) => {
-    console.log('PDF İndir:', code);
     
     // Önce ana results'ta ara
     let existingData = results.find(item => item.code === code);
@@ -358,7 +346,6 @@ const AdminPanel: React.FC = () => {
   };
 
   const handleExcel = async (code: string) => {
-    console.log('Excel İndir:', code);
     try {
       const response = await fetch(`${API_BASE_URL}/api/admin/export-excel/${code}`, {
         method: 'GET',
@@ -404,7 +391,6 @@ const AdminPanel: React.FC = () => {
   };
 
   const handleDelete = async (code: string) => {
-    console.log('Sil:', code);
     
     // Önce ana results'ta ara
     let existingData = results.find(item => item.code === code);
@@ -462,7 +448,6 @@ const AdminPanel: React.FC = () => {
   };
 
   const handleViewAnswers = (result: UserResult) => {
-    console.log('Cevapları Görüntüle:', result.code);
     // Cevaplar popup'ını aç
   };
 

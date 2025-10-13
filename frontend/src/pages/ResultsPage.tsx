@@ -59,7 +59,6 @@ const ResultsPage: React.FC = () => {
   const loadData = async () => {
     try {
       setIsLoading(true);
-      console.log('🔄 Results sayfası verileri yükleniyor...');
       
       const response = await fetch(`${API_BASE_URL}/api/user-results`, {
         headers: {
@@ -72,12 +71,10 @@ const ResultsPage: React.FC = () => {
       }
       
       const data = await response.json();
-      console.log('✅ Results API yanıtı:', data);
       
       if (data.success && data.results) {
         // Sadece "Tamamlandı" olan sonuçları filtrele
         const completedResults = data.results.filter((result: any) => result.status === 'Tamamlandı');
-        console.log('📊 Tamamlanan sonuçlar:', completedResults);
         
         // HTML'deki gibi gruplama uygula
         const groupedResults = groupByEmail(completedResults);
@@ -228,7 +225,6 @@ const ResultsPage: React.FC = () => {
   // Filtreleme fonksiyonu
   const applyFilters = () => {
     try {
-      console.log('Filtreler:', filters);
 
       // Tarih kontrolü
       if (filters.startDate && filters.endDate) {
@@ -277,7 +273,6 @@ const ResultsPage: React.FC = () => {
       const filteredItems = results.filter(item => {
         try {
           if (!item || !item.name) {
-            console.log('Name özelliği eksik:', item);
             return false;
           }
 
@@ -349,7 +344,6 @@ const ResultsPage: React.FC = () => {
       setFilteredResults(groupedData);
       setCurrentPage(1);
 
-      console.log('Filtrelenmiş veri sayısı:', groupedData.length);
       setShowFilterPopup(false);
     } catch (error) {
       console.error('Filtreleme hatası:', error);
@@ -440,7 +434,6 @@ const ResultsPage: React.FC = () => {
       // Excel dosyasını indir
       XLSX.writeFile(workbook, fileName);
 
-      console.log(`Excel dosyası indirildi. Toplam ${dataToExport.length} sonuç eklendi.`);
     } catch (error) {
       console.error('Excel indirme hatası:', error);
       alert('Excel dosyası indirilirken bir hata oluştu!');
