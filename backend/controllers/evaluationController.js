@@ -5,6 +5,7 @@ const path = require('path');
 const mongoose = require('mongoose');
 const UserCode = require('../models/userCode');
 const Game = require('../models/game');
+const { Document, Packer, Paragraph, TextRun, HeadingLevel, AlignmentType, Footer, PageNumber } = require('docx');
 
 const evaluationController = {
     async getEvaluationById(req, res) {
@@ -86,6 +87,72 @@ const evaluationController = {
         } catch (error) {
             console.error('PDF oluşturma hatası:', error);
             res.status(500).json({ message: 'PDF oluşturulurken bir hata oluştu' });
+        }
+    },
+
+    async generateWord(req, res) {
+        try {
+            const { userCode, selectedOptions } = req.body;
+          
+            // Seçenekleri kontrol et
+            const options = {
+                generalEvaluation: selectedOptions.generalEvaluation === true || selectedOptions.generalEvaluation === 'true',
+                strengths: selectedOptions.strengths === true || selectedOptions.strengths === 'true',
+                development: selectedOptions.development === true || selectedOptions.development === 'true',
+                interviewQuestions: selectedOptions.interviewQuestions === true || selectedOptions.interviewQuestions === 'true',
+                whyTheseQuestions: selectedOptions.whyTheseQuestions === true || selectedOptions.whyTheseQuestions === 'true',
+                developmentSuggestions: selectedOptions.developmentSuggestions === true || selectedOptions.developmentSuggestions === 'true'
+            };
+
+            // Tüm oyunları bul (2 gezegen için 2 farklı Game kaydı olabilir)
+            const games = await Game.find({ playerCode: userCode });
+            if (!games || games.length === 0) {
+                // Game bulunamazsa EvaluationResult koleksiyonunda ara
+                const evaluation = await EvaluationResult.findOne({ ID: userCode });
+                if (!evaluation) {
+                    return res.status(404).json({ message: 'Değerlendirme bulunamadı' });
+                }
+                return generateAndSendWord(evaluation, options, res, userCode);
+            }
+            
+            // Tüm oyunlardaki evaluationResult'ları birleştir
+            let allEvaluationResults = [];
+            for (const game of games) {
+                if (game.evaluationResult) {
+                    // Eğer evaluationResult bir dizi ise (çoklu rapor)
+                    if (Array.isArray(game.evaluationResult)) {
+                        allEvaluationResults = allEvaluationResults.concat(game.evaluationResult);
+                    } else {
+                        // Eğer tek rapor ise diziye çevir
+                        allEvaluationResults.push(game.evaluationResult);
+                    }
+                }
+            }
+
+            // Eğer hiç evaluationResult bulunamadıysa, EvaluationResult koleksiyonunda ara
+            if (allEvaluationResults.length === 0) {
+                const evaluation = await EvaluationResult.findOne({ ID: userCode });
+                if (!evaluation) {
+                    return res.status(404).json({ message: 'Değerlendirme bulunamadı' });
+                }
+                return generateAndSendWord(evaluation, options, res, userCode);
+            }
+
+            // Benzersiz raporları filtrele (aynı ID'li raporları tekrarlama)
+            const uniqueResults = [];
+            const seenIds = new Set();
+            
+            for (const result of allEvaluationResults) {
+                if (result.data && result.data.ID && !seenIds.has(result.data.ID)) {
+                    seenIds.add(result.data.ID);
+                    uniqueResults.push(result);
+                }
+            }
+
+            return generateAndSendWord(uniqueResults, options, res, userCode);
+        } catch (error) {
+            console.error('Word oluşturma hatası:', error);
+            res.status(500).json({ message: 'Word oluşturulurken bir hata oluştu' });
         }
     },
 
@@ -661,6 +728,411 @@ async function generateAndSendPreview(evaluation, options, res, userCode) {
     res.setHeader('Content-Type', 'application/pdf');
     res.setHeader('Content-Disposition', `inline; filename=evaluation_${evaluation[0].data.ID}.pdf`);
     res.send(file);
+}
+
+async function generateAndSendWord(evaluation, options, res, userCode) {
+    try {
+        const sortedEvaluation = await sortReportsByPlanetOrder(evaluation, userCode);
+        const userInfo = await getUserInfo(userCode);
+        const formattedDate = userInfo.completionDate.toLocaleDateString('tr-TR', {
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric'
+        });
+
+        // Footer oluştur
+        const footer = new Footer({
+            children: [
+                new Paragraph({
+                    children: [
+                        new TextRun({
+                            text: "ANDRON Game",
+                            bold: true,
+                            size: 14,
+                            color: "2c3e50"
+                        })
+                    ],
+                    alignment: AlignmentType.RIGHT,
+                    spacing: { after: 100 }
+                }),
+                new Paragraph({
+                    children: [
+                        new TextRun({
+                            text: "GİZLİ © ANDRON Game 2025, İzinsiz paylaşılamaz.    ",
+                            size: 12,
+                            color: "666666"
+                        }),
+                        new TextRun({
+                            children: [PageNumber.CURRENT],
+                            size: 12,
+                            color: "666666"
+                        }),
+                        new TextRun({
+                            text: " / ",
+                            size: 12,
+                            color: "666666"
+                        }),
+                        new TextRun({
+                            children: [PageNumber.TOTAL_PAGES],
+                            size: 12,
+                            color: "666666"
+                        })
+                    ],
+                    alignment: AlignmentType.RIGHT
+                })
+            ]
+        });
+
+        // Word belgesi oluştur - İlk section kapak sayfası olacak
+        const doc = new Document({
+            sections: [{
+                properties: {},
+                children: [
+                    // Boşluk için üst kısım
+                    new Paragraph({
+                        children: [new TextRun({ text: "" })],
+                        spacing: { before: 2000, after: 0 }
+                    }),
+                    // Ana başlık - ortada
+                    new Paragraph({
+                        children: [
+                            new TextRun({
+                                text: "DEĞERLENDİRME",
+                                bold: true,
+                                size: 64,
+                                color: "CC0000"
+                            })
+                        ],
+                        alignment: AlignmentType.CENTER,
+                        spacing: { before: 0, after: 0 }
+                    }),
+                    new Paragraph({
+                        children: [
+                            new TextRun({
+                                text: "RAPORU",
+                                bold: true,
+                                size: 64,
+                                color: "CC0000"
+                            })
+                        ],
+                        alignment: AlignmentType.CENTER,
+                        spacing: { before: 0, after: 400 }
+                    }),
+                    // Çizgi için boşluk
+                    new Paragraph({
+                        children: [new TextRun({ text: "" })],
+                        spacing: { before: 0, after: 200 }
+                    }),
+                    // İsim ve tarih - sağa yaslı
+                    new Paragraph({
+                        children: [
+                            new TextRun({
+                                text: userInfo.name,
+                                bold: true,
+                                size: 18,
+                                color: "2c3e50"
+                            })
+                        ],
+                        alignment: AlignmentType.RIGHT,
+                        spacing: { before: 0, after: 100 }
+                    }),
+                    new Paragraph({
+                        children: [
+                            new TextRun({
+                                text: formattedDate,
+                                size: 16,
+                                color: "2c3e50"
+                            })
+                        ],
+                        alignment: AlignmentType.RIGHT,
+                        spacing: { before: 0, after: 0 }
+                    })
+                ],
+                footers: {
+                    default: footer
+                }
+            }]
+        });
+
+        // Her yetkinlik için bölüm
+        for (let i = 0; i < sortedEvaluation.length; i++) {
+            const report = sortedEvaluation[i];
+            const data = report.data;
+            const reportTitle = getReportTitle(report.type);
+            const competencyName = reportTitle.replace(' Raporu', '');
+
+            // Yetkinlik başlığı
+            doc.addSection({
+                properties: {},
+                children: [
+                    new Paragraph({
+                        children: [
+                            new TextRun({
+                                text: competencyName,
+                                bold: true,
+                                size: 48,
+                                color: "283C9B"
+                            })
+                        ],
+                        alignment: AlignmentType.RIGHT,
+                        spacing: { before: 400, after: 600 }
+                    })
+                ],
+                footers: {
+                    default: footer
+                }
+            });
+
+            // Skor hesaplama
+            let score = 0;
+            const games = await Game.find({ playerCode: userCode });
+            
+            switch (report.type) {
+                case 'MO':
+                    const venusGame = games.find(g => g.section === '0' || g.section === 0);
+                    score = venusGame ? venusGame.customerFocusScore : 0;
+                    break;
+                case 'BY':
+                    const venusGame2 = games.find(g => g.section === '0' || g.section === 0);
+                    score = venusGame2 ? venusGame2.uncertaintyScore : 0;
+                    break;
+                case 'IE':
+                    const titanGame = games.find(g => g.section === '1' || g.section === 1);
+                    score = titanGame ? titanGame.ieScore : 0;
+                    break;
+                case 'IDIK':
+                    const titanGame2 = games.find(g => g.section === '1' || g.section === 1);
+                    score = titanGame2 ? titanGame2.idikScore : 0;
+                    break;
+                default:
+                    score = 0;
+            }
+            
+            score = (!score || score === '-') ? 0 : Math.round(parseFloat(score));
+
+            // Skor gösterimi
+            doc.addSection({
+                properties: {},
+                children: [
+                    new Paragraph({
+                        children: [
+                            new TextRun({
+                                text: `${competencyName} - Skor: ${score}`,
+                                bold: true,
+                                size: 20
+                            })
+                        ],
+                        spacing: { after: 300 }
+                    })
+                ],
+                footers: {
+                    default: footer
+                }
+            });
+
+            // İçerikler
+            if (options.generalEvaluation && data['Genel Değerlendirme']) {
+                doc.addSection({
+                    properties: {},
+                    children: [
+                        new Paragraph({
+                            children: [
+                                new TextRun({
+                                    text: "Genel Değerlendirme",
+                                    bold: true,
+                                    size: 24
+                                })
+                            ],
+                            spacing: { after: 200 }
+                        }),
+                        new Paragraph({
+                            children: [
+                                new TextRun({
+                                    text: data['Genel Değerlendirme'],
+                                    size: 20
+                                })
+                            ],
+                            spacing: { after: 400 }
+                        })
+                    ],
+                    footers: {
+                        default: footer
+                    }
+                });
+            }
+
+            if (options.strengths && data['Güçlü Yönler']) {
+                doc.addSection({
+                    properties: {},
+                    children: [
+                        new Paragraph({
+                            children: [
+                                new TextRun({
+                                    text: "Güçlü Yönler",
+                                    bold: true,
+                                    size: 24
+                                })
+                            ],
+                            spacing: { after: 200 }
+                        }),
+                        new Paragraph({
+                            children: [
+                                new TextRun({
+                                    text: data['Güçlü Yönler'],
+                                    size: 20
+                                })
+                            ],
+                            spacing: { after: 400 }
+                        })
+                    ],
+                    footers: {
+                        default: footer
+                    }
+                });
+            }
+
+            if (options.strengths && data['Gelişim Alanları']) {
+                doc.addSection({
+                    properties: {},
+                    children: [
+                        new Paragraph({
+                            children: [
+                                new TextRun({
+                                    text: "Gelişim Alanları",
+                                    bold: true,
+                                    size: 24
+                                })
+                            ],
+                            spacing: { after: 200 }
+                        }),
+                        new Paragraph({
+                            children: [
+                                new TextRun({
+                                    text: data['Gelişim Alanları'],
+                                    size: 20
+                                })
+                            ],
+                            spacing: { after: 400 }
+                        })
+                    ],
+                    footers: {
+                        default: footer
+                    }
+                });
+            }
+
+            if (options.interviewQuestions && data['Mülakat Soruları']) {
+                doc.addSection({
+                    properties: {},
+                    children: [
+                        new Paragraph({
+                            children: [
+                                new TextRun({
+                                    text: "Mülakat Soruları",
+                                    bold: true,
+                                    size: 24
+                                })
+                            ],
+                            spacing: { after: 200 }
+                        }),
+                        new Paragraph({
+                            children: [
+                                new TextRun({
+                                    text: data['Mülakat Soruları'],
+                                    size: 20
+                                })
+                            ],
+                            spacing: { after: 400 }
+                        })
+                    ],
+                    footers: {
+                        default: footer
+                    }
+                });
+            }
+
+            if (options.whyTheseQuestions && data['Neden Bu Sorular?']) {
+                doc.addSection({
+                    properties: {},
+                    children: [
+                        new Paragraph({
+                            children: [
+                                new TextRun({
+                                    text: "Neden Bu Sorular?",
+                                    bold: true,
+                                    size: 24
+                                })
+                            ],
+                            spacing: { after: 200 }
+                        }),
+                        new Paragraph({
+                            children: [
+                                new TextRun({
+                                    text: data['Neden Bu Sorular?'],
+                                    size: 20
+                                })
+                            ],
+                            spacing: { after: 400 }
+                        })
+                    ],
+                    footers: {
+                        default: footer
+                    }
+                });
+            }
+
+            if (options.developmentSuggestions) {
+                const suggestionKeys = [
+                    { key: 'Gelişim Önerileri -1', title: 'Gelişim Önerisi 1' },
+                    { key: 'Gelişim Önerileri -2', title: 'Gelişim Önerisi 2' },
+                    { key: 'Gelişim Önerileri - 3', title: 'Gelişim Önerisi 3' },
+                    { key: 'Gelişim Önerileri -4', title: 'Gelişim Önerisi 4' }
+                ];
+                const validSuggestions = suggestionKeys.filter(item => data[item.key]);
+
+                for (const item of validSuggestions) {
+                    doc.addSection({
+                        properties: {},
+                        children: [
+                            new Paragraph({
+                                children: [
+                                    new TextRun({
+                                        text: item.title,
+                                        bold: true,
+                                        size: 24
+                                    })
+                                ],
+                                spacing: { after: 200 }
+                            }),
+                            new Paragraph({
+                                children: [
+                                    new TextRun({
+                                        text: data[item.key],
+                                        size: 20
+                                    })
+                                ],
+                                spacing: { after: 400 }
+                            })
+                        ],
+                        footers: {
+                            default: footer
+                        }
+                    });
+                }
+            }
+        }
+
+        // Word dosyasını oluştur ve gönder
+        const buffer = await Packer.toBuffer(doc);
+        
+        res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document');
+        res.setHeader('Content-Disposition', `attachment; filename=evaluation_${evaluation[0].data.ID}.docx`);
+        res.send(buffer);
+        
+    } catch (error) {
+        console.error('Word oluşturma hatası:', error);
+        res.status(500).json({ message: 'Word oluşturulurken bir hata oluştu' });
+    }
 }
 
 module.exports = evaluationController; 

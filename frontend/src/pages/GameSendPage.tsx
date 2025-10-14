@@ -96,7 +96,6 @@ const GameSendPage: React.FC = () => {
 
   const loadRemainingCredits = async () => {
     try {
-      console.log('🔄 Kalan kredi yükleniyor...');
       
       // Sadece credit API'den veri al (cache'li ve hızlı)
       const creditResponse = await creditAPI.getUserCredits();
@@ -104,7 +103,6 @@ const GameSendPage: React.FC = () => {
       if (creditResponse.data.success) {
         const { totalCredits, usedCredits, remainingCredits } = creditResponse.data.credit;
         setRemainingCredits(remainingCredits);
-        console.log(`✅ Kalan kredi: ${remainingCredits} (Toplam: ${totalCredits}, Kullanılan: ${usedCredits})`);
       } else {
         setRemainingCredits(0);
       }
@@ -609,7 +607,7 @@ const GameSendPage: React.FC = () => {
           border: '1px solid #BBDEFB',
           borderRadius: '8px',
           padding: '16px 20px',
-          marginBottom: '20px',
+          marginBottom: '12px',
           display: 'flex',
           alignItems: 'center',
           gap: '12px',
@@ -635,6 +633,40 @@ const GameSendPage: React.FC = () => {
           }}>
             <strong>Kredi Bilgisi:</strong> Kişi ve gezegen başına 1 kredi düşülür. 
             Örnek: 2 kişiye 2 gezegen gönderilirse 4 kredi düşer.
+          </div>
+        </div>
+
+        {/* Uyarı Notu */}
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: '12px',
+          padding: '12px 16px',
+          background: 'rgba(255, 193, 7, 0.1)',
+          border: '1px solid rgba(255, 193, 7, 0.3)',
+          borderRadius: '6px',
+          marginBottom: '20px',
+          boxShadow: '0 2px 8px rgba(0,0,0,0.05)'
+        }}>
+          <div style={{
+            width: '20px',
+            height: '20px',
+            borderRadius: '50%',
+            background: '#FFC107',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            flexShrink: 0
+          }}>
+            <i className="fas fa-exclamation-triangle" style={{ color: 'white', fontSize: '10px' }}></i>
+          </div>
+          <div style={{
+            color: '#856404',
+            fontSize: '13px',
+            fontWeight: 500,
+            lineHeight: '1.4'
+          }}>
+            <strong>Otomatik İade:</strong> Hiç başlanmayıp süresi dolan oyunların kredisi otomatik olarak iade edilir.
           </div>
         </div>
 

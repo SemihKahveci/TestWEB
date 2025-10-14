@@ -390,6 +390,57 @@ const AdminPanel: React.FC = () => {
     }
   };
 
+  const handleWord = async (code: string) => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/evaluation/generateWord`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        },
+        body: JSON.stringify({
+          userCode: code,
+          selectedOptions: pdfOptions // PDF ile aynı seçenekleri kullan
+        })
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Word indirme işlemi başarısız oldu');
+      }
+      
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      
+      // Kullanıcı bilgilerini al
+      const userResponse = await fetch(`${API_BASE_URL}/api/user-results?code=${code}`, {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        }
+      });
+      const userData = await userResponse.json();
+      
+      let fileName = `ANDRON_DeğerlendirmeRaporu_${code}.docx`;
+      if (userData.success && userData.results && userData.results.length > 0) {
+        const user = userData.results[0];
+        const date = user.completionDate ? new Date(user.completionDate) : new Date();
+        const formattedDate = `${date.getDate().toString().padStart(2, '0')}${(date.getMonth() + 1).toString().padStart(2, '0')}${date.getFullYear()}`;
+        fileName = `ANDRON_DeğerlendirmeRaporu_${user.name.replace(/\s+/g, '_')}_${formattedDate}.docx`;
+      }
+      
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = fileName;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+    } catch (error) {
+      console.error('Word indirme hatası:', error);
+      alert('Word indirilirken bir hata oluştu: ' + error.message);
+    }
+  };
+
   const handleDelete = async (code: string) => {
     
     // Önce ana results'ta ara
@@ -1044,6 +1095,23 @@ const AdminPanel: React.FC = () => {
                         <i className="fas fa-file-excel"></i>
                       </div>
                       <div
+                        onClick={() => result.status === 'Tamamlandı' ? handleWord(result.code) : null}
+                        style={{
+                          cursor: result.status === 'Tamamlandı' ? 'pointer' : 'not-allowed',
+                          color: result.status === 'Tamamlandı' ? '#2B579A' : '#ADB5BD',
+                          opacity: result.status === 'Tamamlandı' ? 1 : 0.5,
+                          fontSize: '16px',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          width: '24px',
+                          height: '24px'
+                        }}
+                        title="Word İndir"
+                      >
+                        <i className="fas fa-file-word"></i>
+                      </div>
+                      <div
                         onClick={() => handleDelete(result.code)}
                         style={{
                           cursor: 'pointer',
@@ -1207,6 +1275,23 @@ const AdminPanel: React.FC = () => {
                                 title="Excel İndir"
                               >
                                 <i className="fas fa-file-excel"></i>
+                              </div>
+                              <div
+                                onClick={() => groupItem.status === 'Tamamlandı' ? handleWord(groupItem.code) : null}
+                                style={{
+                                  cursor: groupItem.status === 'Tamamlandı' ? 'pointer' : 'not-allowed',
+                                  color: groupItem.status === 'Tamamlandı' ? '#2B579A' : '#ADB5BD',
+                                  opacity: groupItem.status === 'Tamamlandı' ? 1 : 0.5,
+                                  fontSize: '16px',
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  justifyContent: 'center',
+                                  width: '24px',
+                                  height: '24px'
+                                }}
+                                title="Word İndir"
+                              >
+                                <i className="fas fa-file-word"></i>
                               </div>
                               <div
                                 onClick={() => handleDelete(groupItem.code)}

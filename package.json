@@ -4,6 +4,7 @@
     "concurrently": "^8.2.2",
     "cors": "^2.8.5",
     "csv-parser": "^3.2.0",
+    "docx": "^9.5.1",
     "dotenv": "^16.4.7",
     "express": "^4.21.2",
     "html-pdf-node": "^1.0.8",
