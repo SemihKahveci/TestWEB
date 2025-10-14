@@ -5,7 +5,7 @@ const path = require('path');
 const mongoose = require('mongoose');
 const UserCode = require('../models/userCode');
 const Game = require('../models/game');
-const { Document, Packer, Paragraph, TextRun, HeadingLevel, AlignmentType, Footer, PageNumber } = require('docx');
+const { Document, Packer, Paragraph, TextRun, HeadingLevel, AlignmentType, Footer, PageNumber, BorderStyle } = require('docx');
 
 const evaluationController = {
     async getEvaluationById(req, res) {
@@ -784,44 +784,82 @@ async function generateAndSendWord(evaluation, options, res, userCode) {
         });
 
         // Word belgesi oluştur - İlk section kapak sayfası olacak
+        // Dinamik font boyutu hesaplama - sayfanın solundan sağına kadar uzanacak şekilde
+        const pageWidth = 595; // A4 sayfa genişliği (pt)
+        const margin = 100; // Sol ve sağ margin
+        const availableWidth = pageWidth - margin;
+        const titleFontSize = Math.floor(availableWidth / 6); // 8'den 6'ya düşürüldü (daha büyük font)
+        
         const doc = new Document({
             sections: [{
                 properties: {},
                 children: [
-                    // Boşluk için üst kısım
+                    // Boşluk için üst kısım - sayfa ortasına getirmek için
                     new Paragraph({
                         children: [new TextRun({ text: "" })],
-                        spacing: { before: 2000, after: 0 }
+                        spacing: { before: 3500, after: 0 }
                     }),
-                    // Ana başlık - ortada
+                    // Ana başlık - sağa yaslı, iki satır, gölgeli ve koyulaşan harfler
+                    // DEĞERLENDİRME başlığı
                     new Paragraph({
-                        children: [
-                            new TextRun({
-                                text: "DEĞERLENDİRME",
+                        children: "DEĞERLENDİRME".split('').map((char, index) => {
+                            const totalChars = "DEĞERLENDİRME".length;
+                            const intensity = index / (totalChars - 1);
+                            const r = Math.round(204 + (102 - 204) * intensity); // CC0000'dan 660000'a
+                            const g = Math.round(0 + (0 - 0) * intensity);
+                            const b = Math.round(0 + (0 - 0) * intensity);
+                            const color = `#${r.toString(16).padStart(2, '0')}${g.toString(16).padStart(2, '0')}${b.toString(16).padStart(2, '0')}`;
+                            return new TextRun({
+                                text: char,
                                 bold: true,
-                                size: 64,
-                                color: "CC0000"
-                            })
-                        ],
-                        alignment: AlignmentType.CENTER,
+                                size: titleFontSize,
+                                color: color,
+                                font: "Cambria",
+                                shading: {
+                                    fill: "auto",
+                                    type: "clear"
+                                }
+                            });
+                        }),
+                        alignment: AlignmentType.RIGHT,
                         spacing: { before: 0, after: 0 }
                     }),
+                    // RAPORU başlığı
                     new Paragraph({
-                        children: [
-                            new TextRun({
-                                text: "RAPORU",
+                        children: "RAPORU".split('').map((char, index) => {
+                            const totalChars = "RAPORU".length;
+                            const intensity = index / (totalChars - 1);
+                            const r = Math.round(204 + (102 - 204) * intensity); // CC0000'dan 660000'a
+                            const g = Math.round(0 + (0 - 0) * intensity);
+                            const b = Math.round(0 + (0 - 0) * intensity);
+                            const color = `#${r.toString(16).padStart(2, '0')}${g.toString(16).padStart(2, '0')}${b.toString(16).padStart(2, '0')}`;
+                            return new TextRun({
+                                text: char,
                                 bold: true,
-                                size: 64,
-                                color: "CC0000"
-                            })
-                        ],
-                        alignment: AlignmentType.CENTER,
-                        spacing: { before: 0, after: 400 }
+                                size: titleFontSize,
+                                color: color,
+                                font: "Cambria",
+                                shading: {
+                                    fill: "auto",
+                                    type: "clear"
+                                }
+                            });
+                        }),
+                        alignment: AlignmentType.RIGHT,
+                        spacing: { before: 0, after: 300 }
                     }),
-                    // Çizgi için boşluk
+                    // Çizgi - yatay çizgi
                     new Paragraph({
                         children: [new TextRun({ text: "" })],
-                        spacing: { before: 0, after: 200 }
+                        spacing: { before: 0, after: 200 },
+                        border: {
+                            bottom: {
+                                color: "000000",
+                                space: 1,
+                                style: BorderStyle.SINGLE,
+                                size: 6
+                            }
+                        }
                     }),
                     // İsim ve tarih - sağa yaslı
                     new Paragraph({
@@ -829,19 +867,21 @@ async function generateAndSendWord(evaluation, options, res, userCode) {
                             new TextRun({
                                 text: userInfo.name,
                                 bold: true,
-                                size: 18,
-                                color: "2c3e50"
+                                size: 24,
+                                color: "2c3e50",
+                                font: "Cambria"
                             })
                         ],
                         alignment: AlignmentType.RIGHT,
-                        spacing: { before: 0, after: 100 }
+                        spacing: { before: 200, after: 100 }
                     }),
                     new Paragraph({
                         children: [
                             new TextRun({
                                 text: formattedDate,
-                                size: 16,
-                                color: "2c3e50"
+                                size: 22,
+                                color: "2c3e50",
+                                font: "Cambria"
                             })
                         ],
                         alignment: AlignmentType.RIGHT,
