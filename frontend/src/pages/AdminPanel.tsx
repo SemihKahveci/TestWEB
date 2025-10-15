@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { evaluationAPI, creditAPI } from '../services/api';
+import { useAuth } from '../contexts/AuthContext';
 
 // Dinamik API base URL - hem local hem live'da çalışır
 const API_BASE_URL = (import.meta as any).env?.DEV 
@@ -44,6 +45,7 @@ interface PDFOptions {
 }
 
 const AdminPanel: React.FC = () => {
+  const { user } = useAuth();
   const [results, setResults] = useState<UserResult[]>([]);
   const [filteredResults, setFilteredResults] = useState<UserResult[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -70,6 +72,9 @@ const AdminPanel: React.FC = () => {
   });
   
   const hasLoaded = useRef(false);
+  
+  // Super admin kontrolü
+  const isSuperAdmin = user?.role === 'superadmin';
 
   // Responsive kontrolü
   useEffect(() => {
@@ -1044,22 +1049,24 @@ const AdminPanel: React.FC = () => {
                       justifyContent: 'center',
                       alignItems: 'center'
                     }}>
-                      <div
-                        onClick={() => handleView(result.code)}
-                        style={{
-                          cursor: 'pointer',
-                          color: '#17A2B8',
-                          fontSize: '16px',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          width: '24px',
-                          height: '24px'
-                        }}
-                        title="Cevapları Görüntüle"
-                      >
-                        <i className="fas fa-info-circle"></i>
-                      </div>
+                      {isSuperAdmin && (
+                        <div
+                          onClick={() => handleView(result.code)}
+                          style={{
+                            cursor: 'pointer',
+                            color: '#17A2B8',
+                            fontSize: '16px',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            width: '24px',
+                            height: '24px'
+                          }}
+                          title="Cevapları Görüntüle"
+                        >
+                          <i className="fas fa-info-circle"></i>
+                        </div>
+                      )}
                       <div
                         onClick={() => result.status === 'Tamamlandı' ? handlePDF(result.code) : null}
                         style={{
@@ -1077,40 +1084,44 @@ const AdminPanel: React.FC = () => {
                       >
                         <i className="fas fa-file-pdf"></i>
                       </div>
-                      <div
-                        onClick={() => result.status === 'Tamamlandı' ? handleExcel(result.code) : null}
-                        style={{
-                          cursor: result.status === 'Tamamlandı' ? 'pointer' : 'not-allowed',
-                          color: result.status === 'Tamamlandı' ? '#1D6F42' : '#ADB5BD',
-                          opacity: result.status === 'Tamamlandı' ? 1 : 0.5,
-                          fontSize: '16px',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          width: '24px',
-                          height: '24px'
-                        }}
-                        title="Excel İndir"
-                      >
-                        <i className="fas fa-file-excel"></i>
-                      </div>
-                      <div
-                        onClick={() => result.status === 'Tamamlandı' ? handleWord(result.code) : null}
-                        style={{
-                          cursor: result.status === 'Tamamlandı' ? 'pointer' : 'not-allowed',
-                          color: result.status === 'Tamamlandı' ? '#2B579A' : '#ADB5BD',
-                          opacity: result.status === 'Tamamlandı' ? 1 : 0.5,
-                          fontSize: '16px',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          width: '24px',
-                          height: '24px'
-                        }}
-                        title="Word İndir"
-                      >
-                        <i className="fas fa-file-word"></i>
-                      </div>
+                      {isSuperAdmin && (
+                        <div
+                          onClick={() => result.status === 'Tamamlandı' ? handleExcel(result.code) : null}
+                          style={{
+                            cursor: result.status === 'Tamamlandı' ? 'pointer' : 'not-allowed',
+                            color: result.status === 'Tamamlandı' ? '#1D6F42' : '#ADB5BD',
+                            opacity: result.status === 'Tamamlandı' ? 1 : 0.5,
+                            fontSize: '16px',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            width: '24px',
+                            height: '24px'
+                          }}
+                          title="Excel İndir"
+                        >
+                          <i className="fas fa-file-excel"></i>
+                        </div>
+                      )}
+                      {isSuperAdmin && (
+                        <div
+                          onClick={() => result.status === 'Tamamlandı' ? handleWord(result.code) : null}
+                          style={{
+                            cursor: result.status === 'Tamamlandı' ? 'pointer' : 'not-allowed',
+                            color: result.status === 'Tamamlandı' ? '#2B579A' : '#ADB5BD',
+                            opacity: result.status === 'Tamamlandı' ? 1 : 0.5,
+                            fontSize: '16px',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            width: '24px',
+                            height: '24px'
+                          }}
+                          title="Word İndir"
+                        >
+                          <i className="fas fa-file-word"></i>
+                        </div>
+                      )}
                       <div
                         onClick={() => handleDelete(result.code)}
                         style={{
@@ -1226,22 +1237,24 @@ const AdminPanel: React.FC = () => {
                               justifyContent: 'center',
                               alignItems: 'center'
                             }}>
-                              <div
-                                onClick={() => handleView(groupItem.code)}
-                                style={{
-                                  cursor: 'pointer',
-                                  color: '#17A2B8',
-                                  fontSize: '16px',
-                                  display: 'flex',
-                                  alignItems: 'center',
-                                  justifyContent: 'center',
-                                  width: '24px',
-                                  height: '24px'
-                                }}
-                                title="Cevapları Görüntüle"
-                              >
-                                <i className="fas fa-info-circle"></i>
-                              </div>
+                              {isSuperAdmin && (
+                                <div
+                                  onClick={() => handleView(groupItem.code)}
+                                  style={{
+                                    cursor: 'pointer',
+                                    color: '#17A2B8',
+                                    fontSize: '16px',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    width: '24px',
+                                    height: '24px'
+                                  }}
+                                  title="Cevapları Görüntüle"
+                                >
+                                  <i className="fas fa-info-circle"></i>
+                                </div>
+                              )}
                               <div
                                 onClick={() => groupItem.status === 'Tamamlandı' ? handlePDF(groupItem.code) : null}
                                 style={{
@@ -1259,40 +1272,44 @@ const AdminPanel: React.FC = () => {
                               >
                                 <i className="fas fa-file-pdf"></i>
                               </div>
-                              <div
-                                onClick={() => groupItem.status === 'Tamamlandı' ? handleExcel(groupItem.code) : null}
-                                style={{
-                                  cursor: groupItem.status === 'Tamamlandı' ? 'pointer' : 'not-allowed',
-                                  color: groupItem.status === 'Tamamlandı' ? '#1D6F42' : '#ADB5BD',
-                                  opacity: groupItem.status === 'Tamamlandı' ? 1 : 0.5,
-                                  fontSize: '16px',
-                                  display: 'flex',
-                                  alignItems: 'center',
-                                  justifyContent: 'center',
-                                  width: '24px',
-                                  height: '24px'
-                                }}
-                                title="Excel İndir"
-                              >
-                                <i className="fas fa-file-excel"></i>
-                              </div>
-                              <div
-                                onClick={() => groupItem.status === 'Tamamlandı' ? handleWord(groupItem.code) : null}
-                                style={{
-                                  cursor: groupItem.status === 'Tamamlandı' ? 'pointer' : 'not-allowed',
-                                  color: groupItem.status === 'Tamamlandı' ? '#2B579A' : '#ADB5BD',
-                                  opacity: groupItem.status === 'Tamamlandı' ? 1 : 0.5,
-                                  fontSize: '16px',
-                                  display: 'flex',
-                                  alignItems: 'center',
-                                  justifyContent: 'center',
-                                  width: '24px',
-                                  height: '24px'
-                                }}
-                                title="Word İndir"
-                              >
-                                <i className="fas fa-file-word"></i>
-                              </div>
+                              {isSuperAdmin && (
+                                <div
+                                  onClick={() => groupItem.status === 'Tamamlandı' ? handleExcel(groupItem.code) : null}
+                                  style={{
+                                    cursor: groupItem.status === 'Tamamlandı' ? 'pointer' : 'not-allowed',
+                                    color: groupItem.status === 'Tamamlandı' ? '#1D6F42' : '#ADB5BD',
+                                    opacity: groupItem.status === 'Tamamlandı' ? 1 : 0.5,
+                                    fontSize: '16px',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    width: '24px',
+                                    height: '24px'
+                                  }}
+                                  title="Excel İndir"
+                                >
+                                  <i className="fas fa-file-excel"></i>
+                                </div>
+                              )}
+                              {isSuperAdmin && (
+                                <div
+                                  onClick={() => groupItem.status === 'Tamamlandı' ? handleWord(groupItem.code) : null}
+                                  style={{
+                                    cursor: groupItem.status === 'Tamamlandı' ? 'pointer' : 'not-allowed',
+                                    color: groupItem.status === 'Tamamlandı' ? '#2B579A' : '#ADB5BD',
+                                    opacity: groupItem.status === 'Tamamlandı' ? 1 : 0.5,
+                                    fontSize: '16px',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    width: '24px',
+                                    height: '24px'
+                                  }}
+                                  title="Word İndir"
+                                >
+                                  <i className="fas fa-file-word"></i>
+                                </div>
+                              )}
                               <div
                                 onClick={() => handleDelete(groupItem.code)}
                                 style={{
