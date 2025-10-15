@@ -748,7 +748,7 @@ async function generateAndSendWord(evaluation, options, res, userCode) {
                         new TextRun({
                             text: "ANDRON Game",
                             bold: true,
-                            size: 10, // PDF'deki gibi 10pt
+                            size: 10, 
                             color: "2c3e50"
                         })
                     ],
@@ -759,22 +759,22 @@ async function generateAndSendWord(evaluation, options, res, userCode) {
                     children: [
                         new TextRun({
                             text: "GİZLİ © ANDRON Game 2025, İzinsiz paylaşılamaz.    ",
-                            size: 10, // PDF'deki gibi 10pt
+                            size: 10, 
                             color: "666666"
                         }),
                         new TextRun({
                             children: [PageNumber.CURRENT],
-                            size: 10, // PDF'deki gibi 10pt
+                            size: 10, 
                             color: "666666"
                         }),
                         new TextRun({
                             text: " / ",
-                            size: 10, // PDF'deki gibi 10pt
+                            size: 10, 
                             color: "666666"
                         }),
                         new TextRun({
                             children: [PageNumber.TOTAL_PAGES],
-                            size: 10, // PDF'deki gibi 10pt
+                            size: 10, 
                             color: "666666"
                         })
                     ],
@@ -788,7 +788,7 @@ async function generateAndSendWord(evaluation, options, res, userCode) {
         const pageWidth = 595; // A4 sayfa genişliği (pt)
         const margin = 100; // Sol ve sağ margin
         const availableWidth = pageWidth - margin;
-        const titleFontSize = 64; // PDF'deki gibi sabit 64pt
+        const titleFontSize = 64; 
         
         const doc = new Document({
             sections: [{
@@ -867,10 +867,10 @@ async function generateAndSendWord(evaluation, options, res, userCode) {
                             new TextRun({
                                 text: userInfo.name,
                                 bold: true,
-                                size: 18, // PDF'deki gibi 18pt
+                                size: 24, 
                                 color: "2c3e50",
                                 font: "Cambria",
-                                italics: true // PDF'deki gibi italik
+                                italics: true 
                             })
                         ],
                         alignment: AlignmentType.RIGHT,
@@ -902,7 +902,7 @@ async function generateAndSendWord(evaluation, options, res, userCode) {
             const reportTitle = getReportTitle(report.type);
             const competencyName = reportTitle.replace(' Raporu', '');
 
-            // Skor hesaplama - PDF'deki gibi
+            // Skor hesaplama 
             let competencyScore = 0;
             const competencyGames = await Game.find({ playerCode: userCode });
             
@@ -950,9 +950,9 @@ async function generateAndSendWord(evaluation, options, res, userCode) {
                             return new TextRun({
                                 text: char,
                                 bold: true,
-                                size: 80, // PDF'deki gibi 80pt
+                                size: 100, 
                                 color: color,
-                                font: "Impact", // PDF'deki gibi Impact font
+                                font: "Impact",
                                 shading: {
                                     fill: "auto",
                                     type: "clear"
@@ -960,7 +960,7 @@ async function generateAndSendWord(evaluation, options, res, userCode) {
                             });
                         }),
                         alignment: AlignmentType.RIGHT, // Sağa yaslı
-                        spacing: { before: 5040, after: 800 }, // PDF'deki 180px padding (5040pt)
+                        spacing: { before: 5040, after: 800 }, 
                         tabStops: [
                             {
                                 type: "center",
@@ -1008,11 +1008,19 @@ async function generateAndSendWord(evaluation, options, res, userCode) {
                 doc.addSection({
                     properties: {},
                     children: [
-                        // Skor bar tablosu - PDF'deki gibi
+                        // Yetkinlik adı ve progress bar - yan yana (görünmez tablo)
                         new Table({
                             width: {
                                 size: 100,
                                 type: WidthType.PERCENTAGE,
+                            },
+                            borders: {
+                                top: { style: BorderStyle.NONE },
+                                bottom: { style: BorderStyle.NONE },
+                                left: { style: BorderStyle.NONE },
+                                right: { style: BorderStyle.NONE },
+                                insideHorizontal: { style: BorderStyle.NONE },
+                                insideVertical: { style: BorderStyle.NONE }
                             },
                             rows: [
                                 new TableRow({
@@ -1024,7 +1032,7 @@ async function generateAndSendWord(evaluation, options, res, userCode) {
                                                         new TextRun({
                                                             text: competencyName,
                                                             bold: true,
-                                                            size: 20,
+                                                            size: 26,
                                                             color: "283c9b"
                                                         })
                                                     ],
@@ -1032,31 +1040,86 @@ async function generateAndSendWord(evaluation, options, res, userCode) {
                                                 })
                                             ],
                                             width: {
-                                                size: 70,
+                                                size: 80,
                                                 type: WidthType.PERCENTAGE,
                                             },
+                                            borders: {
+                                                top: { style: BorderStyle.NONE },
+                                                bottom: { style: BorderStyle.NONE },
+                                                left: { style: BorderStyle.NONE },
+                                                right: { style: BorderStyle.NONE }
+                                            }
                                         }),
                                         new TableCell({
                                             children: [
-                                                new Paragraph({
-                                                    children: [
-                                                        new TextRun({
-                                                            text: `${competencyScore}`,
-                                                            bold: true,
-                                                            size: 11,
-                                                            color: "FFFFFF"
-                                                        })
+                                                new Table({
+                                                    width: {
+                                                        size: 100,
+                                                        type: WidthType.PERCENTAGE,
+                                                    },
+                                                    rows: [
+                                                        new TableRow({
+                                                            children: [
+                                                                new TableCell({
+                                                                    children: [
+                                                                        new Paragraph({
+                                                                            children: [
+                                                                                new TextRun({
+                                                                                    text: `${competencyScore}`,
+                                                                                    bold: true,
+                                                                                    size: 14,
+                                                                                    color: "FFFFFF"
+                                                                                })
+                                                                            ],
+                                                                            alignment: AlignmentType.CENTER,
+                                                                            spacing: { before: 50, after: 50 }
+                                                                        })
+                                                                    ],
+                                                                    width: {
+                                                                        size: competencyScore,
+                                                                        type: WidthType.PERCENTAGE,
+                                                                    },
+                                                                    shading: {
+                                                                        fill: barColor.replace('#', ''),
+                                                                        type: "clear"
+                                                                    }
+                                                                }),
+                                                                new TableCell({
+                                                                    children: [
+                                                                        new Paragraph({
+                                                                            children: [
+                                                                                new TextRun({
+                                                                                    text: " ",
+                                                                                    size: 11
+                                                                                })
+                                                                            ],
+                                                                            alignment: AlignmentType.CENTER,
+                                                                            spacing: { before: 50, after: 50 }
+                                                                        })
+                                                                    ],
+                                                                    width: {
+                                                                        size: 100 - competencyScore,
+                                                                        type: WidthType.PERCENTAGE,
+                                                                    },
+                                                                    shading: {
+                                                                        fill: "E0E0E0",
+                                                                        type: "clear"
+                                                                    }
+                                                                })
+                                                            ],
+                                                        }),
                                                     ],
-                                                    alignment: AlignmentType.CENTER
                                                 })
                                             ],
                                             width: {
-                                                size: 30,
+                                                size: 20,
                                                 type: WidthType.PERCENTAGE,
                                             },
-                                            shading: {
-                                                fill: barColor.replace('#', ''),
-                                                type: "clear"
+                                            borders: {
+                                                top: { style: BorderStyle.NONE },
+                                                bottom: { style: BorderStyle.NONE },
+                                                left: { style: BorderStyle.NONE },
+                                                right: { style: BorderStyle.NONE }
                                             }
                                         })
                                     ],
@@ -1069,21 +1132,21 @@ async function generateAndSendWord(evaluation, options, res, userCode) {
                                     text: "Genel Değerlendirme",
                                     bold: true,
                                     size: 24,
-                                    color: "001c55" // PDF'deki koyu mavi renk
+                                    color: "001c55"
                                 })
                             ],
-                            spacing: { before: 560, after: 200 } // PDF'deki 20px margin top
+                            spacing: { before: 560, after: 200 }
                         }),
                         new Paragraph({
                             children: [
                                 new TextRun({
                                     text: data['Genel Değerlendirme'],
                                     size: 20,
-                                    font: "Arial" // PDF'deki gibi Arial font
+                                    font: "Arial" 
                                 })
                             ],
                             alignment: AlignmentType.JUSTIFIED, // İki yana yaslama
-                            spacing: { after: 2520 } // PDF'deki 90px padding bottom
+                            spacing: { after: 2520 } 
                         })
                     ],
                     footers: {
@@ -1096,11 +1159,19 @@ async function generateAndSendWord(evaluation, options, res, userCode) {
                 doc.addSection({
                     properties: {},
                     children: [
-                        // Skor bar tablosu - PDF'deki gibi
+                        // Yetkinlik adı ve progress bar - yan yana (görünmez tablo)
                         new Table({
                             width: {
                                 size: 100,
                                 type: WidthType.PERCENTAGE,
+                            },
+                            borders: {
+                                top: { style: BorderStyle.NONE },
+                                bottom: { style: BorderStyle.NONE },
+                                left: { style: BorderStyle.NONE },
+                                right: { style: BorderStyle.NONE },
+                                insideHorizontal: { style: BorderStyle.NONE },
+                                insideVertical: { style: BorderStyle.NONE }
                             },
                             rows: [
                                 new TableRow({
@@ -1112,7 +1183,7 @@ async function generateAndSendWord(evaluation, options, res, userCode) {
                                                         new TextRun({
                                                             text: competencyName,
                                                             bold: true,
-                                                            size: 20,
+                                                            size: 26,
                                                             color: "283c9b"
                                                         })
                                                     ],
@@ -1123,28 +1194,83 @@ async function generateAndSendWord(evaluation, options, res, userCode) {
                                                 size: 70,
                                                 type: WidthType.PERCENTAGE,
                                             },
+                                            borders: {
+                                                top: { style: BorderStyle.NONE },
+                                                bottom: { style: BorderStyle.NONE },
+                                                left: { style: BorderStyle.NONE },
+                                                right: { style: BorderStyle.NONE }
+                                            }
                                         }),
                                         new TableCell({
                                             children: [
-                                                new Paragraph({
-                                                    children: [
-                                                        new TextRun({
-                                                            text: `${competencyScore}`,
-                                                            bold: true,
-                                                            size: 11,
-                                                            color: "FFFFFF"
-                                                        })
+                                                new Table({
+                                                    width: {
+                                                        size: 100,
+                                                        type: WidthType.PERCENTAGE,
+                                                    },
+                                                    rows: [
+                                                        new TableRow({
+                                                            children: [
+                                                                new TableCell({
+                                                                    children: [
+                                                                        new Paragraph({
+                                                                            children: [
+                                                                                new TextRun({
+                                                                                    text: `${competencyScore}`,
+                                                                                    bold: true,
+                                                                                    size: 14,
+                                                                                    color: "FFFFFF"
+                                                                                })
+                                                                            ],
+                                                                            alignment: AlignmentType.CENTER,
+                                                                            spacing: { before: 50, after: 50 }
+                                                                        })
+                                                                    ],
+                                                                    width: {
+                                                                        size: competencyScore,
+                                                                        type: WidthType.PERCENTAGE,
+                                                                    },
+                                                                    shading: {
+                                                                        fill: barColor.replace('#', ''),
+                                                                        type: "clear"
+                                                                    }
+                                                                }),
+                                                                new TableCell({
+                                                                    children: [
+                                                                        new Paragraph({
+                                                                            children: [
+                                                                                new TextRun({
+                                                                                    text: " ",
+                                                                                    size: 11
+                                                                                })
+                                                                            ],
+                                                                            alignment: AlignmentType.CENTER,
+                                                                            spacing: { before: 50, after: 50 }
+                                                                        })
+                                                                    ],
+                                                                    width: {
+                                                                        size: 100 - competencyScore,
+                                                                        type: WidthType.PERCENTAGE,
+                                                                    },
+                                                                    shading: {
+                                                                        fill: "E0E0E0",
+                                                                        type: "clear"
+                                                                    }
+                                                                })
+                                                            ],
+                                                        }),
                                                     ],
-                                                    alignment: AlignmentType.CENTER
                                                 })
                                             ],
                                             width: {
                                                 size: 30,
                                                 type: WidthType.PERCENTAGE,
                                             },
-                                            shading: {
-                                                fill: barColor.replace('#', ''),
-                                                type: "clear"
+                                            borders: {
+                                                top: { style: BorderStyle.NONE },
+                                                bottom: { style: BorderStyle.NONE },
+                                                left: { style: BorderStyle.NONE },
+                                                right: { style: BorderStyle.NONE }
                                             }
                                         })
                                     ],
@@ -1157,21 +1283,21 @@ async function generateAndSendWord(evaluation, options, res, userCode) {
                                     text: "Güçlü Yönler",
                                     bold: true,
                                     size: 24,
-                                    color: "001c55" // PDF'deki koyu mavi renk
+                                    color: "001c55" 
                                 })
                             ],
-                            spacing: { after: 200 }
+                            spacing: { before: 560, after: 200 } // Skor bar ile mesafe
                         }),
                         new Paragraph({
                             children: [
                                 new TextRun({
                                     text: data['Güçlü Yönler'],
                                     size: 20,
-                                    font: "Arial" // PDF'deki gibi Arial font
+                                    font: "Arial" 
                                 })
                             ],
                             alignment: AlignmentType.JUSTIFIED, // İki yana yaslama
-                            spacing: { after: 2520 } // PDF'deki 90px padding bottom
+                            spacing: { after: 2520 } 
                         })
                     ],
                     footers: {
@@ -1184,11 +1310,19 @@ async function generateAndSendWord(evaluation, options, res, userCode) {
                 doc.addSection({
                     properties: {},
                     children: [
-                        // Skor bar tablosu - PDF'deki gibi
+                        // Yetkinlik adı ve progress bar - yan yana (görünmez tablo)
                         new Table({
                             width: {
                                 size: 100,
                                 type: WidthType.PERCENTAGE,
+                            },
+                            borders: {
+                                top: { style: BorderStyle.NONE },
+                                bottom: { style: BorderStyle.NONE },
+                                left: { style: BorderStyle.NONE },
+                                right: { style: BorderStyle.NONE },
+                                insideHorizontal: { style: BorderStyle.NONE },
+                                insideVertical: { style: BorderStyle.NONE }
                             },
                             rows: [
                                 new TableRow({
@@ -1200,7 +1334,7 @@ async function generateAndSendWord(evaluation, options, res, userCode) {
                                                         new TextRun({
                                                             text: competencyName,
                                                             bold: true,
-                                                            size: 20,
+                                                            size: 26,
                                                             color: "283c9b"
                                                         })
                                                     ],
@@ -1211,28 +1345,84 @@ async function generateAndSendWord(evaluation, options, res, userCode) {
                                                 size: 70,
                                                 type: WidthType.PERCENTAGE,
                                             },
+                                            borders: {
+                                                top: { style: BorderStyle.NONE },
+                                                bottom: { style: BorderStyle.NONE },
+                                                left: { style: BorderStyle.NONE },
+                                                right: { style: BorderStyle.NONE }
+                                            }
                                         }),
                                         new TableCell({
                                             children: [
-                                                new Paragraph({
-                                                    children: [
-                                                        new TextRun({
-                                                            text: `${competencyScore}`,
-                                                            bold: true,
-                                                            size: 11,
-                                                            color: "FFFFFF"
-                                                        })
+                                                new Table({
+                                                    width: {
+                                                        size: 100,
+                                                        type: WidthType.PERCENTAGE,
+                                                    },
+                                                    rows: [
+                                                        new TableRow({
+                                                            children: [
+                                                                new TableCell({
+                                                                    children: [
+                                                                        new Paragraph({
+                                                                            children: [
+                                                                                new TextRun({
+                                                                                    text: `${competencyScore}`,
+                                                                                    bold: true,
+                                                                                    size: 14,
+                                                                                    color: "FFFFFF"
+                                                                                })
+                                                                            ],
+                                                                            alignment: AlignmentType.CENTER,
+                                                                            spacing: { before: 50, after: 50 }
+                                                                        })
+                                                                    ],
+                                                                    width: {
+                                                                        size: competencyScore,
+                                                                        type: WidthType.PERCENTAGE,
+                                                                    },
+
+                                                                    shading: {
+                                                                        fill: barColor.replace('#', ''),
+                                                                        type: "clear"
+                                                                    }
+                                                                }),
+                                                                new TableCell({
+                                                                    children: [
+                                                                        new Paragraph({
+                                                                            children: [
+                                                                                new TextRun({
+                                                                                    text: " ",
+                                                                                    size: 11
+                                                                                })
+                                                                            ],
+                                                                            alignment: AlignmentType.CENTER,
+                                                                            spacing: { before: 50, after: 50 }
+                                                                        })
+                                                                    ],
+                                                                    width: {
+                                                                        size: 100 - competencyScore,
+                                                                        type: WidthType.PERCENTAGE,
+                                                                    },
+                                                                    shading: {
+                                                                        fill: "E0E0E0",
+                                                                        type: "clear"
+                                                                    }
+                                                                })
+                                                            ],
+                                                        }),
                                                     ],
-                                                    alignment: AlignmentType.CENTER
                                                 })
                                             ],
                                             width: {
                                                 size: 30,
                                                 type: WidthType.PERCENTAGE,
                                             },
-                                            shading: {
-                                                fill: barColor.replace('#', ''),
-                                                type: "clear"
+                                            borders: {
+                                                top: { style: BorderStyle.NONE },
+                                                bottom: { style: BorderStyle.NONE },
+                                                left: { style: BorderStyle.NONE },
+                                                right: { style: BorderStyle.NONE }
                                             }
                                         })
                                     ],
@@ -1245,21 +1435,21 @@ async function generateAndSendWord(evaluation, options, res, userCode) {
                                     text: "Gelişim Alanları",
                                     bold: true,
                                     size: 24,
-                                    color: "001c55" // PDF'deki koyu mavi renk
+                                    color: "001c55" 
                                 })
                             ],
-                            spacing: { after: 200 }
+                            spacing: { before: 560, after: 200 } // Skor bar ile mesafe
                         }),
                         new Paragraph({
                             children: [
                                 new TextRun({
                                     text: data['Gelişim Alanları'],
                                     size: 20,
-                                    font: "Arial" // PDF'deki gibi Arial font
+                                    font: "Arial" 
                                 })
                             ],
                             alignment: AlignmentType.JUSTIFIED, // İki yana yaslama
-                            spacing: { after: 2520 } // PDF'deki 90px padding bottom
+                            spacing: { after: 2520 } 
                         })
                     ],
                     footers: {
@@ -1272,11 +1462,19 @@ async function generateAndSendWord(evaluation, options, res, userCode) {
                 doc.addSection({
                     properties: {},
                     children: [
-                        // Skor bar tablosu - PDF'deki gibi
+                        // Yetkinlik adı ve progress bar - yan yana (görünmez tablo)
                         new Table({
                             width: {
                                 size: 100,
                                 type: WidthType.PERCENTAGE,
+                            },
+                            borders: {
+                                top: { style: BorderStyle.NONE },
+                                bottom: { style: BorderStyle.NONE },
+                                left: { style: BorderStyle.NONE },
+                                right: { style: BorderStyle.NONE },
+                                insideHorizontal: { style: BorderStyle.NONE },
+                                insideVertical: { style: BorderStyle.NONE }
                             },
                             rows: [
                                 new TableRow({
@@ -1288,7 +1486,7 @@ async function generateAndSendWord(evaluation, options, res, userCode) {
                                                         new TextRun({
                                                             text: competencyName,
                                                             bold: true,
-                                                            size: 20,
+                                                            size: 26,
                                                             color: "283c9b"
                                                         })
                                                     ],
@@ -1299,28 +1497,83 @@ async function generateAndSendWord(evaluation, options, res, userCode) {
                                                 size: 70,
                                                 type: WidthType.PERCENTAGE,
                                             },
+                                            borders: {
+                                                top: { style: BorderStyle.NONE },
+                                                bottom: { style: BorderStyle.NONE },
+                                                left: { style: BorderStyle.NONE },
+                                                right: { style: BorderStyle.NONE }
+                                            }
                                         }),
                                         new TableCell({
                                             children: [
-                                                new Paragraph({
-                                                    children: [
-                                                        new TextRun({
-                                                            text: `${competencyScore}`,
-                                                            bold: true,
-                                                            size: 11,
-                                                            color: "FFFFFF"
-                                                        })
+                                                new Table({
+                                                    width: {
+                                                        size: 100,
+                                                        type: WidthType.PERCENTAGE,
+                                                    },
+                                                    rows: [
+                                                        new TableRow({
+                                                            children: [
+                                                                new TableCell({
+                                                                    children: [
+                                                                        new Paragraph({
+                                                                            children: [
+                                                                                new TextRun({
+                                                                                    text: `${competencyScore}`,
+                                                                                    bold: true,
+                                                                                    size: 14,
+                                                                                    color: "FFFFFF"
+                                                                                })
+                                                                            ],
+                                                                            alignment: AlignmentType.CENTER,
+                                                                            spacing: { before: 50, after: 50 }
+                                                                        })
+                                                                    ],
+                                                                    width: {
+                                                                        size: competencyScore,
+                                                                        type: WidthType.PERCENTAGE,
+                                                                    },
+                                                                    shading: {
+                                                                        fill: barColor.replace('#', ''),
+                                                                        type: "clear"
+                                                                    }
+                                                                }),
+                                                                new TableCell({
+                                                                    children: [
+                                                                        new Paragraph({
+                                                                            children: [
+                                                                                new TextRun({
+                                                                                    text: " ",
+                                                                                    size: 11
+                                                                                })
+                                                                            ],
+                                                                            alignment: AlignmentType.CENTER,
+                                                                            spacing: { before: 50, after: 50 }
+                                                                        })
+                                                                    ],
+                                                                    width: {
+                                                                        size: 100 - competencyScore,
+                                                                        type: WidthType.PERCENTAGE,
+                                                                    },
+                                                                    shading: {
+                                                                        fill: "E0E0E0",
+                                                                        type: "clear"
+                                                                    }
+                                                                })
+                                                            ],
+                                                        }),
                                                     ],
-                                                    alignment: AlignmentType.CENTER
                                                 })
                                             ],
                                             width: {
                                                 size: 30,
                                                 type: WidthType.PERCENTAGE,
                                             },
-                                            shading: {
-                                                fill: barColor.replace('#', ''),
-                                                type: "clear"
+                                            borders: {
+                                                top: { style: BorderStyle.NONE },
+                                                bottom: { style: BorderStyle.NONE },
+                                                left: { style: BorderStyle.NONE },
+                                                right: { style: BorderStyle.NONE }
                                             }
                                         })
                                     ],
@@ -1333,21 +1586,21 @@ async function generateAndSendWord(evaluation, options, res, userCode) {
                                     text: "Mülakat Soruları",
                                     bold: true,
                                     size: 24,
-                                    color: "001c55" // PDF'deki koyu mavi renk
+                                    color: "001c55" 
                                 })
                             ],
-                            spacing: { after: 200 }
+                            spacing: { before: 560, after: 200 } // Skor bar ile mesafe
                         }),
                         new Paragraph({
                             children: [
                                 new TextRun({
                                     text: data['Mülakat Soruları'],
                                     size: 20,
-                                    font: "Arial" // PDF'deki gibi Arial font
+                                    font: "Arial" 
                                 })
                             ],
                             alignment: AlignmentType.JUSTIFIED, // İki yana yaslama
-                            spacing: { after: 2520 } // PDF'deki 90px padding bottom
+                            spacing: { after: 2520 } 
                         })
                     ],
                     footers: {
@@ -1360,11 +1613,19 @@ async function generateAndSendWord(evaluation, options, res, userCode) {
                 doc.addSection({
                     properties: {},
                     children: [
-                        // Skor bar tablosu - PDF'deki gibi
+                        // Yetkinlik adı ve progress bar - yan yana (görünmez tablo)
                         new Table({
                             width: {
                                 size: 100,
                                 type: WidthType.PERCENTAGE,
+                            },
+                            borders: {
+                                top: { style: BorderStyle.NONE },
+                                bottom: { style: BorderStyle.NONE },
+                                left: { style: BorderStyle.NONE },
+                                right: { style: BorderStyle.NONE },
+                                insideHorizontal: { style: BorderStyle.NONE },
+                                insideVertical: { style: BorderStyle.NONE }
                             },
                             rows: [
                                 new TableRow({
@@ -1376,7 +1637,7 @@ async function generateAndSendWord(evaluation, options, res, userCode) {
                                                         new TextRun({
                                                             text: competencyName,
                                                             bold: true,
-                                                            size: 20,
+                                                            size: 26,
                                                             color: "283c9b"
                                                         })
                                                     ],
@@ -1387,28 +1648,83 @@ async function generateAndSendWord(evaluation, options, res, userCode) {
                                                 size: 70,
                                                 type: WidthType.PERCENTAGE,
                                             },
+                                            borders: {
+                                                top: { style: BorderStyle.NONE },
+                                                bottom: { style: BorderStyle.NONE },
+                                                left: { style: BorderStyle.NONE },
+                                                right: { style: BorderStyle.NONE }
+                                            }
                                         }),
                                         new TableCell({
                                             children: [
-                                                new Paragraph({
-                                                    children: [
-                                                        new TextRun({
-                                                            text: `${competencyScore}`,
-                                                            bold: true,
-                                                            size: 11,
-                                                            color: "FFFFFF"
-                                                        })
+                                                new Table({
+                                                    width: {
+                                                        size: 100,
+                                                        type: WidthType.PERCENTAGE,
+                                                    },
+                                                    rows: [
+                                                        new TableRow({
+                                                            children: [
+                                                                new TableCell({
+                                                                    children: [
+                                                                        new Paragraph({
+                                                                            children: [
+                                                                                new TextRun({
+                                                                                    text: `${competencyScore}`,
+                                                                                    bold: true,
+                                                                                    size: 14,
+                                                                                    color: "FFFFFF"
+                                                                                })
+                                                                            ],
+                                                                            alignment: AlignmentType.CENTER,
+                                                                            spacing: { before: 50, after: 50 }
+                                                                        })
+                                                                    ],
+                                                                    width: {
+                                                                        size: competencyScore,
+                                                                        type: WidthType.PERCENTAGE,
+                                                                    },
+                                                                    shading: {
+                                                                        fill: barColor.replace('#', ''),
+                                                                        type: "clear"
+                                                                    }
+                                                                }),
+                                                                new TableCell({
+                                                                    children: [
+                                                                        new Paragraph({
+                                                                            children: [
+                                                                                new TextRun({
+                                                                                    text: " ",
+                                                                                    size: 11
+                                                                                })
+                                                                            ],
+                                                                            alignment: AlignmentType.CENTER,
+                                                                            spacing: { before: 50, after: 50 }
+                                                                        })
+                                                                    ],
+                                                                    width: {
+                                                                        size: 100 - competencyScore,
+                                                                        type: WidthType.PERCENTAGE,
+                                                                    },
+                                                                    shading: {
+                                                                        fill: "E0E0E0",
+                                                                        type: "clear"
+                                                                    }
+                                                                })
+                                                            ],
+                                                        }),
                                                     ],
-                                                    alignment: AlignmentType.CENTER
                                                 })
                                             ],
                                             width: {
                                                 size: 30,
                                                 type: WidthType.PERCENTAGE,
                                             },
-                                            shading: {
-                                                fill: barColor.replace('#', ''),
-                                                type: "clear"
+                                            borders: {
+                                                top: { style: BorderStyle.NONE },
+                                                bottom: { style: BorderStyle.NONE },
+                                                left: { style: BorderStyle.NONE },
+                                                right: { style: BorderStyle.NONE }
                                             }
                                         })
                                     ],
@@ -1421,21 +1737,21 @@ async function generateAndSendWord(evaluation, options, res, userCode) {
                                     text: "Neden Bu Sorular?",
                                     bold: true,
                                     size: 24,
-                                    color: "001c55" // PDF'deki koyu mavi renk
+                                    color: "001c55" 
                                 })
                             ],
-                            spacing: { after: 200 }
+                            spacing: { before: 560, after: 200 } // Skor bar ile mesafe
                         }),
                         new Paragraph({
                             children: [
                                 new TextRun({
                                     text: data['Neden Bu Sorular?'],
                                     size: 20,
-                                    font: "Arial" // PDF'deki gibi Arial font
+                                    font: "Arial" 
                                 })
                             ],
                             alignment: AlignmentType.JUSTIFIED, // İki yana yaslama
-                            spacing: { after: 2520 } // PDF'deki 90px padding bottom
+                            spacing: { after: 2520 } 
                         })
                     ],
                     footers: {
@@ -1457,11 +1773,19 @@ async function generateAndSendWord(evaluation, options, res, userCode) {
                     doc.addSection({
                         properties: {},
                         children: [
-                            // Skor bar tablosu - PDF'deki gibi
+                            // Yetkinlik adı ve progress bar - yan yana (görünmez tablo)
                             new Table({
                                 width: {
                                     size: 100,
                                     type: WidthType.PERCENTAGE,
+                                },
+                                borders: {
+                                    top: { style: BorderStyle.NONE },
+                                    bottom: { style: BorderStyle.NONE },
+                                    left: { style: BorderStyle.NONE },
+                                    right: { style: BorderStyle.NONE },
+                                    insideHorizontal: { style: BorderStyle.NONE },
+                                    insideVertical: { style: BorderStyle.NONE }
                                 },
                                 rows: [
                                     new TableRow({
@@ -1481,31 +1805,88 @@ async function generateAndSendWord(evaluation, options, res, userCode) {
                                                     })
                                                 ],
                                                 width: {
-                                                    size: 70,
+                                                    size: 60,
                                                     type: WidthType.PERCENTAGE,
                                                 },
+                                                borders: {
+                                                    top: { style: BorderStyle.NONE },
+                                                    bottom: { style: BorderStyle.NONE },
+                                                    left: { style: BorderStyle.NONE },
+                                                    right: { style: BorderStyle.NONE }
+                                                }
                                             }),
                                             new TableCell({
                                                 children: [
-                                                    new Paragraph({
-                                                        children: [
-                                                            new TextRun({
-                                                                text: `${competencyScore}`,
-                                                                bold: true,
-                                                                size: 11,
-                                                                color: "FFFFFF"
-                                                            })
+                                                    new Table({
+                                                        width: {
+                                                            size: 100,
+                                                            type: WidthType.PERCENTAGE,
+                                                        },
+                                                        rows: [
+                                                            new TableRow({
+                                                                children: [
+                                                                    new TableCell({
+                                                                        children: [
+                                                                            new Paragraph({
+                                                                                children: [
+                                                                                    new TextRun({
+                                                                                        text: `${competencyScore}`,
+                                                                                        bold: true,
+                                                                                        size: 14,
+                                                                                        color: "FFFFFF"
+                                                                                    })
+                                                                                ],
+                                                                                alignment: AlignmentType.CENTER,
+                                                                            spacing: { before: 50, after: 50 },
+                                                                            })
+                                                                        ],
+                                                                        width: {
+                                                                            size: competencyScore,
+                                                                            type: WidthType.PERCENTAGE,
+                                                                        },
+                                                                        verticalAlign: "bottom",
+                                                                        shading: {
+                                                                            fill: barColor.replace('#', ''),
+                                                                            type: "clear"
+                                                                        }
+                                                                    }),
+                                                                    new TableCell({
+                                                                        children: [
+                                                                            new Paragraph({
+                                                                                children: [
+                                                                                    new TextRun({
+                                                                                        text: " ",
+                                                                                        size: 11
+                                                                                    })
+                                                                                ],
+                                                                                alignment: AlignmentType.CENTER,
+                                                                            spacing: { before: 50, after: 50 },
+                                                                                spacing: { before: 50, after: 50 }
+                                                                            })
+                                                                        ],
+                                                                        width: {
+                                                                            size: 100 - competencyScore,
+                                                                            type: WidthType.PERCENTAGE,
+                                                                        },
+                                                                        shading: {
+                                                                            fill: "E0E0E0",
+                                                                            type: "clear"
+                                                                        }
+                                                                    })
+                                                                ],
+                                                            }),
                                                         ],
-                                                        alignment: AlignmentType.CENTER
                                                     })
                                                 ],
                                                 width: {
-                                                    size: 30,
+                                                    size: 40,
                                                     type: WidthType.PERCENTAGE,
                                                 },
-                                                shading: {
-                                                    fill: barColor.replace('#', ''),
-                                                    type: "clear"
+                                                borders: {
+                                                    top: { style: BorderStyle.NONE },
+                                                    bottom: { style: BorderStyle.NONE },
+                                                    left: { style: BorderStyle.NONE },
+                                                    right: { style: BorderStyle.NONE }
                                                 }
                                             })
                                         ],
@@ -1518,21 +1899,21 @@ async function generateAndSendWord(evaluation, options, res, userCode) {
                                         text: item.title,
                                         bold: true,
                                         size: 24,
-                                        color: "001c55" // PDF'deki koyu mavi renk
+                                        color: "001c55" 
                                     })
                                 ],
-                                spacing: { after: 200 }
+                                spacing: { before: 560, after: 200 } // Skor bar ile mesafe
                             }),
                             new Paragraph({
                                 children: [
                                     new TextRun({
                                         text: data[item.key],
                                         size: 20,
-                                        font: "Arial" // PDF'deki gibi Arial font
+                                        font: "Arial" 
                                     })
                                 ],
                                 alignment: AlignmentType.JUSTIFIED, // İki yana yaslama
-                                spacing: { after: 2520 } // PDF'deki 90px padding bottom
+                                spacing: { after: 2520 } 
                             })
                         ],
                         footers: {
