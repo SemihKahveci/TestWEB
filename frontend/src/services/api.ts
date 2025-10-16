@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 // Dinamik API base URL - hem local hem live'da çalışır
-const API_BASE_URL = import.meta.env.DEV 
+const API_BASE_URL = (import.meta as any).env?.DEV 
   ? 'http://localhost:5000/api'  // Development
   : '/api';  // Production (aynı domain'de serve edilir)
 
@@ -178,6 +178,13 @@ export const creditAPI = {
   // Get user's credit information
   getUserCredits: () =>
     api.get('/credit'),
+  
+  // Update total credits (when new credits are purchased)
+  updateTotalCredits: (creditData: {
+    amount: number;
+    description?: string;
+  }) =>
+    api.post('/credit/update-total', creditData),
   
   // Deduct credits for game sending
   deductCredits: (creditData: {

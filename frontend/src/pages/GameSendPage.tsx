@@ -94,23 +94,60 @@ const GameSendPage: React.FC = () => {
     loadRemainingCredits();
   }, []);
 
-  const loadRemainingCredits = async () => {
+  // Sayfa focus olduğunda kredi bilgilerini yenile
+  useEffect(() => {
+    const handleFocus = () => {
+      loadRemainingCredits(true); // Force refresh
+    };
+
+    window.addEventListener('focus', handleFocus);
+    
+    return () => {
+      window.removeEventListener('focus', handleFocus);
+    };
+  }, []);
+
+  const loadRemainingCredits = async (forceRefresh = false) => {
     try {
+      // Credit API'den güncel veri al
+      // Cache'i bypass etmek için timestamp parametresi ekle
+      const url = forceRefresh ? `/api/credit?t=${Date.now()}` : '/api/credit';
+      const creditResponse = await fetch(url, {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        }
+      });
       
-      // Sadece credit API'den veri al (cache'li ve hızlı)
-      const creditResponse = await creditAPI.getUserCredits();
+      if (creditResponse.ok) {
+        const data = await creditResponse.json();
+        if (data.success) {
+          const { totalCredits, usedCredits, remainingCredits } = data.credit;
+          setRemainingCredits(remainingCredits);
+          
+          // localStorage'ı da güncelle
+          localStorage.setItem('remainingCredits', remainingCredits.toString());
+          localStorage.setItem('usedCredits', usedCredits.toString());
+          localStorage.setItem('totalCredits', totalCredits.toString());
+          
+          console.log('Kredi bilgileri güncellendi:', { totalCredits, usedCredits, remainingCredits });
+        } else {
+          setRemainingCredits(0);
+        }
+      } else {
+        throw new Error('API yanıtı başarısız');
+      }
+    } catch (error) {
+      console.error('Kredi bilgisi yüklenirken hata:', error);
+      // Fallback: localStorage'dan al
+      const fallbackRemaining = parseInt(localStorage.getItem('remainingCredits') || '0');
+      const fallbackUsed = parseInt(localStorage.getItem('usedCredits') || '0');
+      const fallbackTotal = parseInt(localStorage.getItem('totalCredits') || '0');
       
-      if (creditResponse.data.success) {
-        const { totalCredits, usedCredits, remainingCredits } = creditResponse.data.credit;
-        setRemainingCredits(remainingCredits);
+      if (fallbackTotal > 0) {
+        setRemainingCredits(fallbackRemaining);
       } else {
         setRemainingCredits(0);
       }
-    } catch (error) {
-      console.error('💥 Kalan kredi yüklenirken hata:', error);
-      // Fallback: localStorage'dan al
-      const fallbackCredits = parseInt(localStorage.getItem('usedCredits') || '0');
-      setRemainingCredits(123563657 - fallbackCredits); // Total - used
     }
   };
 
@@ -260,14 +297,22 @@ const GameSendPage: React.FC = () => {
         setSelectedPlanets([]);
         // Kredi düşür (API ile)
         try {
-          await creditAPI.deductCredits({
+          const deductResponse = await creditAPI.deductCredits({
             amount: creditCost,
             type: 'game_send',
             description: `Kişi gönderimi: ${personName} (${creditCost} gezegen)`
           });
           
-          // UI'yi güncelle - API'den güncel veriyi çek
-          await loadRemainingCredits();
+          if (deductResponse.data.success) {
+            // localStorage'ı güncelle
+            const { totalCredits, usedCredits, remainingCredits } = deductResponse.data.credit;
+            localStorage.setItem('remainingCredits', remainingCredits.toString());
+            localStorage.setItem('usedCredits', usedCredits.toString());
+            localStorage.setItem('totalCredits', totalCredits.toString());
+            
+            // UI'yi güncelle
+            setRemainingCredits(remainingCredits);
+          }
         } catch (error) {
           showMessage('Hata', `Kredi düşürülemedi: ${error.response?.data?.message || error.message}`, 'error');
         }
@@ -423,14 +468,22 @@ const GameSendPage: React.FC = () => {
         showMessage('Başarılı', `${successCount} kişiye başarıyla gönderildi! (${totalCreditCost} kredi düşüldü)`, 'success');
         // Kredi düşür (API ile)
         try {
-          await creditAPI.deductCredits({
+          const deductResponse = await creditAPI.deductCredits({
             amount: totalCreditCost,
             type: 'game_send',
             description: `Grup gönderimi: ${successCount} kişi (${totalCreditCost} kredi)`
           });
           
-          // UI'yi güncelle - API'den güncel veriyi çek
-          await loadRemainingCredits();
+          if (deductResponse.data.success) {
+            // localStorage'ı güncelle
+            const { totalCredits, usedCredits, remainingCredits } = deductResponse.data.credit;
+            localStorage.setItem('remainingCredits', remainingCredits.toString());
+            localStorage.setItem('usedCredits', usedCredits.toString());
+            localStorage.setItem('totalCredits', totalCredits.toString());
+            
+            // UI'yi güncelle
+            setRemainingCredits(remainingCredits);
+          }
         } catch (error) {
           showMessage('Hata', `Kredi düşürülemedi: ${error.response?.data?.message || error.message}`, 'error');
         }
@@ -439,14 +492,22 @@ const GameSendPage: React.FC = () => {
         console.error('Gönderim hataları:', errors);
         // Kredi düşür (sadece başarılı gönderimler için - API ile)
         try {
-          await creditAPI.deductCredits({
+          const deductResponse = await creditAPI.deductCredits({
             amount: totalCreditCost,
             type: 'game_send',
             description: `Grup gönderimi (kısmi): ${successCount} kişi (${totalCreditCost} kredi)`
           });
           
-          // UI'yi güncelle - API'den güncel veriyi çek
-          await loadRemainingCredits();
+          if (deductResponse.data.success) {
+            // localStorage'ı güncelle
+            const { totalCredits, usedCredits, remainingCredits } = deductResponse.data.credit;
+            localStorage.setItem('remainingCredits', remainingCredits.toString());
+            localStorage.setItem('usedCredits', usedCredits.toString());
+            localStorage.setItem('totalCredits', totalCredits.toString());
+            
+            // UI'yi güncelle
+            setRemainingCredits(remainingCredits);
+          }
         } catch (error) {
           showMessage('Hata', `Kredi düşürülemedi: ${error.response?.data?.message || error.message}`, 'error');
         }

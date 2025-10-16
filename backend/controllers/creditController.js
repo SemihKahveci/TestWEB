@@ -64,6 +64,16 @@ const getUserCredits = async (req, res) => {
         transactions: []
       });
       await credit.save();
+    } else {
+      // Mevcut kredi kaydı varsa, toplam krediyi güncelle
+      const currentTotalCredits = await getTotalCreditsFromCache(req);
+      
+      if (credit.totalCredits !== currentTotalCredits) {
+        console.log(`Toplam kredi güncelleniyor: ${credit.totalCredits} -> ${currentTotalCredits}`);
+        credit.totalCredits = currentTotalCredits;
+        credit.remainingCredits = currentTotalCredits - credit.usedCredits;
+        await credit.save();
+      }
     }
     
     res.json({
@@ -317,10 +327,16 @@ const restoreCredits = async (req, res) => {
   }
 };
 
+// Function to invalidate cache (exported for use by other controllers)
+const invalidateCache = () => {
+  totalCreditsCache.lastUpdated = null;
+};
+
 module.exports = {
   getUserCredits,
   updateTotalCredits,
   deductCredits,
   restoreCredits,
-  getCreditTransactions
+  getCreditTransactions,
+  invalidateCache
 };

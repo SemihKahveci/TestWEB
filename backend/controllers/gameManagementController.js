@@ -1,4 +1,5 @@
 const GameManagement = require('../models/gameManagement');
+const { invalidateCache } = require('./creditController');
 
 class GameManagementController {
     // Tüm oyun yönetimi verilerini getir
@@ -43,6 +44,10 @@ class GameManagementController {
             });
 
             await newGame.save();
+            
+            // Kredi cache'ini invalidate et çünkü toplam kredi değişmiş olabilir
+            invalidateCache();
+            
             res.status(201).json(newGame);
         } catch (error) {
             console.error('Oyun ekleme hatası:', error);
@@ -91,6 +96,9 @@ class GameManagementController {
                 { new: true }
             );
 
+            // Kredi cache'ini invalidate et çünkü toplam kredi değişmiş olabilir
+            invalidateCache();
+
             res.json({ success: true, message: 'Oyun başarıyla güncellendi', game: updatedGame });
         } catch (error) {
             console.error('Oyun güncelleme hatası:', error);
@@ -107,6 +115,9 @@ class GameManagementController {
             if (!deletedGame) {
                 return res.status(404).json({ message: 'Oyun bulunamadı' });
             }
+
+            // Kredi cache'ini invalidate et çünkü toplam kredi değişmiş olabilir
+            invalidateCache();
 
             res.json({ message: 'Oyun başarıyla silindi' });
         } catch (error) {

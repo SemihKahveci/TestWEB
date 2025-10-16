@@ -29,7 +29,13 @@ const SubscriptionSettings: React.FC = () => {
         try {
           const response = await creditAPI.getUserCredits();
           if (response.data.success) {
-            setUsedCredits(response.data.credit.usedCredits);
+            const { totalCredits, usedCredits, remainingCredits } = response.data.credit;
+            setUsedCredits(usedCredits);
+            
+            // localStorage'ı güncelle
+            localStorage.setItem('remainingCredits', remainingCredits.toString());
+            localStorage.setItem('usedCredits', usedCredits.toString());
+            localStorage.setItem('totalCredits', totalCredits.toString());
           }
         } catch (error) {
           console.error('Kredi bilgisi yüklenirken hata:', error);
@@ -104,7 +110,13 @@ const SubscriptionSettings: React.FC = () => {
       try {
         const response = await creditAPI.getUserCredits();
         if (response.data.success) {
-          setUsedCredits(response.data.credit.usedCredits);
+          const { totalCredits, usedCredits, remainingCredits } = response.data.credit;
+          setUsedCredits(usedCredits);
+          
+          // localStorage'ı güncelle
+          localStorage.setItem('remainingCredits', remainingCredits.toString());
+          localStorage.setItem('usedCredits', usedCredits.toString());
+          localStorage.setItem('totalCredits', totalCredits.toString());
         }
       } catch (error) {
         console.error('Kredi bilgisi yüklenirken hata:', error);
@@ -115,6 +127,42 @@ const SubscriptionSettings: React.FC = () => {
     
     loadCreditInfo();
   }, []);
+
+  // Toplam kredi değiştiğinde veritabanını güncelle
+  useEffect(() => {
+    const updateTotalCreditsInDB = async () => {
+      if (totalCredits > 0) {
+        try {
+          // Mevcut kredi bilgilerini al
+          const response = await creditAPI.getUserCredits();
+          if (response.data.success) {
+            const currentTotalCredits = response.data.credit.totalCredits;
+            
+            // Eğer toplam kredi farklıysa güncelle
+            if (currentTotalCredits !== totalCredits) {
+              const difference = totalCredits - currentTotalCredits;
+              
+              if (difference !== 0) {
+                await creditAPI.updateTotalCredits({
+                  amount: difference,
+                  description: `Oyun yönetimi güncellemesi: ${difference > 0 ? '+' : ''}${difference} kredi`
+                });
+                
+                console.log(`Toplam kredi güncellendi: ${currentTotalCredits} -> ${totalCredits} (${difference > 0 ? '+' : ''}${difference})`);
+              }
+            }
+          }
+        } catch (error) {
+          console.error('Toplam kredi güncellenirken hata:', error);
+        }
+      }
+    };
+
+    // Sadece games yüklendikten sonra çalıştır
+    if (!isLoading && games.length > 0) {
+      updateTotalCreditsInDB();
+    }
+  }, [totalCredits, isLoading, games.length]);
   
   const remainingCredits = totalCreditAmount - usedCredits; // Kalan kredi
   const usedPercentage = totalCreditAmount > 0 ? (usedCredits / totalCreditAmount) * 100 : 0; // Kullanım yüzdesi
