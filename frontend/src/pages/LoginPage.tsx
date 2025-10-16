@@ -258,13 +258,16 @@ const LoginPage: React.FC = () => {
   return (
     <div style={{
       minHeight: '100vh',
+      height: isMobile ? '100vh' : 'auto',
       display: 'flex',
       flexDirection: 'column',
       justifyContent: 'center',
       alignItems: 'center',
       position: 'relative',
       overflow: 'hidden',
-      fontFamily: 'Inter, sans-serif'
+      fontFamily: 'Inter, sans-serif',
+      width: '100%',
+      padding: isMobile ? '20px' : '0'
     }}>
 
       {/* Login Container */}
@@ -274,10 +277,12 @@ const LoginPage: React.FC = () => {
         flexDirection: 'column',
         justifyContent: 'center',
         alignItems: 'center',
-        gap: '40px',
+        gap: isMobile ? '24px' : '40px',
         width: '100%',
         maxWidth: '436px',
-        padding: '20px'
+        padding: isMobile ? '16px' : '20px',
+        marginTop: isMobile ? 'auto' : '0',
+        marginBottom: isMobile ? 'auto' : '0'
       }}>
         {/* Logo */}
         <div style={{
@@ -290,7 +295,11 @@ const LoginPage: React.FC = () => {
           <img 
             src="/logo.png" 
             alt="Logo" 
-            style={{ width: '272px', height: '56px' }}
+            style={{ 
+              width: isMobile ? '240px' : '272px', 
+              height: isMobile ? '50px' : '56px',
+              maxWidth: '100%'
+            }}
           />
         </div>
 
@@ -750,10 +759,12 @@ const LoginPage: React.FC = () => {
 
       {/* Footer */}
       <div style={{
-        position: 'absolute',
-        bottom: '20px',
-        left: '50%',
-        transform: 'translateX(-50%)'
+        position: isMobile ? 'relative' : 'absolute',
+        bottom: isMobile ? '0' : '20px',
+        left: isMobile ? 'auto' : '50%',
+        transform: isMobile ? 'none' : 'translateX(-50%)',
+        marginTop: isMobile ? 'auto' : '0',
+        padding: isMobile ? '16px' : '0'
       }}>
         <p style={{
           color: '#8A92A6',

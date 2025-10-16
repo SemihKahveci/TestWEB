@@ -29,7 +29,10 @@ function App() {
           backgroundSize: 'cover',
           backgroundPosition: 'center',
           backgroundRepeat: 'no-repeat',
-          minHeight: '100vh'
+          backgroundAttachment: 'fixed',
+          minHeight: '100vh',
+          width: '100%',
+          position: 'relative'
         }}>
           <Routes>
             {/* Public routes */}

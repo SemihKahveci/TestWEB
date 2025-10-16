@@ -14,6 +14,12 @@ const CompanyIdentification: React.FC = () => {
   const [showAddPopup, setShowAddPopup] = useState(false);
   const [showEditPopup, setShowEditPopup] = useState(false);
   const [showDeletePopup, setShowDeletePopup] = useState(false);
+  const [showMessageModal, setShowMessageModal] = useState(false);
+  const [messageModal, setMessageModal] = useState({
+    title: '',
+    message: '',
+    type: 'info' as 'success' | 'error' | 'warning' | 'info'
+  });
   const [selectedCompany, setSelectedCompany] = useState<Company | null>(null);
   const [isMobile, setIsMobile] = useState(false);
   
@@ -82,6 +88,16 @@ const CompanyIdentification: React.FC = () => {
     setShowDeletePopup(true);
   };
 
+  // Modal functions
+  const showMessage = (title: string, message: string, type: 'success' | 'error' | 'warning' | 'info') => {
+    setMessageModal({ title, message, type });
+    setShowMessageModal(true);
+  };
+
+  const closeMessageModal = () => {
+    setShowMessageModal(false);
+  };
+
   const handleSubmitAdd = async () => {
     try {
       const response = await companyAPI.create(formData);
@@ -90,12 +106,12 @@ const CompanyIdentification: React.FC = () => {
         loadCompanies();
       } else {
         console.error('❌ Firma ekleme hatası:', response.data.message);
-        alert(response.data.message);
+        showMessage('Hata', response.data.message, 'error');
       }
     } catch (error: any) {
       console.error('💥 Firma ekleme hatası:', error);
       const errorMessage = error.response?.data?.message || 'Firma eklenirken bir hata oluştu';
-      alert(errorMessage);
+      showMessage('Hata', errorMessage, 'error');
     }
   };
 
@@ -111,12 +127,12 @@ const CompanyIdentification: React.FC = () => {
         loadCompanies();
       } else {
         console.error('❌ Firma güncelleme hatası:', response.data.message);
-        alert(response.data.message);
+        showMessage('Hata', response.data.message, 'error');
       }
     } catch (error: any) {
       console.error('💥 Firma güncelleme hatası:', error);
       const errorMessage = error.response?.data?.message || 'Firma güncellenirken bir hata oluştu';
-      alert(errorMessage);
+      showMessage('Hata', errorMessage, 'error');
     }
   };
 
@@ -129,12 +145,12 @@ const CompanyIdentification: React.FC = () => {
         loadCompanies();
       } else {
         console.error('❌ Firma silme hatası:', response.data.message);
-        alert(response.data.message);
+        showMessage('Hata', response.data.message, 'error');
       }
     } catch (error: any) {
       console.error('💥 Firma silme hatası:', error);
       const errorMessage = error.response?.data?.message || 'Firma silinirken bir hata oluştu';
-      alert(errorMessage);
+      showMessage('Hata', errorMessage, 'error');
     }
   };
 
@@ -884,6 +900,117 @@ const CompanyIdentification: React.FC = () => {
           </div>
         </div>
       )}
+
+      {/* Message Modal */}
+      {showMessageModal && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          width: '100%',
+          height: '100%',
+          backgroundColor: 'rgba(0,0,0,0.5)',
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+          zIndex: 2000
+        }}>
+          <div style={{
+            background: 'white',
+            borderRadius: '12px',
+            padding: '0',
+            maxWidth: '400px',
+            width: '90%',
+            boxShadow: '0 8px 32px rgba(0,0,0,0.2)',
+            animation: 'modalSlideIn 0.3s ease-out'
+          }}>
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '16px',
+              padding: '24px 24px 16px 24px',
+              borderBottom: '1px solid #E9ECEF'
+            }}>
+              <div style={{
+                width: '48px',
+                height: '48px',
+                borderRadius: '50%',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontSize: '24px',
+                flexShrink: 0,
+                background: messageModal.type === 'success' ? '#D4EDDA' : 
+                           messageModal.type === 'error' ? '#F8D7DA' :
+                           messageModal.type === 'warning' ? '#FFF3CD' : '#D1ECF1',
+                color: messageModal.type === 'success' ? '#155724' : 
+                       messageModal.type === 'error' ? '#721C24' :
+                       messageModal.type === 'warning' ? '#856404' : '#0C5460'
+              }}>
+                <i className={`fas ${
+                  messageModal.type === 'success' ? 'fa-check-circle' :
+                  messageModal.type === 'error' ? 'fa-times-circle' :
+                  messageModal.type === 'warning' ? 'fa-exclamation-triangle' : 'fa-info-circle'
+                }`}></i>
+              </div>
+              <h3 style={{
+                fontSize: '18px',
+                fontWeight: 600,
+                color: '#232D42',
+                margin: 0
+              }}>
+                {messageModal.title}
+              </h3>
+            </div>
+            <div style={{
+              padding: '16px 24px 24px 24px',
+              color: '#495057',
+              fontSize: '14px',
+              lineHeight: 1.5
+            }}>
+              {messageModal.message}
+            </div>
+            <div style={{
+              display: 'flex',
+              gap: '12px',
+              justifyContent: 'flex-end',
+              padding: '0 24px 24px 24px'
+            }}>
+              <button
+                onClick={closeMessageModal}
+                style={{
+                  padding: '10px 20px',
+                  border: 'none',
+                  borderRadius: '6px',
+                  fontSize: '14px',
+                  fontWeight: 500,
+                  cursor: 'pointer',
+                  transition: 'all 0.3s ease',
+                  minWidth: '80px',
+                  background: '#3A57E8',
+                  color: 'white'
+                }}
+              >
+                Tamam
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* CSS Animation */}
+      <style>{`
+        @keyframes modalSlideIn {
+          from {
+            opacity: 0;
+            transform: translateY(-20px) scale(0.95);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0) scale(1);
+          }
+        }
+      `}</style>
     </div>
   );
 };

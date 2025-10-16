@@ -328,6 +328,13 @@ const bulkCreateAuthorizations = async (req, res) => {
             const rowNumber = i + 2; // Excel'de satır numarası (header + 1)
 
             try {
+                // Boş satır kontrolü - tüm hücreler boşsa bu satırı ignore et
+                const isRowEmpty = row.every(cell => !cell || cell.toString().trim() === '');
+                if (isRowEmpty) {
+                    console.log(`Satır ${rowNumber} tamamen boş, ignore ediliyor`);
+                    continue; // Bu satırı atla, hata verme
+                }
+
                 if (row.length < 4) {
                     errors.push({
                         row: rowNumber,

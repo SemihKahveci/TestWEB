@@ -60,6 +60,12 @@ const AdminPanel: React.FC = () => {
   const [showDeletePopup, setShowDeletePopup] = useState(false);
   const [showPDFPreview, setShowPDFPreview] = useState(false);
   const [showAnswersPopup, setShowAnswersPopup] = useState(false);
+  const [showMessageModal, setShowMessageModal] = useState(false);
+  const [messageModal, setMessageModal] = useState({
+    title: '',
+    message: '',
+    type: 'info' as 'success' | 'error' | 'warning' | 'info'
+  });
   const [selectedUser, setSelectedUser] = useState<UserResult | null>(null);
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
   const [isMobile, setIsMobile] = useState(false);
@@ -311,7 +317,7 @@ const AdminPanel: React.FC = () => {
       
       const data = await response.json();
       if (!data.success || !data.results || data.results.length === 0) {
-        alert('Bu kod için veri bulunamadı.');
+        showMessage('Hata', 'Bu kod için veri bulunamadı.', 'error');
         return;
       }
       
@@ -320,7 +326,7 @@ const AdminPanel: React.FC = () => {
       setShowAnswersPopup(true);
     } catch (error) {
       console.error('Cevapları getirme hatası:', error);
-      alert('Cevaplar getirilirken bir hata oluştu: ' + error.message);
+      showMessage('Hata', 'Cevaplar getirilirken bir hata oluştu: ' + (error as Error).message, 'error');
     }
   };
 
@@ -343,7 +349,7 @@ const AdminPanel: React.FC = () => {
     }
     
     if (!existingData) {
-      alert('Bu kod için veri bulunamadı.');
+      showMessage('Hata', 'Bu kod için veri bulunamadı.', 'error');
       return;
     }
     setSelectedUser(existingData);
@@ -391,7 +397,7 @@ const AdminPanel: React.FC = () => {
       document.body.removeChild(a);
     } catch (error) {
       console.error('Excel indirme hatası:', error);
-      alert('Excel indirilirken bir hata oluştu: ' + error.message);
+      showMessage('Hata', 'Excel indirilirken bir hata oluştu: ' + (error as Error).message, 'error');
     }
   };
 
@@ -442,7 +448,7 @@ const AdminPanel: React.FC = () => {
       document.body.removeChild(a);
     } catch (error) {
       console.error('Word indirme hatası:', error);
-      alert('Word indirilirken bir hata oluştu: ' + error.message);
+      showMessage('Hata', 'Word indirilirken bir hata oluştu: ' + (error as Error).message, 'error');
     }
   };
 
@@ -465,7 +471,7 @@ const AdminPanel: React.FC = () => {
     }
     
     if (!existingData) {
-      alert('Bu kod için veri bulunamadı.');
+      showMessage('Hata', 'Bu kod için veri bulunamadı.', 'error');
       return;
     }
     setSelectedUser(existingData);
@@ -497,15 +503,25 @@ const AdminPanel: React.FC = () => {
       // Sadece veriyi yeniden yükle (sayfa yenilenmesin)
       await loadData();
       
-      alert('Değerlendirme başarıyla silindi.');
+      showMessage('Başarılı', 'Değerlendirme başarıyla silindi.', 'success');
     } catch (error) {
       console.error('Silme hatası:', error);
-      alert('Silme işlemi sırasında bir hata oluştu: ' + error.message);
+      showMessage('Hata', 'Silme işlemi sırasında bir hata oluştu: ' + (error as Error).message, 'error');
     }
   };
 
   const handleViewAnswers = (result: UserResult) => {
     // Cevaplar popup'ını aç
+  };
+
+  // Modal functions
+  const showMessage = (title: string, message: string, type: 'success' | 'error' | 'warning' | 'info') => {
+    setMessageModal({ title, message, type });
+    setShowMessageModal(true);
+  };
+
+  const closeMessageModal = () => {
+    setShowMessageModal(false);
   };
 
   const paginatedResults = filteredResults.slice(
@@ -1677,7 +1693,7 @@ const AdminPanel: React.FC = () => {
                     }, 100);
                   } catch (error) {
                     console.error('PDF önizleme hatası:', error);
-                    alert('PDF önizlenirken bir hata oluştu: ' + error.message);
+                    showMessage('Hata', 'PDF önizlenirken bir hata oluştu: ' + (error as Error).message, 'error');
                   }
                 }}
                 style={{
@@ -1746,7 +1762,7 @@ const AdminPanel: React.FC = () => {
                     setShowPDFPopup(false);
                   } catch (error) {
                     console.error('PDF indirme hatası:', error);
-                    alert('PDF indirilirken bir hata oluştu: ' + error.message);
+                    showMessage('Hata', 'PDF indirilirken bir hata oluştu: ' + (error as Error).message, 'error');
                   }
                 }}
                 style={{
@@ -2161,11 +2177,118 @@ const AdminPanel: React.FC = () => {
         </div>
       )}
 
+      {/* Message Modal */}
+      {showMessageModal && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          width: '100%',
+          height: '100%',
+          backgroundColor: 'rgba(0,0,0,0.5)',
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+          zIndex: 2000
+        }}>
+          <div style={{
+            background: 'white',
+            borderRadius: '12px',
+            padding: '0',
+            maxWidth: '400px',
+            width: '90%',
+            boxShadow: '0 8px 32px rgba(0,0,0,0.2)',
+            animation: 'modalSlideIn 0.3s ease-out'
+          }}>
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '16px',
+              padding: '24px 24px 16px 24px',
+              borderBottom: '1px solid #E9ECEF'
+            }}>
+              <div style={{
+                width: '48px',
+                height: '48px',
+                borderRadius: '50%',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontSize: '24px',
+                flexShrink: 0,
+                background: messageModal.type === 'success' ? '#D4EDDA' : 
+                           messageModal.type === 'error' ? '#F8D7DA' :
+                           messageModal.type === 'warning' ? '#FFF3CD' : '#D1ECF1',
+                color: messageModal.type === 'success' ? '#155724' : 
+                       messageModal.type === 'error' ? '#721C24' :
+                       messageModal.type === 'warning' ? '#856404' : '#0C5460'
+              }}>
+                <i className={`fas ${
+                  messageModal.type === 'success' ? 'fa-check-circle' :
+                  messageModal.type === 'error' ? 'fa-times-circle' :
+                  messageModal.type === 'warning' ? 'fa-exclamation-triangle' : 'fa-info-circle'
+                }`}></i>
+              </div>
+              <h3 style={{
+                fontSize: '18px',
+                fontWeight: 600,
+                color: '#232D42',
+                margin: 0
+              }}>
+                {messageModal.title}
+              </h3>
+            </div>
+            <div style={{
+              padding: '16px 24px 24px 24px',
+              color: '#495057',
+              fontSize: '14px',
+              lineHeight: 1.5
+            }}>
+              {messageModal.message}
+            </div>
+            <div style={{
+              display: 'flex',
+              gap: '12px',
+              justifyContent: 'flex-end',
+              padding: '0 24px 24px 24px'
+            }}>
+              <button
+                onClick={closeMessageModal}
+                style={{
+                  padding: '10px 20px',
+                  border: 'none',
+                  borderRadius: '6px',
+                  fontSize: '14px',
+                  fontWeight: 500,
+                  cursor: 'pointer',
+                  transition: 'all 0.3s ease',
+                  minWidth: '80px',
+                  background: '#3A57E8',
+                  color: 'white'
+                }}
+              >
+                Tamam
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* CSS Animation */}
       <style>{`
         @keyframes spin {
           0% { transform: rotate(0deg); }
           100% { transform: rotate(360deg); }
+        }
+        @keyframes modalSlideIn {
+          from {
+            opacity: 0;
+            transform: translateY(-20px) scale(0.95);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0) scale(1);
+          }
         }
       `}</style>
     </div>

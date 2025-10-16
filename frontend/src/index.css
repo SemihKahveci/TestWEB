@@ -90,4 +90,22 @@ body {
     padding: 12px 16px;
     font-size: 14px;
   }
+  
+  /* Login page background fix for mobile */
+  .App {
+    background-attachment: scroll !important;
+    background-size: cover !important;
+    background-position: center center !important;
+    min-height: 100vh !important;
+    height: 100vh !important;
+    overflow-x: hidden;
+  }
+  
+  /* Ensure full viewport coverage */
+  html, body {
+    height: 100%;
+    margin: 0;
+    padding: 0;
+    overflow-x: hidden;
+  }
 }

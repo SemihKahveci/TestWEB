@@ -402,7 +402,8 @@ const ResultsPage: React.FC = () => {
         }));
 
       if (dataToExport.length === 0) {
-        alert('İndirilecek veri bulunamadı.');
+        setErrorMessage('İndirilecek veri bulunamadı.');
+        setShowErrorPopup(true);
         return;
       }
 
@@ -436,7 +437,8 @@ const ResultsPage: React.FC = () => {
 
     } catch (error) {
       console.error('Excel indirme hatası:', error);
-      alert('Excel dosyası indirilirken bir hata oluştu!');
+      setErrorMessage('Excel dosyası indirilirken bir hata oluştu!');
+      setShowErrorPopup(true);
     }
   };
 
