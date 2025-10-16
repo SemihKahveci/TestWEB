@@ -161,6 +161,59 @@ const DefineCompanyAdmin: React.FC = () => {
     setFilteredCompanies(companies); // Reset filter
   };
 
+  // Highlight search term in text
+  const highlightText = (text: string, searchTerm: string) => {
+    if (!searchTerm || !text) return text;
+    
+    // Türkçe karakterleri normalize et
+    const normalizeText = (text: string) => {
+      return text
+        .trim()
+        .toLowerCase()
+        .replace(/ı/g, 'i') // I'yi i'ye çevir
+        .replace(/ğ/g, 'g') // Ğ'yi g'ye çevir
+        .replace(/ü/g, 'u') // Ü'yi u'ya çevir
+        .replace(/ş/g, 's') // Ş'yi s'ye çevir
+        .replace(/ö/g, 'o') // Ö'yi o'ya çevir
+        .replace(/ç/g, 'c') // Ç'yi c'ye çevir
+        .replace(/İ/g, 'i') // İ'yi i'ye çevir
+        .replace(/Ğ/g, 'g') // Ğ'yi g'ye çevir
+        .replace(/Ü/g, 'u') // Ü'yi u'ya çevir
+        .replace(/Ş/g, 's') // Ş'yi s'ye çevir
+        .replace(/Ö/g, 'o') // Ö'yi o'ya çevir
+        .replace(/Ç/g, 'c'); // Ç'yi c'ye çevir
+    };
+    
+    const normalizedText = normalizeText(text);
+    const normalizedSearchTerm = normalizeText(searchTerm);
+    
+    // Normalize edilmiş metinde arama yap
+    const searchIndex = normalizedText.indexOf(normalizedSearchTerm);
+    if (searchIndex === -1) return text;
+    
+    // Orijinal metinde eşleşen kısmı bul
+    const beforeMatch = text.substring(0, searchIndex);
+    const matchLength = searchTerm.length;
+    const match = text.substring(searchIndex, searchIndex + matchLength);
+    const afterMatch = text.substring(searchIndex + matchLength);
+    
+    return (
+      <>
+        {beforeMatch}
+        <span style={{ 
+          backgroundColor: '#FEF3C7', 
+          color: '#92400E',
+          fontWeight: 600,
+          padding: '1px 2px',
+          borderRadius: '2px'
+        }}>
+          {match}
+        </span>
+        {afterMatch}
+      </>
+    );
+  };
+
   const handleAddAdmin = () => {
     setFormData({ name: '', email: '', company: '', password: '' });
     setCompanySearchTerm('');
@@ -769,60 +822,142 @@ const DefineCompanyAdmin: React.FC = () => {
                   Firma
                 </label>
                 <div style={{ position: 'relative' }} data-company-dropdown>
-                  <input
-                    type="text"
-                    value={companySearchTerm}
-                    onChange={(e) => {
-                      handleCompanySearch(e.target.value);
-                      setShowCompanyDropdown(true);
-                    }}
-                    placeholder="Firma adını arayın"
+                  {/* Custom Dropdown */}
+                  <div
+                    onClick={() => setShowCompanyDropdown(!showCompanyDropdown)}
                     style={{
-                      width: '100%',
-                      padding: '8px 16px',
+                      padding: '12px 16px',
                       border: '1px solid #D1D5DB',
-                      borderRadius: '4px',
+                      borderRadius: '6px',
                       fontSize: '14px',
-                      fontFamily: 'Inter',
-                      outline: 'none'
+                      color: '#232D42',
+                      backgroundColor: '#FFFFFF',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      userSelect: 'none',
+                      fontFamily: 'Inter'
                     }}
-                    onFocus={() => setShowCompanyDropdown(true)}
-                  />
+                  >
+                    <span style={{ color: companySearchTerm ? '#232D42' : '#8A92A6' }}>
+                      {companySearchTerm || `Firma seçin (${companies.length} firma mevcut)`}
+                    </span>
+                    <i 
+                      className={`fas fa-chevron-${showCompanyDropdown ? 'up' : 'down'}`}
+                      style={{ 
+                        color: '#8A92A6',
+                        fontSize: '12px',
+                        transition: 'transform 0.3s ease'
+                      }}
+                    />
+                  </div>
+                  {/* Dropdown Menu */}
                   {showCompanyDropdown && (
                     <div style={{
                       position: 'absolute',
                       top: '100%',
                       left: 0,
                       right: 0,
-                      background: 'white',
+                      backgroundColor: '#FFFFFF',
                       border: '1px solid #D1D5DB',
-                      borderTop: 'none',
-                      borderRadius: '0 0 4px 4px',
-                      maxHeight: '200px',
-                      overflow: 'auto',
-                      zIndex: 1001
+                      borderRadius: '6px',
+                      boxShadow: '0 8px 25px rgba(0, 0, 0, 0.15)',
+                      zIndex: 9999,
+                      maxHeight: '400px',
+                      overflow: 'hidden'
                     }}>
-                      {filteredCompanies.map((company: any) => (
-                        <div
-                          key={company._id}
-                          onClick={() => handleCompanySelect(company.firmName)}
+                      {/* Search Input */}
+                      <div style={{ padding: '8px', borderBottom: '1px solid #E9ECEF', position: 'relative' }}>
+                        <input
+                          type="text"
+                          placeholder="Firma ara..."
+                          value={companySearchTerm}
+                          onChange={(e) => {
+                            handleCompanySearch(e.target.value);
+                          }}
                           style={{
-                            padding: '8px 16px',
-                            cursor: 'pointer',
+                            width: '100%',
+                            padding: '8px 12px 8px 32px',
+                            border: '1px solid #E9ECEF',
+                            borderRadius: '4px',
+                            fontSize: '14px',
+                            outline: 'none',
+                            fontFamily: 'Inter'
+                          }}
+                          onClick={(e) => e.stopPropagation()}
+                        />
+                        <i className="fas fa-search" style={{
+                          position: 'absolute',
+                          left: '16px',
+                          top: '50%',
+                          transform: 'translateY(-50%)',
+                          color: '#6B7280',
+                          fontSize: '12px'
+                        }} />
+                        {companySearchTerm && (
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setCompanySearchTerm('');
+                              handleCompanySearch('');
+                            }}
+                            style={{
+                              position: 'absolute',
+                              right: '12px',
+                              top: '50%',
+                              transform: 'translateY(-50%)',
+                              background: 'none',
+                              border: 'none',
+                              color: '#6B7280',
+                              cursor: 'pointer',
+                              fontSize: '12px',
+                              padding: '2px'
+                            }}
+                          >
+                            <i className="fas fa-times"></i>
+                          </button>
+                        )}
+                      </div>
+
+                      {/* Options */}
+                      <div style={{ maxHeight: '300px', overflowY: 'auto' }}>
+                        {filteredCompanies.length > 0 ? (
+                          filteredCompanies.map((company: any) => (
+                            <div
+                              key={company._id}
+                              onClick={() => handleCompanySelect(company.firmName)}
+                              style={{
+                                padding: '12px 16px',
+                                cursor: 'pointer',
+                                fontSize: '14px',
+                                fontFamily: 'Inter',
+                                color: '#232D42',
+                                borderBottom: '1px solid #F1F3F4',
+                                transition: 'background-color 0.2s ease'
+                              }}
+                              onMouseEnter={(e) => {
+                                e.currentTarget.style.backgroundColor = '#F8F9FA';
+                              }}
+                              onMouseLeave={(e) => {
+                                e.currentTarget.style.backgroundColor = 'transparent';
+                              }}
+                            >
+                              {highlightText(company.firmName, companySearchTerm)}
+                            </div>
+                          ))
+                        ) : (
+                          <div style={{
+                            padding: '12px 16px',
                             fontSize: '14px',
                             fontFamily: 'Inter',
-                            borderBottom: '1px solid #F3F4F6'
-                          }}
-                          onMouseEnter={(e) => {
-                            e.currentTarget.style.backgroundColor = '#F3F4F6';
-                          }}
-                          onMouseLeave={(e) => {
-                            e.currentTarget.style.backgroundColor = 'transparent';
-                          }}
-                        >
-                          {company.firmName}
-                        </div>
-                      ))}
+                            color: '#8A92A6',
+                            textAlign: 'center'
+                          }}>
+                            {companySearchTerm ? `"${companySearchTerm}" için arama sonucu bulunamadı` : 'Firma bulunamadı'}
+                          </div>
+                        )}
+                      </div>
                     </div>
                   )}
                 </div>

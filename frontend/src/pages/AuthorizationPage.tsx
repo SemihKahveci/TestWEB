@@ -243,6 +243,59 @@ const AuthorizationPage: React.FC = () => {
     setShowPositionDropdown(false);
   };
 
+  // Highlight search term in text
+  const highlightText = (text: string, searchTerm: string) => {
+    if (!searchTerm || !text) return text;
+    
+    // Türkçe karakterleri normalize et
+    const normalizeText = (text: string) => {
+      return text
+        .trim()
+        .toLowerCase()
+        .replace(/ı/g, 'i') // I'yi i'ye çevir
+        .replace(/ğ/g, 'g') // Ğ'yi g'ye çevir
+        .replace(/ü/g, 'u') // Ü'yi u'ya çevir
+        .replace(/ş/g, 's') // Ş'yi s'ye çevir
+        .replace(/ö/g, 'o') // Ö'yi o'ya çevir
+        .replace(/ç/g, 'c') // Ç'yi c'ye çevir
+        .replace(/İ/g, 'i') // İ'yi i'ye çevir
+        .replace(/Ğ/g, 'g') // Ğ'yi g'ye çevir
+        .replace(/Ü/g, 'u') // Ü'yi u'ya çevir
+        .replace(/Ş/g, 's') // Ş'yi s'ye çevir
+        .replace(/Ö/g, 'o') // Ö'yi o'ya çevir
+        .replace(/Ç/g, 'c'); // Ç'yi c'ye çevir
+    };
+    
+    const normalizedText = normalizeText(text);
+    const normalizedSearchTerm = normalizeText(searchTerm);
+    
+    // Normalize edilmiş metinde arama yap
+    const searchIndex = normalizedText.indexOf(normalizedSearchTerm);
+    if (searchIndex === -1) return text;
+    
+    // Orijinal metinde eşleşen kısmı bul
+    const beforeMatch = text.substring(0, searchIndex);
+    const matchLength = searchTerm.length;
+    const match = text.substring(searchIndex, searchIndex + matchLength);
+    const afterMatch = text.substring(searchIndex + matchLength);
+    
+    return (
+      <>
+        {beforeMatch}
+        <span style={{ 
+          backgroundColor: '#FEF3C7', 
+          color: '#92400E',
+          fontWeight: 600,
+          padding: '1px 2px',
+          borderRadius: '2px'
+        }}>
+          {match}
+        </span>
+        {afterMatch}
+      </>
+    );
+  };
+
   const handleAddAuthorization = () => {
     setFormData({
       sicilNo: '',
@@ -419,60 +472,6 @@ const AuthorizationPage: React.FC = () => {
     return timestampB - timestampA; // En yeni en üstte
   });
 
-  // Highlight search term in text
-  const highlightText = (text: string, searchTerm: string) => {
-    if (!searchTerm || !text) return text;
-    
-    // Türkçe karakterleri normalize et
-    const normalizeText = (text: string) => {
-      return text
-        .trim()
-        .replace(/İ/g, 'i') // Büyük İ'yi noktasız i'ye çevir
-        .replace(/I/g, 'i') // Büyük I'yi noktasız i'ye çevir
-        .replace(/Ç/g, 'c') // Ç'yi c'ye çevir
-        .replace(/Ğ/g, 'g') // Ğ'yi g'ye çevir
-        .replace(/Ö/g, 'o') // Ö'yi o'ya çevir
-        .replace(/Ş/g, 's') // Ş'yi s'ye çevir
-        .replace(/Ü/g, 'u') // Ü'yi u'ya çevir
-        .toLowerCase()
-        .replace(/i̇/g, 'i') // Noktalı küçük i'yi noktasız i'ye çevir
-        .replace(/ı/g, 'i') // Noktasız küçük i'yi noktasız i'ye çevir
-        .replace(/ç/g, 'c') // Ç'yi c'ye çevir
-        .replace(/ğ/g, 'g') // Ğ'yi g'ye çevir
-        .replace(/ö/g, 'o') // Ö'yi o'ya çevir
-        .replace(/ş/g, 's') // Ş'yi s'ye çevir
-        .replace(/ü/g, 'u'); // Ü'yi u'ya çevir
-    };
-    
-    const normalizedText = normalizeText(text);
-    const normalizedSearchTerm = normalizeText(searchTerm);
-    
-    // Normalize edilmiş metinde arama yap
-    const searchIndex = normalizedText.indexOf(normalizedSearchTerm);
-    if (searchIndex === -1) return text;
-    
-    // Orijinal metinde eşleşen kısmı bul
-    const beforeMatch = text.substring(0, searchIndex);
-    const matchLength = searchTerm.length;
-    const match = text.substring(searchIndex, searchIndex + matchLength);
-    const afterMatch = text.substring(searchIndex + matchLength);
-    
-    return (
-      <>
-        {beforeMatch}
-        <span style={{ 
-          backgroundColor: '#FEF3C7', 
-          color: '#92400E',
-          fontWeight: '600',
-          padding: '2px 4px',
-          borderRadius: '4px'
-        }}>
-          {match}
-        </span>
-        {afterMatch}
-      </>
-    );
-  };
 
   // Pagination
   const totalPages = Math.ceil(filteredAuthorizations.length / itemsPerPage);
@@ -1293,74 +1292,141 @@ const AuthorizationPage: React.FC = () => {
                   }}>
                     Pozisyon
                   </label>
-                  <input
-                    type="text"
-                    value={positionSearchTerm}
-                    onChange={(e) => {
-                      handlePositionSearch(e.target.value);
-                      setShowPositionDropdown(true);
-                    }}
-                    onFocus={() => setShowPositionDropdown(true)}
-                    placeholder={`Pozisyon arayın (${positions.length} pozisyon mevcut)`}
+                  {/* Custom Dropdown */}
+                  <div
+                    onClick={() => setShowPositionDropdown(!showPositionDropdown)}
                     style={{
-                      width: '100%',
                       padding: '12px 16px',
                       border: '1px solid #E9ECEF',
                       borderRadius: '6px',
                       fontSize: '14px',
-                      fontFamily: 'Inter',
-                      outline: 'none',
-                      backgroundColor: 'white'
+                      color: '#232D42',
+                      backgroundColor: '#FFFFFF',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      userSelect: 'none',
+                      fontFamily: 'Inter'
                     }}
-                  />
+                  >
+                    <span style={{ color: positionSearchTerm ? '#232D42' : '#8A92A6' }}>
+                      {positionSearchTerm || `Pozisyon seçin (${positions.length} pozisyon mevcut)`}
+                    </span>
+                    <i 
+                      className={`fas fa-chevron-${showPositionDropdown ? 'up' : 'down'}`}
+                      style={{ 
+                        color: '#8A92A6',
+                        fontSize: '12px',
+                        transition: 'transform 0.3s ease'
+                      }}
+                    />
+                  </div>
                   {showPositionDropdown && (
                     <div style={{
                       position: 'absolute',
                       top: '100%',
                       left: 0,
                       right: 0,
-                      backgroundColor: 'white',
+                      backgroundColor: '#FFFFFF',
                       border: '1px solid #E9ECEF',
-                      borderTop: 'none',
-                      borderRadius: '0 0 6px 6px',
-                      maxHeight: '200px',
-                      overflowY: 'auto',
-                      zIndex: 1000,
-                      boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)'
+                      borderRadius: '6px',
+                      boxShadow: '0 8px 25px rgba(0, 0, 0, 0.15)',
+                      zIndex: 9999,
+                      maxHeight: '400px',
+                      overflow: 'hidden'
                     }}>
-                      {filteredPositions.length > 0 ? (
-                        filteredPositions.map((position, index) => (
-                          <div
-                            key={index}
-                            onClick={() => handlePositionSelect(position)}
+                      {/* Search Input */}
+                      <div style={{ padding: '8px', borderBottom: '1px solid #E9ECEF', position: 'relative' }}>
+                        <input
+                          type="text"
+                          placeholder="Pozisyon ara..."
+                          value={positionSearchTerm}
+                          onChange={(e) => {
+                            handlePositionSearch(e.target.value);
+                          }}
+                          style={{
+                            width: '100%',
+                            padding: '8px 12px 8px 32px',
+                            border: '1px solid #E9ECEF',
+                            borderRadius: '4px',
+                            fontSize: '14px',
+                            outline: 'none',
+                            fontFamily: 'Inter'
+                          }}
+                          onClick={(e) => e.stopPropagation()}
+                        />
+                        <i className="fas fa-search" style={{
+                          position: 'absolute',
+                          left: '16px',
+                          top: '50%',
+                          transform: 'translateY(-50%)',
+                          color: '#6B7280',
+                          fontSize: '12px'
+                        }} />
+                        {positionSearchTerm && (
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setPositionSearchTerm('');
+                              handlePositionSearch('');
+                            }}
                             style={{
-                              padding: '12px 16px',
+                              position: 'absolute',
+                              right: '12px',
+                              top: '50%',
+                              transform: 'translateY(-50%)',
+                              background: 'none',
+                              border: 'none',
+                              color: '#6B7280',
                               cursor: 'pointer',
-                              fontSize: '14px',
-                              fontFamily: 'Inter',
-                              borderBottom: index < filteredPositions.length - 1 ? '1px solid #F3F4F6' : 'none'
-                            }}
-                            onMouseEnter={(e) => {
-                              e.currentTarget.style.backgroundColor = '#F9FAFB';
-                            }}
-                            onMouseLeave={(e) => {
-                              e.currentTarget.style.backgroundColor = 'white';
+                              fontSize: '12px',
+                              padding: '2px'
                             }}
                           >
-                            {position}
+                            <i className="fas fa-times"></i>
+                          </button>
+                        )}
+                      </div>
+
+                      {/* Options */}
+                      <div style={{ maxHeight: '300px', overflowY: 'auto' }}>
+                        {filteredPositions.length > 0 ? (
+                          filteredPositions.map((position, index) => (
+                            <div
+                              key={index}
+                              onClick={() => handlePositionSelect(position)}
+                              style={{
+                                padding: '12px 16px',
+                                cursor: 'pointer',
+                                fontSize: '14px',
+                                fontFamily: 'Inter',
+                                color: '#232D42',
+                                borderBottom: index < filteredPositions.length - 1 ? '1px solid #F1F3F4' : 'none',
+                                transition: 'background-color 0.2s ease'
+                              }}
+                              onMouseEnter={(e) => {
+                                e.currentTarget.style.backgroundColor = '#F8F9FA';
+                              }}
+                              onMouseLeave={(e) => {
+                                e.currentTarget.style.backgroundColor = 'transparent';
+                              }}
+                            >
+                              {highlightText(position, positionSearchTerm)}
+                            </div>
+                          ))
+                        ) : (
+                          <div style={{
+                            padding: '12px 16px',
+                            fontSize: '14px',
+                            fontFamily: 'Inter',
+                            color: '#8A92A6',
+                            textAlign: 'center'
+                          }}>
+                            {positionSearchTerm ? `"${positionSearchTerm}" için arama sonucu bulunamadı` : 'Pozisyon bulunamadı'}
                           </div>
-                        ))
-                      ) : (
-                        <div style={{
-                          padding: '12px 16px',
-                          fontSize: '14px',
-                          fontFamily: 'Inter',
-                          color: '#6B7280',
-                          textAlign: 'center'
-                        }}>
-                          Pozisyon bulunamadı
-                        </div>
-                      )}
+                        )}
+                      </div>
                     </div>
                   )}
                 </div>
@@ -1541,74 +1607,141 @@ const AuthorizationPage: React.FC = () => {
                   }}>
                     Pozisyon
                   </label>
-                  <input
-                    type="text"
-                    value={positionSearchTerm}
-                    onChange={(e) => {
-                      handlePositionSearch(e.target.value);
-                      setShowPositionDropdown(true);
-                    }}
-                    onFocus={() => setShowPositionDropdown(true)}
-                    placeholder={`Pozisyon arayın (${positions.length} pozisyon mevcut)`}
+                  {/* Custom Dropdown */}
+                  <div
+                    onClick={() => setShowPositionDropdown(!showPositionDropdown)}
                     style={{
-                      width: '100%',
                       padding: '12px 16px',
                       border: '1px solid #E9ECEF',
                       borderRadius: '6px',
                       fontSize: '14px',
-                      fontFamily: 'Inter',
-                      outline: 'none',
-                      backgroundColor: 'white'
+                      color: '#232D42',
+                      backgroundColor: '#FFFFFF',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      userSelect: 'none',
+                      fontFamily: 'Inter'
                     }}
-                  />
+                  >
+                    <span style={{ color: positionSearchTerm ? '#232D42' : '#8A92A6' }}>
+                      {positionSearchTerm || `Pozisyon seçin (${positions.length} pozisyon mevcut)`}
+                    </span>
+                    <i 
+                      className={`fas fa-chevron-${showPositionDropdown ? 'up' : 'down'}`}
+                      style={{ 
+                        color: '#8A92A6',
+                        fontSize: '12px',
+                        transition: 'transform 0.3s ease'
+                      }}
+                    />
+                  </div>
                   {showPositionDropdown && (
                     <div style={{
                       position: 'absolute',
                       top: '100%',
                       left: 0,
                       right: 0,
-                      backgroundColor: 'white',
+                      backgroundColor: '#FFFFFF',
                       border: '1px solid #E9ECEF',
-                      borderTop: 'none',
-                      borderRadius: '0 0 6px 6px',
-                      maxHeight: '200px',
-                      overflowY: 'auto',
-                      zIndex: 1000,
-                      boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)'
+                      borderRadius: '6px',
+                      boxShadow: '0 8px 25px rgba(0, 0, 0, 0.15)',
+                      zIndex: 9999,
+                      maxHeight: '400px',
+                      overflow: 'hidden'
                     }}>
-                      {filteredPositions.length > 0 ? (
-                        filteredPositions.map((position, index) => (
-                          <div
-                            key={index}
-                            onClick={() => handlePositionSelect(position)}
+                      {/* Search Input */}
+                      <div style={{ padding: '8px', borderBottom: '1px solid #E9ECEF', position: 'relative' }}>
+                        <input
+                          type="text"
+                          placeholder="Pozisyon ara..."
+                          value={positionSearchTerm}
+                          onChange={(e) => {
+                            handlePositionSearch(e.target.value);
+                          }}
+                          style={{
+                            width: '100%',
+                            padding: '8px 12px 8px 32px',
+                            border: '1px solid #E9ECEF',
+                            borderRadius: '4px',
+                            fontSize: '14px',
+                            outline: 'none',
+                            fontFamily: 'Inter'
+                          }}
+                          onClick={(e) => e.stopPropagation()}
+                        />
+                        <i className="fas fa-search" style={{
+                          position: 'absolute',
+                          left: '16px',
+                          top: '50%',
+                          transform: 'translateY(-50%)',
+                          color: '#6B7280',
+                          fontSize: '12px'
+                        }} />
+                        {positionSearchTerm && (
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setPositionSearchTerm('');
+                              handlePositionSearch('');
+                            }}
                             style={{
-                              padding: '12px 16px',
+                              position: 'absolute',
+                              right: '12px',
+                              top: '50%',
+                              transform: 'translateY(-50%)',
+                              background: 'none',
+                              border: 'none',
+                              color: '#6B7280',
                               cursor: 'pointer',
-                              fontSize: '14px',
-                              fontFamily: 'Inter',
-                              borderBottom: index < filteredPositions.length - 1 ? '1px solid #F3F4F6' : 'none'
-                            }}
-                            onMouseEnter={(e) => {
-                              e.currentTarget.style.backgroundColor = '#F9FAFB';
-                            }}
-                            onMouseLeave={(e) => {
-                              e.currentTarget.style.backgroundColor = 'white';
+                              fontSize: '12px',
+                              padding: '2px'
                             }}
                           >
-                            {position}
+                            <i className="fas fa-times"></i>
+                          </button>
+                        )}
+                      </div>
+
+                      {/* Options */}
+                      <div style={{ maxHeight: '300px', overflowY: 'auto' }}>
+                        {filteredPositions.length > 0 ? (
+                          filteredPositions.map((position, index) => (
+                            <div
+                              key={index}
+                              onClick={() => handlePositionSelect(position)}
+                              style={{
+                                padding: '12px 16px',
+                                cursor: 'pointer',
+                                fontSize: '14px',
+                                fontFamily: 'Inter',
+                                color: '#232D42',
+                                borderBottom: index < filteredPositions.length - 1 ? '1px solid #F1F3F4' : 'none',
+                                transition: 'background-color 0.2s ease'
+                              }}
+                              onMouseEnter={(e) => {
+                                e.currentTarget.style.backgroundColor = '#F8F9FA';
+                              }}
+                              onMouseLeave={(e) => {
+                                e.currentTarget.style.backgroundColor = 'transparent';
+                              }}
+                            >
+                              {highlightText(position, positionSearchTerm)}
+                            </div>
+                          ))
+                        ) : (
+                          <div style={{
+                            padding: '12px 16px',
+                            fontSize: '14px',
+                            fontFamily: 'Inter',
+                            color: '#8A92A6',
+                            textAlign: 'center'
+                          }}>
+                            {positionSearchTerm ? `"${positionSearchTerm}" için arama sonucu bulunamadı` : 'Pozisyon bulunamadı'}
                           </div>
-                        ))
-                      ) : (
-                        <div style={{
-                          padding: '12px 16px',
-                          fontSize: '14px',
-                          fontFamily: 'Inter',
-                          color: '#6B7280',
-                          textAlign: 'center'
-                        }}>
-                          Pozisyon bulunamadı
-                        </div>
-                      )}
+                        )}
+                      </div>
                     </div>
                   )}
                 </div>
