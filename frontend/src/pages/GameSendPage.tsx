@@ -40,6 +40,9 @@ const GameSendPage: React.FC = () => {
   // Group tab states
   const [groups, setGroups] = useState<Group[]>([]);
   const [selectedGroups, setSelectedGroups] = useState<string[]>([]);
+  const [groupSearchTerm, setGroupSearchTerm] = useState('');
+  const [debouncedGroupSearchTerm, setDebouncedGroupSearchTerm] = useState('');
+  const [showGroupDropdown, setShowGroupDropdown] = useState(false);
   
   // Modal states
   const [showGroupDetailsModal, setShowGroupDetailsModal] = useState(false);
@@ -88,6 +91,32 @@ const GameSendPage: React.FC = () => {
       loadGroups();
     }
   }, [activeTab, groups.length]);
+
+  // Debounce group search term
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedGroupSearchTerm(groupSearchTerm);
+    }, 300);
+
+    return () => clearTimeout(timer);
+  }, [groupSearchTerm]);
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (showGroupDropdown) {
+        const target = event.target as HTMLElement;
+        if (!target.closest('[data-dropdown="group"]')) {
+          setShowGroupDropdown(false);
+        }
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [showGroupDropdown]);
 
   // Load remaining credits on component mount
   useEffect(() => {
@@ -168,8 +197,10 @@ const GameSendPage: React.FC = () => {
 
       const result = await response.json();
       if (result.success) {
-        // Only show active groups
-        const activeGroups = result.groups.filter((group: Group) => group.status === 'Aktif');
+        // Only show active groups and sort alphabetically
+        const activeGroups = result.groups
+          .filter((group: Group) => group.status === 'Aktif')
+          .sort((a: Group, b: Group) => a.name.localeCompare(b.name, 'tr-TR'));
         setGroups(activeGroups);
       } else {
         throw new Error(result.message || 'Grup listesi alınamadı');
@@ -211,26 +242,104 @@ const GameSendPage: React.FC = () => {
   };
 
   // Group management
-  const addGroup = () => {
-    const select = document.getElementById('groupSelect') as HTMLSelectElement;
-    const selectedValue = select.value;
-
-    if (!selectedValue) {
+  const addGroup = (groupId: string) => {
+    if (!groupId) {
       showMessage('Hata', 'Lütfen bir grup seçin!', 'error');
       return;
     }
 
-    if (selectedGroups.includes(selectedValue)) {
+    if (selectedGroups.includes(groupId)) {
       showMessage('Hata', 'Bu grup zaten seçilmiş!', 'error');
       return;
     }
 
-    setSelectedGroups([...selectedGroups, selectedValue]);
-    select.value = '';
+    setSelectedGroups([...selectedGroups, groupId]);
+    setGroupSearchTerm('');
+    setShowGroupDropdown(false);
   };
 
   const removeGroup = (groupId: string) => {
     setSelectedGroups(selectedGroups.filter(g => g !== groupId));
+  };
+
+  // Filter groups based on search term
+  const filteredGroups = groups.filter(group => {
+    // Türkçe karakterleri normalize et
+    const normalizeText = (text: string) => {
+      return text
+        .trim()
+        .toLowerCase()
+        .replace(/ı/g, 'i') // I'yi i'ye çevir
+        .replace(/ğ/g, 'g') // Ğ'yi g'ye çevir
+        .replace(/ü/g, 'u') // Ü'yi u'ya çevir
+        .replace(/ş/g, 's') // Ş'yi s'ye çevir
+        .replace(/ö/g, 'o') // Ö'yi o'ya çevir
+        .replace(/ç/g, 'c') // Ç'yi c'ye çevir
+        .replace(/İ/g, 'i') // İ'yi i'ye çevir
+        .replace(/Ğ/g, 'g') // Ğ'yi g'ye çevir
+        .replace(/Ü/g, 'u') // Ü'yi u'ya çevir
+        .replace(/Ş/g, 's') // Ş'yi s'ye çevir
+        .replace(/Ö/g, 'o') // Ö'yi o'ya çevir
+        .replace(/Ç/g, 'c'); // Ç'yi c'ye çevir
+    };
+    
+    const searchNormalized = normalizeText(debouncedGroupSearchTerm);
+    const groupNameNormalized = normalizeText(group.name);
+    
+    return groupNameNormalized.includes(searchNormalized);
+  });
+
+  // Highlight search term in text
+  const highlightText = (text: string, searchTerm: string) => {
+    if (!searchTerm || !text) return text;
+    
+    // Türkçe karakterleri normalize et
+    const normalizeText = (text: string) => {
+      return text
+        .trim()
+        .toLowerCase()
+        .replace(/ı/g, 'i') // I'yi i'ye çevir
+        .replace(/ğ/g, 'g') // Ğ'yi g'ye çevir
+        .replace(/ü/g, 'u') // Ü'yi u'ya çevir
+        .replace(/ş/g, 's') // Ş'yi s'ye çevir
+        .replace(/ö/g, 'o') // Ö'yi o'ya çevir
+        .replace(/ç/g, 'c') // Ç'yi c'ye çevir
+        .replace(/İ/g, 'i') // İ'yi i'ye çevir
+        .replace(/Ğ/g, 'g') // Ğ'yi g'ye çevir
+        .replace(/Ü/g, 'u') // Ü'yi u'ya çevir
+        .replace(/Ş/g, 's') // Ş'yi s'ye çevir
+        .replace(/Ö/g, 'o') // Ö'yi o'ya çevir
+        .replace(/Ç/g, 'c'); // Ç'yi c'ye çevir
+    };
+    
+    const normalizedText = normalizeText(text);
+    const normalizedSearchTerm = normalizeText(searchTerm);
+    
+    // Normalize edilmiş metinde arama yap
+    const searchIndex = normalizedText.indexOf(normalizedSearchTerm);
+    if (searchIndex === -1) return text;
+    
+    // Orijinal metinde eşleşen kısmı bul
+    const beforeMatch = text.substring(0, searchIndex);
+    const matchLength = searchTerm.length;
+    const match = text.substring(searchIndex, searchIndex + matchLength);
+    const afterMatch = text.substring(searchIndex + matchLength);
+    
+    return (
+      <>
+        {beforeMatch}
+        <span style={{ 
+          backgroundColor: '#FEF3C7', 
+          color: '#92400E',
+          fontWeight: 600,
+          padding: '1px 2px',
+          borderRadius: '2px'
+        }}>
+          {match}
+        </span>
+        {afterMatch}
+      </>
+    );
   };
 
   // Show group details
@@ -985,44 +1094,143 @@ const GameSendPage: React.FC = () => {
               </label>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                 <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-                  <select
-                    id="groupSelect"
-                    style={{
-                      flex: 1,
-                      padding: '16px',
-                      border: '1px solid #E9ECEF',
-                      borderRadius: '4px',
-                      fontSize: '14px',
-                      color: '#232D42'
-                    }}
-                  >
-                    <option value="">Lütfen Grup Seçiniz</option>
-                    {groups
-                      .filter(group => !selectedGroups.includes(group._id))
-                      .map(group => (
-                        <option key={group._id} value={group._id}>
-                          {group.name}
-                        </option>
-                      ))}
-                  </select>
-                  <button
-                    type="button"
-                    onClick={addGroup}
-                    disabled={isLoading}
-                    style={{
-                      background: '#28a745',
-                      color: 'white',
-                      border: 'none',
-                      padding: '8px 12px',
-                      borderRadius: '4px',
-                      cursor: isLoading ? 'not-allowed' : 'pointer',
-                      fontSize: '14px',
-                      transition: 'background-color 0.3s',
-                      opacity: isLoading ? 0.7 : 1
-                    }}
-                  >
-                    <i className="fas fa-plus"></i>
-                  </button>
+                  {/* Custom Dropdown */}
+                  <div style={{ flex: 1, position: 'relative' }} data-dropdown="group">
+                    <div
+                      onClick={() => setShowGroupDropdown(!showGroupDropdown)}
+                      style={{
+                        padding: '16px',
+                        border: '1px solid #E9ECEF',
+                        borderRadius: '4px',
+                        fontSize: '14px',
+                        color: '#232D42',
+                        backgroundColor: '#FFFFFF',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        userSelect: 'none'
+                      }}
+                    >
+                      <span style={{ color: groupSearchTerm ? '#232D42' : '#8A92A6' }}>
+                        {groupSearchTerm || 'Lütfen Grup Seçiniz'}
+                      </span>
+                      <i 
+                        className={`fas fa-chevron-${showGroupDropdown ? 'up' : 'down'}`}
+                        style={{ 
+                          color: '#8A92A6',
+                          fontSize: '12px',
+                          transition: 'transform 0.3s ease'
+                        }}
+                      />
+                    </div>
+
+                    {/* Dropdown Menu */}
+                    {showGroupDropdown && (
+                      <div style={{
+                        position: 'absolute',
+                        top: '100%',
+                        left: 0,
+                        right: 0,
+                        backgroundColor: '#FFFFFF',
+                        border: '1px solid #E9ECEF',
+                        borderRadius: '4px',
+                        boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)',
+                        zIndex: 1000,
+                        maxHeight: '200px',
+                        overflow: 'hidden'
+                      }}>
+                        {/* Search Input */}
+                        <div style={{ padding: '8px', borderBottom: '1px solid #E9ECEF', position: 'relative' }}>
+                          <input
+                            type="text"
+                            placeholder="Grup ara..."
+                            value={groupSearchTerm}
+                            onChange={(e) => setGroupSearchTerm(e.target.value)}
+                            style={{
+                              width: '100%',
+                              padding: '8px 12px 8px 32px',
+                              border: '1px solid #E9ECEF',
+                              borderRadius: '4px',
+                              fontSize: '14px',
+                              outline: 'none'
+                            }}
+                            onClick={(e) => e.stopPropagation()}
+                          />
+                          <i className="fas fa-search" style={{
+                            position: 'absolute',
+                            left: '16px',
+                            top: '50%',
+                            transform: 'translateY(-50%)',
+                            color: '#6B7280',
+                            fontSize: '12px'
+                          }} />
+                          {groupSearchTerm && (
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setGroupSearchTerm('');
+                              }}
+                              style={{
+                                position: 'absolute',
+                                right: '12px',
+                                top: '50%',
+                                transform: 'translateY(-50%)',
+                                background: 'none',
+                                border: 'none',
+                                color: '#6B7280',
+                                cursor: 'pointer',
+                                fontSize: '12px',
+                                padding: '2px'
+                              }}
+                            >
+                              <i className="fas fa-times"></i>
+                            </button>
+                          )}
+                        </div>
+
+                        {/* Options */}
+                        <div style={{ maxHeight: '150px', overflowY: 'auto' }}>
+                          {filteredGroups
+                            .filter(group => !selectedGroups.includes(group._id))
+                            .map(group => (
+                              <div
+                                key={group._id}
+                                onClick={() => addGroup(group._id)}
+                                style={{
+                                  padding: '12px 16px',
+                                  cursor: 'pointer',
+                                  fontSize: '14px',
+                                  color: '#232D42',
+                                  borderBottom: '1px solid #F1F3F4',
+                                  transition: 'background-color 0.2s ease'
+                                }}
+                                onMouseEnter={(e) => {
+                                  e.currentTarget.style.backgroundColor = '#F8F9FA';
+                                }}
+                                onMouseLeave={(e) => {
+                                  e.currentTarget.style.backgroundColor = 'transparent';
+                                }}
+                              >
+                                {highlightText(group.name, groupSearchTerm)}
+                              </div>
+                            ))}
+                          
+                          {/* No results message */}
+                          {groupSearchTerm && filteredGroups.filter(group => !selectedGroups.includes(group._id)).length === 0 && (
+                            <div style={{
+                              padding: '12px 16px',
+                              color: '#8A92A6',
+                              fontSize: '14px',
+                              textAlign: 'center'
+                            }}>
+                              "{groupSearchTerm}" için arama sonucu bulunamadı
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    )}
+                  </div>
                 </div>
                 <div style={{
                   display: 'flex',
@@ -1053,7 +1261,7 @@ const GameSendPage: React.FC = () => {
                           transition: 'transform 0.2s, box-shadow 0.2s'
                         }}
                       >
-                        {group.name}
+                        {highlightText(group.name, groupSearchTerm)}
                         <button
                           onClick={() => removeGroup(groupId)}
                           style={{
