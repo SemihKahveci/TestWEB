@@ -586,9 +586,9 @@ async function buildEvaluationHTML(evaluation, options, userCode, isPreview = fa
             score = (!score || score === '-') ? 0 : Math.round(parseFloat(score));
         
             let barColor = '#0286F7';
-            if (competencyScore <= 37) barColor = '#FF0000';
-            else if (competencyScore <= 65) barColor = '#FFD700';
-            else if (competencyScore <= 89.99) barColor = '#00FF00';
+            if (score <= 37) barColor = '#FF0000';
+            else if (score <= 65) barColor = '#FFD700';
+            else if (score <= 89.99) barColor = '#00FF00';
             else barColor = '#FF0000';
                 
             const isDevelopmentSuggestion = title.includes("Gelişim Önerisi");
