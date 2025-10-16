@@ -16,6 +16,9 @@ const LoginPage: React.FC = () => {
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
+  const [showNewPassword, setShowNewPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
   
   const { login } = useAuth();
   const navigate = useNavigate();
@@ -402,27 +405,50 @@ const LoginPage: React.FC = () => {
               }}>
                 Şifre
               </label>
-              <input
-                id="password"
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                style={{
-                  width: '100%',
-                  height: '48px',
-                  padding: '12px 16px',
-                  backgroundColor: 'white',
-                  border: '1px solid #E9ECEF',
-                  borderRadius: '8px',
-                  color: 'black',
-                  fontSize: '16px',
-                  fontFamily: 'Inter, sans-serif',
-                  fontWeight: 400,
-                  lineHeight: '24px',
-                  outline: 'none'
-                }}
-                placeholder="Şifrenizi girin"
-              />
+              <div style={{ position: 'relative', width: '100%' }}>
+                <input
+                  id="password"
+                  type={showPassword ? "text" : "password"}
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  style={{
+                    width: '100%',
+                    height: '48px',
+                    padding: '12px 50px 12px 16px',
+                    backgroundColor: 'white',
+                    border: '1px solid #E9ECEF',
+                    borderRadius: '8px',
+                    color: 'black',
+                    fontSize: '16px',
+                    fontFamily: 'Inter, sans-serif',
+                    fontWeight: 400,
+                    lineHeight: '24px',
+                    outline: 'none'
+                  }}
+                  placeholder="Şifrenizi girin"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  style={{
+                    position: 'absolute',
+                    right: '16px',
+                    top: '50%',
+                    transform: 'translateY(-50%)',
+                    background: 'none',
+                    border: 'none',
+                    cursor: 'pointer',
+                    color: '#6B7280',
+                    fontSize: '18px',
+                    padding: '4px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center'
+                  }}
+                >
+                  <i className={`fas fa-eye${showPassword ? '-slash' : ''}`}></i>
+                </button>
+              </div>
             </div>
           )}
 
@@ -490,27 +516,50 @@ const LoginPage: React.FC = () => {
                 }}>
                   Yeni Şifre
                 </label>
-                <input
-                  id="newPassword"
-                  type="password"
-                  value={newPassword}
-                  onChange={(e) => setNewPassword(e.target.value)}
-                  style={{
-                    width: '100%',
-                    height: '48px',
-                    padding: '12px 16px',
-                    backgroundColor: 'white',
-                    border: '1px solid #E9ECEF',
-                    borderRadius: '8px',
-                    color: 'black',
-                    fontSize: '16px',
-                    fontFamily: 'Inter, sans-serif',
-                    fontWeight: 400,
-                    lineHeight: '24px',
-                    outline: 'none'
-                  }}
-                  placeholder="Yeni şifrenizi girin"
-                />
+                <div style={{ position: 'relative', width: '100%' }}>
+                  <input
+                    id="newPassword"
+                    type={showNewPassword ? "text" : "password"}
+                    value={newPassword}
+                    onChange={(e) => setNewPassword(e.target.value)}
+                    style={{
+                      width: '100%',
+                      height: '48px',
+                      padding: '12px 50px 12px 16px',
+                      backgroundColor: 'white',
+                      border: '1px solid #E9ECEF',
+                      borderRadius: '8px',
+                      color: 'black',
+                      fontSize: '16px',
+                      fontFamily: 'Inter, sans-serif',
+                      fontWeight: 400,
+                      lineHeight: '24px',
+                      outline: 'none'
+                    }}
+                    placeholder="Yeni şifrenizi girin"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowNewPassword(!showNewPassword)}
+                    style={{
+                      position: 'absolute',
+                      right: '16px',
+                      top: '50%',
+                      transform: 'translateY(-50%)',
+                      background: 'none',
+                      border: 'none',
+                      cursor: 'pointer',
+                      color: '#6B7280',
+                      fontSize: '18px',
+                      padding: '4px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center'
+                    }}
+                  >
+                    <i className={`fas fa-eye${showNewPassword ? '-slash' : ''}`}></i>
+                  </button>
+                </div>
                 {/* Şifre Kriterleri */}
                 <div style={{
                   marginTop: '8px',
@@ -552,27 +601,50 @@ const LoginPage: React.FC = () => {
                 }}>
                   Şifre Tekrar
                 </label>
-                <input
-                  id="confirmPassword"
-                  type="password"
-                  value={confirmPassword}
-                  onChange={(e) => setConfirmPassword(e.target.value)}
-                  style={{
-                    width: '100%',
-                    height: '48px',
-                    padding: '12px 16px',
-                    backgroundColor: 'white',
-                    border: '1px solid #E9ECEF',
-                    borderRadius: '8px',
-                    color: 'black',
-                    fontSize: '16px',
-                    fontFamily: 'Inter, sans-serif',
-                    fontWeight: 400,
-                    lineHeight: '24px',
-                    outline: 'none'
-                  }}
-                  placeholder="Şifrenizi tekrar girin"
-                />
+                <div style={{ position: 'relative', width: '100%' }}>
+                  <input
+                    id="confirmPassword"
+                    type={showConfirmPassword ? "text" : "password"}
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    style={{
+                      width: '100%',
+                      height: '48px',
+                      padding: '12px 50px 12px 16px',
+                      backgroundColor: 'white',
+                      border: '1px solid #E9ECEF',
+                      borderRadius: '8px',
+                      color: 'black',
+                      fontSize: '16px',
+                      fontFamily: 'Inter, sans-serif',
+                      fontWeight: 400,
+                      lineHeight: '24px',
+                      outline: 'none'
+                    }}
+                    placeholder="Şifrenizi tekrar girin"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                    style={{
+                      position: 'absolute',
+                      right: '16px',
+                      top: '50%',
+                      transform: 'translateY(-50%)',
+                      background: 'none',
+                      border: 'none',
+                      cursor: 'pointer',
+                      color: '#6B7280',
+                      fontSize: '18px',
+                      padding: '4px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center'
+                    }}
+                  >
+                    <i className={`fas fa-eye${showConfirmPassword ? '-slash' : ''}`}></i>
+                  </button>
+                </div>
               </div>
             </>
           )}
