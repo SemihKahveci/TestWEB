@@ -690,7 +690,18 @@ async function generateAndSendPDF(evaluation, options, res, userCode) {
               <span style="margin-left:8px;">GİZLİ © ANDRON Game 2025, İzinsiz paylaşılamaz.</span>
               <span style="margin-left:12px;"><span class="pageNumber"></span>/<span class="totalPages"></span></span>
             </div>
-          </div>`
+          </div>`,
+        args: [
+            '--no-sandbox',
+            '--disable-setuid-sandbox',
+            '--disable-dev-shm-usage',
+            '--disable-accelerated-2d-canvas',
+            '--no-first-run',
+            '--no-zygote',
+            '--disable-gpu',
+            '--disable-web-security',
+            '--disable-features=VizDisplayCompositor'
+        ]
       };
     const file = await htmlPdf.generatePdf({ content: htmlContent }, pdfOptions);
     res.setHeader('Content-Type', 'application/pdf');
@@ -714,7 +725,18 @@ async function generateAndSendPreview(evaluation, options, res, userCode) {
               <span style="margin-left:8px;">GİZLİ © ANDRON Game 2025, İzinsiz paylaşılamaz.</span>
               <span style="margin-left:12px;"><span class="pageNumber"></span>/<span class="totalPages"></span></span>
             </div>
-          </div>`
+          </div>`,
+        args: [
+            '--no-sandbox',
+            '--disable-setuid-sandbox',
+            '--disable-dev-shm-usage',
+            '--disable-accelerated-2d-canvas',
+            '--no-first-run',
+            '--no-zygote',
+            '--disable-gpu',
+            '--disable-web-security',
+            '--disable-features=VizDisplayCompositor'
+        ]
       };
     const file = await htmlPdf.generatePdf({ content: htmlContent }, pdfOptions);
     res.setHeader('Content-Type', 'application/pdf');
