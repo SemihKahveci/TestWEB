@@ -523,7 +523,7 @@ async function buildEvaluationHTML(evaluation, options, userCode, isPreview = fa
         const reportTitle = getReportTitle(report.type);
         const competencyName = reportTitle.replace(' Raporu', '');
 
-        // Başlık sayfası
+        // Başlık sayfası - Kapak sayfası gibi basit tasarım
         htmlContent += `
             <div class="section-start" style="
                 page-break-before: always;
@@ -533,23 +533,15 @@ async function buildEvaluationHTML(evaluation, options, userCode, isPreview = fa
                 display:flex; 
                 align-items:center; 
                 justify-content:flex-end;">
-                <h1 style="font-size:80px; font-weight:bold; 
+                <h1 style="font-size:80px; 
+                        font-weight:bold; 
+                        color: #283c9b;
                         text-shadow:4px 4px 8px rgba(0,0,0,0.3); 
-                        font-family: Impact,Haettenschweiler,Franklin Gothic Bold,Charcoal,Helvetica Inserat,Bitstream Vera Sans Bold,Arial Black,sans serif;
+                        font-family: Cambria, Georgia, serif;
                         line-height: 0.9;
                         max-width: 600px;
                         word-wrap: break-word;">
-                    ${competencyName.split(' ').map(word => {
-                        return word.split('').map((char, index) => {
-                            const totalChars = word.length;
-                            const intensity = totalChars > 1 ? index / (totalChars - 1) : 0;
-                            const r = Math.round(35 + (15 - 35) * intensity);
-                            const g = Math.round(37 + (18 - 37) * intensity);
-                            const b = Math.round(133 + (51 - 133) * intensity);
-                            const color = `rgb(${r}, ${g}, ${b})`;
-                            return `<span style="color: ${color};">${char}</span>`;
-                        }).join('');
-                    }).join(' ')}
+                    ${competencyName}
                 </h1>
             </div>
         `;
