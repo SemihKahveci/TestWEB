@@ -26,6 +26,7 @@ const createOrganization = async (req, res) => {
             direktörlük,
             müdürlük,
             grupLiderligi,
+            unvan,
             pozisyon
         } = req.body;
 
@@ -43,6 +44,7 @@ const createOrganization = async (req, res) => {
             direktörlük: direktörlük && direktörlük.trim() !== '' ? direktörlük.trim() : '-',
             müdürlük: müdürlük && müdürlük.trim() !== '' ? müdürlük.trim() : '-',
             grupLiderligi: grupLiderligi && grupLiderligi.trim() !== '' ? grupLiderligi.trim() : '-',
+            unvan: unvan && unvan.trim() !== '' ? unvan.trim() : '-',
             pozisyon: pozisyon.trim()
         };
 
@@ -52,6 +54,7 @@ const createOrganization = async (req, res) => {
             direktörlük: cleanedData.direktörlük,
             müdürlük: cleanedData.müdürlük,
             grupLiderligi: cleanedData.grupLiderligi,
+            unvan: cleanedData.unvan,
             pozisyon: cleanedData.pozisyon
         });
 
@@ -91,6 +94,7 @@ const updateOrganization = async (req, res) => {
             direktörlük,
             müdürlük,
             grupLiderligi,
+            unvan,
             pozisyon
         } = req.body;
 
@@ -108,6 +112,7 @@ const updateOrganization = async (req, res) => {
             direktörlük: direktörlük && direktörlük.trim() !== '' ? direktörlük.trim() : '-',
             müdürlük: müdürlük && müdürlük.trim() !== '' ? müdürlük.trim() : '-',
             grupLiderligi: grupLiderligi && grupLiderligi.trim() !== '' ? grupLiderligi.trim() : '-',
+            unvan: unvan && unvan.trim() !== '' ? unvan.trim() : '-',
             pozisyon: pozisyon.trim()
         };
 
@@ -117,6 +122,7 @@ const updateOrganization = async (req, res) => {
             direktörlük: cleanedData.direktörlük,
             müdürlük: cleanedData.müdürlük,
             grupLiderligi: cleanedData.grupLiderligi,
+            unvan: cleanedData.unvan,
             pozisyon: cleanedData.pozisyon,
             _id: { $ne: id }
         });
@@ -254,7 +260,7 @@ const bulkCreateOrganizations = async (req, res) => {
         const organizations = [];
         const errors = [];
 
-        // Sütun sırası: Genel Müdür Yardımcılığı, Direktörlük, Müdürlük, Departman/Şeflik, Pozisyon
+        // Sütun sırası: Genel Müdür Yardımcılığı, Direktörlük, Müdürlük, Departman/Şeflik, Unvan, Pozisyon
         for (let i = 0; i < data.length; i++) {
             const row = data[i];
             const rowNumber = i + 2; // Excel'de satır numarası (header + 1)
@@ -266,15 +272,15 @@ const bulkCreateOrganizations = async (req, res) => {
                     continue; // Bu satırı atla, hata verme
                 }
 
-                if (row.length < 5) {
+                if (row.length < 6) {
                     errors.push({
                         row: rowNumber,
-                        message: 'Satırda yeterli sütun bulunmuyor. 5 sütun gerekli: Genel Müdür Yardımcılığı, Direktörlük, Müdürlük, Departman/Şeflik, Pozisyon'
+                        message: 'Satırda yeterli sütun bulunmuyor. 6 sütun gerekli: Genel Müdür Yardımcılığı, Direktörlük, Müdürlük, Departman/Şeflik, Unvan, Pozisyon'
                     });
                     continue;
                 }
 
-                const [genelMudurYardimciligi, direktörlük, müdürlük, grupLiderligi, pozisyon] = row;
+                const [genelMudurYardimciligi, direktörlük, müdürlük, grupLiderligi, unvan, pozisyon] = row;
 
                 // Zorunlu alan kontrolü: sadece Pozisyon zorunlu
                 const isEmpty = (value) => !value || value.toString().trim() === '';
@@ -293,6 +299,7 @@ const bulkCreateOrganizations = async (req, res) => {
                     direktörlük: direktörlük && direktörlük.toString().trim() !== '' ? direktörlük.toString().trim() : '-',
                     müdürlük: müdürlük && müdürlük.toString().trim() !== '' ? müdürlük.toString().trim() : '-',
                     grupLiderligi: grupLiderligi && grupLiderligi.toString().trim() !== '' ? grupLiderligi.toString().trim() : '-',
+                    unvan: unvan && unvan.toString().trim() !== '' ? unvan.toString().trim() : '-',
                     pozisyon: pozisyon.toString().trim()
                 };
 
@@ -323,6 +330,7 @@ const bulkCreateOrganizations = async (req, res) => {
                     direktörlük: org.direktörlük,
                     müdürlük: org.müdürlük,
                     grupLiderligi: org.grupLiderligi,
+                    unvan: org.unvan,
                     pozisyon: org.pozisyon
                 });
 

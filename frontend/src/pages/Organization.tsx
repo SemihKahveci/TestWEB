@@ -9,6 +9,7 @@ interface Organization {
   direktörlük?: string;
   müdürlük?: string;
   grupLiderligi?: string;
+  unvan?: string;
   pozisyon?: string;
 }
 
@@ -53,6 +54,7 @@ const Organization: React.FC = () => {
     direktörlük: '',
     müdürlük: '',
     grupLiderligi: '',
+    unvan: '',
     pozisyon: ''
   });
 
@@ -119,6 +121,7 @@ const Organization: React.FC = () => {
       direktörlük: '',
       müdürlük: '',
       grupLiderligi: '',
+      unvan: '',
       pozisyon: ''
     });
     setShowAddPopup(true);
@@ -131,6 +134,7 @@ const Organization: React.FC = () => {
       direktörlük: organization.direktörlük || '',
       müdürlük: organization.müdürlük || '',
       grupLiderligi: organization.grupLiderligi || '',
+      unvan: organization.unvan || '',
       pozisyon: organization.pozisyon || ''
     });
     setShowEditPopup(true);
@@ -158,6 +162,7 @@ const Organization: React.FC = () => {
         direktörlük: formData.direktörlük.trim() === '' ? '-' : formData.direktörlük.trim(),
         müdürlük: formData.müdürlük.trim() === '' ? '-' : formData.müdürlük.trim(),
         grupLiderligi: formData.grupLiderligi.trim() === '' ? '-' : formData.grupLiderligi.trim(),
+        unvan: formData.unvan.trim() === '' ? '-' : formData.unvan.trim(),
         pozisyon: formData.pozisyon.trim()
       };
       
@@ -167,6 +172,7 @@ const Organization: React.FC = () => {
         org.direktörlük === cleanedFormData.direktörlük &&
         org.müdürlük === cleanedFormData.müdürlük &&
         org.grupLiderligi === cleanedFormData.grupLiderligi &&
+        org.unvan === cleanedFormData.unvan &&
         org.pozisyon === cleanedFormData.pozisyon
       );
       
@@ -213,6 +219,7 @@ const Organization: React.FC = () => {
         direktörlük: formData.direktörlük.trim() === '' ? '-' : formData.direktörlük.trim(),
         müdürlük: formData.müdürlük.trim() === '' ? '-' : formData.müdürlük.trim(),
         grupLiderligi: formData.grupLiderligi.trim() === '' ? '-' : formData.grupLiderligi.trim(),
+        unvan: formData.unvan.trim() === '' ? '-' : formData.unvan.trim(),
         pozisyon: formData.pozisyon.trim()
       };
       
@@ -223,6 +230,7 @@ const Organization: React.FC = () => {
         org.direktörlük === cleanedFormData.direktörlük &&
         org.müdürlük === cleanedFormData.müdürlük &&
         org.grupLiderligi === cleanedFormData.grupLiderligi &&
+        org.unvan === cleanedFormData.unvan &&
         org.pozisyon === cleanedFormData.pozisyon
       );
       
@@ -306,6 +314,7 @@ const Organization: React.FC = () => {
       (org.direktörlük && normalizeText(org.direktörlük).includes(searchNormalized)) ||
       (org.müdürlük && normalizeText(org.müdürlük).includes(searchNormalized)) ||
       (org.grupLiderligi && normalizeText(org.grupLiderligi).includes(searchNormalized)) ||
+      (org.unvan && normalizeText(org.unvan).includes(searchNormalized)) ||
       (org.pozisyon && normalizeText(org.pozisyon).includes(searchNormalized))
     );
   });
@@ -429,6 +438,7 @@ const Organization: React.FC = () => {
         'Direktörlük',
         'Müdürlük',
         'Departman/Şeflik',
+        'Unvan',
         'Pozisyon'
       ];
 
@@ -438,13 +448,14 @@ const Organization: React.FC = () => {
         'Örnek Direktörlük',
         'Örnek Müdürlük',
         'Örnek Departman/Şeflik',
+        'Örnek Unvan',
         'Örnek Pozisyon'
       ];
 
       // Boş satırlar için veri
       const emptyRows: string[][] = [];
       for (let i = 0; i < 10; i++) {
-        emptyRows.push(['', '', '', '', '']);
+        emptyRows.push(['', '', '', '', '', '']);
       }
 
       // Tüm veriyi birleştir
@@ -462,6 +473,7 @@ const Organization: React.FC = () => {
         { wch: 20 }, // Direktörlük
         { wch: 20 }, // Müdürlük
         { wch: 20 }, // Departman/Şeflik
+        { wch: 20 }, // Unvan
         { wch: 20 }  // Pozisyon
       ];
 
@@ -947,6 +959,16 @@ const Organization: React.FC = () => {
                   fontWeight: 700,
                   fontFamily: 'Montserrat'
                 }}>
+                  Unvan
+                </th>
+                <th style={{
+                  padding: '16px',
+                  textAlign: 'left',
+                  color: '#232D42',
+                  fontSize: '14px',
+                  fontWeight: 700,
+                  fontFamily: 'Montserrat'
+                }}>
                   Pozisyon
                 </th>
                 <th style={{
@@ -964,7 +986,7 @@ const Organization: React.FC = () => {
             <tbody>
               {searchTerm && (
                 <tr>
-                  <td colSpan={6} style={{
+                  <td colSpan={7} style={{
                     padding: '12px 16px',
                     backgroundColor: '#F8FAFC',
                     borderBottom: '1px solid #E2E8F0',
@@ -979,7 +1001,7 @@ const Organization: React.FC = () => {
               )}
               {currentOrganizations.length === 0 ? (
                 <tr>
-                  <td colSpan={6} style={{
+                  <td colSpan={7} style={{
                     padding: '40px',
                     textAlign: 'center',
                     color: '#8A92A6',
@@ -1028,6 +1050,15 @@ const Organization: React.FC = () => {
                       fontWeight: 500
                     }}>
                       {highlightText(organization.grupLiderligi || '-', searchTerm)}
+                    </td>
+                    <td style={{
+                      padding: '16px',
+                      color: '#232D42',
+                      fontSize: '14px',
+                      fontFamily: 'Montserrat',
+                      fontWeight: 500
+                    }}>
+                      {highlightText(organization.unvan || '-', searchTerm)}
                     </td>
                     <td style={{
                       padding: '16px',
@@ -1328,6 +1359,34 @@ const Organization: React.FC = () => {
                     marginBottom: '8px',
                     fontFamily: 'Inter'
                   }}>
+                    Unvan
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.unvan}
+                    onChange={(e) => setFormData({ ...formData, unvan: e.target.value })}
+                    placeholder="Unvan girin"
+                    style={{
+                      width: '100%',
+                      padding: '14px 16px',
+                      border: '2px solid #E5E7EB',
+                      borderRadius: '8px',
+                      fontSize: '14px',
+                      fontFamily: 'Inter',
+                      outline: 'none'
+                    }}
+                  />
+                </div>
+                
+                <div>
+                  <label style={{
+                    display: 'block',
+                    fontSize: '14px',
+                    fontWeight: 600,
+                    color: '#374151',
+                    marginBottom: '8px',
+                    fontFamily: 'Inter'
+                  }}>
                     Pozisyon <span style={{ color: '#DC2626' }}>*</span>
                   </label>
                   <input
@@ -1563,6 +1622,33 @@ const Organization: React.FC = () => {
                     type="text"
                     value={formData.grupLiderligi}
                     onChange={(e) => setFormData({ ...formData, grupLiderligi: e.target.value })}
+                    style={{
+                      width: '100%',
+                      padding: '14px 16px',
+                      border: '2px solid #E5E7EB',
+                      borderRadius: '8px',
+                      fontSize: '14px',
+                      fontFamily: 'Inter',
+                      outline: 'none'
+                    }}
+                  />
+                </div>
+                
+                <div>
+                  <label style={{
+                    display: 'block',
+                    fontSize: '14px',
+                    fontWeight: 600,
+                    color: '#374151',
+                    marginBottom: '8px',
+                    fontFamily: 'Inter'
+                  }}>
+                    Unvan
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.unvan}
+                    onChange={(e) => setFormData({ ...formData, unvan: e.target.value })}
                     style={{
                       width: '100%',
                       padding: '14px 16px',
