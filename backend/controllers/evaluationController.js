@@ -675,7 +675,7 @@ async function buildEvaluationHTML(evaluation, options, userCode, isPreview = fa
 
 
 async function generateAndSendPDF(evaluation, options, res, userCode) {
-    const htmlContent = await buildEvaluationHTML(evaluation, options, userCode, true);
+    const htmlContent = await buildEvaluationHTML(evaluation, options, userCode, false);
     const pdfOptions = { 
         format: 'A4',
         printBackground: true,

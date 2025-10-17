@@ -27,7 +27,7 @@ interface Person {
 
 const GameSendPage: React.FC = () => {
   // State management
-  const [activeTab, setActiveTab] = useState<'person' | 'group'>('person');
+  const [activeTab, setActiveTab] = useState<'person' | 'group' | 'title'>('person');
   const [isLoading, setIsLoading] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [remainingCredits, setRemainingCredits] = useState(0);
@@ -44,9 +44,18 @@ const GameSendPage: React.FC = () => {
   const [debouncedGroupSearchTerm, setDebouncedGroupSearchTerm] = useState('');
   const [showGroupDropdown, setShowGroupDropdown] = useState(false);
   
+  // Title tab states
+  const [titles, setTitles] = useState<any[]>([]);
+  const [selectedTitles, setSelectedTitles] = useState<string[]>([]);
+  const [titleSearchTerm, setTitleSearchTerm] = useState('');
+  const [debouncedTitleSearchTerm, setDebouncedTitleSearchTerm] = useState('');
+  const [showTitleDropdown, setShowTitleDropdown] = useState(false);
+  
   // Modal states
   const [showGroupDetailsModal, setShowGroupDetailsModal] = useState(false);
   const [selectedGroupDetails, setSelectedGroupDetails] = useState<Group | null>(null);
+  const [showTitleDetailsModal, setShowTitleDetailsModal] = useState(false);
+  const [selectedTitleDetails, setSelectedTitleDetails] = useState<any>(null);
   const [showMessageModal, setShowMessageModal] = useState(false);
   const [messageModal, setMessageModal] = useState({
     title: '',
@@ -92,6 +101,13 @@ const GameSendPage: React.FC = () => {
     }
   }, [activeTab, groups.length]);
 
+  // Load titles when title tab is selected
+  useEffect(() => {
+    if (activeTab === 'title' && titles.length === 0) {
+      loadTitles();
+    }
+  }, [activeTab, titles.length]);
+
   // Debounce group search term
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -101,14 +117,24 @@ const GameSendPage: React.FC = () => {
     return () => clearTimeout(timer);
   }, [groupSearchTerm]);
 
+  // Debounce title search term
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedTitleSearchTerm(titleSearchTerm);
+    }, 300);
+
+    return () => clearTimeout(timer);
+  }, [titleSearchTerm]);
+
   // Close dropdown when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (showGroupDropdown) {
-        const target = event.target as HTMLElement;
-        if (!target.closest('[data-dropdown="group"]')) {
-          setShowGroupDropdown(false);
-        }
+      const target = event.target as HTMLElement;
+      if (showGroupDropdown && !target.closest('[data-dropdown="group"]')) {
+        setShowGroupDropdown(false);
+      }
+      if (showTitleDropdown && !target.closest('[data-dropdown="title"]')) {
+        setShowTitleDropdown(false);
       }
     };
 
@@ -116,7 +142,7 @@ const GameSendPage: React.FC = () => {
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
     };
-  }, [showGroupDropdown]);
+  }, [showGroupDropdown, showTitleDropdown]);
 
   // Load remaining credits on component mount
   useEffect(() => {
@@ -213,8 +239,45 @@ const GameSendPage: React.FC = () => {
     }
   };
 
+  // Load titles from API
+  const loadTitles = async () => {
+    try {
+      setIsLoading(true);
+      const token = localStorage.getItem('token');
+      const response = await fetch('/api/organization', {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error('Unvan listesi yüklenemedi');
+      }
+
+      const result = await response.json();
+      if (result.success) {
+        // Get unique titles and sort alphabetically
+        const uniqueTitles = [...new Set(result.organizations.map((org: any) => org.unvan).filter((unvan: any) => unvan && unvan !== '-'))]
+          .sort((a: any, b: any) => a.localeCompare(b, 'tr-TR'))
+          .map((unvan: any) => ({
+            _id: unvan,
+            name: unvan,
+            organizations: result.organizations.filter((org: any) => org.unvan === unvan)
+          }));
+        setTitles(uniqueTitles);
+      } else {
+        throw new Error(result.message || 'Unvan listesi alınamadı');
+      }
+    } catch (error) {
+      console.error('Unvan listesi yükleme hatası:', error);
+      showMessage('Hata', 'Unvan listesi yüklenemedi', 'error');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   // Tab switching
-  const switchTab = (tabName: 'person' | 'group') => {
+  const switchTab = (tabName: 'person' | 'group' | 'title') => {
     setActiveTab(tabName);
   };
 
@@ -262,6 +325,27 @@ const GameSendPage: React.FC = () => {
     setSelectedGroups(selectedGroups.filter(g => g !== groupId));
   };
 
+  // Title management
+  const addTitle = (titleId: string) => {
+    if (!titleId) {
+      showMessage('Hata', 'Lütfen bir unvan seçin!', 'error');
+      return;
+    }
+
+    if (selectedTitles.includes(titleId)) {
+      showMessage('Hata', 'Bu unvan zaten seçilmiş!', 'error');
+      return;
+    }
+
+    setSelectedTitles([...selectedTitles, titleId]);
+    setTitleSearchTerm('');
+    setShowTitleDropdown(false);
+  };
+
+  const removeTitle = (titleId: string) => {
+    setSelectedTitles(selectedTitles.filter(t => t !== titleId));
+  };
+
   // Filter groups based on search term
   const filteredGroups = groups.filter(group => {
     // Türkçe karakterleri normalize et
@@ -287,6 +371,33 @@ const GameSendPage: React.FC = () => {
     const groupNameNormalized = normalizeText(group.name);
     
     return groupNameNormalized.includes(searchNormalized);
+  });
+
+  // Filter titles based on search term
+  const filteredTitles = titles.filter(title => {
+    // Türkçe karakterleri normalize et
+    const normalizeText = (text: string) => {
+      return text
+        .trim()
+        .toLowerCase()
+        .replace(/ı/g, 'i') // I'yi i'ye çevir
+        .replace(/ğ/g, 'g') // Ğ'yi g'ye çevir
+        .replace(/ü/g, 'u') // Ü'yi u'ya çevir
+        .replace(/ş/g, 's') // Ş'yi s'ye çevir
+        .replace(/ö/g, 'o') // Ö'yi o'ya çevir
+        .replace(/ç/g, 'c') // Ç'yi c'ye çevir
+        .replace(/İ/g, 'i') // İ'yi i'ye çevir
+        .replace(/Ğ/g, 'g') // Ğ'yi g'ye çevir
+        .replace(/Ü/g, 'u') // Ü'yi u'ya çevir
+        .replace(/Ş/g, 's') // Ş'yi s'ye çevir
+        .replace(/Ö/g, 'o') // Ö'yi o'ya çevir
+        .replace(/Ç/g, 'c'); // Ç'yi c'ye çevir
+    };
+    
+    const searchNormalized = normalizeText(debouncedTitleSearchTerm);
+    const titleNameNormalized = normalizeText(title.name);
+    
+    return titleNameNormalized.includes(searchNormalized);
   });
 
   // Highlight search term in text
@@ -348,6 +459,15 @@ const GameSendPage: React.FC = () => {
     if (group) {
       setSelectedGroupDetails(group);
       setShowGroupDetailsModal(true);
+    }
+  };
+
+  // Show title details
+  const showTitleDetails = (titleId: string) => {
+    const title = titles.find(t => t._id === titleId);
+    if (title) {
+      setSelectedTitleDetails(title);
+      setShowTitleDetailsModal(true);
     }
   };
 
@@ -433,6 +553,75 @@ const GameSendPage: React.FC = () => {
       showMessage('Hata', 'Gönderilemedi: Bir hata oluştu', 'error');
     } finally {
       setIsSubmitting(false);
+    }
+  };
+
+  // Send title interview
+  const sendTitleInterview = async () => {
+    if (selectedTitles.length === 0) {
+      showMessage('Hata', 'Lütfen en az bir unvan seçin!', 'error');
+      return;
+    }
+
+    try {
+      // Get all persons from selected titles
+      const allPersons: Person[] = [];
+
+      for (const titleId of selectedTitles) {
+        const title = titles.find(t => t._id === titleId);
+        if (title && title.organizations && title.organizations.length > 0) {
+          // Get person details from authorization API
+          const token = localStorage.getItem('token');
+          const response = await fetch('/api/authorization', {
+            headers: { 'Authorization': `Bearer ${token}` }
+          });
+
+          if (response.ok) {
+            const result = await response.json();
+            if (result.success) {
+              // Find persons with matching positions for this title
+              for (const org of title.organizations) {
+                const matchingPersons = result.authorizations.filter((person: any) => 
+                  person.genelMudurYardimciligi === org.genelMudurYardimciligi &&
+                  person.direktörlük === org.direktörlük &&
+                  person.müdürlük === org.müdürlük &&
+                  person.grupLiderligi === org.grupLiderligi &&
+                  person.unvan === org.unvan &&
+                  person.pozisyon === org.pozisyon
+                );
+                
+                for (const person of matchingPersons) {
+                  if (person.email) {
+                    allPersons.push({
+                      name: person.personName,
+                      email: person.email,
+                      title: person.title,
+                      groupName: `${org.genelMudurYardimciligi} - ${org.direktörlük}`,
+                      planets: ['venus', 'titan'] // Default planets for title-based sending
+                    });
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+
+      if (allPersons.length === 0) {
+        showMessage('Hata', 'Seçilen unvanlarda email adresi olan kişi bulunamadı!', 'error');
+        return;
+      }
+
+      // Show confirmation
+      const confirmMessage = `${allPersons.length} kişiye oyun kodu gönderilecek. Devam etmek istiyor musunuz?`;
+      showConfirm('Onay', confirmMessage, (result) => {
+        if (result) {
+          sendCodesToTitlePersons(allPersons);
+        }
+      });
+    } catch (error) {
+      console.error('Unvan gönderim hatası:', error);
+      showMessage('Hata', 'Gönderim sırasında bir hata oluştu!', 'error');
     }
   };
 
@@ -635,6 +824,137 @@ const GameSendPage: React.FC = () => {
     }
   };
 
+  // Send codes to title persons
+  const sendCodesToTitlePersons = async (allPersons: Person[]) => {
+    try {
+      setIsSubmitting(true);
+      let successCount = 0;
+      let errorCount = 0;
+      const errors: string[] = [];
+
+      for (const person of allPersons) {
+        try {
+          // Generate code for each person
+          const codeResponse = await fetch('/api/generate-code', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              name: person.name,
+              email: person.email,
+              planet: person.planets[0] || 'venus',
+              allPlanets: person.planets.length > 0 ? person.planets : ['venus']
+            })
+          });
+
+          if (codeResponse.ok) {
+            const codeData = await codeResponse.json();
+            if (codeData.success && codeData.code) {
+              // Send code to person
+              const sendResponse = await fetch('/api/send-code', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  code: codeData.code,
+                  name: person.name,
+                  email: person.email,
+                  planet: person.planets[0] || 'venus',
+                  allPlanets: person.planets.length > 0 ? person.planets : ['venus']
+                })
+              });
+
+              if (sendResponse.ok) {
+                const sendData = await sendResponse.json();
+                if (sendData.success) {
+                  successCount++;
+                } else {
+                  errorCount++;
+                  errors.push(`${person.name}: ${sendData.message}`);
+                }
+              } else {
+                errorCount++;
+                errors.push(`${person.name}: Gönderim hatası`);
+              }
+            } else {
+              errorCount++;
+              errors.push(`${person.name}: Kod üretilemedi`);
+            }
+          } else {
+            errorCount++;
+            errors.push(`${person.name}: Kod üretim hatası`);
+          }
+        } catch (error) {
+          errorCount++;
+          errors.push(`${person.name}: ${error instanceof Error ? error.message : 'Bilinmeyen hata'}`);
+        }
+      }
+
+      // Kredi hesaplama (başarılı gönderim sayısı * gezegen sayısı)
+      // Her kişi için 2 gezegen (venus, titan) varsayıyoruz
+      const totalCreditCost = successCount * 2;
+      
+      // Show results
+      if (successCount > 0 && errorCount === 0) {
+        showMessage('Başarılı', `${successCount} kişiye başarıyla gönderildi! (${totalCreditCost} kredi düşüldü)`, 'success');
+        // Kredi düşür (API ile)
+        try {
+          const deductResponse = await creditAPI.deductCredits({
+            amount: totalCreditCost,
+            type: 'game_send',
+            description: `Unvan gönderimi: ${successCount} kişi (${totalCreditCost} kredi)`
+          });
+          
+          if (deductResponse.data.success) {
+            // localStorage'ı güncelle
+            const { totalCredits, usedCredits, remainingCredits } = deductResponse.data.credit;
+            localStorage.setItem('remainingCredits', remainingCredits.toString());
+            localStorage.setItem('usedCredits', usedCredits.toString());
+            localStorage.setItem('totalCredits', totalCredits.toString());
+            
+            // UI'yi güncelle
+            setRemainingCredits(remainingCredits);
+          }
+        } catch (error) {
+          showMessage('Hata', `Kredi düşürülemedi: ${error.response?.data?.message || error.message}`, 'error');
+        }
+      } else if (successCount > 0 && errorCount > 0) {
+        showMessage('Kısmi Başarı', `${successCount} kişiye gönderildi, ${errorCount} kişiye gönderilemedi. (${totalCreditCost} kredi düşüldü)`, 'warning');
+        console.error('Gönderim hataları:', errors);
+        // Kredi düşür (sadece başarılı gönderimler için - API ile)
+        try {
+          const deductResponse = await creditAPI.deductCredits({
+            amount: totalCreditCost,
+            type: 'game_send',
+            description: `Unvan gönderimi (kısmi): ${successCount} kişi (${totalCreditCost} kredi)`
+          });
+          
+          if (deductResponse.data.success) {
+            // localStorage'ı güncelle
+            const { totalCredits, usedCredits, remainingCredits } = deductResponse.data.credit;
+            localStorage.setItem('remainingCredits', remainingCredits.toString());
+            localStorage.setItem('usedCredits', usedCredits.toString());
+            localStorage.setItem('totalCredits', totalCredits.toString());
+            
+            // UI'yi güncelle
+            setRemainingCredits(remainingCredits);
+          }
+        } catch (error) {
+          showMessage('Hata', `Kredi düşürülemedi: ${error.response?.data?.message || error.message}`, 'error');
+        }
+      } else {
+        showMessage('Hata', 'Hiçbir kişiye gönderilemedi!', 'error');
+        console.error('Tüm gönderim hataları:', errors);
+      }
+
+      // Clear selections
+      setSelectedTitles([]);
+    } catch (error) {
+      console.error('Unvan gönderim hatası:', error);
+      showMessage('Hata', 'Gönderim sırasında bir hata oluştu!', 'error');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   // Modal functions
   const showMessage = (title: string, message: string, type: 'success' | 'error' | 'warning' | 'info') => {
     setMessageModal({ title, message, type });
@@ -660,6 +980,11 @@ const GameSendPage: React.FC = () => {
   const closeGroupDetailsModal = () => {
     setShowGroupDetailsModal(false);
     setSelectedGroupDetails(null);
+  };
+
+  const closeTitleDetailsModal = () => {
+    setShowTitleDetailsModal(false);
+    setSelectedTitleDetails(null);
   };
 
   return (
@@ -886,6 +1211,25 @@ const GameSendPage: React.FC = () => {
             }}
           >
             Grup
+          </button>
+          <button
+            onClick={() => switchTab('title')}
+            style={{
+              flex: 1,
+              padding: '12px 24px',
+              textAlign: 'center',
+              background: activeTab === 'title' ? 'white' : 'transparent',
+              border: 'none',
+              borderRadius: '6px',
+              cursor: 'pointer',
+              fontSize: '14px',
+              fontWeight: 500,
+              color: activeTab === 'title' ? '#3A57E8' : '#8A92A6',
+              transition: 'all 0.3s ease',
+              boxShadow: activeTab === 'title' ? '0 2px 4px rgba(0,0,0,0.1)' : 'none'
+            }}
+          >
+            Unvan
           </button>
         </div>
 
@@ -1331,6 +1675,259 @@ const GameSendPage: React.FC = () => {
             </button>
           </div>
         )}
+
+        {/* Title Tab Content */}
+        {activeTab === 'title' && (
+          <div>
+            <div style={{ marginBottom: '30px' }}>
+              <label style={{
+                display: 'block',
+                color: 'black',
+                fontSize: '14px',
+                fontWeight: 700,
+                marginBottom: '12px'
+              }}>
+                Unvan Seçimi
+              </label>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                  {/* Custom Dropdown */}
+                  <div style={{ flex: 1, position: 'relative' }} data-dropdown="title">
+                    <div
+                      onClick={() => setShowTitleDropdown(!showTitleDropdown)}
+                      style={{
+                        padding: '16px',
+                        border: '1px solid #E9ECEF',
+                        borderRadius: '4px',
+                        fontSize: '14px',
+                        color: '#232D42',
+                        backgroundColor: '#FFFFFF',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        userSelect: 'none'
+                      }}
+                    >
+                      <span style={{ color: titleSearchTerm ? '#232D42' : '#8A92A6' }}>
+                        {titleSearchTerm || 'Lütfen Unvan Seçiniz'}
+                      </span>
+                      <i 
+                        className={`fas fa-chevron-${showTitleDropdown ? 'up' : 'down'}`}
+                        style={{ 
+                          color: '#8A92A6',
+                          fontSize: '12px',
+                          transition: 'transform 0.3s ease'
+                        }}
+                      />
+                    </div>
+
+                    {/* Dropdown Menu */}
+                    {showTitleDropdown && (
+                      <div style={{
+                        position: 'absolute',
+                        top: '100%',
+                        left: 0,
+                        right: 0,
+                        backgroundColor: '#FFFFFF',
+                        border: '1px solid #E9ECEF',
+                        borderRadius: '4px',
+                        boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)',
+                        zIndex: 1000,
+                        maxHeight: '200px',
+                        overflow: 'hidden'
+                      }}>
+                        {/* Search Input */}
+                        <div style={{ padding: '8px', borderBottom: '1px solid #E9ECEF', position: 'relative' }}>
+                          <input
+                            type="text"
+                            placeholder="Unvan ara..."
+                            value={titleSearchTerm}
+                            onChange={(e) => setTitleSearchTerm(e.target.value)}
+                            style={{
+                              width: '100%',
+                              padding: '8px 12px 8px 32px',
+                              border: '1px solid #E9ECEF',
+                              borderRadius: '4px',
+                              fontSize: '14px',
+                              outline: 'none'
+                            }}
+                            onClick={(e) => e.stopPropagation()}
+                          />
+                          <i className="fas fa-search" style={{
+                            position: 'absolute',
+                            left: '16px',
+                            top: '50%',
+                            transform: 'translateY(-50%)',
+                            color: '#6B7280',
+                            fontSize: '12px'
+                          }} />
+                          {titleSearchTerm && (
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setTitleSearchTerm('');
+                              }}
+                              style={{
+                                position: 'absolute',
+                                right: '12px',
+                                top: '50%',
+                                transform: 'translateY(-50%)',
+                                background: 'none',
+                                border: 'none',
+                                color: '#6B7280',
+                                cursor: 'pointer',
+                                fontSize: '12px',
+                                padding: '2px'
+                              }}
+                            >
+                              <i className="fas fa-times"></i>
+                            </button>
+                          )}
+                        </div>
+
+                        {/* Options */}
+                        <div style={{ maxHeight: '150px', overflowY: 'auto' }}>
+                          {filteredTitles
+                            .filter(title => !selectedTitles.includes(title._id))
+                            .map(title => (
+                              <div
+                                key={title._id}
+                                onClick={() => addTitle(title._id)}
+                                style={{
+                                  padding: '12px 16px',
+                                  cursor: 'pointer',
+                                  fontSize: '14px',
+                                  color: '#232D42',
+                                  borderBottom: '1px solid #F1F3F4',
+                                  transition: 'background-color 0.2s ease'
+                                }}
+                                onMouseEnter={(e) => {
+                                  e.currentTarget.style.backgroundColor = '#F8F9FA';
+                                }}
+                                onMouseLeave={(e) => {
+                                  e.currentTarget.style.backgroundColor = 'transparent';
+                                }}
+                              >
+                                {highlightText(title.name, titleSearchTerm)}
+                              </div>
+                            ))}
+                          
+                          {/* No results message */}
+                          {titleSearchTerm && filteredTitles.filter(title => !selectedTitles.includes(title._id)).length === 0 && (
+                            <div style={{
+                              padding: '12px 16px',
+                              color: '#8A92A6',
+                              fontSize: '14px',
+                              textAlign: 'center'
+                            }}>
+                              "{titleSearchTerm}" için arama sonucu bulunamadı
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+                <div style={{
+                  display: 'flex',
+                  flexWrap: 'wrap',
+                  gap: '8px',
+                  minHeight: '40px',
+                  padding: '8px',
+                  border: '1px solid #E9ECEF',
+                  borderRadius: '4px',
+                  background: '#f8f9fa'
+                }}>
+                  {selectedTitles.map(titleId => {
+                    const title = titles.find(t => t._id === titleId);
+                    return title ? (
+                      <div
+                        key={titleId}
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '8px',
+                          background: '#6f42c1',
+                          color: 'white',
+                          padding: '6px 12px',
+                          borderRadius: '20px',
+                          fontSize: '12px',
+                          fontWeight: 500,
+                          userSelect: 'none',
+                          transition: 'transform 0.2s, box-shadow 0.2s'
+                        }}
+                      >
+                        {highlightText(title.name, titleSearchTerm)}
+                        <button
+                          onClick={() => removeTitle(titleId)}
+                          style={{
+                            background: 'none',
+                            border: 'none',
+                            color: 'white',
+                            cursor: 'pointer',
+                            fontSize: '14px',
+                            padding: '0',
+                            width: '16px',
+                            height: '16px',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center'
+                          }}
+                        >
+                          <i className="fas fa-times"></i>
+                        </button>
+                        <button
+                          onClick={() => showTitleDetails(titleId)}
+                          style={{
+                            background: 'none',
+                            border: 'none',
+                            color: 'white',
+                            cursor: 'pointer',
+                            fontSize: '14px',
+                            padding: '0',
+                            width: '16px',
+                            height: '16px',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            marginLeft: '4px'
+                          }}
+                        >
+                          <i className="fas fa-eye"></i>
+                        </button>
+                      </div>
+                    ) : null;
+                  })}
+                </div>
+              </div>
+            </div>
+
+            <button
+              onClick={sendTitleInterview}
+              disabled={isSubmitting}
+              style={{
+                background: '#3A57E8',
+                color: 'white',
+                border: 'none',
+                padding: '16px 32px',
+                borderRadius: '8px',
+                fontSize: '14px',
+                fontWeight: 700,
+                cursor: isSubmitting ? 'not-allowed' : 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '12px',
+                marginTop: '30px',
+                transition: 'background-color 0.3s',
+                opacity: isSubmitting ? 0.7 : 1
+              }}
+            >
+              <i className="fas fa-paper-plane"></i>
+              {isSubmitting ? 'Gönderiliyor...' : 'Bu Unvandaki Kişilere Gönder'}
+            </button>
+          </div>
+        )}
       </div>
 
       {/* Group Details Modal */}
@@ -1542,6 +2139,141 @@ const GameSendPage: React.FC = () => {
                       </span>
                     );
                   })}
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Title Details Modal */}
+      {showTitleDetailsModal && selectedTitleDetails && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          width: '100%',
+          height: '100%',
+          backgroundColor: 'rgba(0,0,0,0.5)',
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+          zIndex: 1000
+        }}>
+          <div style={{
+            background: 'white',
+            borderRadius: '8px',
+            padding: '30px',
+            maxWidth: '600px',
+            width: '90%',
+            maxHeight: '80vh',
+            overflowY: 'auto',
+            boxShadow: '0 4px 20px rgba(0,0,0,0.15)'
+          }}>
+            <div style={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              marginBottom: '20px',
+              paddingBottom: '15px',
+              borderBottom: '1px solid #E9ECEF'
+            }}>
+              <h3 style={{
+                fontSize: '18px',
+                fontWeight: 600,
+                color: '#232D42',
+                margin: 0
+              }}>
+                {selectedTitleDetails.name} - Detayları
+              </h3>
+              <button
+                onClick={closeTitleDetailsModal}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  fontSize: '24px',
+                  cursor: 'pointer',
+                  color: '#8A92A6',
+                  padding: '4px',
+                  borderRadius: '4px',
+                  transition: 'background-color 0.3s'
+                }}
+              >
+                <i className="fas fa-times"></i>
+              </button>
+            </div>
+            
+            <div style={{ marginBottom: '20px' }}>
+              <h4 style={{
+                color: '#232D42',
+                fontSize: '14px',
+                fontWeight: 600,
+                marginBottom: '10px'
+              }}>
+                Unvan Bilgileri
+              </h4>
+              <div style={{
+                display: 'flex',
+                flexWrap: 'wrap',
+                gap: '8px'
+              }}>
+                <span style={{
+                  background: '#F8F9FA',
+                  border: '1px solid #DEE2E6',
+                  color: '#495057',
+                  padding: '6px 12px',
+                  borderRadius: '16px',
+                  fontSize: '12px',
+                  fontWeight: 500
+                }}>
+                  Unvan: {selectedTitleDetails.name}
+                </span>
+                <span style={{
+                  background: '#F8F9FA',
+                  border: '1px solid #DEE2E6',
+                  color: '#495057',
+                  padding: '6px 12px',
+                  borderRadius: '16px',
+                  fontSize: '12px',
+                  fontWeight: 500
+                }}>
+                  Organizasyon Sayısı: {selectedTitleDetails.organizations.length}
+                </span>
+              </div>
+            </div>
+
+            {/* Organizations */}
+            {selectedTitleDetails.organizations && selectedTitleDetails.organizations.length > 0 && (
+              <div style={{ marginBottom: '20px' }}>
+                <h4 style={{
+                  color: '#232D42',
+                  fontSize: '14px',
+                  fontWeight: 600,
+                  marginBottom: '10px'
+                }}>
+                  Organizasyonlar ({selectedTitleDetails.organizations.length})
+                </h4>
+                <div style={{
+                  display: 'flex',
+                  flexWrap: 'wrap',
+                  gap: '8px'
+                }}>
+                  {selectedTitleDetails.organizations.map((org: any, index: number) => (
+                    <span
+                      key={index}
+                      style={{
+                        background: '#E8F5E8',
+                        border: '1px solid #C8E6C9',
+                        color: '#388E3C',
+                        padding: '6px 12px',
+                        borderRadius: '16px',
+                        fontSize: '12px',
+                        fontWeight: 500
+                      }}
+                    >
+                      {org.genelMudurYardimciligi} - {org.direktörlük} - {org.müdürlük} - {org.grupLiderligi} - {org.pozisyon}
+                    </span>
+                  ))}
                 </div>
               </div>
             )}
