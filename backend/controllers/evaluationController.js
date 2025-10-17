@@ -675,7 +675,7 @@ async function buildEvaluationHTML(evaluation, options, userCode, isPreview = fa
 
 
 async function generateAndSendPDF(evaluation, options, res, userCode) {
-    const htmlContent = await buildEvaluationHTML(evaluation, options, userCode, false);
+    const htmlContent = await buildEvaluationHTML(evaluation, options, userCode, true);
     const pdfOptions = { 
         format: 'A4',
         printBackground: true,
@@ -690,18 +690,7 @@ async function generateAndSendPDF(evaluation, options, res, userCode) {
               <span style="margin-left:8px;">GİZLİ © ANDRON Game 2025, İzinsiz paylaşılamaz.</span>
               <span style="margin-left:12px;"><span class="pageNumber"></span>/<span class="totalPages"></span></span>
             </div>
-          </div>`,
-        args: [
-            '--no-sandbox',
-            '--disable-setuid-sandbox',
-            '--disable-dev-shm-usage',
-            '--disable-accelerated-2d-canvas',
-            '--no-first-run',
-            '--no-zygote',
-            '--disable-gpu',
-            '--disable-web-security',
-            '--disable-features=VizDisplayCompositor'
-        ]
+          </div>`
       };
     const file = await htmlPdf.generatePdf({ content: htmlContent }, pdfOptions);
     res.setHeader('Content-Type', 'application/pdf');
@@ -725,18 +714,7 @@ async function generateAndSendPreview(evaluation, options, res, userCode) {
               <span style="margin-left:8px;">GİZLİ © ANDRON Game 2025, İzinsiz paylaşılamaz.</span>
               <span style="margin-left:12px;"><span class="pageNumber"></span>/<span class="totalPages"></span></span>
             </div>
-          </div>`,
-        args: [
-            '--no-sandbox',
-            '--disable-setuid-sandbox',
-            '--disable-dev-shm-usage',
-            '--disable-accelerated-2d-canvas',
-            '--no-first-run',
-            '--no-zygote',
-            '--disable-gpu',
-            '--disable-web-security',
-            '--disable-features=VizDisplayCompositor'
-        ]
+          </div>`
       };
     const file = await htmlPdf.generatePdf({ content: htmlContent }, pdfOptions);
     res.setHeader('Content-Type', 'application/pdf');
