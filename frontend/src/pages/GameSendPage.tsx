@@ -1150,7 +1150,8 @@ const GameSendPage: React.FC = () => {
     <div style={{ 
       minHeight: '100vh', 
       background: '#F8F9FA',
-      fontFamily: 'Inter, sans-serif'
+      fontFamily: 'Inter, sans-serif',
+      touchAction: 'pan-x pan-y pinch-zoom'
     }}>
       {/* Header */}
       <div style={{
