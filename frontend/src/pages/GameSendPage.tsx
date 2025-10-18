@@ -36,6 +36,8 @@ const GameSendPage: React.FC = () => {
   const [personName, setPersonName] = useState('');
   const [personEmail, setPersonEmail] = useState('');
   const [selectedPlanets, setSelectedPlanets] = useState<string[]>([]);
+  const [showPlanetDropdown, setShowPlanetDropdown] = useState(false);
+  const [planetSearchTerm, setPlanetSearchTerm] = useState('');
   
   // Group tab states
   const [groups, setGroups] = useState<Group[]>([]);
@@ -50,6 +52,9 @@ const GameSendPage: React.FC = () => {
   const [titleSearchTerm, setTitleSearchTerm] = useState('');
   const [debouncedTitleSearchTerm, setDebouncedTitleSearchTerm] = useState('');
   const [showTitleDropdown, setShowTitleDropdown] = useState(false);
+  const [selectedTitlePlanets, setSelectedTitlePlanets] = useState<string[]>([]);
+  const [showTitlePlanetDropdown, setShowTitlePlanetDropdown] = useState(false);
+  const [titlePlanetSearchTerm, setTitlePlanetSearchTerm] = useState('');
   
   // Modal states
   const [showGroupDetailsModal, setShowGroupDetailsModal] = useState(false);
@@ -126,23 +131,24 @@ const GameSendPage: React.FC = () => {
     return () => clearTimeout(timer);
   }, [titleSearchTerm]);
 
-  // Close dropdown when clicking outside
+  // Close dropdowns when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       const target = event.target as HTMLElement;
-      if (showGroupDropdown && !target.closest('[data-dropdown="group"]')) {
+      const dropdown = target.closest('[data-dropdown]');
+      
+      if (!dropdown) {
         setShowGroupDropdown(false);
-      }
-      if (showTitleDropdown && !target.closest('[data-dropdown="title"]')) {
         setShowTitleDropdown(false);
+        setShowPlanetDropdown(false);
+        setShowTitlePlanetDropdown(false);
       }
     };
 
     document.addEventListener('mousedown', handleClickOutside);
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-    };
-  }, [showGroupDropdown, showTitleDropdown]);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
 
   // Load remaining credits on component mount
   useEffect(() => {
@@ -281,24 +287,7 @@ const GameSendPage: React.FC = () => {
     setActiveTab(tabName);
   };
 
-  // Planet management
-  const addPlanet = () => {
-    const select = document.getElementById('planetSelect') as HTMLSelectElement;
-    const selectedValue = select.value;
-
-    if (!selectedValue) {
-      showMessage('Hata', 'Lütfen bir gezegen seçin', 'error');
-      return;
-    }
-
-    if (selectedPlanets.includes(selectedValue)) {
-      showMessage('Hata', 'Bu gezegen zaten seçilmiş', 'error');
-      return;
-    }
-
-    setSelectedPlanets([...selectedPlanets, selectedValue]);
-    select.value = '';
-  };
+  // Planet management (removed old addPlanet function)
 
   const removePlanet = (planetValue: string) => {
     setSelectedPlanets(selectedPlanets.filter(p => p !== planetValue));
@@ -344,6 +333,22 @@ const GameSendPage: React.FC = () => {
 
   const removeTitle = (titleId: string) => {
     setSelectedTitles(selectedTitles.filter(t => t !== titleId));
+  };
+
+  const addPlanet = (planetValue: string) => {
+    if (selectedPlanets.includes(planetValue)) {
+      showMessage('Hata', 'Bu gezegen zaten seçilmiş!', 'error');
+      return;
+    }
+    setSelectedPlanets([...selectedPlanets, planetValue]);
+    setPlanetSearchTerm('');
+    setShowPlanetDropdown(false);
+  };
+
+  // Title planet management (removed old addTitlePlanet function)
+
+  const removeTitlePlanet = (planetValue: string) => {
+    setSelectedTitlePlanets(selectedTitlePlanets.filter(p => p !== planetValue));
   };
 
   // Filter groups based on search term
@@ -400,6 +405,33 @@ const GameSendPage: React.FC = () => {
     return titleNameNormalized.includes(searchNormalized);
   });
 
+  // Filter planets based on search term
+  const filteredPlanets = availablePlanets.filter(planet => {
+    // Türkçe karakterleri normalize et
+    const normalizeText = (text: string) => {
+      return text
+        .trim()
+        .toLowerCase()
+        .replace(/ı/g, 'i') // I'yi i'ye çevir
+        .replace(/ğ/g, 'g') // Ğ'yi g'ye çevir
+        .replace(/ü/g, 'u') // Ü'yi u'ya çevir
+        .replace(/ş/g, 's') // Ş'yi s'ye çevir
+        .replace(/ö/g, 'o') // Ö'yi o'ya çevir
+        .replace(/ç/g, 'c') // Ç'yi c'ye çevir
+        .replace(/İ/g, 'i') // İ'yi i'ye çevir
+        .replace(/Ğ/g, 'g') // Ğ'yi g'ye çevir
+        .replace(/Ü/g, 'u') // Ü'yi u'ya çevir
+        .replace(/Ş/g, 's') // Ş'yi s'ye çevir
+        .replace(/Ö/g, 'o') // Ö'yi o'ya çevir
+        .replace(/Ç/g, 'c'); // Ç'yi c'ye çevir
+    };
+    
+    const searchNormalized = normalizeText(planetSearchTerm);
+    const planetLabelNormalized = normalizeText(planet.label);
+    
+    return planetLabelNormalized.includes(searchNormalized);
+  });
+
   // Highlight search term in text
   const highlightText = (text: string, searchTerm: string) => {
     if (!searchTerm || !text) return text;
@@ -454,20 +486,96 @@ const GameSendPage: React.FC = () => {
   };
 
   // Show group details
-  const showGroupDetails = (groupId: string) => {
+  const showGroupDetails = async (groupId: string) => {
     const group = groups.find(g => g._id === groupId);
     if (group) {
-      setSelectedGroupDetails(group);
-      setShowGroupDetailsModal(true);
+      try {
+        // Bu gruptaki kişilerin detaylarını al
+        const token = localStorage.getItem('token');
+        const response = await fetch('/api/authorization', {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+
+        if (response.ok) {
+          const result = await response.json();
+          if (result.success) {
+            // Grup kişilerinin detaylarını bul
+            const groupPersons: any[] = [];
+            for (const personValue of group.persons) {
+              const personName = personValue.includes(':') ? personValue.split(':')[1] : personValue;
+              const personDetail = result.authorizations.find((p: any) => p.personName === personName);
+              
+              if (personDetail) {
+                groupPersons.push({
+                  name: personDetail.personName,
+                  email: personDetail.email,
+                  title: personDetail.title,
+                  sicilNo: personDetail.sicilNo
+                });
+              }
+            }
+
+            // Group details'e kişi bilgilerini ekle
+            const groupWithPersons = {
+              ...group,
+              persons: groupPersons
+            };
+
+            setSelectedGroupDetails(groupWithPersons);
+            setShowGroupDetailsModal(true);
+          }
+        }
+      } catch (error) {
+        console.error('Grup detayları yükleme hatası:', error);
+        showMessage('Hata', 'Grup detayları yüklenemedi', 'error');
+      }
     }
   };
 
   // Show title details
-  const showTitleDetails = (titleId: string) => {
+  const showTitleDetails = async (titleId: string) => {
     const title = titles.find(t => t._id === titleId);
     if (title) {
-      setSelectedTitleDetails(title);
-      setShowTitleDetailsModal(true);
+      try {
+        // Bu unvanın pozisyonlarında çalışan kişileri bul
+        const token = localStorage.getItem('token');
+        const response = await fetch('/api/authorization', {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+
+        if (response.ok) {
+          const result = await response.json();
+          if (result.success) {
+            // Bu unvanın pozisyonlarını al
+            const orgPositions = title.organizations
+              .map((org: any) => org.pozisyon)
+              .filter(Boolean)
+              .filter((position: string, index: number, arr: string[]) => arr.indexOf(position) === index);
+
+            // Bu pozisyonlardaki kişileri bul
+            const matchingPersons = result.authorizations.filter((person: any) => 
+              orgPositions.includes(person.title)
+            );
+
+            // Title details'e kişi bilgilerini ekle
+            const titleWithPersons = {
+              ...title,
+              persons: matchingPersons.map(person => ({
+                name: person.personName,
+                email: person.email,
+                title: person.title,
+                sicilNo: person.sicilNo
+              }))
+            };
+
+            setSelectedTitleDetails(titleWithPersons);
+            setShowTitleDetailsModal(true);
+          }
+        }
+      } catch (error) {
+        console.error('Unvan detayları yükleme hatası:', error);
+        showMessage('Hata', 'Unvan detayları yüklenemedi', 'error');
+      }
     }
   };
 
@@ -563,15 +671,36 @@ const GameSendPage: React.FC = () => {
       return;
     }
 
+    if (selectedTitlePlanets.length === 0) {
+      showMessage('Hata', 'Lütfen en az bir gezegen seçin!', 'error');
+      return;
+    }
+
     try {
       // Get all persons from selected titles
       const allPersons: Person[] = [];
 
       for (const titleId of selectedTitles) {
         const title = titles.find(t => t._id === titleId);
+        console.log('Selected title:', title);
+        
         if (title && title.organizations && title.organizations.length > 0) {
-          // Get person details from authorization API
           const token = localStorage.getItem('token');
+          
+          // 1. Bu unvanın pozisyonlarını al (zaten title.organizations'da var)
+          const orgPositions = title.organizations
+            .map((org: any) => org.pozisyon)
+            .filter(Boolean)
+            .filter((position: string, index: number, arr: string[]) => arr.indexOf(position) === index); // Tekrarları kaldır
+          
+          console.log('Positions for this title:', orgPositions);
+          
+          if (orgPositions.length === 0) {
+            console.log('No positions found for this title');
+            continue;
+          }
+          
+          // 2. Authorization API'sinden bu pozisyonlara sahip kişileri bul
           const response = await fetch('/api/authorization', {
             headers: { 'Authorization': `Bearer ${token}` }
           });
@@ -579,28 +708,58 @@ const GameSendPage: React.FC = () => {
           if (response.ok) {
             const result = await response.json();
             if (result.success) {
-              // Find persons with matching positions for this title
-              for (const org of title.organizations) {
-                const matchingPersons = result.authorizations.filter((person: any) => 
-                  person.genelMudurYardimciligi === org.genelMudurYardimciligi &&
-                  person.direktörlük === org.direktörlük &&
-                  person.müdürlük === org.müdürlük &&
-                  person.grupLiderligi === org.grupLiderligi &&
-                  person.unvan === org.unvan &&
-                  person.pozisyon === org.pozisyon
-                );
+              console.log('Available authorizations:', result.authorizations.length);
+              
+              // Debug: Authorization'daki tüm title'ları göster
+              const allAuthTitles = [...new Set(result.authorizations.map((p: any) => p.title))];
+              console.log('All titles in authorization:', allAuthTitles);
+              console.log('Looking for positions:', orgPositions);
+              
+              // Debug: Authorization verilerinin yapısını kontrol et
+              console.log('First authorization sample:', result.authorizations[0]);
+              console.log('Authorization fields:', Object.keys(result.authorizations[0] || {}));
+              
+              // Bu pozisyonlardaki kişileri bul (title alanında arama yap)
+              const matchingPersons = result.authorizations.filter((person: any) => 
+                orgPositions.includes(person.title)
+              );
+              
+              // Debug: Title eşleştirmesini kontrol et
+              console.log('Title matching debug:');
+              result.authorizations.forEach((person: any, index: number) => {
+                if (index < 3) { // İlk 3 kişiyi kontrol et
+                  console.log(`Person ${index}:`, {
+                    name: person.personName,
+                    title: person.title,
+                    isMatch: orgPositions.includes(person.title)
+                  });
+                }
+              });
+              
+              console.log(`Found ${matchingPersons.length} persons in positions: ${orgPositions.join(', ')}`);
+              
+              // Debug: Eşleşmeyen pozisyonları göster
+              const unmatchedPositions = orgPositions.filter(pos => !allAuthTitles.includes(pos));
+              if (unmatchedPositions.length > 0) {
+                console.log('Unmatched positions:', unmatchedPositions);
+              }
+              
+              for (const person of matchingPersons) {
+                console.log('Person details:', {
+                  name: person.personName,
+                  email: person.email,
+                  pozisyon: person.pozisyon
+                });
                 
-                for (const person of matchingPersons) {
                   if (person.email) {
                     allPersons.push({
                       name: person.personName,
                       email: person.email,
                       title: person.title,
-                      groupName: `${org.genelMudurYardimciligi} - ${org.direktörlük}`,
-                      planets: ['venus', 'titan'] // Default planets for title-based sending
+                      groupName: `${person.genelMudurYardimciligi} - ${person.direktörlük}`,
+                      planets: selectedTitlePlanets // Seçilen gezegenleri kullan
                     });
                   }
-                }
               }
             }
           }
@@ -889,8 +1048,7 @@ const GameSendPage: React.FC = () => {
       }
 
       // Kredi hesaplama (başarılı gönderim sayısı * gezegen sayısı)
-      // Her kişi için 2 gezegen (venus, titan) varsayıyoruz
-      const totalCreditCost = successCount * 2;
+      const totalCreditCost = successCount * selectedTitlePlanets.length;
       
       // Show results
       if (successCount > 0 && errorCount === 0) {
@@ -947,6 +1105,7 @@ const GameSendPage: React.FC = () => {
 
       // Clear selections
       setSelectedTitles([]);
+      setSelectedTitlePlanets([]);
     } catch (error) {
       console.error('Unvan gönderim hatası:', error);
       showMessage('Hata', 'Gönderim sırasında bir hata oluştu!', 'error');
@@ -1302,42 +1461,143 @@ const GameSendPage: React.FC = () => {
               </label>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                 <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-                  <select
-                    id="planetSelect"
-                    style={{
-                      flex: 1,
-                      padding: '16px',
-                      border: '1px solid #E9ECEF',
-                      borderRadius: '4px',
-                      fontSize: '14px',
-                      color: '#232D42'
-                    }}
-                  >
-                    <option value="">Lütfen Gezegen Seçiniz</option>
-                    {availablePlanets
-                      .filter(planet => !selectedPlanets.includes(planet.value))
-                      .map(planet => (
-                        <option key={planet.value} value={planet.value}>
-                          {planet.label}
-                        </option>
-                      ))}
-                  </select>
-                  <button
-                    type="button"
-                    onClick={addPlanet}
-                    style={{
-                      background: '#28a745',
-                      color: 'white',
-                      border: 'none',
-                      padding: '8px 12px',
-                      borderRadius: '4px',
-                      cursor: 'pointer',
-                      fontSize: '14px',
-                      transition: 'background-color 0.3s'
-                    }}
-                  >
-                    <i className="fas fa-plus"></i>
-                  </button>
+                  {/* Custom Dropdown */}
+                  <div style={{ flex: 1, position: 'relative' }} data-dropdown="planet">
+                    <div
+                      onClick={() => setShowPlanetDropdown(!showPlanetDropdown)}
+                      style={{
+                        padding: '16px',
+                        border: '1px solid #E9ECEF',
+                        borderRadius: '4px',
+                        fontSize: '14px',
+                        color: '#232D42',
+                        backgroundColor: '#FFFFFF',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        userSelect: 'none'
+                      }}
+                    >
+                      <span style={{ color: planetSearchTerm ? '#232D42' : '#8A92A6' }}>
+                        {planetSearchTerm || 'Lütfen Gezegen Seçiniz'}
+                      </span>
+                      <i 
+                        className={`fas fa-chevron-${showPlanetDropdown ? 'up' : 'down'}`}
+                        style={{ 
+                          color: '#8A92A6',
+                          fontSize: '12px',
+                          transition: 'transform 0.3s ease'
+                        }}
+                      />
+                    </div>
+
+                    {/* Dropdown Menu */}
+                    {showPlanetDropdown && (
+                      <div style={{
+                        position: 'absolute',
+                        top: '100%',
+                        left: 0,
+                        right: 0,
+                        backgroundColor: '#FFFFFF',
+                        border: '1px solid #E9ECEF',
+                        borderRadius: '4px',
+                        boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)',
+                        zIndex: 1000,
+                        maxHeight: '200px',
+                        overflow: 'hidden'
+                      }}>
+                        {/* Search Input */}
+                        <div style={{ padding: '8px', borderBottom: '1px solid #E9ECEF', position: 'relative' }}>
+                          <input
+                            type="text"
+                            placeholder="Gezegen ara..."
+                            value={planetSearchTerm}
+                            onChange={(e) => setPlanetSearchTerm(e.target.value)}
+                            style={{
+                              width: '100%',
+                              padding: '8px 12px 8px 32px',
+                              border: '1px solid #E9ECEF',
+                              borderRadius: '4px',
+                              fontSize: '14px',
+                              outline: 'none'
+                            }}
+                            onClick={(e) => e.stopPropagation()}
+                          />
+                          <i className="fas fa-search" style={{
+                            position: 'absolute',
+                            left: '16px',
+                            top: '50%',
+                            transform: 'translateY(-50%)',
+                            color: '#6B7280',
+                            fontSize: '12px'
+                          }} />
+                          {planetSearchTerm && (
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setPlanetSearchTerm('');
+                              }}
+                              style={{
+                                position: 'absolute',
+                                right: '12px',
+                                top: '50%',
+                                transform: 'translateY(-50%)',
+                                background: 'none',
+                                border: 'none',
+                                color: '#6B7280',
+                                cursor: 'pointer',
+                                fontSize: '12px',
+                                padding: '2px'
+                              }}
+                            >
+                              <i className="fas fa-times"></i>
+                            </button>
+                          )}
+                        </div>
+
+                        {/* Options */}
+                        <div style={{ maxHeight: '150px', overflowY: 'auto' }}>
+                          {filteredPlanets
+                            .filter(planet => !selectedPlanets.includes(planet.value))
+                            .map(planet => (
+                              <div
+                                key={planet.value}
+                                onClick={() => addPlanet(planet.value)}
+                                style={{
+                                  padding: '12px 16px',
+                                  cursor: 'pointer',
+                                  fontSize: '14px',
+                                  color: '#232D42',
+                                  borderBottom: '1px solid #F1F3F4',
+                                  transition: 'background-color 0.2s ease'
+                                }}
+                                onMouseEnter={(e) => {
+                                  e.currentTarget.style.backgroundColor = '#F8F9FA';
+                                }}
+                                onMouseLeave={(e) => {
+                                  e.currentTarget.style.backgroundColor = 'transparent';
+                                }}
+                              >
+                                {highlightText(planet.label, planetSearchTerm)}
+                              </div>
+                            ))}
+                          
+                          {/* No results message */}
+                          {planetSearchTerm && filteredPlanets.filter(planet => !selectedPlanets.includes(planet.value)).length === 0 && (
+                            <div style={{
+                              padding: '12px 16px',
+                              color: '#8A92A6',
+                              fontSize: '14px',
+                              textAlign: 'center'
+                            }}>
+                              "{planetSearchTerm}" için arama sonucu bulunamadı
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    )}
+                  </div>
                 </div>
                 <div style={{
                   display: 'flex',
@@ -1903,6 +2163,239 @@ const GameSendPage: React.FC = () => {
               </div>
             </div>
 
+            <div style={{ marginBottom: '30px' }}>
+              <label style={{
+                display: 'block',
+                color: 'black',
+                fontSize: '14px',
+                fontWeight: 700,
+                marginBottom: '12px'
+              }}>
+                Gezegen Seçimi
+              </label>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                  {/* Custom Dropdown */}
+                  <div style={{ flex: 1, position: 'relative' }} data-dropdown="titlePlanet">
+                    <div
+                      onClick={() => setShowTitlePlanetDropdown(!showTitlePlanetDropdown)}
+                      style={{
+                        padding: '16px',
+                        border: '1px solid #E9ECEF',
+                        borderRadius: '4px',
+                        fontSize: '14px',
+                        color: '#232D42',
+                        backgroundColor: '#FFFFFF',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        userSelect: 'none'
+                      }}
+                    >
+                      <span style={{ color: titlePlanetSearchTerm ? '#232D42' : '#8A92A6' }}>
+                        {titlePlanetSearchTerm || 'Lütfen Gezegen Seçiniz'}
+                      </span>
+                      <i 
+                        className={`fas fa-chevron-${showTitlePlanetDropdown ? 'up' : 'down'}`}
+                        style={{ 
+                          color: '#8A92A6',
+                          fontSize: '12px',
+                          transition: 'transform 0.3s ease'
+                        }}
+                      />
+                    </div>
+
+                    {/* Dropdown Menu */}
+                    {showTitlePlanetDropdown && (
+                      <div style={{
+                        position: 'absolute',
+                        top: '100%',
+                        left: 0,
+                        right: 0,
+                        backgroundColor: '#FFFFFF',
+                        border: '1px solid #E9ECEF',
+                        borderRadius: '4px',
+                        boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)',
+                        zIndex: 1000,
+                        maxHeight: '200px',
+                        overflow: 'hidden'
+                      }}>
+                        {/* Search Input */}
+                        <div style={{ padding: '8px', borderBottom: '1px solid #E9ECEF', position: 'relative' }}>
+                          <input
+                            type="text"
+                            placeholder="Gezegen ara..."
+                            value={titlePlanetSearchTerm}
+                            onChange={(e) => setTitlePlanetSearchTerm(e.target.value)}
+                            style={{
+                              width: '100%',
+                              padding: '8px 12px 8px 32px',
+                              border: '1px solid #E9ECEF',
+                              borderRadius: '4px',
+                              fontSize: '14px',
+                              outline: 'none'
+                            }}
+                            onClick={(e) => e.stopPropagation()}
+                          />
+                          <i className="fas fa-search" style={{
+                            position: 'absolute',
+                            left: '16px',
+                            top: '50%',
+                            transform: 'translateY(-50%)',
+                            color: '#6B7280',
+                            fontSize: '12px'
+                          }} />
+                          {titlePlanetSearchTerm && (
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setTitlePlanetSearchTerm('');
+                              }}
+                              style={{
+                                position: 'absolute',
+                                right: '12px',
+                                top: '50%',
+                                transform: 'translateY(-50%)',
+                                background: 'none',
+                                border: 'none',
+                                color: '#6B7280',
+                                cursor: 'pointer',
+                                fontSize: '12px',
+                                padding: '2px'
+                              }}
+                            >
+                              <i className="fas fa-times"></i>
+                            </button>
+                          )}
+                        </div>
+
+                        {/* Options */}
+                        <div style={{ maxHeight: '150px', overflowY: 'auto' }}>
+                          {availablePlanets
+                            .filter(planet => !selectedTitlePlanets.includes(planet.value))
+                            .filter(planet => {
+                              if (!titlePlanetSearchTerm) return true;
+                              const normalizedSearch = titlePlanetSearchTerm.toLowerCase()
+                                .replace(/ı/g, 'i').replace(/ğ/g, 'g').replace(/ü/g, 'u')
+                                .replace(/ş/g, 's').replace(/ö/g, 'o').replace(/ç/g, 'c');
+                              const normalizedLabel = planet.label.toLowerCase()
+                                .replace(/ı/g, 'i').replace(/ğ/g, 'g').replace(/ü/g, 'u')
+                                .replace(/ş/g, 's').replace(/ö/g, 'o').replace(/ç/g, 'c');
+                              return normalizedLabel.includes(normalizedSearch);
+                            })
+                            .map(planet => (
+                              <div
+                                key={planet.value}
+                                onClick={() => {
+                                  setSelectedTitlePlanets([...selectedTitlePlanets, planet.value]);
+                                  setTitlePlanetSearchTerm('');
+                                  setShowTitlePlanetDropdown(false);
+                                }}
+                                style={{
+                                  padding: '12px 16px',
+                                  cursor: 'pointer',
+                                  fontSize: '14px',
+                                  color: '#232D42',
+                                  borderBottom: '1px solid #F1F3F4',
+                                  transition: 'background-color 0.2s ease'
+                                }}
+                                onMouseEnter={(e) => {
+                                  e.currentTarget.style.backgroundColor = '#F8F9FA';
+                                }}
+                                onMouseLeave={(e) => {
+                                  e.currentTarget.style.backgroundColor = 'transparent';
+                                }}
+                              >
+                                {highlightText(planet.label, titlePlanetSearchTerm)}
+                              </div>
+                            ))}
+                          
+                          {/* No results message */}
+                          {titlePlanetSearchTerm && availablePlanets
+                            .filter(planet => !selectedTitlePlanets.includes(planet.value))
+                            .filter(planet => {
+                              if (!titlePlanetSearchTerm) return true;
+                              const normalizedSearch = titlePlanetSearchTerm.toLowerCase()
+                                .replace(/ı/g, 'i').replace(/ğ/g, 'g').replace(/ü/g, 'u')
+                                .replace(/ş/g, 's').replace(/ö/g, 'o').replace(/ç/g, 'c');
+                              const normalizedLabel = planet.label.toLowerCase()
+                                .replace(/ı/g, 'i').replace(/ğ/g, 'g').replace(/ü/g, 'u')
+                                .replace(/ş/g, 's').replace(/ö/g, 'o').replace(/ç/g, 'c');
+                              return normalizedLabel.includes(normalizedSearch);
+                            }).length === 0 && (
+                            <div style={{
+                              padding: '12px 16px',
+                              color: '#8A92A6',
+                              fontSize: '14px',
+                              textAlign: 'center'
+                            }}>
+                              "{titlePlanetSearchTerm}" için arama sonucu bulunamadı
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+                <div style={{
+                  display: 'flex',
+                  flexWrap: 'wrap',
+                  gap: '8px',
+                  minHeight: '40px',
+                  padding: '8px',
+                  border: '1px solid #E9ECEF',
+                  borderRadius: '4px',
+                  background: '#f8f9fa'
+                }}>
+                  {selectedTitlePlanets.map((planetValue, index) => {
+                    const planet = availablePlanets.find(p => p.value === planetValue);
+                    return planet ? (
+                      <div
+                        key={planetValue}
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '8px',
+                          background: '#6f42c1',
+                          color: 'white',
+                          padding: '6px 12px',
+                          borderRadius: '20px',
+                          fontSize: '12px',
+                          fontWeight: 500,
+                          userSelect: 'none',
+                          transition: 'transform 0.2s, box-shadow 0.2s'
+                        }}
+                      >
+                        <div style={{ cursor: 'grab', padding: '2px', borderRadius: '3px' }}>
+                          <i className="fas fa-grip-vertical"></i>
+                        </div>
+                        {planet.label}
+                        <button
+                          onClick={() => removeTitlePlanet(planetValue)}
+                          style={{
+                            background: 'none',
+                            border: 'none',
+                            color: 'white',
+                            cursor: 'pointer',
+                            fontSize: '14px',
+                            padding: '0',
+                            width: '16px',
+                            height: '16px',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center'
+                          }}
+                        >
+                          <i className="fas fa-times"></i>
+                        </button>
+                      </div>
+                    ) : null;
+                  })}
+                </div>
+              </div>
+            </div>
+
             <button
               onClick={sendTitleInterview}
               disabled={isSubmitting}
@@ -2074,32 +2567,54 @@ const GameSendPage: React.FC = () => {
                   fontWeight: 600,
                   marginBottom: '10px'
                 }}>
-                  Kişiler ({selectedGroupDetails.persons.length})
+                  Grup Üyeleri ({selectedGroupDetails.persons.length})
                 </h4>
                 <div style={{
                   display: 'flex',
-                  flexWrap: 'wrap',
-                  gap: '8px'
+                  flexDirection: 'column',
+                  gap: '8px',
+                  maxHeight: '200px',
+                  overflowY: 'auto'
                 }}>
-                  {selectedGroupDetails.persons.map((person, index) => {
-                    const displayValue = person.includes(':') ? person.split(':')[1] : person;
-                    return (
-                      <span
-                        key={index}
-                        style={{
-                          background: '#E3F2FD',
-                          border: '1px solid #BBDEFB',
-                          color: '#1976D2',
-                          padding: '6px 12px',
-                          borderRadius: '16px',
-                          fontSize: '12px',
-                          fontWeight: 500
-                        }}
-                      >
-                        {displayValue}
-                      </span>
-                    );
-                  })}
+                  {selectedGroupDetails.persons.map((person: any, index: number) => (
+                    <div
+                      key={index}
+                      style={{
+                        background: '#E3F2FD',
+                        border: '1px solid #BBDEFB',
+                        color: '#1976D2',
+                        padding: '12px 16px',
+                        borderRadius: '8px',
+                        fontSize: '13px',
+                        fontWeight: 500,
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'center'
+                      }}
+                    >
+                      <div>
+                        <div style={{ fontWeight: 600, marginBottom: '4px' }}>
+                          {person.name}
+                        </div>
+                        <div style={{ fontSize: '12px', color: '#666' }}>
+                          {person.title}
+                        </div>
+                        <div style={{ fontSize: '11px', color: '#999' }}>
+                          {person.email}
+                        </div>
+                      </div>
+                      <div style={{
+                        background: '#1976D2',
+                        color: 'white',
+                        padding: '4px 8px',
+                        borderRadius: '12px',
+                        fontSize: '11px',
+                        fontWeight: 600
+                      }}>
+                        {person.sicilNo}
+                      </div>
+                    </div>
+                  ))}
                 </div>
               </div>
             )}
@@ -2251,7 +2766,7 @@ const GameSendPage: React.FC = () => {
                   fontWeight: 600,
                   marginBottom: '10px'
                 }}>
-                  Organizasyonlar ({selectedTitleDetails.organizations.length})
+                  Unvan Bilgileri ({selectedTitleDetails.organizations.length})
                 </h4>
                 <div style={{
                   display: 'flex',
@@ -2271,8 +2786,69 @@ const GameSendPage: React.FC = () => {
                         fontWeight: 500
                       }}
                     >
-                      {org.genelMudurYardimciligi} - {org.direktörlük} - {org.müdürlük} - {org.grupLiderligi} - {org.pozisyon}
+                      {org.unvan}
                     </span>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Persons */}
+            {selectedTitleDetails.persons && selectedTitleDetails.persons.length > 0 && (
+              <div style={{ marginBottom: '20px' }}>
+                <h4 style={{
+                  color: '#232D42',
+                  fontSize: '14px',
+                  fontWeight: 600,
+                  marginBottom: '10px'
+                }}>
+                  Bu Unvanda Çalışan Kişiler ({selectedTitleDetails.persons.length})
+                </h4>
+                <div style={{
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '8px',
+                  maxHeight: '200px',
+                  overflowY: 'auto'
+                }}>
+                  {selectedTitleDetails.persons.map((person: any, index: number) => (
+                    <div
+                      key={index}
+                      style={{
+                        background: '#E3F2FD',
+                        border: '1px solid #BBDEFB',
+                        color: '#1976D2',
+                        padding: '12px 16px',
+                        borderRadius: '8px',
+                        fontSize: '13px',
+                        fontWeight: 500,
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'center'
+                      }}
+                    >
+                      <div>
+                        <div style={{ fontWeight: 600, marginBottom: '4px' }}>
+                          {person.name}
+                        </div>
+                        <div style={{ fontSize: '12px', color: '#666' }}>
+                          {person.title}
+                        </div>
+                        <div style={{ fontSize: '11px', color: '#999' }}>
+                          {person.email}
+                        </div>
+                      </div>
+                      <div style={{
+                        background: '#1976D2',
+                        color: 'white',
+                        padding: '4px 8px',
+                        borderRadius: '12px',
+                        fontSize: '11px',
+                        fontWeight: 600
+                      }}>
+                        {person.sicilNo}
+                      </div>
+                    </div>
                   ))}
                 </div>
               </div>
