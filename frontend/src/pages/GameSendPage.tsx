@@ -1151,7 +1151,9 @@ const GameSendPage: React.FC = () => {
       minHeight: '100vh', 
       background: '#F8F9FA',
       fontFamily: 'Inter, sans-serif',
-      touchAction: 'pan-x pan-y pinch-zoom'
+      touchAction: 'pan-x pan-y pinch-zoom',
+      overflowX: 'auto',
+      WebkitOverflowScrolling: 'touch'
     }}>
       {/* Header */}
       <div style={{
@@ -1220,7 +1222,10 @@ const GameSendPage: React.FC = () => {
         maxWidth: '800px',
         margin: '0 auto',
         marginTop: '60px',
-        position: 'relative'
+        position: 'relative',
+        touchAction: 'pan-x pan-y pinch-zoom',
+        overflowX: 'auto',
+        WebkitOverflowScrolling: 'touch'
       }}>
         {/* Kalan Oyun Sayısı - Sağ Üst Çapraz */}
         <div style={{

@@ -377,7 +377,6 @@ const competencyController = {
                     // Boş satır kontrolü - tüm hücreler boşsa bu satırı ignore et
                     const isRowEmpty = row.every(cell => !cell || cell.toString().trim() === '');
                     if (isRowEmpty) {
-                        console.log(`Satır ${rowNumber} tamamen boş, ignore ediliyor`);
                         continue; // Bu satırı atla, hata verme
                     }
 

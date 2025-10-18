@@ -110,3 +110,43 @@ body {
     touch-action: pan-x pan-y pinch-zoom;
   }
 }
+
+/* Tablet specific fixes for horizontal scrolling */
+@media (min-width: 769px) and (max-width: 1024px) {
+  html, body {
+    touch-action: pan-x pan-y pinch-zoom;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  
+  .App {
+    touch-action: pan-x pan-y pinch-zoom;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  
+  /* Force horizontal scrolling on tablets */
+  * {
+    touch-action: pan-x pan-y pinch-zoom;
+  }
+}
+
+/* Large screens (1025px+) - Desktop and large tablets */
+@media (min-width: 1025px) {
+  html, body {
+    touch-action: pan-x pan-y pinch-zoom;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  
+  .App {
+    touch-action: pan-x pan-y pinch-zoom;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  
+  /* Force horizontal scrolling on large screens */
+  * {
+    touch-action: pan-x pan-y pinch-zoom;
+  }
+}
