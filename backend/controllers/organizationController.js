@@ -30,11 +30,18 @@ const createOrganization = async (req, res) => {
             pozisyon
         } = req.body;
 
-        // Gerekli alanları kontrol et - sadece Pozisyon zorunlu
+        // Gerekli alanları kontrol et - Pozisyon ve Unvan zorunlu
         if (!pozisyon || pozisyon.trim() === '') {
             return res.status(400).json({
                 success: false,
                 message: 'Pozisyon alanı boş olamaz'
+            });
+        }
+        
+        if (!unvan || unvan.trim() === '') {
+            return res.status(400).json({
+                success: false,
+                message: 'Unvan alanı boş olamaz'
             });
         }
 
@@ -98,11 +105,18 @@ const updateOrganization = async (req, res) => {
             pozisyon
         } = req.body;
 
-        // Gerekli alanları kontrol et - sadece Pozisyon zorunlu
+        // Gerekli alanları kontrol et - Pozisyon ve Unvan zorunlu
         if (!pozisyon || pozisyon.trim() === '') {
             return res.status(400).json({
                 success: false,
                 message: 'Pozisyon alanı boş olamaz'
+            });
+        }
+        
+        if (!unvan || unvan.trim() === '') {
+            return res.status(400).json({
+                success: false,
+                message: 'Unvan alanı boş olamaz'
             });
         }
 
@@ -282,13 +296,21 @@ const bulkCreateOrganizations = async (req, res) => {
 
                 const [genelMudurYardimciligi, direktörlük, müdürlük, grupLiderligi, unvan, pozisyon] = row;
 
-                // Zorunlu alan kontrolü: sadece Pozisyon zorunlu
+                // Zorunlu alan kontrolü: Pozisyon ve Unvan zorunlu
                 const isEmpty = (value) => !value || value.toString().trim() === '';
                 
                 if (isEmpty(pozisyon)) {
                     errors.push({
                         row: rowNumber,
                         message: 'Pozisyon alanı boş olamaz. Bu alan zorunludur.'
+                    });
+                    continue;
+                }
+                
+                if (isEmpty(unvan)) {
+                    errors.push({
+                        row: rowNumber,
+                        message: 'Unvan alanı boş olamaz. Bu alan zorunludur.'
                     });
                     continue;
                 }

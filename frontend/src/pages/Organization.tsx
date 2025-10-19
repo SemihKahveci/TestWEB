@@ -149,9 +149,15 @@ const Organization: React.FC = () => {
     try {
       setIsSubmitting(true);
       
-      // Form validasyonu - sadece Pozisyon zorunlu
+      // Form validasyonu - Pozisyon ve Unvan zorunlu
       if (!formData.pozisyon || formData.pozisyon.trim() === '') {
         setErrorMessage('Pozisyon alanı boş olamaz!');
+        setShowErrorPopup(true);
+        return;
+      }
+      
+      if (!formData.unvan || formData.unvan.trim() === '') {
+        setErrorMessage('Unvan alanı boş olamaz!');
         setShowErrorPopup(true);
         return;
       }
@@ -206,9 +212,15 @@ const Organization: React.FC = () => {
       if (!selectedOrganization) return;
       setIsSubmitting(true);
       
-      // Form validasyonu - sadece Pozisyon zorunlu
+      // Form validasyonu - Pozisyon ve Unvan zorunlu
       if (!formData.pozisyon || formData.pozisyon.trim() === '') {
         setErrorMessage('Pozisyon alanı boş olamaz!');
+        setShowErrorPopup(true);
+        return;
+      }
+      
+      if (!formData.unvan || formData.unvan.trim() === '') {
+        setErrorMessage('Unvan alanı boş olamaz!');
         setShowErrorPopup(true);
         return;
       }
@@ -1359,7 +1371,7 @@ const Organization: React.FC = () => {
                     marginBottom: '8px',
                     fontFamily: 'Inter'
                   }}>
-                    Unvan
+                    Unvan <span style={{ color: '#E53E3E' }}>*</span>
                   </label>
                   <input
                     type="text"
@@ -1643,7 +1655,7 @@ const Organization: React.FC = () => {
                     marginBottom: '8px',
                     fontFamily: 'Inter'
                   }}>
-                    Unvan
+                    Unvan <span style={{ color: '#E53E3E' }}>*</span>
                   </label>
                   <input
                     type="text"

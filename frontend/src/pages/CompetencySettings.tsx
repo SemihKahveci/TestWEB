@@ -1,4 +1,6 @@
 import React, { useState, useEffect } from 'react';
+import * as XLSX from 'xlsx';
+import { organizationAPI } from '../services/api';
 
 interface Competency {
   _id: string;
@@ -21,6 +23,15 @@ interface Competency {
   };
 }
 
+interface Organization {
+  _id: string;
+  genelMudurYardimciligi?: string;
+  direktörlük?: string;
+  müdürlük?: string;
+  grupLiderligi?: string;
+  pozisyon?: string;
+}
+
 const CompetencySettings: React.FC = () => {
   const [competencies, setCompetencies] = useState<Competency[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -38,6 +49,14 @@ const CompetencySettings: React.FC = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isImporting, setIsImporting] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  
+  // Organization states
+  const [organizations, setOrganizations] = useState<Organization[]>([]);
+  const [positions, setPositions] = useState<string[]>([]);
+  const [filteredPositions, setFilteredPositions] = useState<string[]>([]);
+  const [positionSearchTerm, setPositionSearchTerm] = useState('');
+  const [showPositionDropdown, setShowPositionDropdown] = useState(false);
   
   // Form states
   const [formData, setFormData] = useState({
@@ -72,7 +91,26 @@ const CompetencySettings: React.FC = () => {
 
   useEffect(() => {
     loadCompetencies();
+    loadOrganizations();
   }, []);
+
+  // Dropdown dışına tıklandığında kapat
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target as HTMLElement;
+      if (!target.closest('[data-position-dropdown]')) {
+        setShowPositionDropdown(false);
+      }
+    };
+
+    if (showPositionDropdown) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [showPositionDropdown]);
 
   const loadCompetencies = async () => {
     try {
@@ -95,6 +133,130 @@ const CompetencySettings: React.FC = () => {
     }
   };
 
+  const loadOrganizations = async () => {
+    try {
+      const result = await organizationAPI.getAll();
+      
+      if (result.data.success) {
+        const organizations = result.data.organizations || [];
+        setOrganizations(organizations);
+        
+        // Pozisyonları çıkar ve alfabetik sırala
+        const allPositions = organizations
+          .map(org => org.pozisyon)
+          .filter(pos => pos && pos.trim() !== '')
+          .filter((pos, index, arr) => arr.indexOf(pos) === index) // Tekrarları kaldır
+          .sort((a, b) => a.localeCompare(b, 'tr')); // Türkçe alfabetik sıralama
+        
+        setPositions(allPositions);
+        setFilteredPositions(allPositions); // İlk yüklemede tüm pozisyonları göster
+      } else {
+        throw new Error(result.data.message || 'Organizasyon listesi alınamadı');
+      }
+    } catch (error) {
+      console.error('❌ Organizasyon yükleme hatası:', error);
+    }
+  };
+
+  // Pozisyon arama fonksiyonu
+  const handlePositionSearch = (searchTerm: string) => {
+    setPositionSearchTerm(searchTerm);
+    
+    if (searchTerm.trim() === '') {
+      setFilteredPositions(positions);
+    } else {
+      // Türkçe karakterleri normalize et
+      const normalizeText = (text: string) => {
+        return text
+          .trim()
+          .replace(/İ/g, 'i') // Büyük İ'yi noktasız i'ye çevir
+          .replace(/I/g, 'i') // Büyük I'yi noktasız i'ye çevir
+          .replace(/Ç/g, 'c') // Ç'yi c'ye çevir
+          .replace(/Ğ/g, 'g') // Ğ'yi g'ye çevir
+          .replace(/Ö/g, 'o') // Ö'yi o'ya çevir
+          .replace(/Ş/g, 's') // Ş'yi s'ye çevir
+          .replace(/Ü/g, 'u') // Ü'yi u'ya çevir
+          .toLowerCase()
+          .replace(/i̇/g, 'i') // Noktalı küçük i'yi noktasız i'ye çevir
+          .replace(/ı/g, 'i') // Noktasız küçük i'yi noktasız i'ye çevir
+          .replace(/ç/g, 'c') // Ç'yi c'ye çevir
+          .replace(/ğ/g, 'g') // Ğ'yi g'ye çevir
+          .replace(/ö/g, 'o') // Ö'yi o'ya çevir
+          .replace(/ş/g, 's') // Ş'yi s'ye çevir
+          .replace(/ü/g, 'u'); // Ü'yi u'ya çevir
+      };
+      
+      const searchNormalized = normalizeText(searchTerm);
+      
+      const filtered = positions.filter(position => {
+        const positionNormalized = normalizeText(position);
+        return positionNormalized.includes(searchNormalized);
+      });
+      
+      setFilteredPositions(filtered);
+    }
+  };
+
+  // Pozisyon seçme fonksiyonu
+  const handlePositionSelect = (position: string) => {
+    setFormData({ ...formData, title: position });
+    setPositionSearchTerm(position);
+    setShowPositionDropdown(false);
+  };
+
+  // Highlight search term in text
+  const highlightText = (text: string, searchTerm: string) => {
+    if (!searchTerm || !text) return text;
+    
+    // Türkçe karakterleri normalize et
+    const normalizeText = (text: string) => {
+      return text
+        .trim()
+        .toLowerCase()
+        .replace(/ı/g, 'i') // I'yi i'ye çevir
+        .replace(/ğ/g, 'g') // Ğ'yi g'ye çevir
+        .replace(/ü/g, 'u') // Ü'yi u'ya çevir
+        .replace(/ş/g, 's') // Ş'yi s'ye çevir
+        .replace(/ö/g, 'o') // Ö'yi o'ya çevir
+        .replace(/ç/g, 'c') // Ç'yi c'ye çevir
+        .replace(/İ/g, 'i') // İ'yi i'ye çevir
+        .replace(/Ğ/g, 'g') // Ğ'yi g'ye çevir
+        .replace(/Ü/g, 'u') // Ü'yi u'ya çevir
+        .replace(/Ş/g, 's') // Ş'yi s'ye çevir
+        .replace(/Ö/g, 'o') // Ö'yi o'ya çevir
+        .replace(/Ç/g, 'c'); // Ç'yi c'ye çevir
+    };
+    
+    const normalizedText = normalizeText(text);
+    const normalizedSearchTerm = normalizeText(searchTerm);
+    
+    // Normalize edilmiş metinde arama yap
+    const searchIndex = normalizedText.indexOf(normalizedSearchTerm);
+    if (searchIndex === -1) return text;
+    
+    // Orijinal metinde eşleşen kısmı bul
+    const beforeMatch = text.substring(0, searchIndex);
+    const matchLength = searchTerm.length;
+    const match = text.substring(searchIndex, searchIndex + matchLength);
+    const afterMatch = text.substring(searchIndex + matchLength);
+    
+    return (
+      <>
+        {beforeMatch}
+        <span style={{ 
+          backgroundColor: '#FEF3C7', 
+          color: '#92400E',
+          fontWeight: 600,
+          padding: '1px 2px',
+          borderRadius: '2px'
+        }}>
+          {match}
+        </span>
+        {afterMatch}
+      </>
+    );
+  };
+
   const handleAddCompetency = () => {
     setFormData({
       title: '',
@@ -107,6 +269,8 @@ const CompetencySettings: React.FC = () => {
       collaborationMin: '',
       collaborationMax: ''
     });
+    setPositionSearchTerm('');
+    setShowPositionDropdown(false);
     setShowAddPopup(true);
   };
 
@@ -128,6 +292,8 @@ const CompetencySettings: React.FC = () => {
       collaborationMin: (competency.collaboration?.min || 0).toString(),
       collaborationMax: (competency.collaboration?.max || 0).toString()
     });
+    setPositionSearchTerm(competency.title || '');
+    setShowPositionDropdown(false);
     setShowEditPopup(true);
   };
 
@@ -362,6 +528,153 @@ const CompetencySettings: React.FC = () => {
     } catch (error: any) {
       console.error('💥 Import hatası:', error);
       setErrorMessage('Import işlemi sırasında bir hata oluştu: ' + error.message);
+      setShowErrorPopup(true);
+    } finally {
+      setIsImporting(false);
+    }
+  };
+
+  const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      setSelectedFile(file);
+    }
+  };
+
+  const handleDragOver = (event: React.DragEvent<HTMLDivElement>) => {
+    event.preventDefault();
+    event.currentTarget.style.borderColor = '#3B82F6';
+    event.currentTarget.style.backgroundColor = '#EFF6FF';
+  };
+
+  const handleDragLeave = (event: React.DragEvent<HTMLDivElement>) => {
+    event.preventDefault();
+    event.currentTarget.style.borderColor = '#D1D5DB';
+    event.currentTarget.style.backgroundColor = '#FAFAFA';
+  };
+
+  const handleDrop = (event: React.DragEvent<HTMLDivElement>) => {
+    event.preventDefault();
+    event.currentTarget.style.borderColor = '#D1D5DB';
+    event.currentTarget.style.backgroundColor = '#FAFAFA';
+    
+    const file = event.dataTransfer.files[0];
+    if (file) {
+      if (file.name.endsWith('.xlsx') || file.name.endsWith('.xls')) {
+        setSelectedFile(file);
+      } else {
+        setErrorMessage('Lütfen sadece Excel dosyası (.xlsx, .xls) seçin!');
+        setShowErrorPopup(true);
+      }
+    }
+  };
+
+  const downloadTemplate = () => {
+    try {
+      // Excel template verilerini oluştur
+      const headers = [
+        'Pozisyon',
+        'Müş. Odak. Min Değer',
+        'Müş. Odak. Max Değer',
+        'Bel. Yönt. Min Değer',
+        'Bel. Yönt. Max Değer',
+        'İns. Etk. Min Değer',
+        'İns. Etk. Max Değer',
+        'Güv. Ver. İş ve Sinerji Min Değer',
+        'Güv. Ver. İş ve Sinerji Max Değer'
+      ];
+
+      const exampleData = [
+        'Örnek Pozisyon',
+        '1',
+        '5',
+        '1',
+        '5',
+        '1',
+        '5',
+        '1',
+        '5'
+      ];
+
+      // Boş satırlar ekle
+      const emptyRows = Array(4).fill(null).map(() => Array(9).fill(''));
+
+      // Excel dosyası oluştur
+      const ws = XLSX.utils.aoa_to_sheet([
+        headers,
+        exampleData,
+        ...emptyRows
+      ]);
+
+      // Sütun genişliklerini ayarla
+      ws['!cols'] = [
+        { wch: 20 }, // Pozisyon
+        { wch: 15 }, // Müşteri Odaklılık (Min)
+        { wch: 15 }, // Müşteri Odaklılık (Max)
+        { wch: 15 }, // Belirsizlik Yönetimi (Min)
+        { wch: 15 }, // Belirsizlik Yönetimi (Max)
+        { wch: 15 }, // İnsanları Etkileme (Min)
+        { wch: 15 }, // İnsanları Etkileme (Max)
+        { wch: 15 }, // İşbirliği (Min)
+        { wch: 15 }  // İşbirliği (Max)
+      ];
+
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, 'Yetkinlik Ayarları');
+
+      // Dosyayı indir
+      XLSX.writeFile(wb, 'yetkinlik_ayarlari_template.xlsx');
+    } catch (error) {
+      console.error('Template indirme hatası:', error);
+      setErrorMessage('Template indirilemedi!');
+      setShowErrorPopup(true);
+    }
+  };
+
+  const handleImport = async () => {
+    if (!selectedFile) {
+      setErrorMessage('Lütfen bir Excel dosyası seçin!');
+      setShowErrorPopup(true);
+      return;
+    }
+
+    try {
+      setIsImporting(true);
+      
+      const formData = new FormData();
+      formData.append('excelFile', selectedFile);
+
+      const token = localStorage.getItem('token');
+      const response = await fetch('/api/competency/import', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        },
+        body: formData
+      });
+
+      const result = await response.json();
+
+      if (result.success) {
+        let message = `Başarıyla ${result.importedCount} yetkinlik import edildi!`;
+        if (result.errors && result.errors.length > 0) {
+          message += `\n\nHatalar:\n${result.errors.slice(0, 5).join('\n')}`;
+          if (result.errors.length > 5) {
+            message += `\n... ve ${result.errors.length - 5} hata daha`;
+          }
+        }
+        setSuccessMessage(message);
+        setShowSuccessPopup(true);
+        setShowImportPopup(false);
+        setSelectedFile(null);
+        loadCompetencies();
+      } else {
+        setErrorMessage(result.message || 'Import işlemi başarısız!');
+        setShowErrorPopup(true);
+      }
+    } catch (error) {
+      console.error('Import error:', error);
+      setErrorMessage('Import işlemi sırasında bir hata oluştu!');
       setShowErrorPopup(true);
     } finally {
       setIsImporting(false);
@@ -692,7 +1005,7 @@ const CompetencySettings: React.FC = () => {
                 onClick={() => setShowImportPopup(true)}
                 style={{
                   padding: '12px 20px',
-                  background: '#28A745',
+                  background: '#17A2B8',
                   color: 'white',
                   border: 'none',
                   borderRadius: '6px',
@@ -837,7 +1150,7 @@ const CompetencySettings: React.FC = () => {
                     fontWeight: 600,
                     fontFamily: 'Inter'
                   }}>
-                    Unvan
+                    Pozisyon
                   </th>
                   <th style={{
                     padding: '16px',
@@ -1069,37 +1382,153 @@ const CompetencySettings: React.FC = () => {
                   alignItems: 'flex-start',
                   gap: '15px'
                 }}>
-                  <div style={{
-                    width: '100%',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    justifyContent: 'flex-start',
-                    alignItems: 'flex-start',
-                    gap: '8px'
-                  }}>
+                  <div style={{ position: 'relative' }} data-position-dropdown>
                     <div style={{
                       color: '#232D42',
                       fontSize: '14px',
                       fontFamily: 'Inter',
-                      fontWeight: 500
+                      fontWeight: 500,
+                      marginBottom: '8px'
                     }}>
-                      Unvan
+                      Pozisyon
                     </div>
-                    <input
-                      type="text"
-                      value={formData.title}
-                      onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                      placeholder="Unvan giriniz"
+                    {/* Custom Dropdown */}
+                    <div
+                      onClick={() => setShowPositionDropdown(!showPositionDropdown)}
                       style={{
-                        width: '100%',
                         padding: '12px 16px',
                         border: '1px solid #E9ECEF',
                         borderRadius: '6px',
                         fontSize: '14px',
-                        fontFamily: 'Inter',
-                        outline: 'none'
+                        color: '#232D42',
+                        backgroundColor: '#FFFFFF',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        userSelect: 'none',
+                        fontFamily: 'Inter'
                       }}
-                    />
+                    >
+                      <span style={{ color: positionSearchTerm ? '#232D42' : '#8A92A6' }}>
+                        {positionSearchTerm || `Pozisyon seçin (${positions.length} pozisyon mevcut)`}
+                      </span>
+                      <i 
+                        className={`fas fa-chevron-${showPositionDropdown ? 'up' : 'down'}`}
+                        style={{ 
+                          color: '#8A92A6',
+                          fontSize: '12px',
+                          transition: 'transform 0.3s ease'
+                        }}
+                      />
+                    </div>
+                    {showPositionDropdown && (
+                      <div style={{
+                        position: 'absolute',
+                        top: '100%',
+                        left: 0,
+                        right: 0,
+                        backgroundColor: '#FFFFFF',
+                        border: '1px solid #E9ECEF',
+                        borderRadius: '6px',
+                        boxShadow: '0 8px 25px rgba(0, 0, 0, 0.15)',
+                        zIndex: 9999,
+                        maxHeight: '400px',
+                        overflow: 'hidden'
+                      }}>
+                        {/* Search Input */}
+                        <div style={{ padding: '8px', borderBottom: '1px solid #E9ECEF', position: 'relative' }}>
+                          <input
+                            type="text"
+                            placeholder="Pozisyon ara..."
+                            value={positionSearchTerm}
+                            onChange={(e) => {
+                              handlePositionSearch(e.target.value);
+                            }}
+                            style={{
+                              width: '100%',
+                              padding: '8px 12px 8px 32px',
+                              border: '1px solid #E9ECEF',
+                              borderRadius: '4px',
+                              fontSize: '14px',
+                              outline: 'none',
+                              fontFamily: 'Inter'
+                            }}
+                            onClick={(e) => e.stopPropagation()}
+                          />
+                          <i className="fas fa-search" style={{
+                            position: 'absolute',
+                            left: '16px',
+                            top: '50%',
+                            transform: 'translateY(-50%)',
+                            color: '#6B7280',
+                            fontSize: '12px'
+                          }} />
+                          {positionSearchTerm && (
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setPositionSearchTerm('');
+                                handlePositionSearch('');
+                              }}
+                              style={{
+                                position: 'absolute',
+                                right: '12px',
+                                top: '50%',
+                                transform: 'translateY(-50%)',
+                                background: 'none',
+                                border: 'none',
+                                color: '#6B7280',
+                                cursor: 'pointer',
+                                fontSize: '12px',
+                                padding: '2px'
+                              }}
+                            >
+                              <i className="fas fa-times"></i>
+                            </button>
+                          )}
+                        </div>
+
+                        {/* Options */}
+                        <div style={{ maxHeight: '300px', overflowY: 'auto' }}>
+                          {filteredPositions.length > 0 ? (
+                            filteredPositions.map((position, index) => (
+                              <div
+                                key={index}
+                                onClick={() => handlePositionSelect(position)}
+                                style={{
+                                  padding: '12px 16px',
+                                  cursor: 'pointer',
+                                  fontSize: '14px',
+                                  fontFamily: 'Inter',
+                                  color: '#232D42',
+                                  borderBottom: index < filteredPositions.length - 1 ? '1px solid #F1F3F4' : 'none',
+                                  transition: 'background-color 0.2s ease'
+                                }}
+                                onMouseEnter={(e) => {
+                                  e.currentTarget.style.backgroundColor = '#F8F9FA';
+                                }}
+                                onMouseLeave={(e) => {
+                                  e.currentTarget.style.backgroundColor = 'transparent';
+                                }}
+                              >
+                                {highlightText(position, positionSearchTerm)}
+                              </div>
+                            ))
+                          ) : (
+                            <div style={{
+                              padding: '12px 16px',
+                              fontSize: '14px',
+                              fontFamily: 'Inter',
+                              color: '#8A92A6',
+                              textAlign: 'center'
+                            }}>
+                              {positionSearchTerm ? `"${positionSearchTerm}" için arama sonucu bulunamadı` : 'Pozisyon bulunamadı'}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    )}
                   </div>
                   
                   <div style={{
@@ -1345,6 +1774,7 @@ const CompetencySettings: React.FC = () => {
                     onClick={() => {
                       setShowAddPopup(false);
                       setShowEditPopup(false);
+                      setShowPositionDropdown(false);
                     }}
                     style={{
                       width: '143px',
@@ -1415,6 +1845,7 @@ const CompetencySettings: React.FC = () => {
                   onClick={() => {
                     setShowAddPopup(false);
                     setShowEditPopup(false);
+                    setShowPositionDropdown(false);
                   }}
                   style={{
                     width: '24px',
@@ -1649,30 +2080,60 @@ const CompetencySettings: React.FC = () => {
                   padding: '20px 0'
                 }}>
                   <div style={{
-                    border: '2px dashed #0286F7',
-                    borderRadius: '8px',
-                    padding: '40px 20px',
-                    textAlign: 'center',
-                    background: '#f8f9fa',
-                    cursor: 'pointer'
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    marginBottom: '20px',
+                    gap: '8px'
                   }}>
+                    <button
+                      onClick={downloadTemplate}
+                      style={{
+                        backgroundColor: '#17A2B8',
+                        color: 'white',
+                        border: 'none',
+                        borderRadius: '6px',
+                        padding: '8px 16px',
+                        fontSize: '13px',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '8px'
+                      }}
+                    >
+                      <i className="fas fa-download"></i>
+                      Template İndir
+                    </button>
+                  </div>
+
+                  <div
+                    onClick={() => document.getElementById('excelFileInput')?.click()}
+                    onDragOver={handleDragOver}
+                    onDragLeave={handleDragLeave}
+                    onDrop={handleDrop}
+                    style={{
+                      border: '2px dashed #D1D5DB',
+                      borderRadius: '8px',
+                      padding: '40px 20px',
+                      textAlign: 'center',
+                      cursor: 'pointer',
+                      backgroundColor: '#FAFAFA',
+                      transition: 'all 0.3s'
+                    }}
+                  >
                     <input
                       type="file"
                       accept=".xlsx,.xls"
-                      onChange={handleImportExcel}
+                      onChange={handleFileSelect}
                       style={{ display: 'none' }}
                       id="excelFileInput"
                     />
-                    <label
-                      htmlFor="excelFileInput"
-                      style={{
-                        cursor: 'pointer',
-                        display: 'flex',
-                        flexDirection: 'column',
-                        alignItems: 'center',
-                        gap: '16px'
-                      }}
-                    >
+                    <div style={{
+                      display: 'flex',
+                      flexDirection: 'column',
+                      alignItems: 'center',
+                      gap: '16px'
+                    }}>
                       <i className="fas fa-file-excel" style={{
                         fontSize: '48px',
                         color: '#28A745'
@@ -1684,16 +2145,16 @@ const CompetencySettings: React.FC = () => {
                           fontWeight: 500,
                           marginBottom: '8px'
                         }}>
-                          Excel dosyası seçin
+                          {selectedFile ? selectedFile.name : 'Excel dosyası seçin veya sürükleyin'}
                         </div>
                         <div style={{
-                          color: '#6C757D',
+                          color: '#8A92A6',
                           fontSize: '14px'
                         }}>
-                          .xlsx veya .xls formatında
+                          .xlsx veya .xls formatında dosya yükleyin
                         </div>
                       </div>
-                    </label>
+                    </div>
                   </div>
                 </div>
                 <div style={{
@@ -1717,6 +2178,36 @@ const CompetencySettings: React.FC = () => {
                     }}
                   >
                     İptal
+                  </button>
+                  <button
+                    onClick={handleImport}
+                    disabled={!selectedFile || isImporting}
+                    style={{
+                      background: selectedFile && !isImporting ? '#28A745' : '#6C757D',
+                      color: 'white',
+                      border: 'none',
+                      borderRadius: '6px',
+                      padding: '12px 24px',
+                      cursor: selectedFile && !isImporting ? 'pointer' : 'not-allowed',
+                      fontSize: '14px',
+                      fontFamily: 'Inter',
+                      fontWeight: 500,
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '8px'
+                    }}
+                  >
+                    {isImporting ? (
+                      <>
+                        <i className="fas fa-spinner fa-spin"></i>
+                        Yükleniyor...
+                      </>
+                    ) : (
+                      <>
+                        <i className="fas fa-upload"></i>
+                        Yükle
+                      </>
+                    )}
                   </button>
                 </div>
               </div>
