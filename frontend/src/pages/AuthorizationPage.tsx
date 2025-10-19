@@ -124,6 +124,8 @@ const AuthorizationPage: React.FC = () => {
     const timer = setTimeout(() => {
       setDebouncedSearchTerm(searchTerm);
       setIsSearching(false);
+      // Arama yapıldığında sayfa 1'e dön
+      setCurrentPage(1);
     }, 300);
 
     return () => clearTimeout(timer);
@@ -134,7 +136,7 @@ const AuthorizationPage: React.FC = () => {
       setIsLoading(true);
       
       const token = localStorage.getItem('token');
-      const response = await fetch('/api/authorization', {
+      const response = await fetch('/api/authorization?limit=1000', {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -481,7 +483,10 @@ const AuthorizationPage: React.FC = () => {
 
   const handlePageChange = (page: number) => {
     setCurrentPage(page);
+    // Sayfa değiştiğinde en üste scroll
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
+
 
   // Excel Import Functions
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -1099,11 +1104,9 @@ const AuthorizationPage: React.FC = () => {
               )}
             </tbody>
           </table>
-          </div>
         </div>
 
-        {/* Pagination */}
-        {totalPages > 1 && (
+        {(
           <div style={{
             display: 'flex',
             justifyContent: 'center',
@@ -1162,6 +1165,8 @@ const AuthorizationPage: React.FC = () => {
             </button>
           </div>
         )}
+      </div>
+
 
         {/* Add Popup */}
         {showAddPopup && (

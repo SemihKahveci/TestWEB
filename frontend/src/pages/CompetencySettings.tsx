@@ -51,6 +51,10 @@ const CompetencySettings: React.FC = () => {
   const [isMobile, setIsMobile] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   
+  // Pagination states
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage] = useState(10);
+  
   // Organization states
   const [organizations, setOrganizations] = useState<Organization[]>([]);
   const [positions, setPositions] = useState<string[]>([]);
@@ -701,6 +705,18 @@ const CompetencySettings: React.FC = () => {
     (competency.title || '').toLowerCase().includes(searchTerm.toLowerCase())
   );
 
+  // Pagination
+  const totalPages = Math.ceil(filteredCompetencies.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  const currentCompetencies = filteredCompetencies.slice(startIndex, endIndex);
+
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page);
+    // Sayfa değiştiğinde en üste scroll
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
   if (isLoading) {
     return (
       <div style={{
@@ -899,11 +915,15 @@ const CompetencySettings: React.FC = () => {
                 onChange={(e) => {
                   const value = e.target.value;
                   setSearchTerm(value);
+                  // Arama yapıldığında sayfa 1'e dön
+                  setCurrentPage(1);
                 }}
                 onInput={(e) => {
                   // onInput event'i daha güvenilir
                   const value = (e.target as HTMLInputElement).value;
                   setSearchTerm(value);
+                  // Arama yapıldığında sayfa 1'e dön
+                  setCurrentPage(1);
                 }}
                 onKeyDown={(e) => {
                   // Tüm metni seçip silme durumunu yakala
@@ -919,6 +939,7 @@ const CompetencySettings: React.FC = () => {
                   const input = e.target as HTMLInputElement;
                   if (input.value === '') {
                     setSearchTerm('');
+                    setCurrentPage(1);
                   }
                 }}
                 placeholder="Yetkinlik adında akıllı arama yapın..."
@@ -947,7 +968,10 @@ const CompetencySettings: React.FC = () => {
               />
               {searchTerm && (
                 <button
-                  onClick={() => setSearchTerm('')}
+                  onClick={() => {
+                    setSearchTerm('');
+                    setCurrentPage(1);
+                  }}
                   style={{
                     position: 'absolute',
                     right: '12px',
@@ -1199,7 +1223,34 @@ const CompetencySettings: React.FC = () => {
                 </tr>
               </thead>
               <tbody>
-                {filteredCompetencies.map((competency) => (
+                {searchTerm && (
+                  <tr>
+                    <td colSpan={6} style={{
+                      padding: '12px 16px',
+                      backgroundColor: '#F8FAFC',
+                      borderBottom: '1px solid #E2E8F0',
+                      fontSize: '13px',
+                      color: '#64748B',
+                      fontFamily: 'Inter',
+                      fontWeight: '500'
+                    }}>
+                      🔍 "{searchTerm}" için {filteredCompetencies.length} sonuç bulundu
+                    </td>
+                  </tr>
+                )}
+                {currentCompetencies.length === 0 ? (
+                  <tr>
+                    <td colSpan={6} style={{
+                      padding: '40px',
+                      textAlign: 'center',
+                      color: '#8A92A6',
+                      fontSize: '14px'
+                    }}>
+                      {searchTerm ? `"${searchTerm}" için arama sonucu bulunamadı` : 'Henüz yetkinlik bulunmuyor'}
+                    </td>
+                  </tr>
+                ) : (
+                  currentCompetencies.map((competency) => (
                   <tr key={competency._id} style={{
                     borderBottom: '1px solid #E9ECEF',
                     background: selectedItems.includes(competency._id) ? '#F0F8FF' : 'white'
@@ -1301,11 +1352,71 @@ const CompetencySettings: React.FC = () => {
                       {competency.collaboration?.min || 0} - {competency.collaboration?.max || 0}
                     </td>
                   </tr>
-                ))}
+                  ))
+                )}
               </tbody>
             </table>
             </div>
           </div>
+        </div>
+
+        {/* Pagination */}
+        <div style={{
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+          gap: '8px',
+          marginTop: '20px'
+        }}>
+          <button
+            onClick={() => handlePageChange(currentPage - 1)}
+            disabled={currentPage === 1}
+            style={{
+              padding: '8px 12px',
+              border: '1px solid #E9ECEF',
+              borderRadius: '6px',
+              backgroundColor: currentPage === 1 ? '#F8F9FA' : 'white',
+              color: currentPage === 1 ? '#ADB5BD' : '#232D42',
+              cursor: currentPage === 1 ? 'not-allowed' : 'pointer',
+              fontSize: '14px'
+            }}
+          >
+            Önceki
+          </button>
+          
+          {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+            <button
+              key={page}
+              onClick={() => handlePageChange(page)}
+              style={{
+                padding: '8px 12px',
+                border: '1px solid #E9ECEF',
+                borderRadius: '6px',
+                backgroundColor: currentPage === page ? '#3B82F6' : 'white',
+                color: currentPage === page ? 'white' : '#232D42',
+                cursor: 'pointer',
+                fontSize: '14px'
+              }}
+            >
+              {page}
+            </button>
+          ))}
+          
+          <button
+            onClick={() => handlePageChange(currentPage + 1)}
+            disabled={currentPage === totalPages}
+            style={{
+              padding: '8px 12px',
+              border: '1px solid #E9ECEF',
+              borderRadius: '6px',
+              backgroundColor: currentPage === totalPages ? '#F8F9FA' : 'white',
+              color: currentPage === totalPages ? '#ADB5BD' : '#232D42',
+              cursor: currentPage === totalPages ? 'not-allowed' : 'pointer',
+              fontSize: '14px'
+            }}
+          >
+            Sonraki
+          </button>
         </div>
 
         {/* Add/Edit Popup */}
