@@ -81,6 +81,11 @@ const GameSendPage: React.FC = () => {
     { value: 'titan', label: 'Titan (İnsanları Etkileme - Güven Veren İşbirlikçi ve Sinerji)' }
   ];
 
+  // Helper function to capitalize first letter
+  const capitalizeFirstLetter = (text: string) => {
+    return text.charAt(0).toUpperCase() + text.slice(1);
+  };
+
   // Responsive kontrolü
   useEffect(() => {
     const mediaQuery = window.matchMedia('(max-width: 768px)');
@@ -1585,7 +1590,7 @@ const GameSendPage: React.FC = () => {
                                   e.currentTarget.style.backgroundColor = 'transparent';
                                 }}
                               >
-                                {highlightText(planet.label, planetSearchTerm)}
+                                {highlightText(capitalizeFirstLetter(planet.label), planetSearchTerm)}
                               </div>
                             ))}
                           
@@ -1637,7 +1642,7 @@ const GameSendPage: React.FC = () => {
                         <div style={{ cursor: 'grab', padding: '2px', borderRadius: '3px' }}>
                           <i className="fas fa-grip-vertical"></i>
                         </div>
-                        {planet.label}
+                        {capitalizeFirstLetter(planet.label)}
                         <button
                           onClick={() => removePlanet(planetValue)}
                           style={{
@@ -2313,7 +2318,7 @@ const GameSendPage: React.FC = () => {
                                   e.currentTarget.style.backgroundColor = 'transparent';
                                 }}
                               >
-                                {highlightText(planet.label, titlePlanetSearchTerm)}
+                                {highlightText(capitalizeFirstLetter(planet.label), titlePlanetSearchTerm)}
                               </div>
                             ))}
                           
@@ -2376,7 +2381,7 @@ const GameSendPage: React.FC = () => {
                         <div style={{ cursor: 'grab', padding: '2px', borderRadius: '3px' }}>
                           <i className="fas fa-grip-vertical"></i>
                         </div>
-                        {planet.label}
+                        {capitalizeFirstLetter(planet.label)}
                         <button
                           onClick={() => removeTitlePlanet(planetValue)}
                           style={{
@@ -2656,7 +2661,7 @@ const GameSendPage: React.FC = () => {
                           fontWeight: 500
                         }}
                       >
-                        {displayValue}
+                        {capitalizeFirstLetter(displayValue)}
                       </span>
                     );
                   })}
