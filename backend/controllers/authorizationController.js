@@ -3,7 +3,7 @@ const Authorization = require('../models/Authorization');
 // Tüm kişileri getir
 const getAllAuthorizations = async (req, res) => {
     try {
-        const { page = 1, limit = 10, search = '', status = '' } = req.query;
+        const { page = 1, limit, search = '', status = '' } = req.query;
         
         // Arama ve filtreleme kriterleri
         let filter = {};
@@ -17,29 +17,38 @@ const getAllAuthorizations = async (req, res) => {
             ];
         }
         
-        // Sayfalama için skip hesapla
-        const skip = (parseInt(page) - 1) * parseInt(limit);
+        let query = Authorization.find(filter)
+            .populate('createdBy', 'username email')
+            .sort({ createdAt: -1 });
+
+        // Limit belirtilmişse sayfalama uygula
+        if (limit) {
+            const skip = (parseInt(page) - 1) * parseInt(limit);
+            query = query.skip(skip).limit(parseInt(limit));
+        }
 
         // Kişileri getir
-        const authorizations = await Authorization.find(filter)
-            .populate('createdBy', 'username email')
-            .sort({ createdAt: -1 })
-            .skip(skip)
-            .limit(parseInt(limit));
+        const authorizations = await query;
 
         // Toplam sayıyı al
         const total = await Authorization.countDocuments(filter);
 
-        res.json({
+        // Limit belirtilmişse pagination bilgilerini ekle
+        const response = {
             success: true,
-            authorizations,
-            pagination: {
+            authorizations
+        };
+
+        if (limit) {
+            response.pagination = {
                 currentPage: parseInt(page),
                 totalPages: Math.ceil(total / parseInt(limit)),
                 totalItems: total,
                 itemsPerPage: parseInt(limit)
-            }
-        });
+            };
+        }
+
+        res.json(response);
     } catch (error) {
         console.error('Kişileri getirme hatası:', error);
         res.status(500).json({

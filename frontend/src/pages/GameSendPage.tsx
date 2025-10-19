@@ -497,7 +497,7 @@ const GameSendPage: React.FC = () => {
       try {
         // Bu gruptaki kişilerin detaylarını al
         const token = localStorage.getItem('token');
-        const response = await fetch('/api/authorization?limit=1000', {
+        const response = await fetch('/api/authorization', {
           headers: { 'Authorization': `Bearer ${token}` }
         });
 
@@ -544,7 +544,7 @@ const GameSendPage: React.FC = () => {
       try {
         // Bu unvanın pozisyonlarında çalışan kişileri bul
         const token = localStorage.getItem('token');
-        const response = await fetch('/api/authorization?limit=1000', {
+        const response = await fetch('/api/authorization', {
           headers: { 'Authorization': `Bearer ${token}` }
         });
 

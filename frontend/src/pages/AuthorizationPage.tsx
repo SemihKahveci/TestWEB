@@ -136,7 +136,7 @@ const AuthorizationPage: React.FC = () => {
       setIsLoading(true);
       
       const token = localStorage.getItem('token');
-      const response = await fetch('/api/authorization?limit=1000', {
+      const response = await fetch('/api/authorization', {
         headers: {
           'Authorization': `Bearer ${token}`
         }
