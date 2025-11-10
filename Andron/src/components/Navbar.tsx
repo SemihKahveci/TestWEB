@@ -27,7 +27,7 @@ export default function Navbar() {
   const [languageDropdownOpen, setLanguageDropdownOpen] = useState(false);
   const [selectedLanguage, setSelectedLanguage] = useState(languages[0]);
   const languageDropdownRef = useRef<HTMLDivElement>(null);
-  const [adminPanelUrl, setAdminPanelUrl] = useState<string>('/admin');
+  const [adminPanelUrl, setAdminPanelUrl] = useState<string>('/login');
 
   // Admin paneli URL'ini client-side'da belirle
   useEffect(() => {
@@ -37,7 +37,7 @@ export default function Navbar() {
       if (hostname === 'localhost' || hostname === '127.0.0.1') {
         setAdminPanelUrl('http://localhost:5173');
       }
-      // Production'da zaten /admin (başlangıç değeri)
+      // Production'da /login (admin paneli login sayfası)
     }
   }, []);
 
