@@ -240,30 +240,20 @@ apiRouter.use('/credit', creditRoutes);
 app.use('/api', apiRouter);
 
 // Admin paneli route'u - Production'da
-// Not: Andron 3000 portunda çalışıyor, admin paneli 5000 portunda root'tan serve ediliyor
 if (process.env.NODE_ENV === 'production') {
-    // Production'da root path'inde frontend build dosyalarını serve et
-    app.use(express.static(path.join(__dirname, '../frontend/dist')));
+    // Production'da /admin path'inde frontend build dosyalarını serve et
+    app.use('/admin', express.static(path.join(__dirname, '../frontend/dist')));
     
-    // Admin paneli için tüm route'ları frontend'e yönlendir (API route'ları hariç)
-    app.get('*', (req, res, next) => {
-        // API route'larını atla
-        if (req.path.startsWith('/api')) {
-            return next();
-        }
-        // Diğer tüm route'ları frontend'e yönlendir (login, admin, results vb.)
+    // Admin paneli için tüm route'ları frontend'e yönlendir
+    app.get('/admin/*', (req, res) => {
         res.sendFile(path.join(__dirname, '../frontend/dist/index.html'));
     });
 } else {
-    // Development'da root path'ini React dev server'a proxy et
-    app.get('/', (req, res) => {
+    // Development'da /admin path'ini React dev server'a proxy et
+    app.get('/admin', (req, res) => {
         res.redirect('http://localhost:5173');
     });
-    app.get('*', (req, res, next) => {
-        // API route'larını atla
-        if (req.path.startsWith('/api')) {
-            return next();
-        }
+    app.get('/admin/*', (req, res) => {
         res.redirect(`http://localhost:5173${req.path}`);
     });
 }
