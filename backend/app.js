@@ -239,18 +239,22 @@ apiRouter.use('/credit', creditRoutes);
 // API route'larını uygula
 app.use('/api', apiRouter);
 
-// Ana sayfa - Production'da frontend static dosyalarını serve et
+// Admin paneli route'u - Production'da
 if (process.env.NODE_ENV === 'production') {
-    // Production'da frontend build dosyalarını serve et
-    app.use(express.static(path.join(__dirname, '../frontend/dist')));
+    // Production'da /admin path'inde frontend build dosyalarını serve et
+    app.use('/admin', express.static(path.join(__dirname, '../frontend/dist')));
     
-    app.get('*', (req, res) => {
+    // Admin paneli için tüm route'ları frontend'e yönlendir
+    app.get('/admin/*', (req, res) => {
         res.sendFile(path.join(__dirname, '../frontend/dist/index.html'));
     });
 } else {
-    // Development'da React dev server'a yönlendir
-    app.get('/', (req, res) => {
+    // Development'da /admin path'ini React dev server'a proxy et
+    app.get('/admin', (req, res) => {
         res.redirect('http://localhost:5173');
+    });
+    app.get('/admin/*', (req, res) => {
+        res.redirect(`http://localhost:5173${req.path}`);
     });
 }
 

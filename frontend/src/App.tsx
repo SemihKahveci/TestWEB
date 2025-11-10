@@ -21,9 +21,12 @@ import DefineCompanyAdmin from './pages/DefineCompanyAdmin';
 import SubscriptionSettings from './pages/SubscriptionSettings';
 
 function App() {
+  // Production'da /admin base path'i kullan
+  const basename = process.env.NODE_ENV === 'production' ? '/admin' : '';
+  
   return (
     <AuthProvider>
-      <Router>
+      <Router basename={basename}>
         <div className="App" style={{
           backgroundImage: `url('/background.png')`,
           backgroundSize: 'cover',

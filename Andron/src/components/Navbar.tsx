@@ -28,6 +28,22 @@ export default function Navbar() {
   const [selectedLanguage, setSelectedLanguage] = useState(languages[0]);
   const languageDropdownRef = useRef<HTMLDivElement>(null);
 
+  // Admin paneli URL'ini dinamik olarak belirle
+  const getAdminPanelUrl = () => {
+    // Environment variable varsa onu kullan
+    if (process.env.NEXT_PUBLIC_ADMIN_PANEL_URL) {
+      return process.env.NEXT_PUBLIC_ADMIN_PANEL_URL;
+    }
+    // Production'da (localhost değilse) /admin kullan
+    if (typeof window !== 'undefined' && window.location.hostname !== 'localhost') {
+      return '/admin';
+    }
+    // Development'da localhost:5173 kullan
+    return 'http://localhost:5173';
+  };
+
+  const adminPanelUrl = getAdminPanelUrl();
+
   useEffect(() => {
     const checkIsMobile = () => {
       setIsMobile(window.innerWidth < 1024); // lg breakpoint
@@ -114,9 +130,9 @@ export default function Navbar() {
           style={{ marginRight: "48px" }}
         />
         <a
-          href={process.env.NEXT_PUBLIC_ADMIN_PANEL_URL || "http://localhost:5173"}
-          target="_blank"
-          rel="noopener noreferrer"
+          href={adminPanelUrl}
+          target={adminPanelUrl.startsWith('http') ? '_blank' : undefined}
+          rel={adminPanelUrl.startsWith('http') ? 'noopener noreferrer' : undefined}
           className={`border ${
             isHome || isAboutUs
               ? "border-white/60 text-white bg-transparent hover:bg-white/10"
@@ -266,9 +282,9 @@ export default function Navbar() {
         </ul>
         <div className="flex flex-col gap-3 px-6 pb-6 mt-auto">
           <a
-            href={process.env.NEXT_PUBLIC_ADMIN_PANEL_URL || "http://localhost:5173"}
-            target="_blank"
-            rel="noopener noreferrer"
+            href={adminPanelUrl}
+            target={adminPanelUrl.startsWith('http') ? '_blank' : undefined}
+            rel={adminPanelUrl.startsWith('http') ? 'noopener noreferrer' : undefined}
             className="border border-[#2196f3] text-[#2196f3] bg-transparent hover:bg-blue-50 px-[25px] py-[10px] rounded-md transition text-base font-semibold tracking-wide text-center"
             onClick={() => setMenuOpen(false)}
           >
