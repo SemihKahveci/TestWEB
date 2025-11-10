@@ -245,10 +245,14 @@ if (process.env.NODE_ENV === 'production') {
     // Production'da root path'inde frontend build dosyalarını serve et
     app.use(express.static(path.join(__dirname, '../frontend/dist')));
     
-    // Admin paneli için tüm route'ları frontend'e yönlendir (API route'ları hariç)
+    // Admin paneli için tüm route'ları frontend'e yönlendir (API ve /home route'ları hariç)
     app.get('*', (req, res, next) => {
         // API route'larını atla
         if (req.path.startsWith('/api')) {
+            return next();
+        }
+        // /home route'unu atla (Next.js'e gidecek - nginx'te yönlendirilecek)
+        if (req.path.startsWith('/home')) {
             return next();
         }
         // Diğer tüm route'ları frontend'e yönlendir
