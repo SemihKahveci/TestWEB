@@ -27,22 +27,28 @@ export default function Navbar() {
   const [languageDropdownOpen, setLanguageDropdownOpen] = useState(false);
   const [selectedLanguage, setSelectedLanguage] = useState(languages[0]);
   const languageDropdownRef = useRef<HTMLDivElement>(null);
+  const [adminPanelUrl, setAdminPanelUrl] = useState<string>('/admin');
 
-  // Admin paneli URL'ini dinamik olarak belirle
-  const getAdminPanelUrl = () => {
+  // Admin paneli URL'ini dinamik olarak belirle (client-side)
+  useEffect(() => {
     // Environment variable varsa onu kullan
     if (process.env.NEXT_PUBLIC_ADMIN_PANEL_URL) {
-      return process.env.NEXT_PUBLIC_ADMIN_PANEL_URL;
+      setAdminPanelUrl(process.env.NEXT_PUBLIC_ADMIN_PANEL_URL);
+      return;
     }
-    // Production'da (localhost değilse) /admin kullan
-    if (typeof window !== 'undefined' && window.location.hostname !== 'localhost') {
-      return '/admin';
+    
+    // Client-side'da hostname kontrolü yap
+    if (typeof window !== 'undefined') {
+      const hostname = window.location.hostname;
+      // localhost veya 127.0.0.1 ise development
+      if (hostname === 'localhost' || hostname === '127.0.0.1') {
+        setAdminPanelUrl('http://localhost:5173');
+      } else {
+        // Production'da /admin kullan
+        setAdminPanelUrl('/admin');
+      }
     }
-    // Development'da localhost:5173 kullan
-    return 'http://localhost:5173';
-  };
-
-  const adminPanelUrl = getAdminPanelUrl();
+  }, []);
 
   useEffect(() => {
     const checkIsMobile = () => {
