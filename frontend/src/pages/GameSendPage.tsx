@@ -65,7 +65,8 @@ const GameSendPage: React.FC = () => {
   const [messageModal, setMessageModal] = useState({
     title: '',
     message: '',
-    type: 'info' as 'success' | 'error' | 'warning' | 'info'
+    type: 'info' as 'success' | 'error' | 'warning' | 'info',
+    failedPersons: [] as string[]
   });
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [confirmModal, setConfirmModal] = useState({
@@ -950,7 +951,7 @@ const GameSendPage: React.FC = () => {
           showMessage('Hata', `Kredi düşürülemedi: ${error.response?.data?.message || error.message}`, 'error');
         }
       } else if (successCount > 0 && errorCount > 0) {
-        showMessage('Kısmi Başarı', `${successCount} kişiye gönderildi, ${errorCount} kişiye gönderilemedi. (${totalCreditCost} kredi düşüldü)`, 'warning');
+        showMessage('Kısmi Başarı', `${successCount} kişiye gönderildi, ${errorCount} kişiye gönderilemedi. (${totalCreditCost} kredi düşüldü)`, 'warning', errors);
         console.error('Gönderim hataları:', errors);
         // Kredi düşür (sadece başarılı gönderimler için - API ile)
         try {
@@ -974,7 +975,7 @@ const GameSendPage: React.FC = () => {
           showMessage('Hata', `Kredi düşürülemedi: ${error.response?.data?.message || error.message}`, 'error');
         }
       } else {
-        showMessage('Hata', 'Hiçbir kişiye gönderilemedi!', 'error');
+        showMessage('Hata', 'Hiçbir kişiye gönderilemedi!', 'error', errors);
         console.error('Tüm gönderim hataları:', errors);
       }
 
@@ -1080,7 +1081,7 @@ const GameSendPage: React.FC = () => {
           showMessage('Hata', `Kredi düşürülemedi: ${error.response?.data?.message || error.message}`, 'error');
         }
       } else if (successCount > 0 && errorCount > 0) {
-        showMessage('Kısmi Başarı', `${successCount} kişiye gönderildi, ${errorCount} kişiye gönderilemedi. (${totalCreditCost} kredi düşüldü)`, 'warning');
+        showMessage('Kısmi Başarı', `${successCount} kişiye gönderildi, ${errorCount} kişiye gönderilemedi. (${totalCreditCost} kredi düşüldü)`, 'warning', errors);
         console.error('Gönderim hataları:', errors);
         // Kredi düşür (sadece başarılı gönderimler için - API ile)
         try {
@@ -1104,7 +1105,7 @@ const GameSendPage: React.FC = () => {
           showMessage('Hata', `Kredi düşürülemedi: ${error.response?.data?.message || error.message}`, 'error');
         }
       } else {
-        showMessage('Hata', 'Hiçbir kişiye gönderilemedi!', 'error');
+        showMessage('Hata', 'Hiçbir kişiye gönderilemedi!', 'error', errors);
         console.error('Tüm gönderim hataları:', errors);
       }
 
@@ -1120,8 +1121,8 @@ const GameSendPage: React.FC = () => {
   };
 
   // Modal functions
-  const showMessage = (title: string, message: string, type: 'success' | 'error' | 'warning' | 'info') => {
-    setMessageModal({ title, message, type });
+  const showMessage = (title: string, message: string, type: 'success' | 'error' | 'warning' | 'info', failedPersons: string[] = []) => {
+    setMessageModal({ title, message, type, failedPersons });
     setShowMessageModal(true);
   };
 
@@ -1217,26 +1218,14 @@ const GameSendPage: React.FC = () => {
         </div>
       </div>
 
-      {/* Main Form */}
+      {/* Kalan Oyun Sayısı - Header Altında */}
       <div style={{
-        background: 'white',
-        borderRadius: '8px',
-        boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
-        padding: '40px',
-        width: '90%',
-        maxWidth: '800px',
-        margin: '0 auto',
-        marginTop: '60px',
-        position: 'relative',
-        touchAction: 'pan-x pan-y pinch-zoom',
-        overflowX: 'auto',
-        WebkitOverflowScrolling: 'touch'
+        position: 'absolute',
+        top: '170px',
+        right: '5%',
+        zIndex: 10
       }}>
-        {/* Kalan Oyun Sayısı - Sağ Üst Çapraz */}
         <div style={{
-          position: 'absolute',
-          top: '-50px',
-          right: '-200px',
           background: 'white',
           borderRadius: '8px',
           padding: '12px 16px',
@@ -1246,8 +1235,7 @@ const GameSendPage: React.FC = () => {
           flexDirection: 'column',
           alignItems: 'center',
           gap: '4px',
-          minWidth: '120px',
-          zIndex: 10
+          minWidth: '120px'
         }}>
           <div style={{
             color: '#8A92A6',
@@ -1266,6 +1254,23 @@ const GameSendPage: React.FC = () => {
             {remainingCredits.toLocaleString()}
           </div>
         </div>
+      </div>
+
+      {/* Main Form */}
+      <div style={{
+        background: 'white',
+        borderRadius: '8px',
+        boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+        padding: '40px',
+        width: '90%',
+        maxWidth: '800px',
+        margin: '0 auto',
+        marginTop: '20px',
+        position: 'relative',
+        touchAction: 'pan-x pan-y pinch-zoom',
+        overflowX: 'auto',
+        WebkitOverflowScrolling: 'touch'
+      }}>
         {/* Kredi Bilgi Notu */}
         <div style={{
           background: 'linear-gradient(135deg, #E3F2FD 0%, #F3E5F5 100%)',
@@ -2936,6 +2941,41 @@ const GameSendPage: React.FC = () => {
               lineHeight: 1.5
             }}>
               {messageModal.message}
+              
+              {/* Gönderilemeyen kişiler listesi */}
+              {messageModal.failedPersons && messageModal.failedPersons.length > 0 && (
+                <div style={{
+                  marginTop: '16px',
+                  padding: '12px',
+                  backgroundColor: '#F8F9FA',
+                  borderRadius: '6px',
+                  border: '1px solid #E9ECEF'
+                }}>
+                  <div style={{
+                    fontSize: '13px',
+                    fontWeight: 600,
+                    color: '#6C757D',
+                    marginBottom: '8px'
+                  }}>
+                    Gönderilemeyen Kişiler:
+                  </div>
+                  <div style={{
+                    maxHeight: '150px',
+                    overflowY: 'auto',
+                    fontSize: '12px',
+                    color: '#495057'
+                  }}>
+                    {messageModal.failedPersons.map((error, index) => (
+                      <div key={index} style={{
+                        padding: '4px 0',
+                        borderBottom: index < messageModal.failedPersons.length - 1 ? '1px solid #E9ECEF' : 'none'
+                      }}>
+                        {error}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
             <div style={{
               display: 'flex',

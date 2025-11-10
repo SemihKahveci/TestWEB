@@ -22,7 +22,11 @@ const sendEmail = async (to, subject, html) => {
         return { success: true, messageId: result.id };
     } catch (error) {
         console.error('E-posta gönderme hatası:', error);
-        throw error;
+        return { 
+            success: false, 
+            error: error.message || 'Mailgun servisi hatası',
+            details: error.response?.data || null
+        };
     }
 };
 

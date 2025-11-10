@@ -1,0 +1,206 @@
+@import "tailwindcss";
+@import url("https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap");
+
+:root {
+  --background: #ffffff;
+  --foreground: #171717;
+  --font-family-main: "Poppins", sans-serif;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background: #0a0a0a;
+    --foreground: #ededed;
+  }
+}
+
+body,
+html {
+  color: var(--foreground);
+  font-family: var(--font-family-main);
+  overflow-x: hidden;
+}
+
+/* Pricing Range Slider Styles */
+input[type="range"] {
+  -webkit-appearance: none;
+  width: 100%;
+  height: 8px;
+  border-radius: 4px;
+  background: #d1d5db; /* Default track color */
+  outline: none;
+  opacity: 0.7;
+  transition: opacity 0.2s;
+}
+
+input#get-started::placeholder {
+  color: white;
+}
+
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: #2196f3;
+  cursor: pointer;
+  box-shadow: 0 0 0 4px rgba(33, 150, 243, 0.4);
+}
+
+input[type="range"]::-moz-range-thumb {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: #2196f3;
+  cursor: pointer;
+  box-shadow: 0 0 0 4px rgba(33, 150, 243, 0.4);
+}
+
+input[type="range"]::-ms-thumb {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: #2196f3;
+  cursor: pointer;
+  box-shadow: 0 0 0 4px rgba(33, 150, 243, 0.4);
+}
+
+input::placeholder,
+textarea::placeholder,
+select {
+  color: rgba(0, 0, 0, 0.6);
+}
+
+input[type="text"],
+input[type="email"],
+select,
+textarea {
+  background-color: #fff;
+  border-radius: 8px;
+  padding: 12px 14px;
+  color: #000;
+}
+
+.font-inter {
+  font-family: "Inter", sans-serif;
+}
+
+#contact-form input::placeholder,
+#contact-form textarea::placeholder,
+#contact-form select::placeholder {
+  font-style: italic;
+  font-size: 12px;
+}
+
+#contact-form select {
+  font-size: 12px;
+  font-style: italic;
+  color: #525659;
+}
+
+/* Planet orbit animations */
+@keyframes rotate {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes orbit1 {
+  from {
+    transform: translate(-50%, -50%) rotate(0deg) translateX(250px) rotate(0deg);
+  }
+  to {
+    transform: translate(-50%, -50%) rotate(360deg) translateX(250px)
+      rotate(-360deg);
+  }
+}
+
+@keyframes orbit1-mobile {
+  from {
+    transform: translate(-50%, -50%) rotate(0deg) translateX(150px) rotate(0deg);
+  }
+  to {
+    transform: translate(-50%, -50%) rotate(360deg) translateX(150px)
+      rotate(-360deg);
+  }
+}
+
+@keyframes orbit2 {
+  from {
+    transform: translate(-50%, -50%) rotate(120deg) translateX(250px)
+      rotate(-120deg);
+  }
+  to {
+    transform: translate(-50%, -50%) rotate(480deg) translateX(250px)
+      rotate(-480deg);
+  }
+}
+
+@keyframes orbit2-mobile {
+  from {
+    transform: translate(-50%, -50%) rotate(120deg) translateX(150px)
+      rotate(-120deg);
+  }
+  to {
+    transform: translate(-50%, -50%) rotate(480deg) translateX(150px)
+      rotate(-480deg);
+  }
+}
+
+@keyframes orbit3 {
+  from {
+    transform: translate(-50%, -50%) rotate(240deg) translateX(250px)
+      rotate(-240deg);
+  }
+  to {
+    transform: translate(-50%, -50%) rotate(600deg) translateX(250px)
+      rotate(-600deg);
+  }
+}
+
+@keyframes orbit3-mobile {
+  from {
+    transform: translate(-50%, -50%) rotate(240deg) translateX(150px)
+      rotate(-240deg);
+  }
+  to {
+    transform: translate(-50%, -50%) rotate(600deg) translateX(150px)
+      rotate(-600deg);
+  }
+}
+
+/* Responsive orbit animations */
+@media (max-width: 767px) {
+  .planet-orbit-1 {
+    animation: orbit1-mobile 25s linear infinite !important;
+  }
+  .planet-orbit-2 {
+    animation: orbit2-mobile 25s linear infinite !important;
+  }
+  .planet-orbit-3 {
+    animation: orbit3-mobile 25s linear infinite !important;
+  }
+}
+
+@media (min-width: 768px) {
+  .planet-orbit-1 {
+    animation: orbit1 20s linear infinite !important;
+  }
+  .planet-orbit-2 {
+    animation: orbit2 20s linear infinite !important;
+  }
+  .planet-orbit-3 {
+    animation: orbit3 20s linear infinite !important;
+  }
+}

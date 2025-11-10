@@ -364,7 +364,10 @@ const adminController = {
 
                 res.json({ success: true, message: 'Kod başarıyla gönderildi' });
             } else {
-                res.status(500).json({ success: false, message: 'E-posta gönderilirken bir hata oluştu' });
+                res.status(500).json({ 
+                    success: false, 
+                    message: `E-posta gönderilemedi: ${emailResult.error || 'Bilinmeyen hata'}` 
+                });
             }
         } catch (error) {
  

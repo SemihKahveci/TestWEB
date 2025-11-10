@@ -20,7 +20,7 @@ const authorizationSchema = new mongoose.Schema({
         trim: true,
         lowercase: true,
         maxlength: [100, 'Email 100 karakterden fazla olamaz'],
-        match: [/^\w+([.-]?\w+)*@\w+([.-]?\w+)*(\.\w{2,3})+$/, 'Geçerli bir email adresi giriniz']
+        match: [/^[a-zA-Z0-9._+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/, 'Geçerli bir email adresi giriniz']
     },
     title: {
         type: String,
