@@ -4,6 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { useState } from "react";
+import { getImagePath } from "@/utils/imagePath";
 
 const ContactForm = ({ isContactPage = false }) => {
   const [showPrivacyModal, setShowPrivacyModal] = useState(false);
@@ -503,7 +504,7 @@ const ContactForm = ({ isContactPage = false }) => {
             <div className="w-1/4">
               <div className="flex items-center h-full gap-1 rounded-md p-3 focus-within:ring-2 focus-within:ring-blue-500 bg-white">
                 <Image
-                  src="/assets/images/Turkey_flag.png"
+                  src={getImagePath("/assets/images/Turkey_flag.png")}
                   alt="Turkey Flag"
                   width={20}
                   height={15}
@@ -615,7 +616,7 @@ const ContactForm = ({ isContactPage = false }) => {
             className="absolute inset-0"
           >
             <Image
-              src="/assets/images/contact_bg copy.png"
+              src={getImagePath("/assets/images/contact_bg copy.png")}
               alt="Astronaut"
               fill
               className="rounded-xl object-fill"
@@ -647,7 +648,7 @@ const ContactForm = ({ isContactPage = false }) => {
           className="w-12 h-12 rounded-full border border-gray-300 flex items-center justify-center text-gray-600 hover:bg-gray-100 transition"
         >
           <Image
-            src="/assets/icons/facebook.svg"
+            src={getImagePath("/assets/icons/facebook.svg")}
             alt="Facebook"
             width={12}
             height={12}
@@ -658,7 +659,7 @@ const ContactForm = ({ isContactPage = false }) => {
           className="w-12 h-12 rounded-full border border-gray-300 flex items-center justify-center text-gray-600 hover:bg-gray-100 transition"
         >
           <Image
-            src="/assets/icons/instagram.svg"
+            src={getImagePath("/assets/icons/instagram.svg")}
             alt="Instagram"
             width={24}
             height={24}
@@ -669,7 +670,7 @@ const ContactForm = ({ isContactPage = false }) => {
           className="w-12 h-12 rounded-full border border-gray-300 flex items-center justify-center text-gray-600 hover:bg-gray-100 transition"
         >
           <Image
-            src="/assets/icons/twitter.svg"
+            src={getImagePath("/assets/icons/twitter.svg")}
             alt="Twitter"
             width={24}
             height={24}

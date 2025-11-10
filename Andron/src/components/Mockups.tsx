@@ -1,12 +1,13 @@
 import Image from "next/image";
 import { motion } from "framer-motion";
+import { getImagePath } from "@/utils/imagePath";
 
 export default function Mockups() {
   return (
     <section
       className="relative w-full py-15 md:py-25 text-center overflow-hidden"
       style={{
-        backgroundImage: "url('/assets/images/mockup/mockups-bg.png')",
+        backgroundImage: `url('${process.env.NODE_ENV === 'production' ? '/home' : ''}/assets/images/mockup/mockups-bg.png')`,
         backgroundSize: "cover",
         backgroundPosition: "center",
         backgroundRepeat: "no-repeat",
@@ -47,7 +48,7 @@ export default function Mockups() {
           >
             <div className="relative">
               <Image
-                src="/assets/images/mockup/iphone.png"
+                src={getImagePath("/assets/images/mockup/iphone.png")}
                 alt="iPhone Mockup"
                 width={156}
                 height={305}
@@ -56,7 +57,7 @@ export default function Mockups() {
               {/* iPhone screen content - positioned inside the screen area */}
               <div className="absolute top-[8%] left-[8%] right-[8%] bottom-[8%]">
                 <Image
-                  src="/assets/images/mockup/iphone-bg.png"
+                  src={getImagePath("/assets/images/mockup/iphone-bg.png")}
                   alt="iPhone Screen Content"
                   fill
                   className="object-cover rounded-[12px]"
@@ -75,7 +76,7 @@ export default function Mockups() {
           >
             <div className="relative">
               <Image
-                src="/assets/images/mockup/macbook.png"
+                src={getImagePath("/assets/images/mockup/macbook.png")}
                 alt="MacBook Mockup"
                 width={800}
                 height={600}
@@ -84,7 +85,7 @@ export default function Mockups() {
               {/* MacBook screen content - positioned inside the screen area */}
               <div className="absolute top-[6%] left-[12%] right-[12%] bottom-[25%] md:top-[8%] md:left-[11%] md:right-[11%] md:bottom-[10%] xl:top-[8%] xl:left-[10%] xl:right-[10%] xl:bottom-[10%]">
                 <Image
-                  src="/assets/images/mockup/macbook-bg.png"
+                  src={getImagePath("/assets/images/mockup/macbook-bg.png")}
                   alt="MacBook Screen Content"
                   fill
                   className="object-cover rounded-sm"
@@ -103,7 +104,7 @@ export default function Mockups() {
           >
             <div className="relative">
               <Image
-                src="/assets/images/mockup/ipad.png"
+                src={getImagePath("/assets/images/mockup/ipad.png")}
                 alt="iPad Mockup"
                 width={400}
                 height={600}
@@ -112,7 +113,7 @@ export default function Mockups() {
               {/* iPad screen content - positioned inside the screen area */}
               <div className="absolute top-[7%] left-[6%] right-[6%] bottom-[7%]">
                 <Image
-                  src="/assets/images/mockup/ipad-bg.png"
+                  src={getImagePath("/assets/images/mockup/ipad-bg.png")}
                   alt="iPad Screen Content"
                   fill
                   className="object-cover rounded-[10px]"

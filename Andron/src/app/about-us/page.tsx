@@ -1,5 +1,6 @@
 "use client";
 import Image from "next/image";
+import { getImagePath } from "@/utils/imagePath";
 import About from "@/components/About";
 import GetStarted from "@/components/GetStarted";
 import { motion } from "framer-motion";
@@ -16,7 +17,7 @@ export default function AboutUsPage() {
         {/* Header Background for About Us page */}
         <div className="absolute inset-0 z-0">
           <Image
-            src="/assets/images/header-new-bg.png"
+            src={getImagePath("/assets/images/header-new-bg.png")}
             alt="Header Background"
             fill
             className="object-cover w-full h-full"
@@ -94,21 +95,21 @@ export default function AboutUsPage() {
             {/* Mobil görünüş */}
             <div className="flex flex-col gap-6 md:hidden">
               <Image
-                src="/assets/images/about-us/img-1.png"
+                src={getImagePath("/assets/images/about-us/img-1.png")}
                 alt="Image 1"
                 width={700}
                 height={400}
                 className="rounded-xl w-full"
               />
               <Image
-                src="/assets/images/about-us/img-2-full.png"
+                src={getImagePath("/assets/images/about-us/img-2-full.png")}
                 alt="Image 2"
                 width={500}
                 height={550}
                 className="rounded-xl w-full"
               />
               <Image
-                src="/assets/images/about-us/img-3.png"
+                src={getImagePath("/assets/images/about-us/img-3.png")}
                 alt="Image 3"
                 width={450}
                 height={550}
@@ -119,21 +120,21 @@ export default function AboutUsPage() {
             <div className="relative w-full h-[600px] hidden md:flex items-center justify-center">
               <div className="relative w-full h-full">
                 <Image
-                  src="/assets/images/about-us/img-1.png"
+                  src={getImagePath("/assets/images/about-us/img-1.png")}
                   alt="Image 1"
                   width={700}
                   height={400}
                   className="absolute top-0 left-1/2 transform -translate-x-1/2 z-10 w-[90%] md:w-[95%]"
                 />
                 <Image
-                  src="/assets/images/about-us/img-2.png"
+                  src={getImagePath("/assets/images/about-us/img-2.png")}
                   alt="Image 2"
                   width={500}
                   height={550}
                   className="absolute top-[200px] right-5 z-20 w-[100%] md:w-[95%]"
                 />
                 <Image
-                  src="/assets/images/about-us/img-3.png"
+                  src={getImagePath("/assets/images/about-us/img-3.png")}
                   alt="Image 3"
                   width={450}
                   height={550}
@@ -158,7 +159,7 @@ export default function AboutUsPage() {
           >
             <div className="flex justify-center items-center mb-6">
               <Image
-                src="/assets/images/mission.png"
+                src={getImagePath("/assets/images/mission.png")}
                 alt="Mission"
                 width={100}
                 height={100}
@@ -193,7 +194,7 @@ export default function AboutUsPage() {
           >
             <div className="flex justify-center items-center mb-6">
               <Image
-                src="/assets/images/vision.png"
+                src={getImagePath("/assets/images/vision.png")}
                 alt="Vision"
                 width={100}
                 height={100}
@@ -259,7 +260,7 @@ export default function AboutUsPage() {
                 className="flex flex-col items-center"
               >
                 <Image
-                  src="/assets/images/star.png"
+                  src={getImagePath("/assets/images/star.png")}
                   alt="Star Award"
                   width={100}
                   height={100}

@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import Image from 'next/image';
+import { getImagePath } from "@/utils/imagePath";
 
 const Footer = () => {
   return (
@@ -26,7 +27,7 @@ const Footer = () => {
       <div className="pt-8 flex flex-col items-center">
         <div className="bg-white px-3 py-1 rounded-full w-[66px] h-[66px] flex items-center justify-center">
           <Image
-            src="/assets/icons/logo_colored.svg"
+            src={getImagePath("/assets/icons/logo_colored.svg")}
             alt="Logo"
             width={60}
             height={60}
@@ -42,7 +43,7 @@ const Footer = () => {
             className="text-gray-400 hover:text-white transition"
           >
             <Image
-              src="/assets/icons/fb-white.svg"
+              src={getImagePath("/assets/icons/fb-white.svg")}
               alt="Facebook"
               width={10}
               height={10}
@@ -53,7 +54,7 @@ const Footer = () => {
             className="text-gray-400 hover:text-white transition"
           >
             <Image
-              src="/assets/icons/twitter-white.svg"
+              src={getImagePath("/assets/icons/twitter-white.svg")}
               alt="Twitter"
               width={20}
               height={20}
@@ -64,7 +65,7 @@ const Footer = () => {
             className="text-gray-400 hover:text-white transition"
           >
             <Image
-              src="/assets/icons/instagram-white.svg"
+              src={getImagePath("/assets/icons/instagram-white.svg")}
               alt="Instagram"
               width={20}
               height={20}
@@ -75,7 +76,7 @@ const Footer = () => {
             className="text-gray-400 hover:text-white transition"
           >
             <Image
-              src="/assets/icons/combined-white.svg"
+              src={getImagePath("/assets/icons/combined-white.svg")}
               alt="Instagram"
               width={20}
               height={20}

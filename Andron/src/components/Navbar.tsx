@@ -3,6 +3,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { useState, useEffect, useRef } from "react";
+import { getImagePath } from "@/utils/imagePath";
 
 const menuItems = [
   { name: "Home", href: "/" },
@@ -83,7 +84,7 @@ export default function Navbar() {
       {/* Logo */}
       <Link href="/" className="flex items-center gap-2 z-50">
         <Image
-          src="/assets/icons/logo_colored.svg"
+          src={getImagePath("/assets/icons/logo_colored.svg")}
           alt="Logo"
           width={48}
           height={48}
@@ -160,7 +161,7 @@ export default function Navbar() {
             className="flex items-center gap-2 rounded-md hover:bg-gray-100 transition-colors"
           >
             <Image
-              src="/assets/icons/earth.svg"
+              src={getImagePath("/assets/icons/earth.svg")}
               alt="Language"
               width={28}
               height={28}
@@ -234,7 +235,7 @@ export default function Navbar() {
       >
         <div className="flex items-center justify-between px-6 py-4 border-b">
           <Image
-            src="/assets/icons/logo.svg"
+            src={getImagePath("/assets/icons/logo.svg")}
             alt="Logo"
             width={40}
             height={40}
@@ -285,7 +286,7 @@ export default function Navbar() {
                 Dil / Language
               </span>
               <Image
-                src="/assets/icons/earth.svg"
+                src={getImagePath("/assets/icons/earth.svg")}
                 alt="Language"
                 width={24}
                 height={24}

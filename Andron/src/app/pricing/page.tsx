@@ -3,6 +3,7 @@
 import React, { useState } from "react";
 import Image from "next/image";
 import { motion } from "framer-motion";
+import { getImagePath } from "@/utils/imagePath";
 import GetStarted from "@/components/GetStarted";
 import FAQ from "@/components/FAQ";
 
@@ -84,7 +85,7 @@ export default function PricingPage() {
               className="flex items-center gap-4 md:gap-8"
             >
               <Image
-                src="/assets/icons/icon-check-green.svg"
+                src={getImagePath("/assets/icons/icon-check-green.svg")}
                 alt="Check"
                 width={20}
                 height={20}
@@ -262,7 +263,7 @@ export default function PricingPage() {
           >
             <div className="flex items-center gap-2">
               <Image
-                src="/assets/icons/check-blue.svg"
+                src={getImagePath("/assets/icons/check-blue.svg")}
                 alt="Check"
                 width={20}
                 height={20}
@@ -274,7 +275,7 @@ export default function PricingPage() {
             </div>
             <div className="flex items-center gap-2">
               <Image
-                src="/assets/icons/check-blue.svg"
+                src={getImagePath("/assets/icons/check-blue.svg")}
                 alt="Check"
                 width={20}
                 height={20}
@@ -286,7 +287,7 @@ export default function PricingPage() {
             </div>
             <div className="flex items-center gap-2">
               <Image
-                src="/assets/icons/check-blue.svg"
+                src={getImagePath("/assets/icons/check-blue.svg")}
                 alt="Check"
                 width={20}
                 height={20}
@@ -519,7 +520,7 @@ export default function PricingPage() {
                       {typeof row.free === "boolean" ? (
                         row.free ? (
                           <Image
-                            src="/assets/icons/verify.svg"
+                            src={getImagePath("/assets/icons/verify.svg")}
                             alt="Verified"
                             width={20}
                             height={20}
@@ -536,7 +537,7 @@ export default function PricingPage() {
                       {typeof row.basic === "boolean" ? (
                         row.basic ? (
                           <Image
-                            src="/assets/icons/verify.svg"
+                            src={getImagePath("/assets/icons/verify.svg")}
                             alt="Verified"
                             width={20}
                             height={20}
@@ -558,7 +559,7 @@ export default function PricingPage() {
                       {typeof row.professional === "boolean" ? (
                         row.professional ? (
                           <Image
-                            src="/assets/icons/verify.svg"
+                            src={getImagePath("/assets/icons/verify.svg")}
                             alt="Verified"
                             width={20}
                             height={20}

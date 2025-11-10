@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import { useState, useEffect, useRef } from "react";
+import { getImagePath } from "@/utils/imagePath";
 import FAQ from "@/components/FAQ";
 import ContactForm from "@/components/ContactForm";
 import About from "@/components/About";
@@ -212,7 +213,7 @@ function BookMeetingDrawer({ onClose }: { onClose: () => void }) {
       <div className="flex-1 px-6 py-5 flex flex-col justify-center items-center relative min-w-[260px]">
         <div className="w-full flex justify-center mb-2">
           <Image
-            src="/assets/images/book-a-call.svg"
+            src={getImagePath("/assets/images/book-a-call.svg")}
             alt="Book a Call"
             width={220}
             height={180}
@@ -226,7 +227,7 @@ function BookMeetingDrawer({ onClose }: { onClose: () => void }) {
           <li className="flex items-center gap-2">
             <span className="inline-flex items-center justify-center w-7 h-7 rounded-full bg-gray-100">
               <Image
-                src="/assets/icons/calendar.svg"
+                src={getImagePath("/assets/icons/calendar.svg")}
                 alt="calendar"
                 width={18}
                 height={18}
@@ -239,7 +240,7 @@ function BookMeetingDrawer({ onClose }: { onClose: () => void }) {
           <li className="flex items-center gap-2">
             <span className="inline-flex items-center justify-center w-7 h-7 rounded-full bg-gray-100">
               <Image
-                src="/assets/icons/camera.svg"
+                src={getImagePath("/assets/icons/camera.svg")}
                 alt="camera"
                 width={18}
                 height={18}
@@ -259,7 +260,7 @@ function BookMeetingDrawer({ onClose }: { onClose: () => void }) {
         >
           <div className="flex items-center gap-2 text-gray-700">
             <Image
-              src="/assets/icons/calendar.svg"
+              src={getImagePath("/assets/icons/calendar.svg")}
               alt="calendar"
               width={18}
               height={18}
@@ -275,7 +276,7 @@ function BookMeetingDrawer({ onClose }: { onClose: () => void }) {
           </div>
           <div className="flex items-center gap-2 mt-[21px] text-gray-700">
             <Image
-              src="/assets/icons/clock.svg"
+              src={getImagePath("/assets/icons/clock.svg")}
               alt="clock"
               width={18}
               height={18}
@@ -320,7 +321,7 @@ export default function HomePage() {
         {/* Header background */}
         <div className="absolute inset-0 -z-10">
           <Image
-            src="/assets/images/header-new-bg.png"
+            src={getImagePath("/assets/images/header-new-bg.png")}
             alt="Header Background"
             fill
             className="object-cover w-full h-full"
@@ -329,7 +330,7 @@ export default function HomePage() {
 
           {/* Yer kürəsi */}
           <Image
-            src="/assets/images/earth.png"
+            src={getImagePath("/assets/images/earth.png")}
             alt="Earth"
             width={296}
             height={271}
@@ -359,7 +360,7 @@ export default function HomePage() {
               }}
             >
               <Image
-                src="/assets/images/planets/planet-1.png"
+                src={getImagePath("/assets/images/planets/planet-1.png")}
                 alt="Planet 1"
                 width={63}
                 height={64}
@@ -377,7 +378,7 @@ export default function HomePage() {
               }}
             >
               <Image
-                src="/assets/images/planets/planet-2.png"
+                src={getImagePath("/assets/images/planets/planet-2.png")}
                 alt="Planet 2"
                 width={51}
                 height={51}
@@ -395,7 +396,7 @@ export default function HomePage() {
               }}
             >
               <Image
-                src="/assets/images/planets/planet-3.png"
+                src={getImagePath("/assets/images/planets/planet-3.png")}
                 alt="Planet 3"
                 width={51}
                 height={51}
@@ -462,7 +463,7 @@ export default function HomePage() {
           className="relative z-30 my-[40px] bg-[#0b4bac] rounded-full flex items-center justify-center w-[60px] h-[60px] p-[13px] cursor-pointer hover:scale-110 transition-transform"
         >
           <Image
-            src="/assets/images/play.png"
+            src={getImagePath("/assets/images/play.png")}
             alt="Play"
             width={20}
             height={20}
@@ -577,7 +578,7 @@ export default function HomePage() {
           {/* Background image */}
           <div className="absolute inset-0 -z-10">
             <Image
-              src="/assets/images/features-bg.png"
+              src={getImagePath("/assets/images/features-bg.png")}
               alt="Features Background"
               fill
               className="object-cover w-full h-full"
@@ -690,7 +691,7 @@ export default function HomePage() {
                     Lorem Ipsum
                   </h4>
                   <Image
-                    src="/assets/images/arrow-up-right.svg"
+                    src={getImagePath("/assets/images/arrow-up-right.svg")}
                     alt="Arrow"
                     width={16}
                     height={16}
@@ -769,7 +770,7 @@ export default function HomePage() {
               className="flex items-center gap-4 md:gap-8"
             >
               <Image
-                src="/assets/icons/icon-check-green.svg"
+                src={getImagePath("/assets/icons/icon-check-green.svg")}
                 alt="Check"
                 width={20}
                 height={20}
@@ -867,7 +868,7 @@ export default function HomePage() {
           </button>
           <div className="flex flex-col items-center gap-[3px]">
             <Image
-              src="/assets/images/need_help.svg"
+              src={getImagePath("/assets/images/need_help.svg")}
               alt="Need Help"
               width={167}
               height={126}

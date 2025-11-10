@@ -3,6 +3,7 @@
 import { motion } from "framer-motion";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
+import { getImagePath } from "@/utils/imagePath";
 
 const About = () => {
   const isAboutPage = usePathname().includes("about-us");
@@ -106,7 +107,7 @@ const About = () => {
             {/* Left Side - Image with cosmic background */}
             <div className="relative">
               <Image
-                src="/assets/images/header_bg-min.png"
+                src={getImagePath("/assets/images/header_bg-min.png")}
                 alt="About Us"
                 width={600}
                 height={359}
