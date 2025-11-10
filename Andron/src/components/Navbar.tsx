@@ -132,19 +132,6 @@ export default function Navbar() {
           rel={adminPanelUrl.startsWith('http') ? 'noopener noreferrer' : undefined}
           className={`border ${
             isHome || isAboutUs
-              ? "border-white/60 text-white bg-transparent hover:bg-white/10"
-              : "border-[#2196f3] text-[#2196f3] bg-transparent hover:bg-blue-50"
-          } px-[25px] py-[8px] rounded-md transition text-base font-semibold tracking-wide`}
-          style={{
-            boxShadow: isHome ? "none" : "0 1px 2px rgba(0,0,0,0.01)",
-            fontFamily: "var(--font-poppins)",
-          }}
-        >
-          ADMIN PANELİ
-        </a>
-        <button
-          className={`border ${
-            isHome || isAboutUs
               ? "border-white text-white bg-transparent hover:bg-white/10"
               : "border-gray-400 text-[#444] bg-white hover:bg-gray-100"
           } px-[25px] py-[8px] rounded-md transition text-base font-semibold tracking-wide`}
@@ -154,7 +141,7 @@ export default function Navbar() {
           }}
         >
           LOG IN
-        </button>
+        </a>
         <button
           className={`px-6 py-2 rounded-md transition text-base font-semibold tracking-wide ${
             isHome || isAboutUs
@@ -282,14 +269,11 @@ export default function Navbar() {
             href={adminPanelUrl}
             target={adminPanelUrl.startsWith('http') ? '_blank' : undefined}
             rel={adminPanelUrl.startsWith('http') ? 'noopener noreferrer' : undefined}
-            className="border border-[#2196f3] text-[#2196f3] bg-transparent hover:bg-blue-50 px-[25px] py-[10px] rounded-md transition text-base font-semibold tracking-wide text-center"
+            className="border border-gray-400 text-[#444] bg-white hover:bg-gray-100 px-[25px] py-[10px] rounded-md transition text-base font-semibold tracking-wide text-center"
             onClick={() => setMenuOpen(false)}
           >
-            ADMIN PANELİ
-          </a>
-          <button className="border border-gray-400 text-[#444] bg-white hover:bg-gray-100 px-[25px] py-[10px] rounded-md transition text-base font-semibold tracking-wide">
             LOG IN
-          </button>
+          </a>
           <button className="bg-[#2196f3] text-white px-6 py-2 rounded-md hover:bg-[#1976d2] transition text-base font-semibold tracking-wide">
             REQUEST DEMO
           </button>
