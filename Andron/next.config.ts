@@ -1,7 +1,7 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   output: 'standalone',
-  basePath: '/mainpage',
+  basePath: '/home',
 };
 
 export default nextConfig;
