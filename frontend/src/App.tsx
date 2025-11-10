@@ -23,7 +23,7 @@ import SubscriptionSettings from './pages/SubscriptionSettings';
 function App() {
   return (
     <AuthProvider>
-      <Router basename="/admin">
+      <Router>
         <div className="App" style={{
           backgroundImage: `url('/background.png')`,
           backgroundSize: 'cover',

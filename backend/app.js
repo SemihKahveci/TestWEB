@@ -100,6 +100,7 @@ app.use(cors({
 }));
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ limit: '50mb', extended: true }));
+// Public klasörünü root'tan serve et
 app.use(express.static(path.join(__dirname, 'public')));
 
 // HTTP sunucusu
@@ -241,19 +242,28 @@ app.use('/api', apiRouter);
 
 // Admin paneli route'u - Production'da
 if (process.env.NODE_ENV === 'production') {
-    // Production'da /admin path'inde frontend build dosyalarını serve et
-    app.use('/admin', express.static(path.join(__dirname, '../frontend/dist')));
+    // Production'da root path'inde frontend build dosyalarını serve et
+    app.use(express.static(path.join(__dirname, '../frontend/dist')));
     
-    // Admin paneli için tüm route'ları frontend'e yönlendir
-    app.get('/admin/*', (req, res) => {
+    // Admin paneli için tüm route'ları frontend'e yönlendir (API route'ları hariç)
+    app.get('*', (req, res, next) => {
+        // API route'larını atla
+        if (req.path.startsWith('/api')) {
+            return next();
+        }
+        // Diğer tüm route'ları frontend'e yönlendir
         res.sendFile(path.join(__dirname, '../frontend/dist/index.html'));
     });
 } else {
-    // Development'da /admin path'ini React dev server'a proxy et
-    app.get('/admin', (req, res) => {
+    // Development'da root path'ini React dev server'a proxy et
+    app.get('/', (req, res) => {
         res.redirect('http://localhost:5173');
     });
-    app.get('/admin/*', (req, res) => {
+    app.get('*', (req, res, next) => {
+        // API route'larını atla
+        if (req.path.startsWith('/api')) {
+            return next();
+        }
         res.redirect(`http://localhost:5173${req.path}`);
     });
 }
