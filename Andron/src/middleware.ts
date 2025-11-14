@@ -6,19 +6,36 @@ export function middleware(request: NextRequest) {
   if (process.env.NODE_ENV === 'production') {
     const pathname = request.nextUrl.pathname;
     
-    // Eğer path zaten /home ile başlıyorsa, olduğu gibi bırak
+    // Eğer path /home ile başlıyorsa, /home'u kaldır ve redirect et (temiz URL için)
     if (pathname.startsWith('/home')) {
-      return NextResponse.next();
+      const newPath = pathname === '/home' || pathname === '/home/' 
+        ? '/' 
+        : pathname.replace('/home', '');
+      const url = request.nextUrl.clone();
+      url.pathname = newPath;
+      return NextResponse.redirect(url);
     }
     
-    // Root path için /home/ yaz
+    // Static dosyalar ve API route'ları için /home prefix'i ekle (rewrite)
+    if (
+      pathname.startsWith('/_next') ||
+      pathname.startsWith('/api') ||
+      pathname.startsWith('/assets') ||
+      pathname === '/favicon.ico'
+    ) {
+      const url = request.nextUrl.clone();
+      url.pathname = `/home${pathname}`;
+      return NextResponse.rewrite(url);
+    }
+    
+    // Root path için /home/ yaz (rewrite - URL değişmez)
     if (pathname === '/') {
       const url = request.nextUrl.clone();
       url.pathname = '/home/';
       return NextResponse.rewrite(url);
     }
     
-    // Diğer path'ler için /home ekle
+    // Diğer path'ler için /home ekle (rewrite - URL değişmez)
     const url = request.nextUrl.clone();
     url.pathname = `/home${pathname}`;
     return NextResponse.rewrite(url);
