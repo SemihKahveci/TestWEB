@@ -3,17 +3,234 @@
 import Image from "next/image";
 import Link from "next/link";
 import { motion } from "framer-motion";
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { getImagePath } from "@/utils/imagePath";
 
 const ContactForm = ({ isContactPage = false }) => {
-  const [showPrivacyModal, setShowPrivacyModal] = useState(false);
-  const [showKVKKModal, setShowKVKKModal] = useState(false);
+  const [showTermsModal, setShowTermsModal] = useState(false);
+  const [countryCode, setCountryCode] = useState("+90");
+  const [selectedCountry, setSelectedCountry] = useState({ code: "+90", countryCode: "tr", name: "Turkey" });
+  const [showCountryDropdown, setShowCountryDropdown] = useState(false);
+  const [countrySearchTerm, setCountrySearchTerm] = useState("");
+  const countryDropdownRef = useRef<HTMLDivElement>(null);
+
+  // Dropdown dışına tıklandığında kapat
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        countryDropdownRef.current &&
+        !countryDropdownRef.current.contains(event.target as Node)
+      ) {
+        setShowCountryDropdown(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  const countries = [
+    { code: "+93", countryCode: "af", name: "Afghanistan" },
+    { code: "+355", countryCode: "al", name: "Albania" },
+    { code: "+213", countryCode: "dz", name: "Algeria" },
+    { code: "+376", countryCode: "ad", name: "Andorra" },
+    { code: "+244", countryCode: "ao", name: "Angola" },
+    { code: "+1", countryCode: "ag", name: "Antigua and Barbuda" },
+    { code: "+54", countryCode: "ar", name: "Argentina" },
+    { code: "+374", countryCode: "am", name: "Armenia" },
+    { code: "+61", countryCode: "au", name: "Australia" },
+    { code: "+43", countryCode: "at", name: "Austria" },
+    { code: "+994", countryCode: "az", name: "Azerbaijan" },
+    { code: "+1", countryCode: "bs", name: "Bahamas" },
+    { code: "+973", countryCode: "bh", name: "Bahrain" },
+    { code: "+880", countryCode: "bd", name: "Bangladesh" },
+    { code: "+1", countryCode: "bb", name: "Barbados" },
+    { code: "+375", countryCode: "by", name: "Belarus" },
+    { code: "+32", countryCode: "be", name: "Belgium" },
+    { code: "+501", countryCode: "bz", name: "Belize" },
+    { code: "+229", countryCode: "bj", name: "Benin" },
+    { code: "+975", countryCode: "bt", name: "Bhutan" },
+    { code: "+591", countryCode: "bo", name: "Bolivia" },
+    { code: "+387", countryCode: "ba", name: "Bosnia and Herzegovina" },
+    { code: "+267", countryCode: "bw", name: "Botswana" },
+    { code: "+55", countryCode: "br", name: "Brazil" },
+    { code: "+673", countryCode: "bn", name: "Brunei" },
+    { code: "+359", countryCode: "bg", name: "Bulgaria" },
+    { code: "+226", countryCode: "bf", name: "Burkina Faso" },
+    { code: "+257", countryCode: "bi", name: "Burundi" },
+    { code: "+855", countryCode: "kh", name: "Cambodia" },
+    { code: "+237", countryCode: "cm", name: "Cameroon" },
+    { code: "+1", countryCode: "ca", name: "Canada" },
+    { code: "+238", countryCode: "cv", name: "Cape Verde" },
+    { code: "+236", countryCode: "cf", name: "Central African Republic" },
+    { code: "+235", countryCode: "td", name: "Chad" },
+    { code: "+56", countryCode: "cl", name: "Chile" },
+    { code: "+86", countryCode: "cn", name: "China" },
+    { code: "+57", countryCode: "co", name: "Colombia" },
+    { code: "+269", countryCode: "km", name: "Comoros" },
+    { code: "+242", countryCode: "cg", name: "Congo" },
+    { code: "+506", countryCode: "cr", name: "Costa Rica" },
+    { code: "+385", countryCode: "hr", name: "Croatia" },
+    { code: "+53", countryCode: "cu", name: "Cuba" },
+    { code: "+357", countryCode: "cy", name: "Cyprus" },
+    { code: "+420", countryCode: "cz", name: "Czech Republic" },
+    { code: "+45", countryCode: "dk", name: "Denmark" },
+    { code: "+253", countryCode: "dj", name: "Djibouti" },
+    { code: "+1", countryCode: "dm", name: "Dominica" },
+    { code: "+1", countryCode: "do", name: "Dominican Republic" },
+    { code: "+593", countryCode: "ec", name: "Ecuador" },
+    { code: "+20", countryCode: "eg", name: "Egypt" },
+    { code: "+503", countryCode: "sv", name: "El Salvador" },
+    { code: "+240", countryCode: "gq", name: "Equatorial Guinea" },
+    { code: "+291", countryCode: "er", name: "Eritrea" },
+    { code: "+372", countryCode: "ee", name: "Estonia" },
+    { code: "+251", countryCode: "et", name: "Ethiopia" },
+    { code: "+679", countryCode: "fj", name: "Fiji" },
+    { code: "+358", countryCode: "fi", name: "Finland" },
+    { code: "+33", countryCode: "fr", name: "France" },
+    { code: "+241", countryCode: "ga", name: "Gabon" },
+    { code: "+220", countryCode: "gm", name: "Gambia" },
+    { code: "+995", countryCode: "ge", name: "Georgia" },
+    { code: "+49", countryCode: "de", name: "Germany" },
+    { code: "+233", countryCode: "gh", name: "Ghana" },
+    { code: "+30", countryCode: "gr", name: "Greece" },
+    { code: "+1", countryCode: "gd", name: "Grenada" },
+    { code: "+502", countryCode: "gt", name: "Guatemala" },
+    { code: "+224", countryCode: "gn", name: "Guinea" },
+    { code: "+245", countryCode: "gw", name: "Guinea-Bissau" },
+    { code: "+592", countryCode: "gy", name: "Guyana" },
+    { code: "+509", countryCode: "ht", name: "Haiti" },
+    { code: "+504", countryCode: "hn", name: "Honduras" },
+    { code: "+852", countryCode: "hk", name: "Hong Kong" },
+    { code: "+36", countryCode: "hu", name: "Hungary" },
+    { code: "+354", countryCode: "is", name: "Iceland" },
+    { code: "+91", countryCode: "in", name: "India" },
+    { code: "+62", countryCode: "id", name: "Indonesia" },
+    { code: "+98", countryCode: "ir", name: "Iran" },
+    { code: "+964", countryCode: "iq", name: "Iraq" },
+    { code: "+353", countryCode: "ie", name: "Ireland" },
+    { code: "+972", countryCode: "il", name: "Israel" },
+    { code: "+39", countryCode: "it", name: "Italy" },
+    { code: "+1", countryCode: "jm", name: "Jamaica" },
+    { code: "+81", countryCode: "jp", name: "Japan" },
+    { code: "+962", countryCode: "jo", name: "Jordan" },
+    { code: "+7", countryCode: "kz", name: "Kazakhstan" },
+    { code: "+254", countryCode: "ke", name: "Kenya" },
+    { code: "+686", countryCode: "ki", name: "Kiribati" },
+    { code: "+965", countryCode: "kw", name: "Kuwait" },
+    { code: "+996", countryCode: "kg", name: "Kyrgyzstan" },
+    { code: "+856", countryCode: "la", name: "Laos" },
+    { code: "+371", countryCode: "lv", name: "Latvia" },
+    { code: "+961", countryCode: "lb", name: "Lebanon" },
+    { code: "+266", countryCode: "ls", name: "Lesotho" },
+    { code: "+231", countryCode: "lr", name: "Liberia" },
+    { code: "+218", countryCode: "ly", name: "Libya" },
+    { code: "+423", countryCode: "li", name: "Liechtenstein" },
+    { code: "+370", countryCode: "lt", name: "Lithuania" },
+    { code: "+352", countryCode: "lu", name: "Luxembourg" },
+    { code: "+853", countryCode: "mo", name: "Macau" },
+    { code: "+389", countryCode: "mk", name: "North Macedonia" },
+    { code: "+261", countryCode: "mg", name: "Madagascar" },
+    { code: "+265", countryCode: "mw", name: "Malawi" },
+    { code: "+60", countryCode: "my", name: "Malaysia" },
+    { code: "+960", countryCode: "mv", name: "Maldives" },
+    { code: "+223", countryCode: "ml", name: "Mali" },
+    { code: "+356", countryCode: "mt", name: "Malta" },
+    { code: "+692", countryCode: "mh", name: "Marshall Islands" },
+    { code: "+222", countryCode: "mr", name: "Mauritania" },
+    { code: "+230", countryCode: "mu", name: "Mauritius" },
+    { code: "+52", countryCode: "mx", name: "Mexico" },
+    { code: "+691", countryCode: "fm", name: "Micronesia" },
+    { code: "+373", countryCode: "md", name: "Moldova" },
+    { code: "+377", countryCode: "mc", name: "Monaco" },
+    { code: "+976", countryCode: "mn", name: "Mongolia" },
+    { code: "+382", countryCode: "me", name: "Montenegro" },
+    { code: "+212", countryCode: "ma", name: "Morocco" },
+    { code: "+258", countryCode: "mz", name: "Mozambique" },
+    { code: "+95", countryCode: "mm", name: "Myanmar" },
+    { code: "+264", countryCode: "na", name: "Namibia" },
+    { code: "+674", countryCode: "nr", name: "Nauru" },
+    { code: "+977", countryCode: "np", name: "Nepal" },
+    { code: "+31", countryCode: "nl", name: "Netherlands" },
+    { code: "+64", countryCode: "nz", name: "New Zealand" },
+    { code: "+505", countryCode: "ni", name: "Nicaragua" },
+    { code: "+227", countryCode: "ne", name: "Niger" },
+    { code: "+234", countryCode: "ng", name: "Nigeria" },
+    { code: "+850", countryCode: "kp", name: "North Korea" },
+    { code: "+47", countryCode: "no", name: "Norway" },
+    { code: "+968", countryCode: "om", name: "Oman" },
+    { code: "+92", countryCode: "pk", name: "Pakistan" },
+    { code: "+680", countryCode: "pw", name: "Palau" },
+    { code: "+970", countryCode: "ps", name: "Palestine" },
+    { code: "+507", countryCode: "pa", name: "Panama" },
+    { code: "+675", countryCode: "pg", name: "Papua New Guinea" },
+    { code: "+595", countryCode: "py", name: "Paraguay" },
+    { code: "+51", countryCode: "pe", name: "Peru" },
+    { code: "+63", countryCode: "ph", name: "Philippines" },
+    { code: "+48", countryCode: "pl", name: "Poland" },
+    { code: "+351", countryCode: "pt", name: "Portugal" },
+    { code: "+974", countryCode: "qa", name: "Qatar" },
+    { code: "+40", countryCode: "ro", name: "Romania" },
+    { code: "+7", countryCode: "ru", name: "Russia" },
+    { code: "+250", countryCode: "rw", name: "Rwanda" },
+    { code: "+1", countryCode: "kn", name: "Saint Kitts and Nevis" },
+    { code: "+1", countryCode: "lc", name: "Saint Lucia" },
+    { code: "+1", countryCode: "vc", name: "Saint Vincent" },
+    { code: "+685", countryCode: "ws", name: "Samoa" },
+    { code: "+378", countryCode: "sm", name: "San Marino" },
+    { code: "+239", countryCode: "st", name: "Sao Tome and Principe" },
+    { code: "+966", countryCode: "sa", name: "Saudi Arabia" },
+    { code: "+221", countryCode: "sn", name: "Senegal" },
+    { code: "+381", countryCode: "rs", name: "Serbia" },
+    { code: "+248", countryCode: "sc", name: "Seychelles" },
+    { code: "+232", countryCode: "sl", name: "Sierra Leone" },
+    { code: "+65", countryCode: "sg", name: "Singapore" },
+    { code: "+421", countryCode: "sk", name: "Slovakia" },
+    { code: "+386", countryCode: "si", name: "Slovenia" },
+    { code: "+677", countryCode: "sb", name: "Solomon Islands" },
+    { code: "+252", countryCode: "so", name: "Somalia" },
+    { code: "+27", countryCode: "za", name: "South Africa" },
+    { code: "+82", countryCode: "kr", name: "South Korea" },
+    { code: "+211", countryCode: "ss", name: "South Sudan" },
+    { code: "+34", countryCode: "es", name: "Spain" },
+    { code: "+94", countryCode: "lk", name: "Sri Lanka" },
+    { code: "+249", countryCode: "sd", name: "Sudan" },
+    { code: "+597", countryCode: "sr", name: "Suriname" },
+    { code: "+268", countryCode: "sz", name: "Eswatini" },
+    { code: "+46", countryCode: "se", name: "Sweden" },
+    { code: "+41", countryCode: "ch", name: "Switzerland" },
+    { code: "+963", countryCode: "sy", name: "Syria" },
+    { code: "+886", countryCode: "tw", name: "Taiwan" },
+    { code: "+992", countryCode: "tj", name: "Tajikistan" },
+    { code: "+255", countryCode: "tz", name: "Tanzania" },
+    { code: "+66", countryCode: "th", name: "Thailand" },
+    { code: "+228", countryCode: "tg", name: "Togo" },
+    { code: "+676", countryCode: "to", name: "Tonga" },
+    { code: "+1", countryCode: "tt", name: "Trinidad and Tobago" },
+    { code: "+216", countryCode: "tn", name: "Tunisia" },
+    { code: "+90", countryCode: "tr", name: "Turkey" },
+    { code: "+993", countryCode: "tm", name: "Turkmenistan" },
+    { code: "+1", countryCode: "tv", name: "Tuvalu" },
+    { code: "+256", countryCode: "ug", name: "Uganda" },
+    { code: "+380", countryCode: "ua", name: "Ukraine" },
+    { code: "+971", countryCode: "ae", name: "UAE" },
+    { code: "+44", countryCode: "gb", name: "United Kingdom" },
+    { code: "+1", countryCode: "us", name: "United States" },
+    { code: "+598", countryCode: "uy", name: "Uruguay" },
+    { code: "+998", countryCode: "uz", name: "Uzbekistan" },
+    { code: "+678", countryCode: "vu", name: "Vanuatu" },
+    { code: "+379", countryCode: "va", name: "Vatican City" },
+    { code: "+58", countryCode: "ve", name: "Venezuela" },
+    { code: "+84", countryCode: "vn", name: "Vietnam" },
+    { code: "+967", countryCode: "ye", name: "Yemen" },
+    { code: "+260", countryCode: "zm", name: "Zambia" },
+    { code: "+263", countryCode: "zw", name: "Zimbabwe" },
+  ];
 
   return (
     <section className="bg-gray-50 w-full py-16 text-center">
-      {/* Privacy Policy Modal */}
-      {showPrivacyModal && (
+      {/* Terms and Conditions Modal */}
+      {showTermsModal && (
         <div
           className="fixed inset-0 flex items-center justify-center z-50 p-4"
           style={{ background: "rgba(33, 37, 41, 0.55)" }}
@@ -27,21 +244,30 @@ const ContactForm = ({ isContactPage = false }) => {
             {/* Header - Fixed */}
             <div className="p-6 pb-4">
               <h2 className="text-[32px] leading-[96px] font-bold text-center text-black">
-                GİZLİLİK POLİTİKASI
+                PRIVACY POLICY AND KVKK TERMS
               </h2>
               <div className="w-50 h-1 bg-blue-500 mx-auto"></div>
             </div>
 
             {/* Scrollable Content */}
             <div className="flex-1 overflow-y-auto p-6 pt-4 pb-4 relative">
-              <div className="text-left space-y-6">
+              <div className="text-left space-y-8">
+                {/* Privacy Policy Section */}
                 <div>
                   <h2
-                    className="text-[18px] font-bold mb-4"
+                    className="text-[24px] font-bold mb-4"
                     style={{ color: "#000000" }}
                   >
-                    What is Lorem Ipsum?
+                    Privacy Policy
                   </h2>
+                  <div className="space-y-4">
+                    <div>
+                      <h3
+                        className="text-[18px] font-bold mb-2"
+                        style={{ color: "#000000" }}
+                      >
+                        What is Lorem Ipsum?
+                      </h3>
                   <p
                     className="text-[18px] leading-relaxed"
                     style={{ color: "#525E6F" }}
@@ -65,12 +291,12 @@ const ContactForm = ({ isContactPage = false }) => {
                   </p>
                 </div>
                 <div>
-                  <h2
-                    className="text-[18px] font-bold mb-4"
+                      <h3
+                        className="text-[18px] font-bold mb-2"
                     style={{ color: "#000000" }}
                   >
                     Where does it come from?
-                  </h2>
+                      </h3>
                   <p
                     className="text-[18px] leading-relaxed"
                     style={{ color: "#525E6F" }}
@@ -84,137 +310,26 @@ const ContactForm = ({ isContactPage = false }) => {
                     the cites of the word in classical literature, discovered
                     the undoubtable source.
                   </p>
-                  <p
-                    className="text-[18px] leading-relaxed"
-                    style={{ color: "#525E6F" }}
-                  >
-                    Lorem Ipsum comes from sections 1.10.32 and 1.10.33 of &quot;de
-                    Finibus Bonorum et Malorum (The Extremes of Good and Evil)
-                    by Cicero, written in 45 BC. This book is a treatise on the
-                    theory of ethics, very popular during the Renaissance. The
-                    first line of Lorem Ipsum, &quot;Lorem ipsum dolor sit amet..&quot;,
-                    comes from a line in section 1.10.32.
-                  </p>
-                  <p
-                    className="text-[18px] leading-relaxed"
-                    style={{ color: "#525E6F" }}
-                  >
-                    The standard chunk of Lorem Ipsum used since the 1500s is
-                    reproduced below for those interested. Sections 1.10.32 and
-                    1.10.33 from &quot;de Finibus Bonorum et Malorum&quot; by Cicero are
-                    also reproduced in their exact original form, accompanied by
-                    English versions from the 1914 translation by H. Rackham.
-                  </p>
+                    </div>
+                  </div>
                 </div>
-                <div>
+
+                {/* KVKK Terms Section */}
+                <div className="border-t pt-6">
                   <h2
-                    className="text-[18px] font-bold mb-4"
+                    className="text-[24px] font-bold mb-4"
                     style={{ color: "#000000" }}
                   >
-                    How to use Lorem Ipsum?
+                    KVKK Terms
                   </h2>
-                  <p
-                    className="text-[18px] leading-relaxed"
-                    style={{ color: "#525E6F" }}
-                  >
-                    There are many variations of passages of Lorem Ipsum
-                    available, but the majority have suffered alteration in some
-                    form, by injected humour, or randomised words which don&apos;t
-                    look even slightly believable. If you are going to use a
-                    passage of Lorem Ipsum, you need to be sure there isn&apos;t
-                    anything embarrassing hidden in the middle of text.
-                  </p>
-                  <p
-                    className="text-[18px] leading-relaxed"
-                    style={{ color: "#525E6F" }}
-                  >
-                    All the Lorem Ipsum generators on the Internet tend to
-                    repeat predefined chunks as necessary, making this the first
-                    true generator on the Internet. It uses a dictionary of over
-                    200 Latin words, combined with a handful of model sentence
-                    structures, to generate Lorem Ipsum which looks reasonable.
-                    The generated Lorem Ipsum is therefore always free from
-                    repetition, injected humour, or non-characteristic words
-                    etc.
-                  </p>
-                </div>
-              </div>
-
-              {/* Aşağı hissədən kölgə, yalnız kontent scroll oluna biləndə görünsün */}
-              <div
-                className="pointer-events-none"
-                style={{
-                  position: "sticky",
-                  left: 0,
-                  right: 0,
-                  bottom: -20,
-                  height: "50px",
-                  zIndex: 10,
-                  background:
-                    "linear-gradient(to top, rgba(0,0,0,0.10) 60%, rgba(255,255,255,0) 100%)",
-                }}
-              />
-            </div>
-
-            {/* Footer - Fixed */}
-            <div className="p-6 pt-4">
-              <div className="flex gap-4 justify-center">
-                <button
-                  onClick={() => setShowPrivacyModal(false)}
-                  className="w-[196px] h-[45px] border border-[#0099FF] text-[#0099FF] bg-white rounded-md hover:bg-blue-50 transition-colors font-bold text-base"
-                  style={{
-                    fontSize: "16px",
-                    fontWeight: 700,
-                  }}
-                >
-                  GERİ
-                </button>
-                <button
-                  onClick={() => setShowPrivacyModal(false)}
-                  className="w-[196px] h-[45px] bg-[#0099FF] text-white rounded-md hover:bg-blue-600 transition-colors font-bold text-base"
-                  style={{
-                    fontSize: "16px",
-                    fontWeight: 700,
-                  }}
-                >
-                  OKUDUM, ANLADIM
-                </button>
-              </div>
-            </div>
-          </motion.div>
-        </div>
-      )}
-
-      {/* KVKK Modal */}
-      {showKVKKModal && (
-        <div
-          className="fixed inset-0 flex items-center justify-center z-50 p-4"
-          style={{ background: "rgba(33, 37, 41, 0.55)" }}
-        >
-          <motion.div
-            initial={{ opacity: 0, scale: 0.9 }}
-            animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 0.9 }}
-            className="bg-white rounded-xl max-w-5xl w-full max-h-[80vh] shadow-2xl flex flex-col"
-          >
-            {/* Header - Fixed */}
-            <div className="p-6 pb-4">
-              <h2 className="text-[32px] leading-[96px] font-bold text-center text-black">
-                KİŞİSEL VERİLERİN KORUMA KANUNU
-              </h2>
-              <div className="w-50 h-1 bg-blue-500 mx-auto"></div>
-            </div>
-
-            {/* Scrollable Content */}
-            <div className="flex-1 overflow-y-auto p-6 pt-4 pb-4 relative">
-              <div className="text-left space-y-6 relative z-0">
+                  <div className="space-y-4">
                 <div>
-                  <h2
-                    className="text-[18px] font-bold mb-4"
+                      <h3
+                        className="text-[18px] font-bold mb-2"
                     style={{ color: "#000000" }}
                   >
                     What is Lorem Ipsum?
-                  </h2>
+                      </h3>
                   <p
                     className="text-[18px] leading-relaxed"
                     style={{ color: "#525E6F" }}
@@ -238,12 +353,12 @@ const ContactForm = ({ isContactPage = false }) => {
                   </p>
                 </div>
                 <div>
-                  <h2
-                    className="text-[18px] font-bold mb-4"
+                      <h3
+                        className="text-[18px] font-bold mb-2"
                     style={{ color: "#000000" }}
                   >
                     Where does it come from?
-                  </h2>
+                      </h3>
                   <p
                     className="text-[18px] leading-relaxed"
                     style={{ color: "#525E6F" }}
@@ -257,61 +372,11 @@ const ContactForm = ({ isContactPage = false }) => {
                     the cites of the word in classical literature, discovered
                     the undoubtable source.
                   </p>
-                  <p
-                    className="text-[18px] leading-relaxed"
-                    style={{ color: "#525E6F" }}
-                  >
-                    Lorem Ipsum comes from sections 1.10.32 and 1.10.33 of &quot;de
-                    Finibus Bonorum et Malorum (The Extremes of Good and Evil)
-                    by Cicero, written in 45 BC. This book is a treatise on the
-                    theory of ethics, very popular during the Renaissance. The
-                    first line of Lorem Ipsum, &quot;Lorem ipsum dolor sit amet..&quot;,
-                    comes from a line in section 1.10.32.
-                  </p>
-                  <p
-                    className="text-[18px] leading-relaxed"
-                    style={{ color: "#525E6F" }}
-                  >
-                    The standard chunk of Lorem Ipsum used since the 1500s is
-                    reproduced below for those interested. Sections 1.10.32 and
-                    1.10.33 from &quot;de Finibus Bonorum et Malorum&quot; by Cicero are
-                    also reproduced in their exact original form, accompanied by
-                    English versions from the 1914 translation by H. Rackham.
-                  </p>
+                    </div>
                 </div>
-                <div>
-                  <h2
-                    className="text-[18px] font-bold mb-4"
-                    style={{ color: "#000000" }}
-                  >
-                    How to use Lorem Ipsum?
-                  </h2>
-                  <p
-                    className="text-[18px] leading-relaxed"
-                    style={{ color: "#525E6F" }}
-                  >
-                    There are many variations of passages of Lorem Ipsum
-                    available, but the majority have suffered alteration in some
-                    form, by injected humour, or randomised words which don&apos;t
-                    look even slightly believable. If you are going to use a
-                    passage of Lorem Ipsum, you need to be sure there isn&apos;t
-                    anything embarrassing hidden in the middle of text.
-                  </p>
-                  <p
-                    className="text-[18px] leading-relaxed"
-                    style={{ color: "#525E6F" }}
-                  >
-                    All the Lorem Ipsum generators on the Internet tend to
-                    repeat predefined chunks as necessary, making this the first
-                    true generator on the Internet. It uses a dictionary of over
-                    200 Latin words, combined with a handful of model sentence
-                    structures, to generate Lorem Ipsum which looks reasonable.
-                    The generated Lorem Ipsum is therefore always free from
-                    repetition, injected humour, or non-characteristic words
-                    etc.
-                  </p>
                 </div>
               </div>
+
               {/* Aşağı hissədən kölgə, yalnız kontent scroll oluna biləndə görünsün */}
               <div
                 className="pointer-events-none"
@@ -332,24 +397,24 @@ const ContactForm = ({ isContactPage = false }) => {
             <div className="p-6 pt-4">
               <div className="flex gap-4 justify-center">
                 <button
-                  onClick={() => setShowKVKKModal(false)}
+                  onClick={() => setShowTermsModal(false)}
                   className="w-[196px] h-[45px] border border-[#0099FF] text-[#0099FF] bg-white rounded-md hover:bg-blue-50 transition-colors font-bold text-base"
                   style={{
                     fontSize: "16px",
                     fontWeight: 700,
                   }}
                 >
-                  GERİ
+                  BACK
                 </button>
                 <button
-                  onClick={() => setShowKVKKModal(false)}
+                  onClick={() => setShowTermsModal(false)}
                   className="w-[196px] h-[45px] bg-[#0099FF] text-white rounded-md hover:bg-blue-600 transition-colors font-bold text-base"
                   style={{
                     fontSize: "16px",
                     fontWeight: 700,
                   }}
                 >
-                  OKUDUM, ANLADIM
+                  I HAVE READ AND UNDERSTOOD
                 </button>
               </div>
             </div>
@@ -412,14 +477,14 @@ const ContactForm = ({ isContactPage = false }) => {
               htmlFor="topic"
               className="block text-[#525659] text-sm font-semibold mb-2"
             >
-              Hangi Konuda Yardımcı Olabiliriz?
+              How Can We Help You?
             </label>
             <div className="relative">
               <select
                 id="topic"
                 className="w-full bg-white rounded-md p-3 focus:outline-none focus:ring-2 focus:ring-blue-500 appearance-none pr-10"
               >
-                <option>Lorem ipsum</option>
+                <option>Please Select an Option</option>
               </select>
               <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
                 <svg
@@ -439,30 +504,18 @@ const ContactForm = ({ isContactPage = false }) => {
             </div>
           </div>
           <div className="mb-4">
-            <label
-              htmlFor="reason"
-              className="block text-[#525659] text-sm font-semibold mb-2"
-            >
-              Bize Neden Ulaşmak İstiyorsunuz?
-            </label>
-            <input
-              type="text"
-              id="reason"
-              placeholder="Lorem ipsum"
-              className="w-full bg-white rounded-md p-3 focus:outline-none focus:ring-2 focus:ring-blue-500"
-            />
           </div>
           <div className="mb-4">
             <label
               htmlFor="company"
               className="block text-[#525659] text-sm font-semibold mb-2"
             >
-              Çalışmakta Olduğunuz Firma İsmi
+              Your Company Name
             </label>
             <input
               type="text"
               id="company"
-              placeholder="Lorem ipsum"
+              placeholder="Please Enter Your Company Name"
               className="w-full bg-white rounded-md p-3 focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
           </div>
@@ -471,12 +524,12 @@ const ContactForm = ({ isContactPage = false }) => {
               htmlFor="where"
               className="block text-[#525659] text-sm font-semibold mb-2"
             >
-              Bizi Nerden Duydunuz?
+              How Did You Hear About Us?
             </label>
             <input
               type="text"
               id="where"
-              placeholder="Lorem ipsum"
+              placeholder="Please Enter"
               className="w-full bg-white rounded-md p-3 focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
           </div>
@@ -485,12 +538,12 @@ const ContactForm = ({ isContactPage = false }) => {
               htmlFor="email"
               className="block text-[#525659] text-sm font-semibold mb-2"
             >
-              Kurumsal Mail Adresiniz
+              Your Corporate Email Address
             </label>
             <input
               type="email"
               id="email"
-              placeholder="Lütfen kurumsal mail adresi giriniz."
+              placeholder="Please Enter Your Corporate Email Address"
               className="w-full bg-white rounded-md p-3 focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
           </div>
@@ -498,26 +551,88 @@ const ContactForm = ({ isContactPage = false }) => {
             htmlFor="email"
             className="block text-[#525659] text-sm font-semibold mb-2"
           >
-            İletişim Numaranız
+            Contact Number
           </label>
           <div className="mb-4 flex gap-2">
-            <div className="w-1/4">
-              <div className="flex items-center h-full gap-1 rounded-md p-3 focus-within:ring-2 focus-within:ring-blue-500 bg-white">
+            <div className="w-1/4 relative" ref={countryDropdownRef}>
+              <div 
+                className="flex items-center h-full gap-1 rounded-md p-3 focus-within:ring-2 focus-within:ring-blue-500 bg-white cursor-pointer"
+                onClick={() => {
+                  setShowCountryDropdown(!showCountryDropdown);
+                  if (!showCountryDropdown) {
+                    setCountrySearchTerm("");
+                  }
+                }}
+              >
                 <Image
-                  src={getImagePath("/assets/images/Turkey_flag.png")}
-                  alt="Turkey Flag"
+                  src={`https://flagcdn.com/w20/${selectedCountry.countryCode}.png`}
+                  alt={selectedCountry.name}
                   width={20}
                   height={15}
+                  className="object-cover"
                 />
-                <span className="text-[#525659] text-[12px] ml-2">+90</span>
+                <span className="text-[#525659] text-[12px] ml-2">{selectedCountry.code}</span>
+                <svg 
+                  className={`w-4 h-4 ml-auto transition-transform ${showCountryDropdown ? 'rotate-180' : ''}`}
+                  fill="none" 
+                  stroke="currentColor" 
+                  viewBox="0 0 24 24"
+                >
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                </svg>
               </div>
+              {showCountryDropdown && (
+                <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-200 rounded-md shadow-lg z-50 max-h-60 overflow-hidden flex flex-col">
+                  <div className="p-2 border-b border-gray-200">
+                    <input
+                      type="text"
+                      placeholder="Search"
+                      value={countrySearchTerm}
+                      onChange={(e) => setCountrySearchTerm(e.target.value)}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md text-xs outline-none focus:ring-2 focus:ring-blue-500"
+                      onClick={(e) => e.stopPropagation()}
+                    />
+                  </div>
+                  <div className="overflow-y-auto max-h-52">
+                    {countries
+                      .filter((country) => {
+                        const searchLower = countrySearchTerm.toLowerCase();
+                        return (
+                          country.name.toLowerCase().includes(searchLower) ||
+                          country.code.includes(countrySearchTerm)
+                        );
+                      })
+                      .map((country) => (
+                    <div
+                      key={country.countryCode}
+                      onClick={() => {
+                        setSelectedCountry(country);
+                        setCountryCode(country.code);
+                        setShowCountryDropdown(false);
+                        setCountrySearchTerm("");
+                      }}
+                      className="flex items-center gap-2 px-3 py-2 hover:bg-gray-100 cursor-pointer"
+                    >
+                      <Image
+                        src={`https://flagcdn.com/w20/${country.countryCode}.png`}
+                        alt={country.name}
+                        width={20}
+                        height={15}
+                        className="object-cover"
+                      />
+                      <span className="text-[#525659] text-[12px]">{country.code}</span>
+                    </div>
+                      ))}
+                  </div>
+                </div>
+              )}
             </div>
             <div className="w-3/4">
               <input
                 type="text"
                 id="phone"
-                placeholder="Lütfen iletişim bilgisi giriniz"
-                className="w-full outline-none bg-transparent pl-2"
+                placeholder="Please Enter Your Contact Number"
+                className="w-full outline-none pl-2 rounded-md p-3 focus:ring-2 focus:ring-blue-500 bg-white"
               />
             </div>
           </div>
@@ -526,12 +641,12 @@ const ContactForm = ({ isContactPage = false }) => {
               htmlFor="message"
               className="block text-[#525659] text-sm font-semibold mb-2"
             >
-              Mesajınız
+              Your Message
             </label>
             <textarea
               id="message"
               rows={4}
-              placeholder="Lütfen mesajınızı giriniz"
+              placeholder="Please Enter Your Message"
               className="w-full bg-white rounded-md p-3 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
           </div>
@@ -549,24 +664,16 @@ const ContactForm = ({ isContactPage = false }) => {
                 className="text-sm font-medium"
                 style={{ color: "rgba(0, 0, 0, 0.65)" }}
               >
+                I accept the{" "}
                 <button
                   type="button"
-                  onClick={() => setShowPrivacyModal(true)}
+                  onClick={() => setShowTermsModal(true)}
                   style={{ color: "#5563FF", textDecoration: "underline" }}
                   className="hover:opacity-80 transition-opacity bg-transparent border-none p-0 cursor-pointer"
                 >
-                  Gizlilik
-                </button>{" "}
-                ve{" "}
-                <button
-                  type="button"
-                  onClick={() => setShowKVKKModal(true)}
-                  style={{ color: "#5563FF", textDecoration: "underline" }}
-                  className="hover:opacity-80 transition-opacity bg-transparent border-none p-0 cursor-pointer"
-                >
-                  KVKK şart
-                </button>{" "}
-                koşullarını kabul ediyorum.
+                  Privacy Policy and KVKK Terms
+                </button>
+                .
               </label>
             </div>
             <div className="flex items-start gap-3">
@@ -580,7 +687,7 @@ const ContactForm = ({ isContactPage = false }) => {
                 className="text-sm font-medium"
                 style={{ color: "rgba(0, 0, 0, 0.65)" }}
               >
-                Aylık Bültenimizden haberdar olmak istermisiniz?
+                Would you like to subscribe to our monthly newsletter?
               </label>
             </div>
           </div>
@@ -591,7 +698,7 @@ const ContactForm = ({ isContactPage = false }) => {
               background: "linear-gradient(to right, #1465FA, #0099FF)",
             }}
           >
-            Gönder
+            SUBMIT
           </button>
         </motion.div>
         {/* Astronaut Image */}

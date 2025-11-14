@@ -16,12 +16,12 @@ export const metadata: Metadata = {
   icons: {
     icon: [
       {
-        url: "/assets/icons/logo.svg",
-        type: "image/svg+xml",
+        url: "/assets/icons/game-logo.png",
+        type: "image/png",
       },
     ],
-    shortcut: "/assets/icons/logo.svg",
-    apple: "/assets/icons/logo.svg",
+    shortcut: "/assets/icons/game-logo.png",
+    apple: "/assets/icons/game-logo.png",
   },
 };
 
