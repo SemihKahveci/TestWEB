@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import Link from "next/link";
 import { useState, useEffect, useRef } from "react";
 import { getImagePath } from "@/utils/imagePath";
 import FAQ from "@/components/FAQ";
@@ -456,39 +457,43 @@ export default function HomePage() {
         </motion.p>
 
         {/* Mərkəzdə böyük play button */}
-        <motion.div
-          initial={{ opacity: 0, scale: 0.8 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 0.6, delay: 0.4 }}
-          className="relative z-30 my-[40px] bg-[#0b4bac] rounded-full flex items-center justify-center w-[60px] h-[60px] p-[13px] cursor-pointer hover:scale-110 transition-transform"
-        >
-          <Image
-            src={getImagePath("/assets/images/play.png")}
-            alt="Play"
-            width={20}
-            height={20}
-          />
-        </motion.div>
+        <Link href="/about-us">
+          <motion.div
+            initial={{ opacity: 0, scale: 0.8 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.6, delay: 0.4 }}
+            className="relative z-30 my-[40px] bg-[#0b4bac] rounded-full flex items-center justify-center w-[60px] h-[60px] p-[13px] cursor-pointer hover:scale-110 transition-transform"
+          >
+            <Image
+              src={getImagePath("/assets/images/play.png")}
+              alt="Play"
+              width={20}
+              height={20}
+            />
+          </motion.div>
+        </Link>
 
         {/* Alt hissədə iki button */}
         <div className="flex justify-center gap-6">
-          <motion.button
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.5 }}
-            className="border border-white text-white text-[16px] w-[186px] h-[45px] font-semibold px-6 py-2 rounded shadow transition hover:bg-white hover:text-[#0099FF]"
-          >
-            Start Free Trailer
-          </motion.button>
+          <Link href="/contact">
+            <motion.button
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, delay: 0.5 }}
+              className="border border-white text-white text-[16px] w-[186px] h-[45px] font-semibold px-6 py-2 rounded shadow transition hover:bg-white hover:text-[#0099FF]"
+            >
+              Start Free Trailer
+            </motion.button>
+          </Link>
 
-          <motion.button
+          {/* <motion.button
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.6 }}
             className="bg-[#0B4CAC] text-white w-[138px] text-[16px] h-[45px] font-semibold px-6 py-2 rounded shadow transition hover:bg-blue-600"
           >
             Play Demo
-          </motion.button>
+          </motion.button> */}
         </div>
       </section>
       {/* Referanslar bölməsi */}

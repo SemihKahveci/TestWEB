@@ -156,7 +156,7 @@ export default function Navbar() {
         </Link>
 
         {/* Language Dropdown - Desktop */}
-        <div className="relative ml-2" ref={languageDropdownRef}>
+        {/* <div className="relative ml-2" ref={languageDropdownRef}>
           <button
             onClick={() => setLanguageDropdownOpen(!languageDropdownOpen)}
             className="flex items-center gap-2 rounded-md hover:bg-gray-100 transition-colors"
@@ -195,7 +195,7 @@ export default function Navbar() {
               ))}
             </div>
           )}
-        </div>
+        </div> */}
       </div>
 
       {/* Mobile Burger Icon */}
@@ -285,7 +285,7 @@ export default function Navbar() {
           </Link>
 
           {/* Language Dropdown - Mobile */}
-          <div className="border-t pt-4">
+          {/* <div className="border-t pt-4">
             <div className="flex items-center justify-between mb-2">
               <span className="text-sm font-medium text-gray-700">
                 Dil / Language
@@ -313,7 +313,7 @@ export default function Navbar() {
                 </button>
               ))}
             </div>
-          </div>
+          </div> */}
         </div>
       </div>
     </nav>
