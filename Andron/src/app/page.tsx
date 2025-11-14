@@ -443,7 +443,7 @@ export default function HomePage() {
           transition={{ duration: 0.7, delay: 0.1 }}
           className="text-white font-extrabold text-2xl md:text-[42px] leading-[130%] mb-4 text-center px-4 md:px-0"
         >
-          Lorem Ipsum In The Interactive Text
+          Turn Skill Into Adventure
         </motion.h1>
         <motion.p
           initial={{ opacity: 0, y: 30 }}
@@ -451,8 +451,8 @@ export default function HomePage() {
           transition={{ duration: 0.7, delay: 0.2 }}
           className="text-[#D8D8D8] text-[18px] mx-auto font-medium leading-[140%]"
         >
-          Final tool to work with your team, store everything in one place,{" "}
-          <br /> and organize projects the way you want.
+          Engaging gamified assessments to identify talent {" "}
+          <br /> while providing an enjoyable experience.
         </motion.p>
 
         {/* Mərkəzdə böyük play button */}

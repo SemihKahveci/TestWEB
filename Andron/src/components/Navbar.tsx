@@ -143,7 +143,8 @@ export default function Navbar() {
         >
           LOG IN
         </a>
-        <button
+        <Link
+          href="/contact"
           className={`px-6 py-2 rounded-md transition text-base font-semibold tracking-wide ${
             isHome || isAboutUs
               ? "bg-[#2196f3] text-white hover:bg-[#1976d2]"
@@ -152,7 +153,7 @@ export default function Navbar() {
           style={{ fontFamily: "var(--font-poppins)" }}
         >
           REQUEST DEMO
-        </button>
+        </Link>
 
         {/* Language Dropdown - Desktop */}
         <div className="relative ml-2" ref={languageDropdownRef}>
@@ -275,9 +276,13 @@ export default function Navbar() {
           >
             LOG IN
           </a>
-          <button className="bg-[#2196f3] text-white px-6 py-2 rounded-md hover:bg-[#1976d2] transition text-base font-semibold tracking-wide">
+          <Link
+            href="/contact"
+            className="bg-[#2196f3] text-white px-6 py-2 rounded-md hover:bg-[#1976d2] transition text-base font-semibold tracking-wide text-center"
+            onClick={() => setMenuOpen(false)}
+          >
             REQUEST DEMO
-          </button>
+          </Link>
 
           {/* Language Dropdown - Mobile */}
           <div className="border-t pt-4">

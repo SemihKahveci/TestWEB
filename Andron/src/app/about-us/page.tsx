@@ -178,9 +178,11 @@ export default function AboutUsPage() {
               <span className="absolute w-[150px] left-1/2 transform -translate-x-1/2 bottom-[-10px] h-1 bg-black rounded"></span>
             </motion.h2>
             <p className="text-[#000] text-md font-[400] leading-relaxed mt-6 max-w-md mx-auto">
-              Lorem Ipsum is simply dummy text of the printing and typesetting
-              industry. Lorem Ipsum has been the industrys standard dummy text
-              ever since the 1500s,
+            The purpose of ANDRON Game is to combine the power of gamification, advanced AI
+            techniques, and real-time behavioral analysis to deliver a truly novel competency
+            discovery experience for both companies and candidates. By producing manipulation-proof
+            data based on candidates’ natural decisions and behaviors, we match the right
+            person to the right position and simplify the entire hiring process.
             </p>
           </motion.div>
 

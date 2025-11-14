@@ -55,7 +55,6 @@ const About = () => {
               viewport={{ once: true }}
               className="text-sm text-[#ABABAB] mb-[34px] relative z-2"
             >
-              Lorem ipsum dolor sit amet consectetur enim .
             </motion.p>
             <motion.div
               initial={{ opacity: 0, y: 20 }}
@@ -69,20 +68,46 @@ const About = () => {
                   isAboutPage ? "relative z-2 text-white" : "text-black"
                 }`}
               >
-                Lorem ipsum dolor sit amet consectetur enim .Lorem ipsum dolor
-                sit amet consectetur enim .Lorem ipsum dolor sit amet
-                consectetur enim .Lorem ipsum dolor sit amet consectetur enim
-                .Lorem ipsum dolor sit amet consectetur enim .Lorem ipsum dolor
-                sit amet consectetur enim
+                As an alternative to the tedium and high costs of traditional competency evaluation
+                methods, we set out with a vision for a discovery experience that is both engaging and
+                trustworthy.
               </p>
               <p
                 className={`text-black text-sm leading-relaxed text-center ${
                   isAboutPage ? "relative z-2 text-white" : "text-black"
                 }`}
               >
-                .Lorem ipsum dolor sit amet consectetur enim .Lorem ipsum dolor
-                sit amet consectetur enim .Lorem ipsum dolor sit amet
-                consectetur enim .Lorem ipsum dolor sit amet consectetur enim .
+                “Andron” (Greek: ἀνδρών) originally referred to a private hall in ancient Greece where
+                guests gathered to converse and share 3deas. We’ve adopted th3s name as our own
+                “counc3l of d3scovery,” bringing players together to explore their hidden potentials.
+              </p>
+              <p
+                className={`text-black text-sm leading-relaxed text-center ${
+                  isAboutPage ? "relative z-2 text-white" : "text-black"
+                }`}
+              >
+                At its core, “Andron” signifies a place of gathering and dialogue. Inspired by the
+                m3llenn3a-old stone walls we adm3red at the Istanbul Archaeology Museum, we’ve
+                reimagined Andron for the modern era as an AI-powered discovery platform.
+              </p>
+              <p
+                className={`text-black text-sm leading-relaxed text-center ${
+                  isAboutPage ? "relative z-2 text-white" : "text-black"
+                }`}
+              >
+                The Ancient Greek term ἀνδρών describes a space where guests sparked a flow of
+                ideas. We channel that very spirit into real-time, immersive experiences—allowing
+                individuals to follow their own competency “flow” in reach, interactive scenarios.
+              </p>
+              <p
+                className={`text-black text-sm leading-relaxed text-center ${
+                  isAboutPage ? "relative z-2 text-white" : "text-black"
+                }`}
+              >
+                Our emblem resembles a sleek spaceship. Just as the ancient Andron opened doors to
+                new thoughts, each landing and every exploration on our logo unlocks a door to a new
+                universe. This symbol is the visual essence of our adventure-filled journey, guided by
+                discovery and artificial intelligence.
               </p>
             </motion.div>
             <motion.button
