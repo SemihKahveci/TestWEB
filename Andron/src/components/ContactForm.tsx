@@ -737,13 +737,8 @@ const ContactForm = ({ isContactPage = false }) => {
               className="text-sm font-inter font-[400] text-[16px]"
               style={{ fontStyle: "normal" }}
             >
-              &quot;Lorem Ipsum is simply dummy text of the printing and
-              typesetting industry. Lorem Ipsum has been the industry&apos;s
-              standard dummy text ever since the 1500s,&quot;
+              At the heart of ANDRON, every choice you make becomes a roadmap shaping your future.
               <br />
-              <span className={`font-bold text-center font-inter`}>
-                Lorem ipsum
-              </span>
             </p>
           </div>
         </motion.div>
