@@ -55,12 +55,13 @@ export default function Mockups() {
                 className="w-[120px] h-[235px] md:w-[140px] md:h-[275px] lg:w-[156px] lg:h-[305px] object-cover"
               />
               {/* iPhone screen content - positioned inside the screen area */}
-              <div className="absolute top-[8%] left-[8%] right-[8%] bottom-[8%]">
+              <div className="absolute top-[4%] left-[7%] right-[7%] bottom-[4%] overflow-hidden">
                 <Image
-                  src={getImagePath("/assets/images/mockup/iphone-bg.png")}
+                  src={getImagePath("/assets/images/mockup/soIIphone.png")}
                   alt="iPhone Screen Content"
                   fill
-                  className="object-cover rounded-[12px]"
+                  className="object-cover rounded-[14px]"
+                  style={{ objectFit: 'cover', objectPosition: 'center top' }}
                 />
               </div>
             </div>
@@ -85,7 +86,7 @@ export default function Mockups() {
               {/* MacBook screen content - positioned inside the screen area */}
               <div className="absolute top-[6%] left-[12%] right-[12%] bottom-[25%] md:top-[8%] md:left-[11%] md:right-[11%] md:bottom-[10%] xl:top-[8%] xl:left-[10%] xl:right-[10%] xl:bottom-[10%]">
                 <Image
-                  src={getImagePath("/assets/images/mockup/macbook-bg.png")}
+                  src={getImagePath("/assets/images/mockup/ortaMacos.png")}
                   alt="MacBook Screen Content"
                   fill
                   className="object-cover rounded-sm"
@@ -113,7 +114,7 @@ export default function Mockups() {
               {/* iPad screen content - positioned inside the screen area */}
               <div className="absolute top-[7%] left-[6%] right-[6%] bottom-[7%]">
                 <Image
-                  src={getImagePath("/assets/images/mockup/ipad-bg.png")}
+                  src={getImagePath("/assets/images/mockup/sagIpad.png")}
                   alt="iPad Screen Content"
                   fill
                   className="object-cover rounded-[10px]"

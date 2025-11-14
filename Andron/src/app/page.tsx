@@ -666,30 +666,55 @@ export default function HomePage() {
           >
             PLANETS
           </motion.h2>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 px-4 max-w-7xl mx-auto z-100 relative">
-            {[0, 1, 2, 3].map((i) => (
+          <div className="flex flex-wrap justify-center gap-4 md:gap-6 px-4 max-w-7xl mx-auto z-100 relative">
+            {[
+              {
+                image: getImagePath("/assets/images/planets/venus.png"),
+                title: "The Planet Venus",
+                competencies: [
+                  "Customer Focus",
+                  "Adaptability and Resilience"
+                ]
+              },
+              {
+                image: getImagePath("/assets/images/planets/titan.png"),
+                title: "The Planet Titan",
+                competencies: [
+                  "Trust-Building Collaboration and Synergy",
+                  "Influencing Others"
+                ]
+              }
+            ].map((planet, i) => (
               <motion.div
                 key={i}
                 initial={{ opacity: 0, x: -60 }}
                 whileInView={{ opacity: 1, x: 0 }}
                 transition={{ duration: 0.6, delay: 0.3 * (i + 1) }}
                 viewport={{ once: true }}
-                className="p-1"
+                className="p-1 flex-shrink-0 flex flex-col items-center"
               >
                 <Image
-                  src={
-                    [
-                      getImagePath("/assets/images/cards/On-cloud.png"),
-                      getImagePath("/assets/images/cards/Safer.png"),
-                      getImagePath("/assets/images/cards/Faster-Red.png"),
-                      getImagePath("/assets/images/cards/Faster.png"),
-                    ][i]
-                  }
-                  alt="Card Image"
+                  src={planet.image}
+                  alt={planet.title}
                   width={348}
                   height={348}
-                  className="w-full h-auto object-cover rounded-xl"
+                  className="w-full h-auto object-cover rounded-xl max-w-[348px] mb-4"
                 />
+                <div className="text-center">
+                  <h3 className="text-[24px] font-bold text-white mb-2">
+                    {planet.title}
+                  </h3>
+                  <h4 className="text-[18px] font-semibold text-white mb-3">
+                    Competencies
+                  </h4>
+                  <ul className="text-left text-white space-y-2 max-w-[348px]">
+                    {planet.competencies.map((competency, idx) => (
+                      <li key={idx} className="text-[16px]">
+                        {idx + 1}. {competency}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
               </motion.div>
             ))}
           </div>
