@@ -39,7 +39,7 @@ export default function AboutUsPage() {
           viewport={{ once: true }}
           className="text-[24px] font-bold mb-2 text-[#222] tracking-wide"
         >
-          REFERANSLAR
+          REFERENCES
         </motion.h2>
         <div className="w-40 h-1 bg-[#0099FF] mx-auto mb-8 rounded" />
         <KeenLogoSlider />

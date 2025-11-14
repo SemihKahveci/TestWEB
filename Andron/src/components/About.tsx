@@ -5,8 +5,32 @@ import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { getImagePath } from "@/utils/imagePath";
 
-const About = () => {
+interface AboutProps {
+  ourStoryText1?: string;
+  ourStoryText2?: string;
+}
+
+const About = ({ ourStoryText1, ourStoryText2 }: AboutProps) => {
   const isAboutPage = usePathname().includes("about-us");
+  
+  // Default texts for home page
+  const defaultHomeText1 = "As an alternative to the tedium and high costs of traditional competency evaluation methods, we set out with a vision for a discovery experience that is both engaging and trustworthy.";
+  const defaultHomeText2 = "At its core, \"Andron\" signifies a place of gathering and dialogue. Inspired by the millennia-old stone walls we admired at the Istanbul Archaeology Museum, we've reimagined Andron for the modern era as an AI-powered discovery platform.";
+  
+  // Default texts for about-us page
+  const defaultAboutText1 = `As an alternative to the tedium and high costs of traditional competency evaluation methods, we set out with a vision for a discovery experience that is both engaging and trustworthy.
+
+"Andron" (Greek: ἀνδρών) originally referred to a private hall in ancient Greece where guests gathered to converse and share ideas. We've adopted this name as our own "council of discovery," bringing players together to explore their hidden potentials.`;
+
+  const defaultAboutText2 = `At its core, "Andron" signifies a place of gathering and dialogue. Inspired by the millennia-old stone walls we admired at the Istanbul Archaeology Museum, we've reimagined Andron for the modern era as an AI-powered discovery platform.
+
+The Ancient Greek term ἀνδρών describes a space where guests sparked a flow of ideas. We channel that very spirit into real-time, immersive experiences—allowing individuals to follow their own competency "flow" in rich, interactive scenarios.
+
+Our emblem resembles a sleek spaceship. Just as the ancient andron opened doors to new thoughts, each landing and every exploration in our logo unlocks a door to a new universe. This symbol is the visual essence of our adventure-filled journey, guided by discovery and artificial intelligence.`;
+  
+  // Use provided texts or defaults based on page
+  const text1 = ourStoryText1 || (isAboutPage ? defaultAboutText1 : defaultHomeText1);
+  const text2 = ourStoryText2 || (isAboutPage ? defaultAboutText2 : defaultHomeText2);
 
   return (
     <section className="w-full bg-white">
@@ -61,68 +85,38 @@ const About = () => {
               whileInView={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6, delay: 0.4 }}
               viewport={{ once: true }}
-              className="grid md:grid-rows-2 gap-4 text-left mb-[34px] max-w-[750px] mx-auto relative z-2"
+              className="flex flex-col gap-4 text-left mb-[34px] max-w-[750px] mx-auto relative z-2"
             >
               <p
-                className={`text-black text-sm leading-relaxed text-center ${
+                className={`text-black text-sm leading-relaxed text-center whitespace-pre-line ${
                   isAboutPage ? "relative z-2 text-white" : "text-black"
                 }`}
               >
-                As an alternative to the tedium and high costs of traditional competency evaluation
-                methods, we set out with a vision for a discovery experience that is both engaging and
-                trustworthy.
+                {text1}
               </p>
               <p
-                className={`text-black text-sm leading-relaxed text-center ${
+                className={`text-black text-sm leading-relaxed text-center whitespace-pre-line ${
                   isAboutPage ? "relative z-2 text-white" : "text-black"
                 }`}
               >
-                “Andron” (Greek: ἀνδρών) originally referred to a private hall in ancient Greece where
-                guests gathered to converse and share 3deas. We’ve adopted th3s name as our own
-                “counc3l of d3scovery,” bringing players together to explore their hidden potentials.
-              </p>
-              <p
-                className={`text-black text-sm leading-relaxed text-center ${
-                  isAboutPage ? "relative z-2 text-white" : "text-black"
-                }`}
-              >
-                At its core, “Andron” signifies a place of gathering and dialogue. Inspired by the
-                m3llenn3a-old stone walls we adm3red at the Istanbul Archaeology Museum, we’ve
-                reimagined Andron for the modern era as an AI-powered discovery platform.
-              </p>
-              <p
-                className={`text-black text-sm leading-relaxed text-center ${
-                  isAboutPage ? "relative z-2 text-white" : "text-black"
-                }`}
-              >
-                The Ancient Greek term ἀνδρών describes a space where guests sparked a flow of
-                ideas. We channel that very spirit into real-time, immersive experiences—allowing
-                individuals to follow their own competency “flow” in reach, interactive scenarios.
-              </p>
-              <p
-                className={`text-black text-sm leading-relaxed text-center ${
-                  isAboutPage ? "relative z-2 text-white" : "text-black"
-                }`}
-              >
-                Our emblem resembles a sleek spaceship. Just as the ancient Andron opened doors to
-                new thoughts, each landing and every exploration on our logo unlocks a door to a new
-                universe. This symbol is the visual essence of our adventure-filled journey, guided by
-                discovery and artificial intelligence.
+                {text2}
               </p>
             </motion.div>
-            <motion.button
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: 0.6 }}
-              viewport={{ once: true }}
-              className="bg-[#0099FF] w-[200px] h-[50px] hover:bg-[#0077CC] text-white text-[18px] font-semibold px-8 py-3 shadow-lg transition-colors"
-              style={{
-                clipPath: "polygon(100% 0, 100% 15%, 90% 100%, 0 100%, 0 0)",
-                borderRadius: "10px",
-              }}
-            >
-              DAHA FAZLA
-            </motion.button>
+            {!isAboutPage && (
+              <motion.button
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.6, delay: 0.6 }}
+                viewport={{ once: true }}
+                className="bg-[#0099FF] w-[200px] h-[50px] hover:bg-[#0077CC] text-white text-[18px] font-semibold px-8 py-3 shadow-lg transition-colors"
+                style={{
+                  clipPath: "polygon(100% 0, 100% 15%, 90% 100%, 0 100%, 0 0)",
+                  borderRadius: "10px",
+                }}
+              >
+                MORE ABOUT
+              </motion.button>
+            )}
           </div>
         </div>
 
@@ -156,9 +150,7 @@ const About = () => {
                   viewport={{ once: true }}
                   className="md:text-[45px] text-2xl font-bold text-white mb-6 leading-tight text-left"
                 >
-                  Your Tool to Organize
-                  <br />
-                  All Your Business & Daily Life
+                  What We Do:
                 </motion.h3>
                 <motion.p
                   initial={{ opacity: 0, y: 20 }}
@@ -167,10 +159,12 @@ const About = () => {
                   viewport={{ once: true }}
                   className="text-white text-sm leading-relaxed ml-[100px] text-left"
                 >
-                  Final tool to work with your team, store everything in one
-                  place, and organize projects the way you want. Final tool to
-                  work with your team, store everything in one place, and
-                  organize projects the way you want.
+                  We design and deliver assessment tools that leverage{" "} <br />
+                  cutting-edge technologies and methodologies to unlock individuals’ <br />
+                  potential and track their development through competency measurements;{" "}
+                  today measuring skills, tomorrow mapping potential and opening doors to <br />
+                  new domains—from leadership to innovation—as a modular discovery <br />
+                  platform.
                 </motion.p>
               </div>
             </motion.div>
