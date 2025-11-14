@@ -2,9 +2,7 @@
 import Image from "next/image";
 import { getImagePath } from "@/utils/imagePath";
 import About from "@/components/About";
-import GetStarted from "@/components/GetStarted";
 import { motion } from "framer-motion";
-import Mockups from "@/components/Mockups";
 import KeenLogoSlider from "@/components/KeenLogoSlider";
 
 export default function AboutUsPage() {

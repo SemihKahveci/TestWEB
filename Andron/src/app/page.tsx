@@ -300,7 +300,6 @@ function BookMeetingDrawer({ onClose }: { onClose: () => void }) {
 
 export default function HomePage() {
   const [meetingOpen, setMeetingOpen] = useState(false);
-  const [helpOpen, setHelpOpen] = useState(true);
   const [numberOfGames, setNumberOfGames] = useState(0);
   const [inputValue, setInputValue] = useState("0");
 

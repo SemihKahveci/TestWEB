@@ -2,7 +2,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import { getImagePath } from "@/utils/imagePath";
 
 const menuItems = [
@@ -25,9 +25,6 @@ export default function Navbar() {
   const isAboutUs = pathname === "/about-us";
   const [menuOpen, setMenuOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
-  const [languageDropdownOpen, setLanguageDropdownOpen] = useState(false);
-  const [selectedLanguage, setSelectedLanguage] = useState(languages[0]);
-  const languageDropdownRef = useRef<HTMLDivElement>(null);
   const [adminPanelUrl, setAdminPanelUrl] = useState<string>('/login');
 
   // Admin paneli URL'ini client-side'da belirle
@@ -52,27 +49,6 @@ export default function Navbar() {
 
     return () => window.removeEventListener("resize", checkIsMobile);
   }, []);
-
-  // Close dropdown when clicking outside
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (
-        languageDropdownRef.current &&
-        !languageDropdownRef.current.contains(event.target as Node)
-      ) {
-        setLanguageDropdownOpen(false);
-      }
-    };
-
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
-
-  const handleLanguageSelect = (language: (typeof languages)[0]) => {
-    setSelectedLanguage(language);
-    setLanguageDropdownOpen(false);
-    // Burada dil dəyişikliyi məntiqini əlavə edə bilərsiniz
-  };
 
   return (
     <nav

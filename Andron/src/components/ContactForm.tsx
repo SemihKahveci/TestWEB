@@ -8,7 +8,6 @@ import { getImagePath } from "@/utils/imagePath";
 
 const ContactForm = ({ isContactPage = false }) => {
   const [showTermsModal, setShowTermsModal] = useState(false);
-  const [countryCode, setCountryCode] = useState("+90");
   const [selectedCountry, setSelectedCountry] = useState({ code: "+90", countryCode: "tr", name: "Turkey" });
   const [showCountryDropdown, setShowCountryDropdown] = useState(false);
   const [countrySearchTerm, setCountrySearchTerm] = useState("");
@@ -607,7 +606,6 @@ const ContactForm = ({ isContactPage = false }) => {
                       key={country.countryCode}
                       onClick={() => {
                         setSelectedCountry(country);
-                        setCountryCode(country.code);
                         setShowCountryDropdown(false);
                         setCountrySearchTerm("");
                       }}
