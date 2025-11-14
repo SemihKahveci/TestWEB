@@ -14,11 +14,6 @@ const menuItems = [
   { name: "FAQ", href: "/faq" },
 ];
 
-const languages = [
-  { code: "en", name: "English", flag: "🇺🇸" },
-  { code: "tr", name: "Türkçe", flag: "🇹🇷" },
-];
-
 export default function Navbar() {
   const pathname = usePathname();
   const isHome = pathname === "/";
