@@ -63,7 +63,7 @@ export default function AboutUsPage() {
               viewport={{ once: true }}
               className="text-[46px] leading-[57.6px] font-bold mb-4 text-[#000] w-full md:w-auto mx-auto"
             >
-              Lorem ıpsum
+              Our Galaxy
             </motion.h2>
             <div className="w-40 h-[4px] bg-[#0099FF] mx mb-6" />
             <motion.p
@@ -73,20 +73,24 @@ export default function AboutUsPage() {
               viewport={{ once: true }}
               className="text-[#444] text-base leading-relaxed mb-8 w-full md:w-auto mx-auto"
             >
-              From they fine john he give of rich he. They age and draw mrs
-              like. Improving end distrusts may instantly was household
-              applauded incommode. Why kept very ever home mrs. Considered
-              sympathize ten uncommonly occasional assistance sufficient not.
+              The <strong className="text-[#000000]">ANDRON Game</strong> comprehensively measures the potential of candidates and
+              employees using real-time, tamper-proof data. Through our scenarios, we assess{" "} <br />
+              the following <strong className="text-[#000000]">12 core competencies</strong>:{" "} <br />
+              <ul className="list-disc list-inside">
+                <li>Customer Focus</li>
+                <li>Adaptability and Resilience</li>
+                <li>Aesthetic and Artistic Vision</li>
+                <li>Design Ability</li>
+                <li>Learning Agility</li>
+                <li>Emotional Intelligence</li>
+                <li>Creativity and Intellectual Depth</li>
+                <li>Paradox Resolution and Decision-Making</li>
+                <li>Critical and Systemic Thinking</li>
+                <li>New World Literacy</li>
+                <li>Trust-Building Collaboration and Synergy</li>
+                <li>Influencing Others</li>
+              </ul>
             </motion.p>
-            <motion.button
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: 0.4 }}
-              viewport={{ once: true }}
-              className="bg-[#0099FF] w-[180px] text-white font-semibold py-3 px-8 rounded-lg shadow-md hover:bg-[#0099FF]/80 transition mx-auto md:mx-0 block"
-            >
-              BUTON
-            </motion.button>
           </motion.div>
 
           {/* Right Image Gallery */}
@@ -210,14 +214,17 @@ export default function AboutUsPage() {
               viewport={{ once: true }}
               className="text-[35px] font-extrabold mb-4 relative inline-block"
             >
-              <span className="text-black">OUR </span>
-              <span className="text-[#0099FF]">VISION</span>
+              <span className="text-black">OUR VALUE </span>
+              <span className="text-[#0099FF]">PROPOSITION</span>
               <span className="absolute w-[150px] left-1/2 transform -translate-x-1/2 bottom-[-10px] h-1 bg-black rounded"></span>
             </motion.h2>
             <p className="text-[#000] text-md font-[400] leading-relaxed mt-6 max-w-md mx-auto">
-              Lorem Ipsum is simply dummy text of the printing and typesetting
-              industry. Lorem Ipsum has been the Industrys standard dummy text
-              ever since the 1500s,
+            ANDRON Game goes beyond traditional evaluation methods by combining
+            gamification, advanced artificial intelligence, and real-time behavioral analysis.
+            Your company gets to know candidates not through boring tests, but through
+            real-time scenarios — measuring not only what they know, but how they think and
+            what they respond to, delivering deeper, manipulation-proof insights at every <br />
+            stage of hiring.
             </p>
           </motion.div>
         </div>
