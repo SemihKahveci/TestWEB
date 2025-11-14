@@ -2,6 +2,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { motion } from "framer-motion";
+import { getImagePath } from "@/utils/imagePath";
 
 const blogPosts = [
   {
@@ -10,10 +11,10 @@ const blogPosts = [
     title: "UX review presentations",
     description:
       "How do you create compelling presentations that wow your colleagues and impress your managers?",
-    imageUrl: "/assets/images/blogs/UX review presentations.png",
+    imageUrl: getImagePath("/assets/images/blogs/UX review presentations.png"),
     author: {
       name: "Olivia Rhye",
-      avatarUrl: "/assets/images/avatar/Olivia Rhye.png",
+      avatarUrl: getImagePath("/assets/images/avatar/Olivia Rhye.png"),
     },
     date: "20 Jan 2022",
   },
@@ -23,10 +24,10 @@ const blogPosts = [
     title: "Migrating to Linear 101",
     description:
       "Linear helps streamline software projects, sprints, tasks, and bug tracking. Here&apos;s how to get started.",
-    imageUrl: "/assets/images/blogs/Migrating to Linear 101.png",
+    imageUrl: getImagePath("/assets/images/blogs/Migrating to Linear 101.png"),
     author: {
       name: "Phoenix Baker",
-      avatarUrl: "/assets/images/avatar/Phoenix Baker.png",
+      avatarUrl: getImagePath("/assets/images/avatar/Phoenix Baker.png"),
     },
     date: "19 Jan 2022",
   },
@@ -36,94 +37,94 @@ const blogPosts = [
     title: "Building your API Stack",
     description:
       "The rise of RESTful APIs has been met by a rise in tools for creating, testing, and managing them.",
-    imageUrl: "/assets/images/blogs/Building your API Stack.png",
+    imageUrl: getImagePath("/assets/images/blogs/Building your API Stack.png"),
     author: {
       name: "Lana Steiner",
-      avatarUrl: "/assets/images/avatar/Lana Steiner.png",
+      avatarUrl: getImagePath("/assets/images/avatar/Lana Steiner.png"),
     },
     date: "18 Jan 2022",
   },
-  {
-    id: 4,
-    category: "Management",
-    title: "Bill Walsh leadership lessons",
-    description:
-      "Like to know the secrets of transforming a 2-14 team into a 3x Super Bowl winning Dynasty?",
-    imageUrl: "/assets/images/blogs/Bill Walsh leadership lessons.png",
-    author: {
-      name: "Alec Whitten",
-      avatarUrl: "/assets/images/avatar/Alec Whitten.png",
-    },
-    date: "17 Jan 2022",
-  },
-  {
-    id: 5,
-    category: "Product",
-    title: "PM mental models",
-    description:
-      "Mental models are simple expressions of complex processes or relationships.",
-    imageUrl: "/assets/images/blogs/PM mental models.png",
-    author: {
-      name: "Demi Wilkinson",
-      avatarUrl: "/assets/images/avatar/Demi Wilkinson.png",
-    },
-    date: "16 Jan 2022",
-  },
-  {
-    id: 6,
-    category: "Design",
-    title: "What is Wireframing?",
-    description:
-      "Introduction to Wireframing and its Principles. Learn from the best in the industry.",
-    imageUrl: "/assets/images/blogs/What is Wireframing.png",
-    author: {
-      name: "Candice Wu",
-      avatarUrl: "/assets/images/avatar/Candice Wu.png",
-    },
-    date: "15 Jan 2022",
-  },
-  {
-    id: 7,
-    category: "Design",
-    title: "How collaboration makes us better designers",
-    description:
-      "Collaboration can make our teams stronger, and our individual designs better.",
-    imageUrl:
-      "/assets/images/blogs/How collaboration makes us better designers.png",
-    author: {
-      name: "Natali Craig",
-      avatarUrl: "/assets/images/avatar/Natali Craig.png",
-    },
-    date: "14 Jan 2022",
-  },
-  {
-    id: 8,
-    category: "Product",
-    title: "Our top 10 Javascript frameworks to use",
-    description:
-      "JavaScript frameworks make development easy with extensive features and functionalities.",
-    imageUrl:
-      "/assets/images/blogs/Our top 10 Javascript frameworks to use.png",
-    author: {
-      name: "Drew Cano",
-      avatarUrl: "/assets/images/avatar/Drew Cano.png",
-    },
-    date: "13 Jan 2022",
-  },
-  {
-    id: 9,
-    category: "Customer Success",
-    title: "Podcast: Creating a better CX Community",
-    description:
-      "Starting a community doesn&apos;t need to be complicated, but how do you get started?",
-    imageUrl:
-      "/assets/images/blogs/Podcast- Creating a better CX Community.png",
-    author: {
-      name: "Orlando Diggs",
-      avatarUrl: "/assets/images/avatar/Orlando Diggs.png",
-    },
-    date: "12 Jan 2022",
-  },
+  // {
+  //   id: 4,
+  //   category: "Management",
+  //   title: "Bill Walsh leadership lessons",
+  //   description:
+  //     "Like to know the secrets of transforming a 2-14 team into a 3x Super Bowl winning Dynasty?",
+  //   imageUrl: getImagePath("/assets/images/blogs/Bill Walsh leadership lessons.png"),
+  //   author: {
+  //     name: "Alec Whitten",
+  //     avatarUrl: getImagePath("/assets/images/avatar/Alec Whitten.png"),
+  //   },
+  //   date: "17 Jan 2022",
+  // },
+  // {
+  //   id: 5,
+  //   category: "Product",
+  //   title: "PM mental models",
+  //   description:
+  //     "Mental models are simple expressions of complex processes or relationships.",
+  //   imageUrl: getImagePath("/assets/images/blogs/PM mental models.png"),
+  //   author: {
+  //     name: "Demi Wilkinson",
+  //     avatarUrl: getImagePath("/assets/images/avatar/Demi Wilkinson.png"),
+  //   },
+  //   date: "16 Jan 2022",
+  // },
+  // {
+  //   id: 6,
+  //   category: "Design",
+  //   title: "What is Wireframing?",
+  //   description:
+  //     "Introduction to Wireframing and its Principles. Learn from the best in the industry.",
+  //   imageUrl: getImagePath("/assets/images/blogs/What is Wireframing.png"),
+  //   author: {
+  //     name: "Candice Wu",
+  //     avatarUrl: getImagePath("/assets/images/avatar/Candice Wu.png"),
+  //   },
+  //   date: "15 Jan 2022",
+  // },
+  // {
+  //   id: 7,
+  //   category: "Design",
+  //   title: "How collaboration makes us better designers",
+  //   description:
+  //     "Collaboration can make our teams stronger, and our individual designs better.",
+  //   imageUrl:
+  //     getImagePath("/assets/images/blogs/How collaboration makes us better designers.png"),
+  //   author: {
+  //     name: "Natali Craig",
+  //     avatarUrl: getImagePath("/assets/images/avatar/Natali Craig.png"),
+  //   },
+  //   date: "14 Jan 2022",
+  // },
+  // {
+  //   id: 8,
+  //   category: "Product",
+  //   title: "Our top 10 Javascript frameworks to use",
+  //   description:
+  //     "JavaScript frameworks make development easy with extensive features and functionalities.",
+  //   imageUrl:
+  //     getImagePath("/assets/images/blogs/Our top 10 Javascript frameworks to use.png"),
+  //   author: {
+  //     name: "Drew Cano",
+  //     avatarUrl: getImagePath("/assets/images/avatar/Drew Cano.png")  ,
+  //   },
+  //   date: "13 Jan 2022",
+  // },
+  // {
+  //   id: 9,
+  //   category: "Customer Success",
+  //   title: "Podcast: Creating a better CX Community",
+  //   description:
+  //     "Starting a community doesn&apos;t need to be complicated, but how do you get started?",
+  //   imageUrl:
+  //     getImagePath("/assets/images/blogs/Podcast- Creating a better CX Community.png"),
+  //   author: {
+  //     name: "Orlando Diggs",
+  //     avatarUrl: getImagePath("/assets/images/avatar/Orlando Diggs.png"),
+  //   },
+  //   date: "12 Jan 2022",
+  // },
 ];
 
 export default function BlogPage() {
@@ -141,27 +142,6 @@ export default function BlogPage() {
         >
           BLOG
         </motion.h2>
-        <div className="w-40 h-[4px] bg-[#0099FF] mx-auto mb-4 rounded" />
-        <motion.h1
-          initial={{ opacity: 0, x: -60 }}
-          whileInView={{ opacity: 1, x: 0 }}
-          transition={{ duration: 0.6, delay: 0.2 }}
-          viewport={{ once: true }}
-          className="text-5xl font-semibold text-[#222] mb-4 font-inter"
-        >
-          Lorem Ipsum
-        </motion.h1>
-        <motion.p
-          initial={{ opacity: 0, x: 60 }}
-          whileInView={{ opacity: 1, x: 0 }}
-          transition={{ duration: 0.5, delay: 0.3 }}
-          viewport={{ once: true }}
-          className="text-lg text-[#000000] max-w-2xl mx-auto mb-8"
-        >
-          Lorem Ipsum is simply dummy text of the printing and typesetting
-          industry. Lorem Ipsum has been the industry&apos;s standard dummy text
-          ever since the 1500s,
-        </motion.p>
         <motion.div
           initial={{ opacity: 0, y: 30 }}
           whileInView={{ opacity: 1, y: 0 }}
@@ -219,10 +199,10 @@ export default function BlogPage() {
               >
                 <div className="relative w-full h-48 mb-8">
                   <Image
-                    src={post.imageUrl}
+                    src={getImagePath(post.imageUrl)}
                     alt={post.title}
-                    layout="fill"
-                    objectFit="cover"
+                    fill
+                    className="object-cover"
                   />
                 </div>
                 <div className="text-left">
@@ -257,7 +237,7 @@ export default function BlogPage() {
                   </p>
                   <div className="flex items-center mt-4">
                     <Image
-                      src={post.author.avatarUrl}
+                      src={getImagePath(post.author.avatarUrl)}
                       alt={post.author.name}
                       width={40}
                       height={40}

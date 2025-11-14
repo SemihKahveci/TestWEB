@@ -670,9 +670,9 @@ export default function HomePage() {
               <Image
                 src={
                   [
-                    "/assets/images/blog_1.png",
-                    "/assets/images/blog_2.png",
-                    "/assets/images/blog_3.png",
+                    getImagePath("/assets/images/blog_1.png"),
+                    getImagePath("/assets/images/blog_2.png"),
+                    getImagePath("/assets/images/blog_3.png"),
                   ][i]
                 }
                 alt={`Blog Image ${i + 1}`}
@@ -704,20 +704,6 @@ export default function HomePage() {
             </motion.div>
           ))}
         </div>
-        <motion.button
-          initial={{ opacity: 0, x: -60 }}
-          whileInView={{ opacity: 1, x: 0 }}
-          transition={{ duration: 0.6, delay: 0.5 }}
-          viewport={{ once: true }}
-          className="bg-[#0099FF] hover:bg-[#0099FF] text-[16px] text-white font-semibold px-[25px] rounded-md transition mt-12 w-[192px] h-[45px]"
-          style={{
-            border: "1px solid #4E00A1",
-            // borderImage: "linear-gradient(to right, #0E45C8, #4E00A1) 1",
-            boxShadow: "0 0 16.6px 0 #1183D0",
-          }}
-        >
-          START FREE TRAIL
-        </motion.button>
       </section>
       {/* Pricing bölməsi */}
       <section

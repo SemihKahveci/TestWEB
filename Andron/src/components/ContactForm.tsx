@@ -244,7 +244,7 @@ const ContactForm = ({ isContactPage = false }) => {
             {/* Header - Fixed */}
             <div className="p-6 pb-4">
               <h2 className="text-[32px] leading-[96px] font-bold text-center text-black">
-                PRIVACY POLICY AND KVKK TERMS
+                PRIVACY POLICY AND PERSONAL DATA PROTECTION
               </h2>
               <div className="w-50 h-1 bg-blue-500 mx-auto"></div>
             </div>
@@ -320,7 +320,7 @@ const ContactForm = ({ isContactPage = false }) => {
                     className="text-[24px] font-bold mb-4"
                     style={{ color: "#000000" }}
                   >
-                    KVKK Terms
+                    Personal Data Protection
                   </h2>
                   <div className="space-y-4">
                 <div>
@@ -671,7 +671,7 @@ const ContactForm = ({ isContactPage = false }) => {
                   style={{ color: "#5563FF", textDecoration: "underline" }}
                   className="hover:opacity-80 transition-opacity bg-transparent border-none p-0 cursor-pointer"
                 >
-                  Privacy Policy and KVKK Terms
+                  Privacy Policy and Personal Data Protection
                 </button>
                 .
               </label>
