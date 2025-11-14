@@ -242,23 +242,17 @@ app.use('/api', apiRouter);
 
 // Admin paneli route'u - Production'da
 if (process.env.NODE_ENV === 'production') {
-    // Production'da root path'inde frontend build dosyalarını serve et
-    app.use(express.static(path.join(__dirname, '../frontend/dist')));
-    
-    // Admin paneli için tüm route'ları frontend'e yönlendir (API ve /home route'ları hariç)
-    app.get('*', (req, res, next) => {
-        // API route'larını atla
-        if (req.path.startsWith('/api')) {
-            return next();
-        }
-        // /home route'unu atla (Next.js'e gidecek - nginx'te yönlendirilecek)
-        if (req.path.startsWith('/home')) {
-            return next();
-        }
-        // Diğer tüm route'ları frontend'e yönlendir
-        res.sendFile(path.join(__dirname, '../frontend/dist/index.html'));
+    const adminDistPath = path.join(__dirname, '../frontend/dist');
+
+    // Admin paneli statikleri /admin altında
+    app.use('/admin', express.static(adminDistPath));
+
+    // Admin SPA route'ları (/admin, /admin/login, /admin/whatever...)
+    app.get('/admin*', (req, res) => {
+        res.sendFile(path.join(adminDistPath, 'index.html'));
     });
-} else {
+}
+ else {
     // Development'da root path'ini React dev server'a proxy et
     app.get('/', (req, res) => {
         res.redirect('http://localhost:5173');
