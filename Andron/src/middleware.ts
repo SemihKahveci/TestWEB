@@ -6,14 +6,20 @@ export function middleware(request: NextRequest) {
   if (process.env.NODE_ENV === 'production') {
     const pathname = request.nextUrl.pathname;
     
-    // Eğer path /home ile başlıyorsa, /home'u kaldır ve redirect et (temiz URL için)
-    if (pathname.startsWith('/home')) {
+    // Eğer path zaten /home ile başlıyorsa ve bu bir internal rewrite değilse, redirect et
+    // Ama internal rewrite'ları (x-middleware-rewrite header'ı ile gelen) ignore et
+    if (pathname.startsWith('/home') && !request.headers.get('x-middleware-rewrite')) {
       const newPath = pathname === '/home' || pathname === '/home/' 
         ? '/' 
         : pathname.replace('/home', '');
       const url = request.nextUrl.clone();
       url.pathname = newPath;
       return NextResponse.redirect(url);
+    }
+    
+    // Eğer path zaten /home ile başlıyorsa ve internal rewrite ise, olduğu gibi bırak
+    if (pathname.startsWith('/home')) {
+      return NextResponse.next();
     }
     
     // Static dosyalar ve API route'ları için /home prefix'i ekle (rewrite)
