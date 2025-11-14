@@ -1110,6 +1110,60 @@ const adminController = {
                 message: 'Şifre sıfırlanırken bir hata oluştu' 
             });
         }
+    },
+
+    // Contact form email gönderme
+    sendContactEmail: async (req, res) => {
+        try {
+            const { to, subject, html, replyTo } = req.body;
+
+            console.log('Contact email request received:', {
+                to,
+                subject,
+                hasHtml: !!html,
+                replyTo
+            });
+
+            if (!to || !subject || !html) {
+                console.error('Missing required fields:', { to, subject, hasHtml: !!html });
+                return res.status(400).json({ 
+                    success: false, 
+                    message: 'To, subject ve html gereklidir' 
+                });
+            }
+
+            console.log('Sending email via emailService...');
+            // Contact form için özel from email: sekahveci@androngame.com
+            const contactFromEmail = process.env.CONTACT_FROM_EMAIL || 'sekahveci@androngame.com';
+            const emailResult = await sendEmail(to, subject, html, replyTo, contactFromEmail);
+
+            console.log('Email result:', emailResult);
+
+            if (emailResult.success) {
+                console.log('Email sent successfully, messageId:', emailResult.messageId);
+                res.json({
+                    success: true,
+                    message: 'E-posta başarıyla gönderildi',
+                    messageId: emailResult.messageId
+                });
+            } else {
+                console.error('Email sending failed:', emailResult.error, emailResult.details);
+                res.status(500).json({
+                    success: false,
+                    message: 'E-posta gönderilirken bir hata oluştu',
+                    error: emailResult.error,
+                    details: emailResult.details
+                });
+            }
+
+        } catch (error) {
+            console.error('Contact e-postası gönderme hatası:', error);
+            res.status(500).json({
+                success: false,
+                message: 'E-posta gönderilirken bir hata oluştu',
+                error: error.message
+            });
+        }
     }
 };
 

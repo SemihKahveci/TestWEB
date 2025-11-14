@@ -8,10 +8,93 @@ import { getImagePath } from "@/utils/imagePath";
 
 const ContactForm = ({ isContactPage = false }) => {
   const [showTermsModal, setShowTermsModal] = useState(false);
+  const [privacyAccepted, setPrivacyAccepted] = useState(false);
   const [selectedCountry, setSelectedCountry] = useState({ code: "+90", countryCode: "tr", name: "Turkey" });
   const [showCountryDropdown, setShowCountryDropdown] = useState(false);
   const [countrySearchTerm, setCountrySearchTerm] = useState("");
   const countryDropdownRef = useRef<HTMLDivElement>(null);
+  
+  // Form state
+  const [formData, setFormData] = useState({
+    topic: "",
+    company: "",
+    where: "",
+    email: "",
+    phone: "",
+    message: "",
+    newsletter: false,
+  });
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitStatus, setSubmitStatus] = useState<{ type: "success" | "error" | null; message: string }>({ type: null, message: "" });
+
+  // Form validation
+  const isFormValid = () => {
+    return (
+      formData.topic.trim() !== "" &&
+      formData.company.trim() !== "" &&
+      formData.where.trim() !== "" &&
+      formData.email.trim() !== "" &&
+      formData.phone.trim() !== "" &&
+      formData.message.trim() !== "" &&
+      privacyAccepted
+    );
+  };
+
+  // Handle form submit
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!isFormValid()) {
+      setSubmitStatus({ type: "error", message: "Please fill in all required fields and accept the privacy policy." });
+      return;
+    }
+
+    setIsSubmitting(true);
+    setSubmitStatus({ type: null, message: "" });
+
+    try {
+      const fullPhone = `${selectedCountry.code} ${formData.phone}`;
+      
+      const response = await fetch("/api/contact", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          topic: formData.topic,
+          company: formData.company,
+          where: formData.where,
+          email: formData.email,
+          phone: fullPhone,
+          message: formData.message,
+          newsletter: formData.newsletter,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok && data.success) {
+        setSubmitStatus({ type: "success", message: "Your message has been sent successfully!" });
+        // Reset form
+        setFormData({
+          topic: "",
+          company: "",
+          where: "",
+          email: "",
+          phone: "",
+          message: "",
+          newsletter: false,
+        });
+        setPrivacyAccepted(false);
+      } else {
+        setSubmitStatus({ type: "error", message: data.message || "Failed to send message. Please try again." });
+      }
+    } catch (error) {
+      setSubmitStatus({ type: "error", message: "An error occurred. Please try again later." });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
   // Dropdown dışına tıklandığında kapat
   useEffect(() => {
@@ -251,128 +334,320 @@ const ContactForm = ({ isContactPage = false }) => {
             {/* Scrollable Content */}
             <div className="flex-1 overflow-y-auto p-6 pt-4 pb-4 relative">
               <div className="text-left space-y-8">
-                {/* Privacy Policy Section */}
-                <div>
-                  <h2
-                    className="text-[24px] font-bold mb-4"
-                    style={{ color: "#000000" }}
-                  >
-                    Privacy Policy
-                  </h2>
-                  <div className="space-y-4">
-                    <div>
-                      <h3
-                        className="text-[18px] font-bold mb-2"
-                        style={{ color: "#000000" }}
-                      >
-                        What is Lorem Ipsum?
-                      </h3>
-                  <p
-                    className="text-[18px] leading-relaxed"
-                    style={{ color: "#525E6F" }}
-                  >
-                    Lorem Ipsum is simply dummy text of the printing and
-                    typesetting industry. Lorem Ipsum has been the industry&apos;s
-                    standard dummy text ever since the asdasdas, when an unknown
-                    printer took a galley of type and scrambled it to make a
-                    type specimen book. It has survived not only five centuries,
-                    but also the leap into electronic typesetting, remaining
-                    essentially unchanged.
-                  </p>
-                  <p
-                    className="text-[18px] leading-relaxed"
-                    style={{ color: "#525E6F" }}
-                  >
-                    It was popularised in the 1960s with the release of Letraset
-                    sheets containing Lorem Ipsum passages, and more recently
-                    with desktop publishing software like Aldus PageMaker
-                    including versions of Lorem Ipsum.
-                  </p>
-                </div>
-                <div>
-                      <h3
-                        className="text-[18px] font-bold mb-2"
-                    style={{ color: "#000000" }}
-                  >
-                    Where does it come from?
-                      </h3>
-                  <p
-                    className="text-[18px] leading-relaxed"
-                    style={{ color: "#525E6F" }}
-                  >
-                    Contrary to popular belief, Lorem Ipsum is not simply random
-                    text. It has roots in a piece of classical Latin literature
-                    from 45 BC, making it over 2000 years old. Richard
-                    McClintock, a Latin professor at Hampden-Sydney College in
-                    Virginia, looked up one of the more obscure Latin words,
-                    consectetur, from a Lorem Ipsum passage, and going through
-                    the cites of the word in classical literature, discovered
-                    the undoubtable source.
-                  </p>
-                    </div>
-                  </div>
-                </div>
-
                 {/* KVKK Terms Section */}
-                <div className="border-t pt-6">
+                <div>
                   <h2
                     className="text-[24px] font-bold mb-4"
                     style={{ color: "#000000" }}
                   >
-                    Personal Data Protection
+                    PERSONAL DATA PROTECTION // KVKK
                   </h2>
+                  <h3
+                    className="text-[18px] font-semibold mb-4"
+                    style={{ color: "#000000" }}
+                  >
+                    GENERAL DISCLOSURE NOTICE ON THE PROTECTION OF PERSONAL DATA UNDER LAW NO. 6698
+                  </h3>
                   <div className="space-y-4">
-                <div>
-                      <h3
-                        className="text-[18px] font-bold mb-2"
-                    style={{ color: "#000000" }}
-                  >
-                    What is Lorem Ipsum?
-                      </h3>
-                  <p
-                    className="text-[18px] leading-relaxed"
-                    style={{ color: "#525E6F" }}
-                  >
-                    Lorem Ipsum is simply dummy text of the printing and
-                    typesetting industry. Lorem Ipsum has been the industry&apos;s
-                    standard dummy text ever since the 1500s, when an unknown
-                    printer took a galley of type and scrambled it to make a
-                    type specimen book. It has survived not only five centuries,
-                    but also the leap into electronic typesetting, remaining
-                    essentially unchanged.
-                  </p>
-                  <p
-                    className="text-[18px] leading-relaxed"
-                    style={{ color: "#525E6F" }}
-                  >
-                    It was popularised in the 1960s with the release of Letraset
-                    sheets containing Lorem Ipsum passages, and more recently
-                    with desktop publishing software like Aldus PageMaker
-                    including versions of Lorem Ipsum.
-                  </p>
-                </div>
-                <div>
-                      <h3
-                        className="text-[18px] font-bold mb-2"
-                    style={{ color: "#000000" }}
-                  >
-                    Where does it come from?
-                      </h3>
-                  <p
-                    className="text-[18px] leading-relaxed"
-                    style={{ color: "#525E6F" }}
-                  >
-                    Contrary to popular belief, Lorem Ipsum is not simply random
-                    text. It has roots in a piece of classical Latin literature
-                    from 45 BC, making it over 2000 years old. Richard
-                    McClintock, a Latin professor at Hampden-Sydney College in
-                    Virginia, looked up one of the more obscure Latin words,
-                    consectetur, from a Lorem Ipsum passage, and going through
-                    the cites of the word in classical literature, discovered
-                    the undoubtable source.
-                  </p>
+                    <p
+                      className="text-[18px] leading-relaxed"
+                      style={{ color: "#525E6F" }}
+                    >
+                      As ANDRON GAME OYUN JOINT STOCK COMPANY (ANDRON Game / the &quot;Company&quot;), we attach great importance to the protection of personal data belonging to our customers, product and service suppliers, employees, employee candidates, visitors, and other third parties.
+                    </p>
+                    <p
+                      className="text-[18px] leading-relaxed"
+                      style={{ color: "#525E6F" }}
+                    >
+                      In our capacity as Data Controller, we process the personal data under our responsibility within the limits stipulated by Law No. 6698 on the Protection of Personal Data (KVKK), in accordance with the law and the principles of integrity and good faith.
+                    </p>
+
+                    <h3
+                      className="text-[18px] font-bold mb-3 mt-6"
+                      style={{ color: "#000000" }}
+                    >
+                      Processed Personal Data and Special Categories of Personal Data
+                    </h3>
+                    <p
+                      className="text-[18px] leading-relaxed mb-4"
+                      style={{ color: "#525E6F" }}
+                    >
+                      The following types of personal and special category personal data are processed by ANDRON Game:
+                    </p>
+
+                    <h4
+                      className="text-[16px] font-semibold mb-3 mt-4"
+                      style={{ color: "#000000" }}
+                    >
+                      PERSONAL DATA
+                    </h4>
+                    <div className="overflow-x-auto mb-6">
+                      <table className="w-full border-collapse border border-gray-300 text-sm">
+                        <thead>
+                          <tr style={{ backgroundColor: "#f5f5f5" }}>
+                            <th className="border border-gray-300 px-3 py-2 text-left font-semibold" style={{ color: "#000000" }}>Data Type</th>
+                            <th className="border border-gray-300 px-3 py-2 text-left font-semibold" style={{ color: "#000000" }}>Collected Data</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          <tr>
+                            <td className="border border-gray-300 px-3 py-2 font-semibold" style={{ color: "#000000" }}>Identity</td>
+                            <td className="border border-gray-300 px-3 py-2" style={{ color: "#525E6F" }}>Name-surname, Turkish ID number, information contained in national ID and driver&apos;s license, signature specimen, and other identification information.</td>
+                          </tr>
+                          <tr>
+                            <td className="border border-gray-300 px-3 py-2 font-semibold" style={{ color: "#000000" }}>Contact</td>
+                            <td className="border border-gray-300 px-3 py-2" style={{ color: "#525E6F" }}>Telephone number, address, email address, business address, contact person information, and other contact-related data.</td>
+                          </tr>
+                          <tr>
+                            <td className="border border-gray-300 px-3 py-2 font-semibold" style={{ color: "#000000" }}>Location</td>
+                            <td className="border border-gray-300 px-3 py-2" style={{ color: "#525E6F" }}>Location and route information of employees using company vehicles.</td>
+                          </tr>
+                          <tr>
+                            <td className="border border-gray-300 px-3 py-2 font-semibold" style={{ color: "#000000" }}>Personnel File</td>
+                            <td className="border border-gray-300 px-3 py-2" style={{ color: "#525E6F" }}>Duration of employment, salary, work-related details, SGK registration number, etc.</td>
+                          </tr>
+                          <tr>
+                            <td className="border border-gray-300 px-3 py-2 font-semibold" style={{ color: "#000000" }}>Legal Transaction</td>
+                            <td className="border border-gray-300 px-3 py-2" style={{ color: "#525E6F" }}>Personal data contained in litigation files opened by or against the Company, or included in correspondence with judicial authorities.</td>
+                          </tr>
+                          <tr>
+                            <td className="border border-gray-300 px-3 py-2 font-semibold" style={{ color: "#000000" }}>Customer Transaction</td>
+                            <td className="border border-gray-300 px-3 py-2" style={{ color: "#525E6F" }}>Invoice information related to individual customers, etc.</td>
+                          </tr>
+                          <tr>
+                            <td className="border border-gray-300 px-3 py-2 font-semibold" style={{ color: "#000000" }}>Finance</td>
+                            <td className="border border-gray-300 px-3 py-2" style={{ color: "#525E6F" }}>Bank account details, debt causes and amounts, insurance registration number, tax ID number, etc.</td>
+                          </tr>
+                          <tr>
+                            <td className="border border-gray-300 px-3 py-2 font-semibold" style={{ color: "#000000" }}>Risk Management</td>
+                            <td className="border border-gray-300 px-3 py-2" style={{ color: "#525E6F" }}>Data processed for managing commercial, technical, or administrative risks.</td>
+                          </tr>
+                          <tr>
+                            <td className="border border-gray-300 px-3 py-2 font-semibold" style={{ color: "#000000" }}>Professional Experience</td>
+                            <td className="border border-gray-300 px-3 py-2" style={{ color: "#525E6F" }}>Education details, foreign language proficiency, work experience, driving license, profession, academic background, references, motivations, skills, tendencies, qualifications, interests, workplace behaviors, and psychometric assessments.</td>
+                          </tr>
+                          <tr>
+                            <td className="border border-gray-300 px-3 py-2 font-semibold" style={{ color: "#000000" }}>Transaction Security</td>
+                            <td className="border border-gray-300 px-3 py-2" style={{ color: "#525E6F" }}>IP address, website access logs, username and password details, cookies, etc.</td>
+                          </tr>
+                          <tr>
+                            <td className="border border-gray-300 px-3 py-2 font-semibold" style={{ color: "#000000" }}>Marketing</td>
+                            <td className="border border-gray-300 px-3 py-2" style={{ color: "#525E6F" }}>Cookie (browser) records and related analytics.</td>
+                          </tr>
+                        </tbody>
+                      </table>
                     </div>
-                </div>
+
+                    <h4
+                      className="text-[16px] font-semibold mb-3 mt-4"
+                      style={{ color: "#000000" }}
+                    >
+                      SPECIAL CATEGORIES OF PERSONAL DATA
+                    </h4>
+                    <div className="overflow-x-auto mb-6">
+                      <table className="w-full border-collapse border border-gray-300 text-sm">
+                        <thead>
+                          <tr style={{ backgroundColor: "#f5f5f5" }}>
+                            <th className="border border-gray-300 px-3 py-2 text-left font-semibold" style={{ color: "#000000" }}>Data Type</th>
+                            <th className="border border-gray-300 px-3 py-2 text-left font-semibold" style={{ color: "#000000" }}>Collected Data</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          <tr>
+                            <td className="border border-gray-300 px-3 py-2 font-semibold" style={{ color: "#000000" }}>Health Information</td>
+                            <td className="border border-gray-300 px-3 py-2" style={{ color: "#525E6F" }}>Health data belonging to employees and interns.</td>
+                          </tr>
+                          <tr>
+                            <td className="border border-gray-300 px-3 py-2 font-semibold" style={{ color: "#000000" }}>Criminal Convictions and Security Measures</td>
+                            <td className="border border-gray-300 px-3 py-2" style={{ color: "#525E6F" }}>Criminal record information of employees and job applicants.</td>
+                          </tr>
+                        </tbody>
+                      </table>
+                    </div>
+
+                    <h3
+                      className="text-[18px] font-bold mb-3 mt-6"
+                      style={{ color: "#000000" }}
+                    >
+                      Purposes of Processing Personal and Special Category Personal Data
+                    </h3>
+                    <p
+                      className="text-[18px] leading-relaxed mb-4"
+                      style={{ color: "#525E6F" }}
+                    >
+                      ANDRON Game processes the above-mentioned personal data for the following purposes:
+                    </p>
+                    <ul className="list-disc list-inside space-y-2 mb-6" style={{ color: "#525E6F" }}>
+                      <li>Conducting Emergency Management Processes</li>
+                      <li>Executing Information Security Processes</li>
+                      <li>Managing Employee / Intern / Student Recruitment and Placement Processes</li>
+                      <li>Handling Job Application Processes</li>
+                      <li>Fulfilling Contractual and Statutory Obligations for Employees</li>
+                      <li>Conducting Audit and Ethical Compliance Activities</li>
+                      <li>Organizing Training Activities</li>
+                      <li>Ensuring Compliance with Applicable Legislation</li>
+                      <li>Managing Financial and Accounting Transactions</li>
+                      <li>Ensuring Physical Premises Security</li>
+                      <li>Managing Assignment and Delegation Processes</li>
+                      <li>Conducting Legal Affairs</li>
+                      <li>Carrying Out Internal Audit, Investigation, and Intelligence Activities</li>
+                      <li>Executing Communication Processes</li>
+                      <li>Planning Human Resources Processes</li>
+                      <li>Conducting and Supervising Business Activities</li>
+                      <li>Managing Occupational Health and Safety Processes</li>
+                      <li>Gathering and Evaluating Improvement Suggestions</li>
+                      <li>Ensuring Business Continuity</li>
+                      <li>Managing Procurement Processes</li>
+                      <li>Conducting After-Sales Support Services</li>
+                      <li>Managing Sales Processes</li>
+                      <li>Managing Customer Relationship Processes</li>
+                      <li>Organizing Corporate Events and Activities</li>
+                      <li>Conducting Marketing and Analytical Studies</li>
+                      <li>Managing Advertisement, Campaign, and Promotion Activities</li>
+                      <li>Conducting Risk Management Processes</li>
+                      <li>Executing Contractual Processes</li>
+                      <li>Ensuring Security of Movable Assets and Resources</li>
+                      <li>Managing Payroll and Compensation Policies</li>
+                      <li>Providing Information to Authorized Persons, Institutions, and Authorities</li>
+                      <li>Managing Corporate Governance and Administrative Processes</li>
+                      <li>Recording and Monitoring Visitor Information</li>
+                    </ul>
+
+                    <h3
+                      className="text-[18px] font-bold mb-3 mt-6"
+                      style={{ color: "#000000" }}
+                    >
+                      Collection Method and Legal Basis for Processing Personal Data
+                    </h3>
+                    <p
+                      className="text-[18px] leading-relaxed mb-4"
+                      style={{ color: "#525E6F" }}
+                    >
+                      ANDRON Game processes personal and special category personal data under the conditions specified in Article 5 of Law No. 6698, including:
+                    </p>
+                    <ul className="list-disc list-inside space-y-2 mb-4" style={{ color: "#525E6F" }}>
+                      <li>explicit legal provisions,</li>
+                      <li>establishment or performance of a contract,</li>
+                      <li>fulfillment of legal obligations of the data controller,</li>
+                      <li>necessity for the establishment, exercise, or protection of a legal right,</li>
+                      <li>public disclosure by the data subject,</li>
+                      <li>legitimate interests of the data controller, provided that it does not harm the fundamental rights and freedoms of the data subject, and</li>
+                      <li>explicit consent where required.</li>
+                    </ul>
+                    <p
+                      className="text-[18px] leading-relaxed mb-6"
+                      style={{ color: "#525E6F" }}
+                    >
+                      Data may be collected through job application forms, documents submitted to the Company, HR and accounting records, invoices, delivery notes, quotations, correspondence via post or email, business partners, customers (companies to which you have applied), global platforms, and website visits.
+                    </p>
+
+                    <h3
+                      className="text-[18px] font-bold mb-3 mt-6"
+                      style={{ color: "#000000" }}
+                    >
+                      Sharing of Personal Data with Third Parties in Turkey
+                    </h3>
+                    <p
+                      className="text-[18px] leading-relaxed mb-4"
+                      style={{ color: "#525E6F" }}
+                    >
+                      ANDRON Game may share personal data, within the legal grounds specified in Article 8 of Law No. 6698, with:
+                    </p>
+                    <ul className="list-disc list-inside space-y-2 mb-6" style={{ color: "#525E6F" }}>
+                      <li>Authorized public institutions and organizations as required by law,</li>
+                      <li>Group companies operating in the same sector (only where necessary),</li>
+                      <li>Banks (for processing employee salary payments, including name, surname, and IBAN information),</li>
+                      <li>Certified public accountants (for payroll and financial transactions),</li>
+                      <li>Attorneys (for potential legal disputes involving identity, contact, or legal data),</li>
+                      <li>Contracted physicians (for health-related special category data).</li>
+                    </ul>
+
+                    <h3
+                      className="text-[18px] font-bold mb-3 mt-6"
+                      style={{ color: "#000000" }}
+                    >
+                      Sharing of Personal Data with Third Parties Abroad
+                    </h3>
+                    <p
+                      className="text-[18px] leading-relaxed mb-4"
+                      style={{ color: "#525E6F" }}
+                    >
+                      ANDRON Game may share personal data with third parties abroad solely for the purpose of processing job applications, under the legal bases of Article 9 of Law No. 6698.
+                    </p>
+                    <p
+                      className="text-[18px] leading-relaxed mb-4"
+                      style={{ color: "#525E6F" }}
+                    >
+                      Personal data are securely stored on Microsoft Azure Cloud Systems, which are hosted abroad but inaccessible to unauthorized third parties.
+                    </p>
+                    <p
+                      className="text-[18px] leading-relaxed mb-6"
+                      style={{ color: "#525E6F" }}
+                    >
+                      For users of ANDRON Game&apos;s global online platforms, personal data may be transferred abroad with explicit consent, in cases where third-party integrated services are utilized.
+                    </p>
+
+                    <h3
+                      className="text-[18px] font-bold mb-3 mt-6"
+                      style={{ color: "#000000" }}
+                    >
+                      Rights of Data Subjects Regarding Their Personal Data
+                    </h3>
+                    <p
+                      className="text-[18px] leading-relaxed mb-4"
+                      style={{ color: "#525E6F" }}
+                    >
+                      Individuals whose personal data are processed by ANDRON Game are entitled to all rights listed in Article 11 of the Law No. 6698, including the right to:
+                    </p>
+                    <ul className="list-disc list-inside space-y-2 mb-6" style={{ color: "#525E6F" }}>
+                      <li>Learn whether their personal data are processed,</li>
+                      <li>Request information regarding such processing,</li>
+                      <li>Learn the purpose of processing and whether data are used accordingly,</li>
+                      <li>Learn the domestic or international third parties to whom personal data are disclosed,</li>
+                      <li>Request correction of incomplete or inaccurate data,</li>
+                      <li>Request deletion or destruction of personal data,</li>
+                      <li>Request notification of correction, deletion, or destruction to third parties to whom data have been disclosed,</li>
+                      <li>Object to results arising from automated data processing, and</li>
+                      <li>Request compensation for damages incurred due to unlawful processing of personal data.</li>
+                    </ul>
+
+                    <h3
+                      className="text-[18px] font-bold mb-3 mt-6"
+                      style={{ color: "#000000" }}
+                    >
+                      Requests Regarding Your Personal Data
+                    </h3>
+                    <p
+                      className="text-[18px] leading-relaxed mb-4"
+                      style={{ color: "#525E6F" }}
+                    >
+                      Pursuant to Articles 11 and 13 of Law No. 6698 and Article 5 of the Communiqué on Application Procedures to Data Controllers, you may submit your requests regarding your rights to ANDRON Game using the official Data Subject Application Form (ANDRON GAME KVKK Form) available on our website (www.androngame.com.tr) or in person at our headquarters.
+                    </p>
+                    <p
+                      className="text-[18px] leading-relaxed mb-4"
+                      style={{ color: "#525E6F" }}
+                    >
+                      Applications must include identity verification documents and contain the following information:
+                    </p>
+                    <p
+                      className="text-[18px] leading-relaxed mb-4"
+                      style={{ color: "#525E6F" }}
+                    >
+                      full name, signature (if written), Turkish ID number, residential or workplace address for notification, electronic mail address (if available), phone and fax number (if any), and a clear statement of the request.
+                    </p>
+                    <p
+                      className="text-[18px] leading-relaxed mb-4"
+                      style={{ color: "#525E6F" }}
+                    >
+                      Requests will be processed free of charge within 30 days, unless an additional cost arises, in which case a fee determined by the Communiqué may be requested.
+                    </p>
+                    <p
+                      className="text-[18px] leading-relaxed"
+                      style={{ color: "#525E6F" }}
+                    >
+                      Applications with unverifiable identity documentation will not be processed.
+                    </p>
+                  </div>
                 </div>
               </div>
 
@@ -406,7 +681,10 @@ const ContactForm = ({ isContactPage = false }) => {
                   BACK
                 </button>
                 <button
-                  onClick={() => setShowTermsModal(false)}
+                  onClick={() => {
+                    setPrivacyAccepted(true);
+                    setShowTermsModal(false);
+                  }}
                   className="w-[196px] h-[45px] bg-[#0099FF] text-white rounded-md hover:bg-blue-600 transition-colors font-bold text-base"
                   style={{
                     fontSize: "16px",
@@ -471,6 +749,7 @@ const ContactForm = ({ isContactPage = false }) => {
           className="w-full max-w-md text-left flex flex-col justify-between shrink-0 grow-1"
           id="contact-form"
         >
+          <form onSubmit={handleSubmit}>
           <div className="mb-4">
             <label
               htmlFor="topic"
@@ -481,9 +760,15 @@ const ContactForm = ({ isContactPage = false }) => {
             <div className="relative">
               <select
                 id="topic"
+                value={formData.topic}
+                onChange={(e) => setFormData({ ...formData, topic: e.target.value })}
                 className="w-full bg-white rounded-md p-3 focus:outline-none focus:ring-2 focus:ring-blue-500 appearance-none pr-10"
               >
-                <option>Please Select an Option</option>
+                <option value="">Please Select an Option</option>
+                <option value="general">General Inquiry</option>
+                <option value="support">Support</option>
+                <option value="partnership">Partnership</option>
+                <option value="other">Other</option>
               </select>
               <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
                 <svg
@@ -514,6 +799,8 @@ const ContactForm = ({ isContactPage = false }) => {
             <input
               type="text"
               id="company"
+              value={formData.company}
+              onChange={(e) => setFormData({ ...formData, company: e.target.value })}
               placeholder="Please Enter Your Company Name"
               className="w-full bg-white rounded-md p-3 focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
@@ -528,6 +815,8 @@ const ContactForm = ({ isContactPage = false }) => {
             <input
               type="text"
               id="where"
+              value={formData.where}
+              onChange={(e) => setFormData({ ...formData, where: e.target.value })}
               placeholder="Please Enter"
               className="w-full bg-white rounded-md p-3 focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
@@ -542,6 +831,8 @@ const ContactForm = ({ isContactPage = false }) => {
             <input
               type="email"
               id="email"
+              value={formData.email}
+              onChange={(e) => setFormData({ ...formData, email: e.target.value })}
               placeholder="Please Enter Your Corporate Email Address"
               className="w-full bg-white rounded-md p-3 focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
@@ -629,6 +920,8 @@ const ContactForm = ({ isContactPage = false }) => {
               <input
                 type="text"
                 id="phone"
+                value={formData.phone}
+                onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
                 placeholder="Please Enter Your Contact Number"
                 className="w-full outline-none pl-2 rounded-md p-3 focus:ring-2 focus:ring-blue-500 bg-white"
               />
@@ -644,6 +937,8 @@ const ContactForm = ({ isContactPage = false }) => {
             <textarea
               id="message"
               rows={4}
+              value={formData.message}
+              onChange={(e) => setFormData({ ...formData, message: e.target.value })}
               placeholder="Please Enter Your Message"
               className="w-full bg-white rounded-md p-3 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
@@ -655,7 +950,9 @@ const ContactForm = ({ isContactPage = false }) => {
               <input
                 type="checkbox"
                 id="privacy"
-                className="mt-1 w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 focus:ring-2"
+                checked={privacyAccepted}
+                disabled
+                className="mt-1 w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 focus:ring-2 cursor-not-allowed"
               />
               <label
                 htmlFor="privacy"
@@ -678,6 +975,8 @@ const ContactForm = ({ isContactPage = false }) => {
               <input
                 type="checkbox"
                 id="newsletter"
+                checked={formData.newsletter}
+                onChange={(e) => setFormData({ ...formData, newsletter: e.target.checked })}
                 className="mt-1 w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 focus:ring-2"
               />
               <label
@@ -690,14 +989,33 @@ const ContactForm = ({ isContactPage = false }) => {
             </div>
           </div>
 
+          {submitStatus.type && (
+            <div
+              className={`mb-4 p-3 rounded-md text-sm ${
+                submitStatus.type === "success"
+                  ? "bg-green-100 text-green-800"
+                  : "bg-red-100 text-red-800"
+              }`}
+            >
+              {submitStatus.message}
+            </div>
+          )}
+
           <button
-            className="text-white font-semibold px-8 py-3 rounded-md shadow transition w-full"
+            type="submit"
+            disabled={!isFormValid() || isSubmitting}
+            className={`text-white font-semibold px-8 py-3 rounded-md shadow transition w-full ${
+              !isFormValid() || isSubmitting
+                ? "opacity-50 cursor-not-allowed"
+                : "hover:opacity-90"
+            }`}
             style={{
               background: "linear-gradient(to right, #1465FA, #0099FF)",
             }}
           >
-            SUBMIT
+            {isSubmitting ? "SENDING..." : "SUBMIT"}
           </button>
+          </form>
         </motion.div>
         {/* Astronaut Image */}
         <motion.div

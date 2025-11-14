@@ -9,14 +9,22 @@ const mg = mailgun.client({
     url: 'https://api.mailgun.net'
 });
 
-const sendEmail = async (to, subject, html) => {
+const sendEmail = async (to, subject, html, replyTo = null, fromEmail = null) => {
     try {
+        // Contact form için özel from email, yoksa default kullan
+        const fromAddress = fromEmail || process.env.MAILGUN_FROM_EMAIL;
+        const fromName = process.env.MAILGUN_FROM_NAME || 'ANDRON Game';
+        
         const data = {
-            from: `${process.env.MAILGUN_FROM_NAME} <${process.env.MAILGUN_FROM_EMAIL}>`,
+            from: `${fromName} <${fromAddress}>`,
             to: to,
             subject: subject,
             html: html
         };
+
+        if (replyTo) {
+            data['h:Reply-To'] = replyTo;
+        }
 
         const result = await mg.messages.create(process.env.MAILGUN_DOMAIN, data);
         return { success: true, messageId: result.id };

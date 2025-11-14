@@ -10,6 +10,9 @@ router.post('/login', adminController.login);
 // Excel export - Authentication gerektirmez
 router.get('/export-excel/:code', adminController.exportExcel);
 
+// Contact form e-postası gönder (authentication gerektirmez)
+router.post('/send-contact-email', adminController.sendContactEmail);
+
 // Diğer route'lar authentication gerektirir
 router.use(authenticateAdmin);
 
