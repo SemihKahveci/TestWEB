@@ -2,13 +2,70 @@
 
 import React, { useState } from "react";
 import Image from "next/image";
+import Link from "next/link";
 import { motion } from "framer-motion";
 import { getImagePath } from "@/utils/imagePath";
 import GetStarted from "@/components/GetStarted";
 import FAQ from "@/components/FAQ";
 
 export default function PricingPage() {
-  const [sliderValue, setSliderValue] = useState(25);
+  const [numberOfGames, setNumberOfGames] = useState(0);
+  const [inputValue, setInputValue] = useState("0");
+
+  // Fiyat hesaplama fonksiyonu
+  const calculatePrice = (games: number) => {
+    if (games === 0) return 0;
+    if (games >= 1 && games <= 500) return 5.0;
+    if (games >= 501 && games <= 1000) return 4.75;
+    if (games >= 1001 && games <= 5000) return 4.5;
+    return null; // 5000 üzeri için custom
+  };
+
+  // Slider değeri için - 5000 üzeri ise 5001 göster
+  const sliderValue = numberOfGames > 5000 ? 5001 : numberOfGames;
+  
+  const unitPrice = calculatePrice(numberOfGames);
+  const totalPrice = unitPrice !== null ? unitPrice * numberOfGames : 0;
+
+  // Input değiştiğinde
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setInputValue(value);
+    
+    // Boş bırakılabilir - sadece değer girildiğinde güncelle
+    if (value === "") {
+      return; // Boş bırak, blur'da güncelle
+    }
+    
+    // "5000+" gibi string'leri kontrol et
+    if (value.includes("+") || value.toLowerCase().includes("custom")) {
+      setNumberOfGames(5001);
+      setInputValue("5000+");
+      return;
+    }
+    
+    const numValue = parseInt(value);
+    if (!isNaN(numValue)) {
+      if (numValue > 5000) {
+        setNumberOfGames(5001);
+        setInputValue("5000+");
+      } else if (numValue >= 0 && numValue <= 5001) {
+        setNumberOfGames(numValue);
+      }
+    }
+  };
+
+  // Slider değiştiğinde
+  const handleSliderChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = parseInt(e.target.value);
+    if (value === 5001) {
+      setNumberOfGames(5001);
+      setInputValue("5000+");
+    } else {
+      setNumberOfGames(value);
+      setInputValue(value.toString());
+    }
+  };
 
   // const pricingPlans = {
   //   monthly: {
@@ -60,49 +117,19 @@ export default function PricingPage() {
           whileInView={{ opacity: 1, x: 0 }}
           transition={{ duration: 0.6, delay: 0.3 }}
           viewport={{ once: true }}
-          className="text-2xl md:text-[45px] font-extrabold text-[#fff] leading-[130%]"
+          className="text-2xl md:text-[45px] font-extrabold text-[#fff] leading-[130%] mb-8"
         >
-          Your Tool to Organize
+          Hiring the wrong talent is costing you! 
         </motion.h2>
         <motion.p
-          initial={{ opacity: 0, x: -60 }}
-          whileInView={{ opacity: 1, x: 0 }}
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6, delay: 0.4 }}
           viewport={{ once: true }}
-          className="text-[#fff] text-sm font-[500] max-w-[470px] mx-auto mb-12 leading-[140%] px-2 md:px-0"
+          className="text-lg md:text-xl text-white mb-12"
         >
-          Final tool to work with your team, store everything in one place, and
-          organize projects the way you want.
+          How many Games do you need?
         </motion.p>
-        <div className="flex flex-row flex-wrap justify-center items-start md:items-center gap-4 md:gap-16 mb-12 px-2 md:px-0">
-          {[0, 1, 2].map((i) => (
-            <motion.div
-              key={i}
-              initial={{ opacity: 0, x: -60 }}
-              whileInView={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.6, delay: 0.3 * (i + 1) }}
-              viewport={{ once: true }}
-              className="flex items-center gap-4 md:gap-8"
-            >
-              <Image
-                src={getImagePath("/assets/icons/icon-check-green.svg")}
-                alt="Check"
-                width={20}
-                height={20}
-                className="text-[#1465FA]"
-              />
-              <span className="text-sm font-medium">
-                {
-                  [
-                    "Free 15-day trial",
-                    "Unlimited Team Members",
-                    "Cancel Anytime",
-                  ][i]
-                }
-              </span>
-            </motion.div>
-          ))}
-        </div>
         <motion.div
           initial={{ opacity: 0, x: -60 }}
           whileInView={{ opacity: 1, x: 0 }}
@@ -111,53 +138,124 @@ export default function PricingPage() {
           className="bg-white rounded-xl shadow-xl w-full max-w-5xl mx-auto p-8 text-[#222] mb-[110px]"
         >
           <div className="flex justify-around items-end mb-8">
-            {[0, 1, 2].map((i) => (
-              <React.Fragment key={i}>
-                <motion.div
-                  initial={{ opacity: 0, x: -60 }}
-                  whileInView={{ opacity: 1, x: 0 }}
-                  transition={{ duration: 0.6, delay: 0.3 * (i + 1) }}
-                  viewport={{ once: true }}
-                  className="flex flex-col items-center px-3 md:px-8"
-                >
-                  <div className="text-base md:text-md mb-6">Lorem Ipsum</div>
-                  <div className="text-2xl md:text-[32px] font-extrabold">
-                    XX
-                  </div>
-                </motion.div>
-                {/* Dikey ayraç, yalnız 0 və 1-ci blokdan sonra */}
-                {i < 2 && (
-                  <div className="h-8 md:h-12 w-0.5 bg-gray-400 mx-2 md:mx-4" />
+            {/* İlk blok */}
+            <motion.div
+              initial={{ opacity: 0, x: -60 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.6, delay: 0.3 }}
+              viewport={{ once: true }}
+              className="flex flex-col items-center px-3 md:px-8"
+            >
+              <div className="text-base md:text-md mb-6">Number of Games</div>
+              <div className="text-2xl md:text-[32px] font-extrabold">
+                {numberOfGames >= 5001 ? "5000+" : numberOfGames.toLocaleString()}
+              </div>
+            </motion.div>
+            <div className="h-8 md:h-12 w-0.5 bg-gray-400 mx-2 md:mx-4" />
+            
+            {/* İkinci blok */}
+            <motion.div
+              initial={{ opacity: 0, x: -60 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.6, delay: 0.6 }}
+              viewport={{ once: true }}
+              className="flex flex-col items-center px-3 md:px-8"
+            >
+              <div className="text-base md:text-md mb-6">Price</div>
+              <div className="text-2xl md:text-[32px] font-extrabold">
+                {unitPrice === null ? (
+                  <span className="text-sm">Custom</span>
+                ) : (
+                  `$${unitPrice.toFixed(2)}`
                 )}
-              </React.Fragment>
-            ))}
+              </div>
+            </motion.div>
+            <div className="h-8 md:h-12 w-0.5 bg-gray-400 mx-2 md:mx-4" />
+            
+            {/* Üçüncü blok */}
+            <motion.div
+              initial={{ opacity: 0, x: -60 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.6, delay: 0.9 }}
+              viewport={{ once: true }}
+              className="flex flex-col items-center px-3 md:px-8"
+            >
+              <div className="text-base md:text-md mb-6">Total Price</div>
+              <div className="text-2xl md:text-[32px] font-extrabold">
+                {unitPrice === null ? (
+                  <span className="text-sm">Custom</span>
+                ) : (
+                  `$${totalPrice.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+                )}
+              </div>
+            </motion.div>
           </div>
-          <input
-            type="range"
-            min="0"
-            max="100"
-            step="25"
-            value={sliderValue}
-            onChange={(e) => setSliderValue(parseInt(e.target.value))}
-            className="w-full h-2 bg-blue-100 rounded-lg appearance-none cursor-pointer"
-            style={{
-              background: `linear-gradient(to right, #2196f3 0%, #2196f3 ${sliderValue}%, #d1d5db ${sliderValue}%, #d1d5db 100%)`,
-              height: "8px",
-              borderRadius: "4px",
-            }}
-          />
+          <div className="relative mb-6">
+            <input
+              type="range"
+              min="0"
+              max="5001"
+              step="1"
+              value={sliderValue}
+              onChange={handleSliderChange}
+              className="w-full h-2 bg-blue-100 rounded-lg appearance-none cursor-pointer"
+              style={{
+                background: `linear-gradient(to right, #2196f3 0%, #2196f3 ${(sliderValue / 5001) * 100}%, #d1d5db ${(sliderValue / 5001) * 100}%, #d1d5db 100%)`,
+                height: "8px",
+                borderRadius: "4px",
+              }}
+            />
+            <div className="flex justify-center mt-3">
+              <div className="flex items-center gap-2">
+                <span className="text-sm text-gray-600">Or enter manually:</span>
+                <input
+                  type="text"
+                  value={numberOfGames > 5000 ? "5000+" : (inputValue === "" ? "" : inputValue)}
+                  onChange={handleInputChange}
+                  onBlur={() => {
+                    if (inputValue === "") {
+                      // Boş bırakıldıysa mevcut değeri göster
+                      setInputValue(numberOfGames > 5000 ? "5000+" : numberOfGames.toString());
+                    } else if (numberOfGames > 5000) {
+                      setInputValue("5000+");
+                    } else {
+                      setInputValue(numberOfGames.toString());
+                    }
+                  }}
+                  onFocus={(e) => {
+                    // Focus olduğunda tüm metni seç
+                    e.target.select();
+                  }}
+                  placeholder="Amount"
+                  className="w-24 px-3 py-1.5 border border-gray-300 rounded-md text-center text-sm font-medium focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                />
+              </div>
+            </div>
+          </div>
+          {numberOfGames > 5000 && (
+            <motion.p
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.3 }}
+              className="text-[#0099FF] text-lg md:text-xl mt-6 mb-4 font-bold leading-[24px] text-center"
+            >
+              Looking for something custom?
+            </motion.p>
+          )}
           <p className="text-[#667085] text-sm mt-6 mb-4 font-[400] leading-[24px]">
-            Lorem Ipsum has been the industry&apos;s standard dummy
+          “All prices do not include any VAT.”
           </p>
-          <motion.button
-            initial={{ opacity: 0, x: -60 }}
-            whileInView={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.6, delay: 0.5 }}
-            viewport={{ once: true }}
-            className="bg-[#0099FF] hover:bg-[#0099FF] text-white font-semibold px-8 py-3 rounded-md shadow transition"
-          >
-            START FREE TRAIL
-          </motion.button>
+          <Link href="/contact" className="mt-6 block">
+            <motion.button
+              initial={{ opacity: 0, x: -60 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.6, delay: 0.5 }}
+              viewport={{ once: true }}
+              className="bg-[#0099FF] hover:bg-[#0099FF] text-white font-semibold px-8 py-3 rounded-md shadow transition"
+            >
+              REQUEST DEMO
+            </motion.button>
+          </Link>
         </motion.div>
       </section>
       {/* Yeni bölmə: Lorem Ipsum və Kartlar */}
@@ -167,34 +265,33 @@ export default function PricingPage() {
           whileInView={{ opacity: 1, x: 0 }}
           transition={{ duration: 0.6, delay: 0.3 }}
           viewport={{ once: true }}
-          className="text-[24px] font-bold mb-2 text-black"
-        >
-          AVANTAJLARI
-        </motion.h2>
-        <div className="w-32 h-1 bg-[#0099FF] mx-auto mb-6 rounded" />
-        <motion.h2
-          initial={{ opacity: 0, x: -60 }}
-          whileInView={{ opacity: 1, x: 0 }}
-          transition={{ duration: 0.6, delay: 0.3 }}
-          viewport={{ once: true }}
           className="text-2xl md:text-[45px] font-extrabold mb-4 text-[#14181F] leading-[130%] px-2 md:px-0"
         >
-          Your Tool to Organize <br />
-          All Your Business & Daily Life
+          What ANDRON Offers You?
         </motion.h2>
-        <motion.p
-          initial={{ opacity: 0, x: -60 }}
-          whileInView={{ opacity: 1, x: 0 }}
-          transition={{ duration: 0.6, delay: 0.4 }}
-          viewport={{ once: true }}
-          className="text-[#525E6F] text-sm font-[500] max-w-2xl mx-auto mb-12 leading-[140%] px-2 md:px-0"
-          style={{ maxWidth: "470px" }}
-        >
-          Final tool to work with your team, store everything in one place, and
-          organize projects the way you want.
-        </motion.p>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 px-4 max-w-7xl mx-auto justify-center z-10">
-          {[0, 1, 2, 3].map((i) => (
+          {[
+            {
+              image: getImagePath("/assets/images/game.png"),
+              title: "Tamper-proof Options",
+              description: "There are no right or wrong answers.",
+            },
+            {
+              image: getImagePath("/assets/images/magicpen.png"),
+              title: "Immersive Scenarios",
+              description: "Immersive scenarios where every decision shapes your path.",
+            },
+            {
+              image: getImagePath("/assets/images/medal.png"),
+              title: "Real-Time Behavioral Analysis",
+              description: "See how people think, react, and adapt in real-time.",
+            },
+            {
+              image: getImagePath("/assets/images/cup.png"),
+              title: "AI-Based Reporting",
+              description: "Discover what lies beyond numbers and choices.",
+            },
+          ].map((item, i) => (
             <motion.div
               key={i}
               initial={{ opacity: 0, x: -60 }}
@@ -206,14 +303,7 @@ export default function PricingPage() {
             >
               <div className="w-[100px] h-[100px] flex items-center justify-center mb-4">
                 <Image
-                  src={
-                    [
-                      "/assets/images/game.png",
-                      "/assets/images/magicpen.png",
-                      "/assets/images/medal.png",
-                      "/assets/images/cup.png",
-                    ][i]
-                  }
+                  src={item.image}
                   alt="Icon"
                   width={70}
                   height={70}
@@ -221,11 +311,10 @@ export default function PricingPage() {
                 />
               </div>
               <h3 className="text-2xl font-semibold mb-2 text-[#0099FF]">
-                Lorem Ipsum
+                {item.title}
               </h3>
               <p className="text-[#000] text-[14px] font-[300]">
-                Lorem ipsum dolor sit amet consectetur enim Lorem ipsum dolor
-                sit amet consectetur enim.
+                {item.description}
               </p>
             </motion.div>
           ))}
