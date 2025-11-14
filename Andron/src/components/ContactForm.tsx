@@ -90,6 +90,7 @@ const ContactForm = ({ isContactPage = false }) => {
         setSubmitStatus({ type: "error", message: data.message || "Failed to send message. Please try again." });
       }
     } catch (error) {
+      console.error("Form submission error:", error);
       setSubmitStatus({ type: "error", message: "An error occurred. Please try again later." });
     } finally {
       setIsSubmitting(false);
@@ -336,12 +337,6 @@ const ContactForm = ({ isContactPage = false }) => {
               <div className="text-left space-y-8">
                 {/* KVKK Terms Section */}
                 <div>
-                  <h2
-                    className="text-[24px] font-bold mb-4"
-                    style={{ color: "#000000" }}
-                  >
-                    PERSONAL DATA PROTECTION // KVKK
-                  </h2>
                   <h3
                     className="text-[18px] font-semibold mb-4"
                     style={{ color: "#000000" }}
