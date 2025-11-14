@@ -416,7 +416,7 @@ export default function HomePage() {
             className="fixed top-0 right-0 h-full max-w-[700px] w-auto z-[10999] flex"
           >
             {/* Vertical button */}
-            <button
+            {/* <button
               className="absolute -left-[40px] top-[20%] bg-[#4E9C00] text-white text-md font-medium p-3 rounded-l shadow-lg tracking-wide transition flex items-center justify-center"
               style={{
                 writingMode: "sideways-lr",
@@ -427,7 +427,7 @@ export default function HomePage() {
               aria-label="Book a Meeting"
             >
               BOOK A MEETING
-            </button>
+            </button> */}
 
             {/* Panel */}
             <div
@@ -527,8 +527,7 @@ export default function HomePage() {
             viewport={{ once: true }}
             className="text-2xl md:text-[45px] font-extrabold mb-4 text-[#14181F] leading-[130%]"
           >
-            Your Tool to Organize <br />
-            All Your Business & Daily Life
+            What Andron Offers You?
           </motion.h2>
           <motion.p
             initial={{ opacity: 0, x: -60 }}
@@ -541,41 +540,55 @@ export default function HomePage() {
             <br /> and organize projects the way you want.
           </motion.p>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 px-4 max-w-7xl mx-auto justify-center z-10">
-            {[0, 1, 2, 3].map((i) => (
-              <motion.div
-                key={i}
-                initial={{ opacity: 0, x: -60 }}
-                whileInView={{ opacity: 1, x: 0 }}
-                transition={{ duration: 0.6, delay: 0.3 * (i + 1) }}
-                viewport={{ once: true }}
-                className="bg-white shadow-lg p-6 w-full max-w-[300px] h-[348px] flex flex-col items-center justify-center text-center transition-all duration-300 hover:shadow-2xl hover:shadow-[#0099FF]/30 mx-auto"
-                style={{ padding: "23px 28px", gap: "10px" }}
-              >
-                <div className="w-[100px] h-[100px] flex items-center justify-center mb-4">
-                  <Image
-                    src={
-                      [
-                        "/assets/images/game.png",
-                        "/assets/images/magicpen.png",
-                        "/assets/images/medal.png",
-                        "/assets/images/cup.png",
-                      ][i]
-                    }
-                    alt="Icon"
-                    width={70}
-                    height={70}
-                    className="shrink-0"
-                  />
-                </div>
-                <h3 className="text-2xl font-semibold mb-2 text-[#0099FF]">
-                  Lorem Ipsum
-                </h3>
-                <p className="text-[#000] text-[14px] font-[300]">
-                  Lorem ipsum dolor sit amet consectetur enim Lorem ipsum dolor
-                  sit amet consectetur enim.
-                </p>
-              </motion.div>
-            ))}
+            {[0, 1, 2, 3].map((i) => {
+              const titles = [
+                "Tamper-proof Options",
+                "Immersive Scenarios",
+                "Real-Time Behavioral Analysis",
+                "AI-Based Reporting"
+              ];
+              const descriptions = [
+                "There are no right or wrong answers.",
+                "Immersive scenarios where every decision shapes your path.",
+                "See how people think, react, and adapt in real-time.",
+                "Discover what lies beyond numbers and choices."
+              ];
+              
+              return (
+                <motion.div
+                  key={i}
+                  initial={{ opacity: 0, x: -60 }}
+                  whileInView={{ opacity: 1, x: 0 }}
+                  transition={{ duration: 0.6, delay: 0.3 * (i + 1) }}
+                  viewport={{ once: true }}
+                  className="bg-white shadow-lg p-6 w-full max-w-[300px] h-[348px] flex flex-col items-center justify-center text-center transition-all duration-300 hover:shadow-2xl hover:shadow-[#0099FF]/30 mx-auto"
+                  style={{ padding: "23px 28px", gap: "10px" }}
+                >
+                  <div className="w-[100px] h-[100px] flex items-center justify-center mb-4">
+                    <Image
+                      src={
+                        [
+                          getImagePath("/assets/images/game.png"),
+                          getImagePath("/assets/images/magicpen.png"),
+                          getImagePath("/assets/images/medal.png"),
+                          getImagePath("/assets/images/cup.png"),
+                        ][i]
+                      }
+                      alt="Icon"
+                      width={70}
+                      height={70}
+                      className="shrink-0"
+                    />
+                  </div>
+                  <h3 className="text-2xl font-semibold mb-2 text-[#0099FF]">
+                    {titles[i]}
+                  </h3>
+                  <p className="text-[#000] text-[14px] font-[300]">
+                    {descriptions[i]}
+                  </p>
+                </motion.div>
+              );
+            })}
           </div>
         </section>
         {/* Yeni bölmə: On-Cloud, Safer, Faster Kartlar */}
@@ -594,30 +607,10 @@ export default function HomePage() {
             whileInView={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.6, delay: 0.3 }}
             viewport={{ once: true }}
-            className="text-[24px] font-bold text-[#fff] uppercase"
+            className="text-[48px] font-bold text-[#fff] uppercase"
           >
-            FEATURES
+            PLANETS
           </motion.h2>
-          <div className="w-40 h-1 bg-[#0099FF] mx-auto mb-6 rounded" />
-          <motion.h3
-            initial={{ opacity: 0, x: -60 }}
-            whileInView={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.6, delay: 0.4 }}
-            viewport={{ once: true }}
-            className="text-2xl md:text-[45px] font-semibold text-[#fff]"
-          >
-            Lorem Ipsum Text
-          </motion.h3>
-          <motion.p
-            initial={{ opacity: 0, x: -60 }}
-            whileInView={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.6, delay: 0.5 }}
-            viewport={{ once: true }}
-            className="text-[#fff] text-[15px] max-w-2xl mx-auto mb-12 text-md font-[400]"
-          >
-            Lorem ipsum dolor sit amet consectetur enim .Lorem ipsum dolor sit
-            amet consectetur enim .Lorem ipsum dolor sit amet consectetur enim .
-          </motion.p>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 px-4 max-w-7xl mx-auto z-100 relative">
             {[0, 1, 2, 3].map((i) => (
               <motion.div
@@ -631,10 +624,10 @@ export default function HomePage() {
                 <Image
                   src={
                     [
-                      "/assets/images/cards/On-cloud.png",
-                      "/assets/images/cards/Safer.png",
-                      "/assets/images/cards/Faster-Red.png",
-                      "/assets/images/cards/Faster.png",
+                      getImagePath("/assets/images/cards/On-cloud.png"),
+                      getImagePath("/assets/images/cards/Safer.png"),
+                      getImagePath("/assets/images/cards/Faster-Red.png"),
+                      getImagePath("/assets/images/cards/Faster.png"),
                     ][i]
                   }
                   alt="Card Image"

@@ -30,9 +30,9 @@ export default function Mockups() {
         whileInView={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.6 }}
         viewport={{ once: true }}
-        className="text-xl md:text-2xl font-bold text-white mb-8 md:mb-0 relative z-10 max-w-[350px] mx-auto text-center px-4"
+        className="text-2xl md:text-3xl font-bold text-white mb-8 md:mb-0 relative z-10 max-w-[3400px] mx-auto text-center px-4"
       >
-        Your Tool to Organize All <br /> Your Business & Daily Life
+        Scenes From The Game
       </motion.h2>
 
       {/* Devices container */}
@@ -126,16 +126,11 @@ export default function Mockups() {
 
       {/* Bottom white section */}
       <div
-        className="bg-white absolute bottom-[-1px] left-0 right-0 h-[150px] sm:h-[200px] md:h-[280px] lg:h-[350px] xl:h-[440px] z-100 flex items-end pb-1 md:pb-2 sm:pb-3 md:pb-4 justify-center"
+        className="bg-white absolute bottom-[-1px] left-0 right-0 h-[150px] sm:h-[200px] md:h-[280px] lg:h-[350px] xl:h-[440px] z-100 flex items-end pb-1 sm:pb-3 md:pb-4 justify-center"
         style={{
           clipPath: "polygon(50% 40%, 0% 100%, 100% 100%)",
         }}
       >
-        <div className="max-w-[200px] sm:max-w-[280px] md:max-w-[350px] lg:max-w-[400px] xl:max-w-[450px] mx-auto border border-[#A2A2A2] rounded-lg py-1.5 sm:py-2 px-3 sm:px-4 md:px-6 lg:px-8 mx-2 sm:mx-3 md:mx-4">
-          <p className="text-[#A2A2A2] text-[10px] md:text-xs sm:text-sm md:text-md text-center leading-tight sm:leading-normal">
-            Lorem ipsum dolor sit amet consectetur enim
-          </p>
-        </div>
       </div>
     </section>
   );

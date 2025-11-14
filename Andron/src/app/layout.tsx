@@ -13,6 +13,16 @@ const poppins = Poppins({
 export const metadata: Metadata = {
   title: "Andron",
   description: "Andron - Your Digital Assessment Platform",
+  icons: {
+    icon: [
+      {
+        url: "/assets/icons/logo.svg",
+        type: "image/svg+xml",
+      },
+    ],
+    shortcut: "/assets/icons/logo.svg",
+    apple: "/assets/icons/logo.svg",
+  },
 };
 
 export default function RootLayout({

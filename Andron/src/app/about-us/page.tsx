@@ -231,22 +231,22 @@ export default function AboutUsPage() {
       </section>
 
       {/* Mockups bölməsi */}
-      <div className="relative bg-white py-[100px]">
+      {/* <div className="relative bg-white py-[100px]">
         <Mockups />
-      </div>
+      </div> */}
 
       {/* Get Started bölməsi */}
-      <motion.div
+      {/* <motion.div
         initial={{ opacity: 0, y: 40 }}
         whileInView={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.7, delay: 0.2 }}
         viewport={{ once: true }}
       >
         <GetStarted />
-      </motion.div>
+      </motion.div> */}
 
       {/* Our Award Section */}
-      <section className="bg-white py-16 px-4">
+      {/* <section className="bg-white py-16 px-4">
         <div className="max-w-4xl mx-auto text-center">
           <motion.h2
             initial={{ opacity: 0, y: 30 }}
@@ -282,7 +282,7 @@ export default function AboutUsPage() {
             ))}
           </div>
         </div>
-      </section>
+      </section> */}
     </main>
   );
 }
