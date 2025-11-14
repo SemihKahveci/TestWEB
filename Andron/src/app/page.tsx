@@ -858,7 +858,7 @@ export default function HomePage() {
         subtitle="Find answers to common questions about our platform"
       />
 
-      {helpOpen && (
+{/*       {helpOpen && (
         <div className="fixed bottom-5 right-5 md:bottom-8 md:right-18 z-[110] w-[231px] bg-white rounded-[10px] shadow-2xl border border-gray-100 flex flex-col items-center p-[10px] gap-[10px]">
           <button
             onClick={() => setHelpOpen(false)}
@@ -890,7 +890,7 @@ export default function HomePage() {
             Cancel
           </button>
         </div>
-      )}
+      )} */}
     </main>
   );
 }
