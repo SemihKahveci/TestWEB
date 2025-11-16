@@ -407,20 +407,73 @@ const adminController = {
     // Kullanıcı sonuçlarını getir
     getUserResults: async (req, res) => {
         try {
-            const { code } = req.query;
+            const { code, page, limit, searchTerm, statusFilter, showExpiredWarning } = req.query;
+            
+            // Pagination parametreleri
+            const pageNum = parseInt(page) || 1;
+            const limitNum = parseInt(limit) || 10;
+            const skip = (pageNum - 1) * limitNum;
+            
             let results;
+            let totalCount;
+            let query = {};
+            
             if (code) {
+                // Tek kod için pagination yok
                 results = await UserCode.find({ code });
+                totalCount = results.length;
             } else {
-                results = await UserCode.find().sort({ sentDate: -1 });
+                // Filtreleme query'si oluştur
+                if (statusFilter) {
+                    query.status = statusFilter;
+                } else {
+                    // showExpiredWarning false ise "Süresi Doldu" statüsündeki kayıtları filtrele
+                    // (statusFilter yoksa)
+                    if (showExpiredWarning === 'false' || showExpiredWarning === false) {
+                        query.status = { $ne: 'Süresi Doldu' };
+                    } else if (showExpiredWarning !== 'true' && showExpiredWarning !== true) {
+                        // Varsayılan olarak "Süresi Doldu" kayıtlarını gizle
+                        query.status = { $ne: 'Süresi Doldu' };
+                    }
+                }
+                
+                // Search term varsa isim ile filtrele
+                if (searchTerm) {
+                    query.name = { $regex: searchTerm, $options: 'i' };
+                }
+                
+                // Toplam sayıyı hesapla (filtrelemeden sonra)
+                totalCount = await UserCode.countDocuments(query);
+                
+                // Sorguyu çalıştır
+                results = await UserCode.find(query)
+                    .sort({ sentDate: -1 })
+                    .skip(skip)
+                    .limit(limitNum);
             }
             
-
+            // Performans: Tüm Game'leri tek sorguda çek (N+1 sorgu problemini çöz)
+            const playerCodes = results.map(r => r.code);
+            const allGames = await Game.find({ 
+                playerCode: { $in: playerCodes } 
+            }).select('playerCode section customerFocusScore uncertaintyScore ieScore idikScore evaluationResult');
+            
+            // Game'leri playerCode'a göre grupla (memory'de hızlı erişim için)
+            const gamesByPlayerCode = {};
+            allGames.forEach(game => {
+                if (!gamesByPlayerCode[game.playerCode]) {
+                    gamesByPlayerCode[game.playerCode] = [];
+                }
+                gamesByPlayerCode[game.playerCode].push(game);
+            });
+            
+            // UserCode güncellemelerini topla (non-blocking için)
+            const updatePromises = [];
             
             // Her sonuç için Game modelinden de veri al
-            const mappedResults = await Promise.all(results.map(async (result) => {
-                // Game modelinden ilgili tüm oyunları bul (Venus ve Titan için)
-                const games = await Game.find({ playerCode: result.code });
+            const mappedResults = results.map((result) => {
+                // Memory'den ilgili oyunları al (sorgu yok, çok hızlı)
+                const games = gamesByPlayerCode[result.code] || [];
                 
                 // Tüm oyunlardaki evaluationResult array'lerinden rapor ID'lerini bul
                 let reportIds = [];
@@ -451,9 +504,11 @@ const adminController = {
                         updateData.uncertaintyScore = venusGame.uncertaintyScore;
                     }
                     
-                    // UserCode'u güncelle
+                    // UserCode güncellemesini topla (non-blocking)
                     if (Object.keys(updateData).length > 0) {
-                        await UserCode.findByIdAndUpdate(result._id, updateData);
+                        updatePromises.push(
+                            UserCode.findByIdAndUpdate(result._id, updateData)
+                        );
                     }
                 }
                 
@@ -473,16 +528,29 @@ const adminController = {
                     uncertaintyScore: (venusGame ? venusGame.uncertaintyScore : null) || result.uncertaintyScore || '-',
                     ieScore: (titanGame ? titanGame.ieScore : null) || result.ieScore || '-',
                     idikScore: (titanGame ? titanGame.idikScore : null) || result.idikScore || '-',
-                    // Oyun cevaplarını da ekle (tüm oyunların cevaplarını birleştir)
-                    answers: games.length > 0 ? games.flatMap(g => g.answers || []) : null,
+                    // Oyun cevaplarını sadece code parametresi varsa ekle (performans için)
+                    answers: code && games.length > 0 ? games.flatMap(g => g.answers || []) : null,
                     // Rapor ID'sini ekle
                     reportId: reportId
                 };
-            }));
+            });
+            
+            // UserCode güncellemelerini arka planda çalıştır (response'u beklemeden)
+            if (updatePromises.length > 0) {
+                Promise.all(updatePromises).catch(err => {
+                    console.error('UserCode güncelleme hatası (non-blocking):', err);
+                });
+            }
             
             res.json({
                 success: true,
-                results: mappedResults
+                results: mappedResults,
+                pagination: {
+                    page: pageNum,
+                    limit: limitNum,
+                    total: totalCount,
+                    totalPages: Math.ceil(totalCount / limitNum)
+                }
             });
         } catch (error) {
             console.error('Sonuçları getirme hatası:', error);

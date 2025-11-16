@@ -144,8 +144,15 @@ export const gameManagementAPI = {
 
 // Evaluation API
 export const evaluationAPI = {
-  getAll: () => {
-    return api.get('/user-results');
+  getAll: (page?: number, limit?: number, searchTerm?: string, statusFilter?: string, showExpiredWarning?: boolean) => {
+    const params = new URLSearchParams();
+    if (page) params.append('page', page.toString());
+    if (limit) params.append('limit', limit.toString());
+    if (searchTerm) params.append('searchTerm', searchTerm);
+    if (statusFilter) params.append('statusFilter', statusFilter);
+    if (showExpiredWarning !== undefined) params.append('showExpiredWarning', showExpiredWarning.toString());
+    const queryString = params.toString();
+    return api.get(`/user-results${queryString ? '?' + queryString : ''}`);
   },
   
   getById: (id: string) =>

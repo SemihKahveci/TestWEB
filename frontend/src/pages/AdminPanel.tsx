@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { evaluationAPI, creditAPI } from '../services/api';
 import { useAuth } from '../contexts/AuthContext';
 
@@ -49,11 +49,15 @@ const AdminPanel: React.FC = () => {
   const [results, setResults] = useState<UserResult[]>([]);
   const [filteredResults, setFilteredResults] = useState<UserResult[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isSearching, setIsSearching] = useState(false); // Backend arama için ayrı loading
   const [searchTerm, setSearchTerm] = useState('');
+  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
   const [showExpiredWarning, setShowExpiredWarning] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage] = useState(10);
+  const [totalCount, setTotalCount] = useState(0);
+  const [totalPages, setTotalPages] = useState(0);
   
   // Popup states
   const [showPDFPopup, setShowPDFPopup] = useState(false);
@@ -67,7 +71,6 @@ const AdminPanel: React.FC = () => {
     type: 'info' as 'success' | 'error' | 'warning' | 'info'
   });
   const [selectedUser, setSelectedUser] = useState<UserResult | null>(null);
-  const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
   const [isMobile, setIsMobile] = useState(false);
   const [pdfOptions, setPdfOptions] = useState<PDFOptions>({
     generalEvaluation: true,
@@ -100,33 +103,43 @@ const AdminPanel: React.FC = () => {
     };
   }, []);
 
-  useEffect(() => {
-    // Sadece bir kere çalıştır (React Strict Mode için)
-    if (!hasLoaded.current) {
-      hasLoaded.current = true;
-      loadData();
-    }
-  }, []);
-
-  useEffect(() => {
-    // Sadece results yüklendiyse filtreleme yap
-    if (results.length > 0) {
-      filterResults();
-    }
-  }, [results, searchTerm, statusFilter, showExpiredWarning]);
-
-  const loadData = async () => {
+  const loadData = useCallback(async (showLoading = true) => {
     try {
-      setIsLoading(true);
+      // Sadece ilk yüklemede veya sayfa değiştiğinde loading göster
+      // Arama için loading gösterme (arka planda çalışsın)
+      if (showLoading) {
+        setIsLoading(true);
+      } else {
+        setIsSearching(true);
+      }
       
-      const response = await evaluationAPI.getAll();
+      // Pagination ile veri çek (filtreleme parametrelerini de gönder)
+      const response = await evaluationAPI.getAll(
+        currentPage, 
+        itemsPerPage, 
+        debouncedSearchTerm, // Debounced search term kullan
+        statusFilter, 
+        showExpiredWarning
+      );
       
       
       if (response.data.success) {
-        // HTML'deki gibi gruplama uygula
-        const groupedResults = groupByEmail(response.data.results);
-        setResults(groupedResults);
-        setFilteredResults(groupedResults);
+        // Pagination bilgilerini kaydet
+        if (response.data.pagination) {
+          setTotalCount(response.data.pagination.total);
+          setTotalPages(response.data.pagination.totalPages);
+        }
+        
+        // Gruplama yok, tüm veriler güncelliğe göre sıralanmış şekilde geliyor
+        const formattedResults = response.data.results.map((result: any) => ({
+          ...result,
+          isGrouped: false,
+          groupCount: 1,
+          hasExpiredCode: result.status === 'Süresi Doldu'
+        }));
+        
+        setResults(formattedResults);
+        setFilteredResults(formattedResults);
       } else {
         console.error('❌ API hatası:', response.data.message);
         console.error('❌ Tam yanıt:', response.data);
@@ -137,31 +150,54 @@ const AdminPanel: React.FC = () => {
       console.error('💥 Hata status:', error.response?.status);
     } finally {
       setIsLoading(false);
+      setIsSearching(false);
     }
-  };
+  }, [currentPage, itemsPerPage, debouncedSearchTerm, statusFilter, showExpiredWarning]);
 
-  const filterResults = () => {
-    let filtered = results;
+  // Debounce search term - kullanıcı yazmayı bitirdikten 500ms sonra arama yap
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearchTerm(searchTerm);
+    }, 500);
 
-    // HTML'deki gibi sadece isim ile arama
+    return () => clearTimeout(timer);
+  }, [searchTerm]);
+
+  // Frontend'de anlık filtreleme (akıllı arama)
+  useEffect(() => {
     if (searchTerm) {
-      filtered = filtered.filter(result =>
+      // Frontend'de anlık filtreleme yap
+      const filtered = results.filter(result =>
         result.name && result.name.toLowerCase().includes(searchTerm.toLowerCase())
       );
+      setFilteredResults(filtered);
+    } else {
+      // Arama yoksa tüm sonuçları göster
+      setFilteredResults(results);
     }
+  }, [searchTerm, results]);
 
-    // HTML'deki gibi: switch açık değilse süresi dolanları gizle
-    if (!showExpiredWarning) {
-      filtered = filtered.filter(result => result.status !== 'Süresi Doldu');
+  useEffect(() => {
+    // İlk yükleme ve sayfa değiştiğinde veri çek (loading göster)
+    if (!hasLoaded.current) {
+      hasLoaded.current = true;
+      loadData(true); // İlk yüklemede loading göster
+    } else {
+      loadData(false); // Sonraki yüklemelerde loading gösterme
     }
+  }, [currentPage, statusFilter, showExpiredWarning]);
 
-    if (statusFilter) {
-      filtered = filtered.filter(result => result.status === statusFilter);
+  // Debounced search term değiştiğinde backend'den veri çek (arka planda)
+  useEffect(() => {
+    if (hasLoaded.current) {
+      loadData(false); // Arama için loading gösterme
     }
+  }, [debouncedSearchTerm]);
 
-    setFilteredResults(filtered);
+  useEffect(() => {
+    // Search/filter değiştiğinde sayfayı 1'e resetle
     setCurrentPage(1);
-  };
+  }, [debouncedSearchTerm, statusFilter, showExpiredWarning]);
 
   const getStatusBadge = (status: string) => {
     const statusClasses = {
@@ -251,7 +287,11 @@ const AdminPanel: React.FC = () => {
         });
       } else {
         // Birden fazla sonuç varsa gruplandır (sıralama yapmadan)
-        const latestItem = group[0]; // En yeni olan
+        // Önce tarihe göre sırala (en yeni üstte)
+        const sortedGroup = [...group].sort((a, b) => {
+          return new Date(b.sentDate || 0).getTime() - new Date(a.sentDate || 0).getTime();
+        });
+        const latestItem = sortedGroup[0]; // En yeni olan
         
         // Grupta süresi dolmuş kod var mı kontrol et
         const hasExpiredCode = group.some(item => item.status === 'Süresi Doldu');
@@ -260,7 +300,7 @@ const AdminPanel: React.FC = () => {
           ...latestItem,
           isGrouped: true,
           groupCount: group.length,
-          allGroupItems: group, // Ham grup (sıralama yapılmamış)
+          allGroupItems: [latestItem], // Sadece en güncel sonucu tut (performans için)
           hasExpiredCode: hasExpiredCode
         });
       }
@@ -269,37 +309,7 @@ const AdminPanel: React.FC = () => {
     return groupedData;
   };
 
-  // Grup içindeki oyunları sıralama fonksiyonu
-  const sortGroupItems = (groupItems: UserResult[]): UserResult[] => {
-    return [...groupItems].sort((a, b) => {
-      const statusOrderA = getStatusOrder(a.status);
-      const statusOrderB = getStatusOrder(b.status);
-      
-      //   orderA: statusOrderA,
-      //   statusB: b.status,
-      //   orderB: statusOrderB
-      // });
-      
-      // Önce statüye göre sırala
-      if (statusOrderA !== statusOrderB) {
-        return statusOrderA - statusOrderB;
-      }
-      
-      // Aynı statüde ise gönderim tarihine göre sırala (en yeni önce)
-      return new Date(b.sentDate).getTime() - new Date(a.sentDate).getTime();
-    });
-  };
 
-  // Grup açma/kapama fonksiyonu
-  const toggleGroup = (email: string) => {
-    const newExpandedGroups = new Set(expandedGroups);
-    if (newExpandedGroups.has(email)) {
-      newExpandedGroups.delete(email);
-    } else {
-      newExpandedGroups.add(email);
-    }
-    setExpandedGroups(newExpandedGroups);
-  };
 
   const handleView = async (code: string) => {
     
@@ -524,12 +534,8 @@ const AdminPanel: React.FC = () => {
     setShowMessageModal(false);
   };
 
-  const paginatedResults = filteredResults.slice(
-    (currentPage - 1) * itemsPerPage,
-    currentPage * itemsPerPage
-  );
-
-  const totalPages = Math.ceil(filteredResults.length / itemsPerPage);
+  // Pagination artık backend'de yapılıyor, filteredResults zaten sayfalanmış veri
+  const paginatedResults = filteredResults;
 
   if (isLoading) {
     return (
@@ -622,18 +628,12 @@ const AdminPanel: React.FC = () => {
             onChange={(e) => {
               const value = e.target.value;
               setSearchTerm(value);
-              // HTML'deki gibi anlık filtreleme
-              setTimeout(() => {
-                filterResults();
-              }, 100);
+              // Filtreleme backend'de yapılıyor, sadece state'i güncelle
             }}
             onInput={(e) => {
               // onInput event'i daha güvenilir
               const value = (e.target as HTMLInputElement).value;
               setSearchTerm(value);
-              setTimeout(() => {
-                filterResults();
-              }, 100);
             }}
             onKeyDown={(e) => {
               // Tüm metni seçip silme durumunu yakala
@@ -641,13 +641,7 @@ const AdminPanel: React.FC = () => {
                 const input = e.target as HTMLInputElement;
                 if (input.selectionStart === 0 && input.selectionEnd === input.value.length) {
                   setSearchTerm('');
-                  setTimeout(() => {
-                    filterResults();
-                  }, 100);
                 }
-              }
-              if (e.key === 'Enter') {
-                filterResults();
               }
             }}
             onKeyUp={(e) => {
@@ -655,9 +649,6 @@ const AdminPanel: React.FC = () => {
               const input = e.target as HTMLInputElement;
               if (input.value === '') {
                 setSearchTerm('');
-                setTimeout(() => {
-                  filterResults();
-                }, 100);
               }
             }}
             style={{
@@ -727,7 +718,7 @@ const AdminPanel: React.FC = () => {
         }}>
           {/* Refresh Button */}
           <button
-            onClick={loadData}
+            onClick={() => loadData(true)}
             style={{
               background: '#0286F7',
               color: 'white',
@@ -933,36 +924,6 @@ const AdminPanel: React.FC = () => {
                     borderRight: '1px solid #E9ECEF',
                     textAlign: 'left'
                   }}>
-                     {result.isGrouped && result.groupCount && result.groupCount > 1 && (() => {
-                       // HTML'deki gibi görünür grup sayısını hesapla
-                       let visibleGroupCount = 1;
-                       if (result.allGroupItems) {
-                         visibleGroupCount = 1 + result.allGroupItems.slice(1).filter(sub => 
-                           showExpiredWarning || sub.status !== 'Süresi Doldu'
-                         ).length;
-                       }
-                       return visibleGroupCount > 1 ? (
-                         <span
-                           onClick={() => toggleGroup(result.email)}
-                           style={{
-                             display: 'inline-block',
-                             width: '20px',
-                             height: '20px',
-                             lineHeight: '18px',
-                             textAlign: 'center',
-                             background: '#0286F7',
-                             color: 'white',
-                             borderRadius: '3px',
-                             cursor: 'pointer',
-                             marginRight: '8px',
-                             fontSize: '12px',
-                             fontWeight: 'bold'
-                           }}
-                         >
-                           {expandedGroups.has(result.email) ? '-' : '+'}
-                         </span>
-                       ) : null;
-                     })()}
                     {result.name}
                      {result.isGrouped && result.groupCount && result.groupCount > 1 && (() => {
                        // HTML'deki gibi görünür grup sayısını hesapla
@@ -1157,197 +1118,6 @@ const AdminPanel: React.FC = () => {
                     </div>
                   </td>
                   </tr>
-                  
-                  {/* Alt satırlar (gruplandırılmış ise) */}
-                  {result.isGrouped && result.groupCount && result.groupCount > 1 && result.allGroupItems && expandedGroups.has(result.email) && 
-                    sortGroupItems(result.allGroupItems).slice(1).filter(groupItem => {
-                      // HTML'deki gibi: switch açık değilse süresi dolanları gizle
-                      return showExpiredWarning || groupItem.status !== 'Süresi Doldu';
-                    }).map((groupItem, subIndex) => {
-                      const subReportExpiryDate = new Date(groupItem.sentDate);
-                      subReportExpiryDate.setMonth(subReportExpiryDate.getMonth() + 6);
-                      
-                      return (
-                        <tr key={groupItem.code} style={{
-                          borderBottom: '1px solid #F1F3F4',
-                          background: subIndex % 2 === 0 ? '#ECECEC' : 'white'
-                        }}>
-                          <td style={{
-                            padding: '16px',
-                            paddingLeft: '46px',
-                            fontSize: '14px',
-                            color: '#232D42',
-                            fontFamily: 'Inter',
-                            fontWeight: 500,
-                            borderRight: '1px solid #E9ECEF',
-                            textAlign: 'left'
-                          }}>
-                            {groupItem.name}
-                          </td>
-                          <td style={{
-                            padding: '16px',
-                            fontSize: '14px',
-                            color: '#8A92A6',
-                            fontFamily: 'Inter',
-                            borderRight: '1px solid #E9ECEF',
-                            textAlign: 'center'
-                          }}>
-                            {groupItem.email}
-                          </td>
-                           <td style={{
-                             padding: '16px',
-                             fontSize: '14px',
-                             fontFamily: 'Inter',
-                             borderRight: '1px solid #E9ECEF',
-                             textAlign: 'center'
-                           }}>
-                             {getStatusBadge(groupItem.status)}
-                           </td>
-                          <td style={{
-                            padding: '16px',
-                            fontSize: '14px',
-                            color: '#8A92A6',
-                            fontFamily: 'Inter',
-                            borderRight: '1px solid #E9ECEF',
-                            textAlign: 'center'
-                          }}>
-                            {formatDate(groupItem.sentDate)}
-                          </td>
-                          <td style={{
-                            padding: '16px',
-                            fontSize: '14px',
-                            color: '#8A92A6',
-                            fontFamily: 'Inter',
-                            borderRight: '1px solid #E9ECEF',
-                            textAlign: 'center'
-                          }}>
-                            {groupItem.completionDate ? formatDate(groupItem.completionDate) : '-'}
-                          </td>
-                          <td style={{
-                            padding: '16px',
-                            fontSize: '14px',
-                            color: '#8A92A6',
-                            fontFamily: 'Inter',
-                            borderRight: '1px solid #E9ECEF',
-                            textAlign: 'center'
-                          }}>
-                            {formatDate(groupItem.expiryDate)}
-                          </td>
-                          <td style={{
-                            padding: '16px',
-                            fontSize: '14px',
-                            color: '#8A92A6',
-                            fontFamily: 'Inter',
-                            borderRight: '1px solid #E9ECEF',
-                            textAlign: 'center'
-                          }}>
-                            {formatDate(subReportExpiryDate.toISOString())}
-                          </td>
-                          <td style={{
-                            padding: '16px',
-                            textAlign: 'center'
-                          }}>
-                            <div style={{
-                              display: 'flex',
-                              gap: '10px',
-                              justifyContent: 'center',
-                              alignItems: 'center'
-                            }}>
-                              {isSuperAdmin && (
-                                <div
-                                  onClick={() => handleView(groupItem.code)}
-                                  style={{
-                                    cursor: 'pointer',
-                                    color: '#17A2B8',
-                                    fontSize: '16px',
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    justifyContent: 'center',
-                                    width: '24px',
-                                    height: '24px'
-                                  }}
-                                  title="Cevapları Görüntüle"
-                                >
-                                  <i className="fas fa-info-circle"></i>
-                                </div>
-                              )}
-                              <div
-                                onClick={() => groupItem.status === 'Tamamlandı' ? handlePDF(groupItem.code) : null}
-                                style={{
-                                  cursor: groupItem.status === 'Tamamlandı' ? 'pointer' : 'not-allowed',
-                                  color: groupItem.status === 'Tamamlandı' ? '#0286F7' : '#ADB5BD',
-                                  opacity: groupItem.status === 'Tamamlandı' ? 1 : 0.5,
-                                  fontSize: '16px',
-                                  display: 'flex',
-                                  alignItems: 'center',
-                                  justifyContent: 'center',
-                                  width: '24px',
-                                  height: '24px'
-                                }}
-                                title="PDF İndir"
-                              >
-                                <i className="fas fa-file-pdf"></i>
-                              </div>
-                              {isSuperAdmin && (
-                                <div
-                                  onClick={() => groupItem.status === 'Tamamlandı' ? handleExcel(groupItem.code) : null}
-                                  style={{
-                                    cursor: groupItem.status === 'Tamamlandı' ? 'pointer' : 'not-allowed',
-                                    color: groupItem.status === 'Tamamlandı' ? '#1D6F42' : '#ADB5BD',
-                                    opacity: groupItem.status === 'Tamamlandı' ? 1 : 0.5,
-                                    fontSize: '16px',
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    justifyContent: 'center',
-                                    width: '24px',
-                                    height: '24px'
-                                  }}
-                                  title="Excel İndir"
-                                >
-                                  <i className="fas fa-file-excel"></i>
-                                </div>
-                              )}
-                              {isSuperAdmin && (
-                                <div
-                                  onClick={() => groupItem.status === 'Tamamlandı' ? handleWord(groupItem.code) : null}
-                                  style={{
-                                    cursor: groupItem.status === 'Tamamlandı' ? 'pointer' : 'not-allowed',
-                                    color: groupItem.status === 'Tamamlandı' ? '#2B579A' : '#ADB5BD',
-                                    opacity: groupItem.status === 'Tamamlandı' ? 1 : 0.5,
-                                    fontSize: '16px',
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    justifyContent: 'center',
-                                    width: '24px',
-                                    height: '24px'
-                                  }}
-                                  title="Word İndir"
-                                >
-                                  <i className="fas fa-file-word"></i>
-                                </div>
-                              )}
-                              <div
-                                onClick={() => handleDelete(groupItem.code)}
-                                style={{
-                                  cursor: 'pointer',
-                                  color: '#FF0000',
-                                  fontSize: '16px',
-                                  display: 'flex',
-                                  alignItems: 'center',
-                                  justifyContent: 'center',
-                                  width: '24px',
-                                  height: '24px'
-                                }}
-                                title="Sil"
-                              >
-                                <i className="fas fa-trash"></i>
-                              </div>
-                            </div>
-                          </td>
-                        </tr>
-                      );
-                    })
-                  }
                 </React.Fragment>
               ))}
             </tbody>
@@ -1371,7 +1141,7 @@ const AdminPanel: React.FC = () => {
             color: '#6B7280',
             fontFamily: 'Inter'
           }}>
-            {((currentPage - 1) * itemsPerPage) + 1}-{Math.min(currentPage * itemsPerPage, filteredResults.length)} arası, toplam {filteredResults.length} kayıt
+            {((currentPage - 1) * itemsPerPage) + 1}-{Math.min(currentPage * itemsPerPage, totalCount)} arası, toplam {totalCount} kayıt
           </div>
 
           {/* Pagination Controls */}

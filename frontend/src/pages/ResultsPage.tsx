@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { evaluationAPI } from '../services/api';
 import * as XLSX from 'xlsx';
 
@@ -28,14 +28,17 @@ const ResultsPage: React.FC = () => {
   const [results, setResults] = useState<UserResult[]>([]);
   const [filteredResults, setFilteredResults] = useState<UserResult[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isSearching, setIsSearching] = useState(false); // Backend arama için ayrı loading
   const [searchTerm, setSearchTerm] = useState('');
+  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage] = useState(10);
+  const [totalCount, setTotalCount] = useState(0);
+  const [totalPages, setTotalPages] = useState(0);
   
   // Popup states
   const [showFilterPopup, setShowFilterPopup] = useState(false);
   const [selectedUser, setSelectedUser] = useState<UserResult | null>(null);
-  const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
   const [showErrorPopup, setShowErrorPopup] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
   
@@ -56,32 +59,43 @@ const ResultsPage: React.FC = () => {
   
   const hasLoaded = useRef(false);
 
-  const loadData = async () => {
+  const loadData = useCallback(async (showLoading = true) => {
     try {
-      setIsLoading(true);
-      
-      const response = await fetch(`${API_BASE_URL}/api/user-results`, {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        }
-      });
-      
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+      // Sadece ilk yüklemede veya sayfa değiştiğinde loading göster
+      // Arama için loading gösterme (arka planda çalışsın)
+      if (showLoading) {
+        setIsLoading(true);
+      } else {
+        setIsSearching(true);
       }
       
-      const data = await response.json();
+      // Pagination ile veri çek (sadece "Tamamlandı" statüsündeki kayıtlar)
+      const response = await evaluationAPI.getAll(
+        currentPage, 
+        itemsPerPage, 
+        debouncedSearchTerm, // Debounced search term kullan
+        'Tamamlandı', // Sadece tamamlanan sonuçlar
+        true // showExpiredWarning (tüm kayıtları göster)
+      );
       
-      if (data.success && data.results) {
-        // Sadece "Tamamlandı" olan sonuçları filtrele
-        const completedResults = data.results.filter((result: any) => result.status === 'Tamamlandı');
+      if (response.data.success && response.data.results) {
+        // Pagination bilgilerini kaydet
+        if (response.data.pagination) {
+          setTotalCount(response.data.pagination.total);
+          setTotalPages(response.data.pagination.totalPages);
+        }
         
-        // HTML'deki gibi gruplama uygula
-        const groupedResults = groupByEmail(completedResults);
-        setResults(groupedResults);
-        setFilteredResults(groupedResults);
+        // Gruplama yok, tüm veriler güncelliğe göre sıralanmış şekilde geliyor
+        const formattedResults = response.data.results.map((result: any) => ({
+          ...result,
+          isGrouped: false,
+          groupCount: 1
+        }));
+        
+        setResults(formattedResults);
+        setFilteredResults(formattedResults);
       } else {
-        console.error('❌ API başarısız:', data.message);
+        console.error('❌ API başarısız:', response.data.message);
         setResults([]);
         setFilteredResults([]);
       }
@@ -91,8 +105,9 @@ const ResultsPage: React.FC = () => {
       setFilteredResults([]);
     } finally {
       setIsLoading(false);
+      setIsSearching(false);
     }
-  };
+  }, [currentPage, itemsPerPage, debouncedSearchTerm]);
 
   // Responsive kontrolü
   useEffect(() => {
@@ -112,35 +127,50 @@ const ResultsPage: React.FC = () => {
     };
   }, []);
 
+  // Debounce search term - kullanıcı yazmayı bitirdikten 500ms sonra arama yap
   useEffect(() => {
-    // Sadece bir kere çalıştır (React Strict Mode için)
-    if (!hasLoaded.current) {
-      hasLoaded.current = true;
-      loadData();
-    }
-  }, []);
+    const timer = setTimeout(() => {
+      setDebouncedSearchTerm(searchTerm);
+    }, 500);
 
+    return () => clearTimeout(timer);
+  }, [searchTerm]);
+
+  // Frontend'de anlık filtreleme (akıllı arama)
   useEffect(() => {
-    // Sadece results yüklendiyse filtreleme yap
-    if (results.length > 0) {
-      filterResults();
-    }
-  }, [results, searchTerm]);
-
-
-  const filterResults = () => {
-    let filtered = results;
-
-    // HTML'deki gibi sadece isim ile arama
     if (searchTerm) {
-      filtered = filtered.filter(result =>
+      // Frontend'de anlık filtreleme yap
+      const filtered = results.filter(result =>
         result.name && result.name.toLowerCase().includes(searchTerm.toLowerCase())
       );
+      setFilteredResults(filtered);
+    } else {
+      // Arama yoksa tüm sonuçları göster
+      setFilteredResults(results);
     }
+  }, [searchTerm, results]);
 
-    setFilteredResults(filtered);
+  useEffect(() => {
+    // İlk yükleme ve sayfa değiştiğinde veri çek (loading göster)
+    if (!hasLoaded.current) {
+      hasLoaded.current = true;
+      loadData(true); // İlk yüklemede loading göster
+    } else {
+      loadData(false); // Sonraki yüklemelerde loading gösterme
+    }
+  }, [currentPage]);
+
+  // Debounced search term değiştiğinde backend'den veri çek (arka planda)
+  useEffect(() => {
+    if (hasLoaded.current) {
+      loadData(false); // Arama için loading gösterme
+    }
+  }, [debouncedSearchTerm]);
+
+  useEffect(() => {
+    // Search değiştiğinde sayfayı 1'e resetle
     setCurrentPage(1);
-  };
+  }, [debouncedSearchTerm]);
 
   const formatDate = (dateString: string) => {
     if (!dateString) return '-';
@@ -197,13 +227,14 @@ const ResultsPage: React.FC = () => {
         });
       } else {
         // Birden fazla sonuç varsa gruplandır
+        // En yeni olan zaten sıralanmış durumda (yukarıda sıralandı)
         const latestItem = group[0]; // En yeni olan
         
         groupedData.push({
           ...latestItem,
           isGrouped: true,
           groupCount: group.length,
-          allGroupItems: group
+          allGroupItems: [latestItem] // Sadece en güncel sonucu tut (performans için)
         });
       }
     });
@@ -211,16 +242,6 @@ const ResultsPage: React.FC = () => {
     return groupedData;
   };
 
-  // Grup açma/kapama fonksiyonu
-  const toggleGroup = (email: string) => {
-    const newExpandedGroups = new Set(expandedGroups);
-    if (newExpandedGroups.has(email)) {
-      newExpandedGroups.delete(email);
-    } else {
-      newExpandedGroups.add(email);
-    }
-    setExpandedGroups(newExpandedGroups);
-  };
 
   // Filtreleme fonksiyonu
   const applyFilters = () => {
@@ -339,9 +360,8 @@ const ResultsPage: React.FC = () => {
         }
       });
 
-      // Filtrelenmiş verileri gruplandır
-      const groupedData = groupByEmail(filteredItems);
-      setFilteredResults(groupedData);
+      // Gruplama yok, sadece filtreleme yap
+      setFilteredResults(filteredItems);
       setCurrentPage(1);
 
       setShowFilterPopup(false);
@@ -442,12 +462,8 @@ const ResultsPage: React.FC = () => {
     }
   };
 
-  const paginatedResults = filteredResults.slice(
-    (currentPage - 1) * itemsPerPage,
-    currentPage * itemsPerPage
-  );
-
-  const totalPages = Math.ceil(filteredResults.length / itemsPerPage);
+  // Pagination artık backend'de yapılıyor, filteredResults zaten sayfalanmış veri
+  const paginatedResults = filteredResults;
 
   if (isLoading) {
     return (
@@ -540,18 +556,12 @@ const ResultsPage: React.FC = () => {
             onChange={(e) => {
               const value = e.target.value;
               setSearchTerm(value);
-              // HTML'deki gibi anlık filtreleme
-              setTimeout(() => {
-                filterResults();
-              }, 100);
+              // Filtreleme backend'de yapılıyor, sadece state'i güncelle
             }}
             onInput={(e) => {
               // onInput event'i daha güvenilir
               const value = (e.target as HTMLInputElement).value;
               setSearchTerm(value);
-              setTimeout(() => {
-                filterResults();
-              }, 100);
             }}
             onKeyDown={(e) => {
               // Tüm metni seçip silme durumunu yakala
@@ -559,13 +569,7 @@ const ResultsPage: React.FC = () => {
                 const input = e.target as HTMLInputElement;
                 if (input.selectionStart === 0 && input.selectionEnd === input.value.length) {
                   setSearchTerm('');
-                  setTimeout(() => {
-                    filterResults();
-                  }, 100);
                 }
-              }
-              if (e.key === 'Enter') {
-                filterResults();
               }
             }}
             onKeyUp={(e) => {
@@ -573,9 +577,6 @@ const ResultsPage: React.FC = () => {
               const input = e.target as HTMLInputElement;
               if (input.value === '') {
                 setSearchTerm('');
-                setTimeout(() => {
-                  filterResults();
-                }, 100);
               }
             }}
             style={{
@@ -645,7 +646,7 @@ const ResultsPage: React.FC = () => {
         }}>
           {/* Refresh Button */}
           <button
-            onClick={loadData}
+            onClick={() => loadData(true)}
             style={{
               background: '#0286F7',
               color: 'white',
@@ -824,27 +825,6 @@ const ResultsPage: React.FC = () => {
                       textAlign: 'left',
                       borderRight: '1px solid #E9ECEF'
                     }}>
-                      {result.isGrouped && result.groupCount && result.groupCount > 1 && (
-                        <span
-                          onClick={() => toggleGroup(result.email)}
-                          style={{
-                            display: 'inline-block',
-                            width: '20px',
-                            height: '20px',
-                            lineHeight: '18px',
-                            textAlign: 'center',
-                            background: '#0286F7',
-                            color: 'white',
-                            borderRadius: '3px',
-                            cursor: 'pointer',
-                            marginRight: '8px',
-                            fontSize: '12px',
-                            fontWeight: 'bold'
-                          }}
-                        >
-                          {expandedGroups.has(result.email) ? '-' : '+'}
-                        </span>
-                      )}
                       {result.name}
                       {result.isGrouped && result.groupCount && result.groupCount > 1 && (
                         <span style={{
@@ -954,126 +934,6 @@ const ResultsPage: React.FC = () => {
                     </span>
                   </td>
                   </tr>
-                  
-                  {/* Alt satırlar (gruplandırılmış ise) */}
-                  {result.isGrouped && result.groupCount && result.groupCount > 1 && result.allGroupItems && expandedGroups.has(result.email) && 
-                    result.allGroupItems.slice(1).map((groupItem, subIndex) => (
-                      <tr key={groupItem.code} style={{
-                        borderBottom: '1px solid #F1F3F4',
-                        background: subIndex % 2 === 0 ? '#ECECEC' : 'white'
-                      }}>
-                        <td style={{
-                          padding: '16px',
-                          paddingLeft: '46px',
-                          fontSize: '14px',
-                          color: '#232D42',
-                          fontFamily: 'Inter',
-                          fontWeight: 500,
-                          textAlign: 'left',
-                          borderRight: '1px solid #E9ECEF'
-                        }}>
-                          {groupItem.name}
-                        </td>
-                        <td style={{
-                          padding: '16px',
-                          fontSize: '14px',
-                          color: '#8A92A6',
-                          fontFamily: 'Inter',
-                          textAlign: 'center',
-                          borderRight: '1px solid #E9ECEF'
-                        }}>
-                          {formatDate(groupItem.completionDate)}
-                        </td>
-                        <td style={{
-                          padding: '16px',
-                          fontSize: '14px',
-                          fontFamily: 'Inter',
-                          textAlign: 'center',
-                          borderRight: '1px solid #E9ECEF'
-                        }}>
-                          <span style={{
-                            padding: '4px 8px',
-                            borderRadius: '4px',
-                            fontSize: '12px',
-                            fontWeight: 500,
-                            backgroundColor: getScoreColorClass(groupItem.customerFocusScore) === 'red' ? '#FF0000' : 
-                                           getScoreColorClass(groupItem.customerFocusScore) === 'yellow' ? '#FFD700' : 
-                                           getScoreColorClass(groupItem.customerFocusScore) === 'green' ? '#00FF00' : 'transparent',
-                            color: getScoreColorClass(groupItem.customerFocusScore) === 'red' ? '#FFF' : 
-                                   getScoreColorClass(groupItem.customerFocusScore) === 'yellow' ? '#000' : 
-                                   getScoreColorClass(groupItem.customerFocusScore) === 'green' ? '#000' : '#8A92A6'
-                          }}>
-                            {formatScore(groupItem.customerFocusScore)}
-                          </span>
-                        </td>
-                        <td style={{
-                          padding: '16px',
-                          fontSize: '14px',
-                          fontFamily: 'Inter',
-                          textAlign: 'center',
-                          borderRight: '1px solid #E9ECEF'
-                        }}>
-                          <span style={{
-                            padding: '4px 8px',
-                            borderRadius: '4px',
-                            fontSize: '12px',
-                            fontWeight: 500,
-                            backgroundColor: getScoreColorClass(groupItem.uncertaintyScore) === 'red' ? '#FF0000' : 
-                                           getScoreColorClass(groupItem.uncertaintyScore) === 'yellow' ? '#FFD700' : 
-                                           getScoreColorClass(groupItem.uncertaintyScore) === 'green' ? '#00FF00' : 'transparent',
-                            color: getScoreColorClass(groupItem.uncertaintyScore) === 'red' ? '#FFF' : 
-                                   getScoreColorClass(groupItem.uncertaintyScore) === 'yellow' ? '#000' : 
-                                   getScoreColorClass(groupItem.uncertaintyScore) === 'green' ? '#000' : '#8A92A6'
-                          }}>
-                            {formatScore(groupItem.uncertaintyScore)}
-                          </span>
-                        </td>
-                        <td style={{
-                          padding: '16px',
-                          fontSize: '14px',
-                          fontFamily: 'Inter',
-                          textAlign: 'center',
-                          borderRight: '1px solid #E9ECEF'
-                        }}>
-                          <span style={{
-                            padding: '4px 8px',
-                            borderRadius: '4px',
-                            fontSize: '12px',
-                            fontWeight: 500,
-                            backgroundColor: getScoreColorClass(groupItem.ieScore) === 'red' ? '#FF0000' : 
-                                           getScoreColorClass(groupItem.ieScore) === 'yellow' ? '#FFD700' : 
-                                           getScoreColorClass(groupItem.ieScore) === 'green' ? '#00FF00' : 'transparent',
-                            color: getScoreColorClass(groupItem.ieScore) === 'red' ? '#FFF' : 
-                                   getScoreColorClass(groupItem.ieScore) === 'yellow' ? '#000' : 
-                                   getScoreColorClass(groupItem.ieScore) === 'green' ? '#000' : '#8A92A6'
-                          }}>
-                            {formatScore(groupItem.ieScore)}
-                          </span>
-                        </td>
-                        <td style={{
-                          padding: '16px',
-                          fontSize: '14px',
-                          fontFamily: 'Inter',
-                          textAlign: 'center'
-                        }}>
-                          <span style={{
-                            padding: '4px 8px',
-                            borderRadius: '4px',
-                            fontSize: '12px',
-                            fontWeight: 500,
-                            backgroundColor: getScoreColorClass(groupItem.idikScore) === 'red' ? '#FF0000' : 
-                                           getScoreColorClass(groupItem.idikScore) === 'yellow' ? '#FFD700' : 
-                                           getScoreColorClass(groupItem.idikScore) === 'green' ? '#00FF00' : 'transparent',
-                            color: getScoreColorClass(groupItem.idikScore) === 'red' ? '#FFF' : 
-                                   getScoreColorClass(groupItem.idikScore) === 'yellow' ? '#000' : 
-                                   getScoreColorClass(groupItem.idikScore) === 'green' ? '#000' : '#8A92A6'
-                          }}>
-                            {formatScore(groupItem.idikScore)}
-                          </span>
-                        </td>
-                      </tr>
-                    ))
-                  }
                 </React.Fragment>
               ))}
             </tbody>
@@ -1097,7 +957,7 @@ const ResultsPage: React.FC = () => {
             color: '#6B7280',
             fontFamily: 'Inter'
           }}>
-            {((currentPage - 1) * itemsPerPage) + 1}-{Math.min(currentPage * itemsPerPage, filteredResults.length)} arası, toplam {filteredResults.length} kayıt
+            {((currentPage - 1) * itemsPerPage) + 1}-{Math.min(currentPage * itemsPerPage, totalCount)} arası, toplam {totalCount} kayıt
           </div>
 
           {/* Pagination Controls */}
