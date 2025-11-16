@@ -304,6 +304,18 @@ async function sortReportsByPlanetOrder(evaluation, userCode) {
     }
 }
 
+function escapeHtml(str = '') {
+    return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;');
+}
+
+function asMultiLineText(str = '') {
+    const safe = escapeHtml(str);
+    return safe.replace(/\r?\n/g, '<br/>');
+}
+
 // 🔧 Ortak PDF HTML oluşturucu
 async function buildEvaluationHTML(evaluation, options, userCode, isPreview = false) {
     const sortedEvaluation = await sortReportsByPlanetOrder(evaluation, userCode);
@@ -343,30 +355,19 @@ async function buildEvaluationHTML(evaluation, options, userCode, isPreview = fa
                     padding-bottom: 5px; 
                 }
 
-                .subsection {
-                    margin: 20px 0 70px 0;
-                    padding-left: 10px;
-                    padding-right: 10px;
-                    padding-bottom: 90px;
-                    position: relative;
-                    margin-bottom: 90px;
-                    margin-left: 0;
-                    margin-right: 0;
-                    page-break-inside: avoid;
-                }
+.subsection {
+    margin: 20px 0 30px 0;
+    padding: 0 10px 30px 10px;
+    position: relative;
 
-                .subsection + .subsection {
-                    page-break-before: always;
-                }
+    /* page-break-before artık inline style ile kontrol ediliyor */
 
-                .section-start + .subsection {
-                    page-break-before: auto !important;
-                }
+    /* ÖNEMLİ: aşağıdakiler kesinlikle OLMAYACAK */
+    /* page-break-inside: avoid; */
+    /* break-inside: avoid-page; */
+}
 
-                /* Her alt başlık yeni sayfada başlasın ama ilkinden sonra */
-                .subsection:not(:first-child){
-                    page-break-before: avoid;
-                }
+
 
                 .sub-subsection {
                     margin: 8px 0;
@@ -391,7 +392,6 @@ async function buildEvaluationHTML(evaluation, options, userCode, isPreview = fa
                     vertical-align: top;
                 }
 
-                /* Kapak Sayfası */
                 .cover-page {
                     text-align: center;
                     padding: 100px 20px;
@@ -434,7 +434,6 @@ async function buildEvaluationHTML(evaluation, options, userCode, isPreview = fa
                     align-items: flex-end;
                 }
 
-                /* Üst Bar (Sol bar + Sağda Yetkinlik Adı) */
                 .competency-header-bar {
                     display: flex;
                     justify-content: space-between;
@@ -444,32 +443,29 @@ async function buildEvaluationHTML(evaluation, options, userCode, isPreview = fa
                     page-break-inside: avoid;
                 }
 
-                 /* Sol tarafta bar */
-                 .competency-header-bar .bar {
-                     width: 150px;
-                     height: 22px;
-                     background-color: #d3d3d3; /* düz gri */
-                     border-radius: 6px;
-                     overflow: hidden;
-                     box-shadow: inset 0 0 3px rgba(0,0,0,0.3), 0 0 2px rgba(0,0,0,0.15);
-                     border: 1px solid #999;
-                 }
+                .competency-header-bar .bar {
+                    width: 150px;
+                    height: 22px;
+                    background-color: #d3d3d3;
+                    border-radius: 6px;
+                    overflow: hidden;
+                    box-shadow: inset 0 0 3px rgba(0,0,0,0.3), 0 0 2px rgba(0,0,0,0.15);
+                    border: 1px solid #999;
+                }
 
-                 /* Dolu kısım - renk dinamik olarak ayarlanacak */
-                 .competency-header-bar .bar .filled {
-                     height: 100%;
-                     border-right: 1px solid rgba(0,0,0,0.2); /* kenar çizgisi */
-                     box-shadow: inset 0 0 2px rgba(255,255,255,0.4);
-                     display: flex;
-                     align-items: center;
-                     justify-content: center;
-                     color: white;
-                     font-size: 11px;
-                     font-weight: bold;
-                     text-shadow: 0 1px 2px rgba(0,0,0,0.5);
-                 }
+                .competency-header-bar .bar .filled {
+                    height: 100%;
+                    border-right: 1px solid rgba(0,0,0,0.2);
+                    box-shadow: inset 0 0 2px rgba(255,255,255,0.4);
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    color: white;
+                    font-size: 11px;
+                    font-weight: bold;
+                    text-shadow: 0 1px 2px rgba(0,0,0,0.5);
+                }
 
-                /* Sol taraftaki yetkinlik ismi */
                 .competency-header-bar .competency-name {
                     font-weight: 700;
                     color: #283c9b;
@@ -477,7 +473,6 @@ async function buildEvaluationHTML(evaluation, options, userCode, isPreview = fa
                     text-shadow: 0 1px 1px rgba(0,0,0,0.1);
                 }
 
-                /* Sabit Footer */
                 .page-footer {
                     position: fixed;
                     bottom: 0;
@@ -494,10 +489,14 @@ async function buildEvaluationHTML(evaluation, options, userCode, isPreview = fa
                     background-color: white;
                     z-index: 1000;
                 }
-                    
 
                 .page-footer .company-name { font-weight: bold; color: #2c3e50; }
                 .page-footer .copyright { color: #888; font-size: 9px; }
+
+                /* Çok satırlı text için (opsiyonel, şu an <br> kullanıyoruz) */
+                .multiline {
+                    /* white-space: pre-line;  // İstersen <br> yerine bu yolu da seçebilirsin */
+                }
             </style>
         </head>
         <body>
@@ -510,7 +509,7 @@ async function buildEvaluationHTML(evaluation, options, userCode, isPreview = fa
                 </div>
                 <div class="cover-divider"></div>
                 <div class="cover-info">
-                    <div><strong>${userInfo.name}</strong></div>
+                    <div><strong>${escapeHtml(userInfo.name)}</strong></div>
                     <div>${formattedDate}</div>
                 </div>
             </div>
@@ -523,7 +522,7 @@ async function buildEvaluationHTML(evaluation, options, userCode, isPreview = fa
         const reportTitle = getReportTitle(report.type);
         const competencyName = reportTitle.replace(' Raporu', '');
 
-        // Başlık sayfası - Kapak sayfası gibi basit tasarım
+        // Başlık sayfası
         htmlContent += `
             <div class="section-start" style="
                 page-break-before: always;
@@ -541,109 +540,121 @@ async function buildEvaluationHTML(evaluation, options, userCode, isPreview = fa
                         line-height: 0.9;
                         max-width: 600px;
                         word-wrap: break-word;">
-                    ${competencyName}
+                    ${escapeHtml(competencyName)}
                 </h1>
             </div>
         `;
 
-         // Bölüm ekleme fonksiyonu
-         const addSection = async (title, content, isLastSection) => {
+        const addSection = async (title, content, isLastSection, isFirstSection = false) => {
             let score = 0;
-        
-            // Game modelinden skorları al
             const games = await Game.find({ playerCode: userCode });
-        
-            // Skor değerini yetkinlik tipine göre al
+
             switch (report.type) {
-                case 'MO':
+                case 'MO': {
                     const venusGame = games.find(g => g.section === '0' || g.section === 0);
                     score = venusGame ? venusGame.customerFocusScore : 0;
                     break;
-                case 'BY':
+                }
+                case 'BY': {
                     const venusGame2 = games.find(g => g.section === '0' || g.section === 0);
                     score = venusGame2 ? venusGame2.uncertaintyScore : 0;
                     break;
-                case 'IE':
+                }
+                case 'IE': {
                     const titanGame = games.find(g => g.section === '1' || g.section === 1);
                     score = titanGame ? titanGame.ieScore : 0;
                     break;
-                case 'IDIK':
+                }
+                case 'IDIK': {
                     const titanGame2 = games.find(g => g.section === '1' || g.section === 1);
                     score = titanGame2 ? titanGame2.idikScore : 0;
                     break;
+                }
                 default:
                     score = 0;
             }
-        
+
             score = (!score || score === '-') ? 0 : Math.round(parseFloat(score));
-        
+
             let barColor = '#0286F7';
             if (score <= 37) barColor = '#FF0000';
             else if (score <= 65) barColor = '#FFD700';
             else if (score <= 89.99) barColor = '#00FF00';
             else barColor = '#FF0000';
-                
-            const isDevelopmentSuggestion = title.includes("Gelişim Önerisi");
 
-            // 🔹 Eğer bu son Gelişim Önerisi ise, page-break ekleme
+            const isDevelopmentSuggestion = title.includes("Gelişim Önerisi");
+            const isWhyTheseQuestions = title === 'Neden Bu Sorular?';
+
+            // İlk section için page-break-before ekleme (başlık sayfasından sonra boş sayfa olmasın)
+            // "Neden Bu Sorular?" section'ından sonra yeni sayfa başlaması için page-break-after ekle
             let sectionStyle = '';
-            if (!(isDevelopmentSuggestion && isLastSection)) {
+            if (!isFirstSection && !(isDevelopmentSuggestion && isLastSection)) {
                 sectionStyle = 'page-break-before: always;';
             }
             
-            // 🔹 Ek güvenlik için: son Gelişim Önerisinden sonra yapay boş blok koyma
+            // "Neden Bu Sorular?" section'ından sonra yeni sayfa başlaması için
+            if (isWhyTheseQuestions) {
+                sectionStyle += ' page-break-after: always;';
+            }
+
             const afterSectionSpacer = (isDevelopmentSuggestion && isLastSection)
                 ? '<div style="height: 0;"></div>'
                 : '';
-            
+
             return `
-              <div class="subsection" style="${sectionStyle}">
-                <table class="section-table">
-                  <thead>
-                    <tr>
-                      <td>
-                        <div class="competency-header-bar">
-                          <div class="competency-name">${competencyName}</div>
-                          <div style="display:flex; flex-direction:column;">
-                            <div class="bar">
-                              <div class="filled" style="width: ${score}%; background-color: ${barColor};">${score}</div>
+                <div class="subsection" style="${sectionStyle.trim()}">
+                  <table class="section-table">
+                    <thead>
+                      <tr>
+                        <td>
+                          <div class="competency-header-bar">
+                            <div class="competency-name">${escapeHtml(competencyName)}</div>
+                            <div style="display:flex; flex-direction:column;">
+                              <div class="bar">
+                                <div class="filled" style="width: ${score}%; background-color: ${barColor};">${score}</div>
+                              </div>
                             </div>
                           </div>
-                        </div>
-                      </td>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    <tr>
-                      <td>
-                        <h3>${title}</h3>
-                        <p style="text-align: justify; text-justify: inter-word;">${content}</p>
-                      </td>
-                    </tr>
-                  </tbody>
-                </table>
-              </div>
-              ${afterSectionSpacer}
-            `;
-            
+                        </td>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr>
+                        <td>
+                          <h3>${escapeHtml(title)}</h3>
+                          <p class="multiline" style="text-align: justify; text-justify: inter-word;">
+                            ${asMultiLineText(content)}
+                          </p>
+                        </td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              `;              
         };
-                
-        // İçerikler
+
+        // İlk section'ı takip etmek için flag
+        let isFirstSection = true;
+
         if (options.generalEvaluation && data['Genel Değerlendirme']) {
-            htmlContent += await addSection('Genel Değerlendirme', data['Genel Değerlendirme']);
+            htmlContent += await addSection('Genel Değerlendirme', data['Genel Değerlendirme'], false, isFirstSection);
+            isFirstSection = false;
         }
         if (options.strengths && data['Güçlü Yönler']) {
-            htmlContent += await addSection('Güçlü Yönler', data['Güçlü Yönler']);
+            htmlContent += await addSection('Güçlü Yönler', data['Güçlü Yönler'], false, isFirstSection);
+            isFirstSection = false;
         }
         if (options.strengths && data['Gelişim Alanları']) {
-            htmlContent += await addSection('Gelişim Alanları', data['Gelişim Alanları']);
-
+            htmlContent += await addSection('Gelişim Alanları', data['Gelişim Alanları'], false, isFirstSection);
+            isFirstSection = false;
         }
         if (options.interviewQuestions && data['Mülakat Soruları']) {
-            htmlContent += await addSection('Mülakat Soruları', data['Mülakat Soruları']);
+            htmlContent += await addSection('Mülakat Soruları', data['Mülakat Soruları'], false, isFirstSection);
+            isFirstSection = false;
         }
         if (options.whyTheseQuestions && data['Neden Bu Sorular?']) {
-            htmlContent += await addSection('Neden Bu Sorular?', data['Neden Bu Sorular?']);
+            htmlContent += await addSection('Neden Bu Sorular?', data['Neden Bu Sorular?'], false, isFirstSection);
+            isFirstSection = false;
         }
 
         if (options.developmentSuggestions) {
@@ -657,21 +668,21 @@ async function buildEvaluationHTML(evaluation, options, userCode, isPreview = fa
 
             for (let i = 0; i < validSuggestions.length; i++) {
                 const item = validSuggestions[i];
-                const isLastSuggestion = (i === validSuggestions.length - 1); // sonuncu mu?
-                htmlContent += await addSection(item.title, data[item.key], isLastSuggestion);
+                const isLastSuggestion = (i === validSuggestions.length - 1);
+                htmlContent += await addSection(item.title, data[item.key], isLastSuggestion, isFirstSection);
+                isFirstSection = false;
             }
         }
     }
 
-    // 📎 Footer
     htmlContent += `
-        </div>
         </body>
         </html>
     `;
 
     return htmlContent;
 }
+
 
 
 async function generateAndSendPDF(evaluation, options, res, userCode) {
