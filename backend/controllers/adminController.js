@@ -456,7 +456,7 @@ const adminController = {
             const playerCodes = results.map(r => r.code);
             const allGames = await Game.find({ 
                 playerCode: { $in: playerCodes } 
-            }).select('playerCode section customerFocusScore uncertaintyScore ieScore idikScore evaluationResult');
+            }).select('playerCode section customerFocusScore uncertaintyScore ieScore idikScore evaluationResult answers');
             
             // Game'leri playerCode'a göre grupla (memory'de hızlı erişim için)
             const gamesByPlayerCode = {};

@@ -316,6 +316,27 @@ function asMultiLineText(str = '') {
     return safe.replace(/\r?\n/g, '<br/>');
 }
 
+function buildContentRows(text = '') {
+    const safe = escapeHtml(text);
+    const lines = safe.split(/\r?\n/);
+
+    return lines.map(line => {
+        const trimmed = line.trim();
+        if (!trimmed) {
+            // Boş satırlar için biraz dikey boşluk
+            return '<tr><td style="height: 0.6em;">&nbsp;</td></tr>';
+        }
+
+        return `
+            <tr>
+                <td style="text-align: justify; text-justify: inter-word;">
+                    ${trimmed}
+                </td>
+            </tr>
+        `;
+    }).join('');
+}
+
 // 🔧 Ortak PDF HTML oluşturucu
 async function buildEvaluationHTML(evaluation, options, userCode, isPreview = false) {
     const sortedEvaluation = await sortReportsByPlanetOrder(evaluation, userCode);
@@ -355,25 +376,31 @@ async function buildEvaluationHTML(evaluation, options, userCode, isPreview = fa
                     padding-bottom: 5px; 
                 }
 
-.subsection {
-    margin: 20px 0 30px 0;
-    padding: 0 10px 30px 10px;
-    position: relative;
+                .subsection {
+                    margin: 20px 0 30px 0;
+                    padding: 0 10px 30px 10px;
+                    position: relative;
 
-    /* page-break-before artık inline style ile kontrol ediliyor */
+                    /* page-break-before artık inline style ile kontrol ediliyor */
 
-    /* ÖNEMLİ: aşağıdakiler kesinlikle OLMAYACAK */
-    /* page-break-inside: avoid; */
-    /* break-inside: avoid-page; */
-}
-
-
+                    /* ÖNEMLİ: aşağıdakiler kesinlikle OLMAYACAK */
+                    /* page-break-inside: avoid; */
+                    /* break-inside: avoid-page; */
+                }
 
                 .sub-subsection {
                     margin: 8px 0;
                     padding-left: 20px;
                 }
 
+                .section-content {
+                margin-top: 10px;
+                }
+
+                .section-content.multiline {
+                text-align: justify;
+                text-justify: inter-word;
+                }
                 .section-table {
                     width: 100%;
                     border-collapse: collapse;
@@ -548,7 +575,7 @@ async function buildEvaluationHTML(evaluation, options, userCode, isPreview = fa
         const addSection = async (title, content, isLastSection, isFirstSection = false) => {
             let score = 0;
             const games = await Game.find({ playerCode: userCode });
-
+        
             switch (report.type) {
                 case 'MO': {
                     const venusGame = games.find(g => g.section === '0' || g.section === 0);
@@ -573,36 +600,24 @@ async function buildEvaluationHTML(evaluation, options, userCode, isPreview = fa
                 default:
                     score = 0;
             }
-
+        
             score = (!score || score === '-') ? 0 : Math.round(parseFloat(score));
-
+        
             let barColor = '#0286F7';
             if (score <= 37) barColor = '#FF0000';
             else if (score <= 65) barColor = '#FFD700';
             else if (score <= 89.99) barColor = '#00FF00';
             else barColor = '#FF0000';
-
-            const isDevelopmentSuggestion = title.includes("Gelişim Önerisi");
-            const isWhyTheseQuestions = title === 'Neden Bu Sorular?';
-
-            // İlk section için page-break-before ekleme (başlık sayfasından sonra boş sayfa olmasın)
-            // "Neden Bu Sorular?" section'ından sonra yeni sayfa başlaması için page-break-after ekle
-            let sectionStyle = '';
-            if (!isFirstSection && !(isDevelopmentSuggestion && isLastSection)) {
-                sectionStyle = 'page-break-before: always;';
-            }
-            
-            // "Neden Bu Sorular?" section'ından sonra yeni sayfa başlaması için
-            if (isWhyTheseQuestions) {
-                sectionStyle += ' page-break-after: always;';
-            }
-
-            const afterSectionSpacer = (isDevelopmentSuggestion && isLastSection)
-                ? '<div style="height: 0;"></div>'
-                : '';
-
+        
+            // İlk section başlık sayfasından hemen sonra gelsin (page-break yok),
+            // diğer tüm section'lar yeni sayfada başlasın
+            const sectionStyle = !isFirstSection ? 'page-break-before: always;' : '';
+        
+            // İçeriği satırlara böl
+            const contentRows = buildContentRows(content);
+        
             return `
-                <div class="subsection" style="${sectionStyle.trim()}">
+                <div class="subsection" style="${sectionStyle}">
                   <table class="section-table">
                     <thead>
                       <tr>
@@ -611,27 +626,23 @@ async function buildEvaluationHTML(evaluation, options, userCode, isPreview = fa
                             <div class="competency-name">${escapeHtml(competencyName)}</div>
                             <div style="display:flex; flex-direction:column;">
                               <div class="bar">
-                                <div class="filled" style="width: ${score}%; background-color: ${barColor};">${score}</div>
+                                <div class="filled" style="width: ${score}%; background-color: ${barColor};">
+                                  ${score}
+                                </div>
                               </div>
                             </div>
                           </div>
+                          <h3>${escapeHtml(title)}</h3>
                         </td>
                       </tr>
                     </thead>
                     <tbody>
-                      <tr>
-                        <td>
-                          <h3>${escapeHtml(title)}</h3>
-                          <p class="multiline" style="text-align: justify; text-justify: inter-word;">
-                            ${asMultiLineText(content)}
-                          </p>
-                        </td>
-                      </tr>
+                      ${contentRows}
                     </tbody>
                   </table>
                 </div>
-              `;              
-        };
+            `;
+        };    
 
         // İlk section'ı takip etmek için flag
         let isFirstSection = true;
@@ -682,8 +693,6 @@ async function buildEvaluationHTML(evaluation, options, userCode, isPreview = fa
 
     return htmlContent;
 }
-
-
 
 async function generateAndSendPDF(evaluation, options, res, userCode) {
     const htmlContent = await buildEvaluationHTML(evaluation, options, userCode, false);
@@ -1772,7 +1781,11 @@ async function generateAndSendWord(evaluation, options, res, userCode) {
                 ];
                 const validSuggestions = suggestionKeys.filter(item => data[item.key]);
 
-                for (const item of validSuggestions) {
+                for (let idx = 0; idx < validSuggestions.length; idx++) {
+                    const item = validSuggestions[idx];
+                    const isLastSuggestion = idx === validSuggestions.length - 1;
+                    const isLastCompetency = i === sortedEvaluation.length - 1;
+                    
                     doc.addSection({
                         properties: {},
                         children: [
@@ -1840,7 +1853,7 @@ async function generateAndSendWord(evaluation, options, res, userCode) {
                                                                                     })
                                                                                 ],
                                                                                 alignment: AlignmentType.CENTER,
-                                                                            spacing: { before: 50, after: 50 },
+                                                                                spacing: { before: 50, after: 50 }
                                                                             })
                                                                         ],
                                                                         width: {
@@ -1863,7 +1876,6 @@ async function generateAndSendWord(evaluation, options, res, userCode) {
                                                                                     })
                                                                                 ],
                                                                                 alignment: AlignmentType.CENTER,
-                                                                            spacing: { before: 50, after: 50 },
                                                                                 spacing: { before: 50, after: 50 }
                                                                             })
                                                                         ],
