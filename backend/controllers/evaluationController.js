@@ -572,7 +572,7 @@ async function buildEvaluationHTML(evaluation, options, userCode, isPreview = fa
             </div>
         `;
 
-        const addSection = async (title, content, isLastSection, isFirstSection = false) => {
+        const addSection = async (title, content, isLastSection, isFirstSection = false, skipPageBreak = false) => {
             let score = 0;
             const games = await Game.find({ playerCode: userCode });
         
@@ -611,7 +611,8 @@ async function buildEvaluationHTML(evaluation, options, userCode, isPreview = fa
         
             // İlk section başlık sayfasından hemen sonra gelsin (page-break yok),
             // diğer tüm section'lar yeni sayfada başlasın
-            const sectionStyle = !isFirstSection ? 'page-break-before: always;' : '';
+            // skipPageBreak true ise page-break ekleme (Mülakat Soruları ve Neden Bu Sorular? aynı sayfada)
+            const sectionStyle = (!isFirstSection && !skipPageBreak) ? 'page-break-before: always;' : '';
         
             // İçeriği satırlara böl
             const contentRows = buildContentRows(content);
@@ -664,25 +665,14 @@ async function buildEvaluationHTML(evaluation, options, userCode, isPreview = fa
             isFirstSection = false;
         }
         if (options.whyTheseQuestions && data['Neden Bu Sorular?']) {
-            htmlContent += await addSection('Neden Bu Sorular?', data['Neden Bu Sorular?'], false, isFirstSection);
+            // Mülakat Soruları'ndan sonra geldiği için skipPageBreak=true (aynı sayfada)
+            htmlContent += await addSection('Neden Bu Sorular?', data['Neden Bu Sorular?'], false, isFirstSection, true);
             isFirstSection = false;
         }
 
-        if (options.developmentSuggestions) {
-            const suggestionKeys = [
-                { key: 'Gelişim Önerileri -1', title: 'Gelişim Önerisi 1' },
-                { key: 'Gelişim Önerileri -2', title: 'Gelişim Önerisi 2' },
-                { key: 'Gelişim Önerileri - 3', title: 'Gelişim Önerisi 3' },
-                { key: 'Gelişim Önerileri -4', title: 'Gelişim Önerisi 4' }
-            ];
-            const validSuggestions = suggestionKeys.filter(item => data[item.key]);
-
-            for (let i = 0; i < validSuggestions.length; i++) {
-                const item = validSuggestions[i];
-                const isLastSuggestion = (i === validSuggestions.length - 1);
-                htmlContent += await addSection(item.title, data[item.key], isLastSuggestion, isFirstSection);
-                isFirstSection = false;
-            }
+        if (options.developmentSuggestions && data['Gelişim Önerileri -1']) {
+            htmlContent += await addSection('Gelişim Önerileri', data['Gelişim Önerileri -1'], false, isFirstSection);
+            isFirstSection = false;
         }
     }
 
@@ -1772,170 +1762,156 @@ async function generateAndSendWord(evaluation, options, res, userCode) {
                 });
             }
 
-            if (options.developmentSuggestions) {
-                const suggestionKeys = [
-                    { key: 'Gelişim Önerileri -1', title: 'Gelişim Önerisi 1' },
-                    { key: 'Gelişim Önerileri -2', title: 'Gelişim Önerisi 2' },
-                    { key: 'Gelişim Önerileri - 3', title: 'Gelişim Önerisi 3' },
-                    { key: 'Gelişim Önerileri -4', title: 'Gelişim Önerisi 4' }
-                ];
-                const validSuggestions = suggestionKeys.filter(item => data[item.key]);
-
-                for (let idx = 0; idx < validSuggestions.length; idx++) {
-                    const item = validSuggestions[idx];
-                    const isLastSuggestion = idx === validSuggestions.length - 1;
-                    const isLastCompetency = i === sortedEvaluation.length - 1;
-                    
-                    doc.addSection({
-                        properties: {},
-                        children: [
-                            // Yetkinlik adı ve progress bar - yan yana (görünmez tablo)
-                            new Table({
-                                width: {
-                                    size: 100,
-                                    type: WidthType.PERCENTAGE,
-                                },
-                                borders: {
-                                    top: { style: BorderStyle.NONE },
-                                    bottom: { style: BorderStyle.NONE },
-                                    left: { style: BorderStyle.NONE },
-                                    right: { style: BorderStyle.NONE },
-                                    insideHorizontal: { style: BorderStyle.NONE },
-                                    insideVertical: { style: BorderStyle.NONE }
-                                },
-                                rows: [
-                                    new TableRow({
-                                        children: [
-                                            new TableCell({
-                                                children: [
-                                                    new Paragraph({
-                                                        children: [
-                                                            new TextRun({
-                                                                text: competencyName,
-                                                                bold: true,
-                                                                size: 20,
-                                                                color: "283c9b"
-                                                            })
-                                                        ],
-                                                        alignment: AlignmentType.LEFT
-                                                    })
-                                                ],
-                                                width: {
-                                                    size: 60,
-                                                    type: WidthType.PERCENTAGE,
-                                                },
-                                                borders: {
-                                                    top: { style: BorderStyle.NONE },
-                                                    bottom: { style: BorderStyle.NONE },
-                                                    left: { style: BorderStyle.NONE },
-                                                    right: { style: BorderStyle.NONE }
-                                                }
-                                            }),
-                                            new TableCell({
-                                                children: [
-                                                    new Table({
-                                                        width: {
-                                                            size: 100,
-                                                            type: WidthType.PERCENTAGE,
-                                                        },
-                                                        rows: [
-                                                            new TableRow({
-                                                                children: [
-                                                                    new TableCell({
-                                                                        children: [
-                                                                            new Paragraph({
-                                                                                children: [
-                                                                                    new TextRun({
-                                                                                        text: `${competencyScore}`,
-                                                                                        bold: true,
-                                                                                        size: 14,
-                                                                                        color: "FFFFFF"
-                                                                                    })
-                                                                                ],
-                                                                                alignment: AlignmentType.CENTER,
-                                                                                spacing: { before: 50, after: 50 }
-                                                                            })
-                                                                        ],
-                                                                        width: {
-                                                                            size: competencyScore,
-                                                                            type: WidthType.PERCENTAGE,
-                                                                        },
-                                                                        verticalAlign: "bottom",
-                                                                        shading: {
-                                                                            fill: barColor.replace('#', ''),
-                                                                            type: "clear"
-                                                                        }
-                                                                    }),
-                                                                    new TableCell({
-                                                                        children: [
-                                                                            new Paragraph({
-                                                                                children: [
-                                                                                    new TextRun({
-                                                                                        text: " ",
-                                                                                        size: 11
-                                                                                    })
-                                                                                ],
-                                                                                alignment: AlignmentType.CENTER,
-                                                                                spacing: { before: 50, after: 50 }
-                                                                            })
-                                                                        ],
-                                                                        width: {
-                                                                            size: 100 - competencyScore,
-                                                                            type: WidthType.PERCENTAGE,
-                                                                        },
-                                                                        shading: {
-                                                                            fill: "E0E0E0",
-                                                                            type: "clear"
-                                                                        }
-                                                                    })
-                                                                ],
-                                                            }),
-                                                        ],
-                                                    })
-                                                ],
-                                                width: {
-                                                    size: 40,
-                                                    type: WidthType.PERCENTAGE,
-                                                },
-                                                borders: {
-                                                    top: { style: BorderStyle.NONE },
-                                                    bottom: { style: BorderStyle.NONE },
-                                                    left: { style: BorderStyle.NONE },
-                                                    right: { style: BorderStyle.NONE }
-                                                }
-                                            })
-                                        ],
-                                    }),
-                                ],
-                            }),
-                            new Paragraph({
-                                children: [
-                                    new TextRun({
-                                        text: item.title,
-                                        bold: true,
-                                        size: 24,
-                                        color: "001c55" 
-                                    })
-                                ],
-                                spacing: { before: 560, after: 200 } // Skor bar ile mesafe
-                            }),
-                            new Paragraph({
-                                children: [
-                                    new TextRun({
-                                        text: data[item.key],
-                                        size: 20,
-                                        font: "Arial" 
-                                    })
-                                ],
-                                alignment: AlignmentType.JUSTIFIED, // İki yana yaslama
-                                spacing: { after: 2520 } 
-                            })
-                        ],
-                        footers: {
-                            default: footer
-                        }
-                    });
-                }
+            if (options.developmentSuggestions && data['Gelişim Önerileri -1']) {
+                doc.addSection({
+                    properties: {},
+                    children: [
+                        // Yetkinlik adı ve progress bar - yan yana (görünmez tablo)
+                        new Table({
+                            width: {
+                                size: 100,
+                                type: WidthType.PERCENTAGE,
+                            },
+                            borders: {
+                                top: { style: BorderStyle.NONE },
+                                bottom: { style: BorderStyle.NONE },
+                                left: { style: BorderStyle.NONE },
+                                right: { style: BorderStyle.NONE },
+                                insideHorizontal: { style: BorderStyle.NONE },
+                                insideVertical: { style: BorderStyle.NONE }
+                            },
+                            rows: [
+                                new TableRow({
+                                    children: [
+                                        new TableCell({
+                                            children: [
+                                                new Paragraph({
+                                                    children: [
+                                                        new TextRun({
+                                                            text: competencyName,
+                                                            bold: true,
+                                                            size: 20,
+                                                            color: "283c9b"
+                                                        })
+                                                    ],
+                                                    alignment: AlignmentType.LEFT
+                                                })
+                                            ],
+                                            width: {
+                                                size: 60,
+                                                type: WidthType.PERCENTAGE,
+                                            },
+                                            borders: {
+                                                top: { style: BorderStyle.NONE },
+                                                bottom: { style: BorderStyle.NONE },
+                                                left: { style: BorderStyle.NONE },
+                                                right: { style: BorderStyle.NONE }
+                                            }
+                                        }),
+                                        new TableCell({
+                                            children: [
+                                                new Table({
+                                                    width: {
+                                                        size: 100,
+                                                        type: WidthType.PERCENTAGE,
+                                                    },
+                                                    rows: [
+                                                        new TableRow({
+                                                            children: [
+                                                                new TableCell({
+                                                                    children: [
+                                                                        new Paragraph({
+                                                                            children: [
+                                                                                new TextRun({
+                                                                                    text: `${competencyScore}`,
+                                                                                    bold: true,
+                                                                                    size: 14,
+                                                                                    color: "FFFFFF"
+                                                                                })
+                                                                            ],
+                                                                            alignment: AlignmentType.CENTER,
+                                                                            spacing: { before: 50, after: 50 }
+                                                                        })
+                                                                    ],
+                                                                    width: {
+                                                                        size: competencyScore,
+                                                                        type: WidthType.PERCENTAGE,
+                                                                    },
+                                                                    verticalAlign: "bottom",
+                                                                    shading: {
+                                                                        fill: barColor.replace('#', ''),
+                                                                        type: "clear"
+                                                                    }
+                                                                }),
+                                                                new TableCell({
+                                                                    children: [
+                                                                        new Paragraph({
+                                                                            children: [
+                                                                                new TextRun({
+                                                                                    text: " ",
+                                                                                    size: 11
+                                                                                })
+                                                                            ],
+                                                                            alignment: AlignmentType.CENTER,
+                                                                            spacing: { before: 50, after: 50 }
+                                                                        })
+                                                                    ],
+                                                                    width: {
+                                                                        size: 100 - competencyScore,
+                                                                        type: WidthType.PERCENTAGE,
+                                                                    },
+                                                                    shading: {
+                                                                        fill: "E0E0E0",
+                                                                        type: "clear"
+                                                                    }
+                                                                })
+                                                            ],
+                                                        }),
+                                                    ],
+                                                })
+                                            ],
+                                            width: {
+                                                size: 40,
+                                                type: WidthType.PERCENTAGE,
+                                            },
+                                            borders: {
+                                                top: { style: BorderStyle.NONE },
+                                                bottom: { style: BorderStyle.NONE },
+                                                left: { style: BorderStyle.NONE },
+                                                right: { style: BorderStyle.NONE }
+                                            }
+                                        })
+                                    ],
+                                }),
+                            ],
+                        }),
+                        new Paragraph({
+                            children: [
+                                new TextRun({
+                                    text: 'Gelişim Önerileri',
+                                    bold: true,
+                                    size: 24,
+                                    color: "001c55" 
+                                })
+                            ],
+                            spacing: { before: 560, after: 200 } // Skor bar ile mesafe
+                        }),
+                        new Paragraph({
+                            children: [
+                                new TextRun({
+                                    text: data['Gelişim Önerileri -1'],
+                                    size: 20,
+                                    font: "Arial" 
+                                })
+                            ],
+                            alignment: AlignmentType.JUSTIFIED, // İki yana yaslama
+                            spacing: { after: 2520 } 
+                        })
+                    ],
+                    footers: {
+                        default: footer
+                    }
+                });
             }
         }
 

@@ -452,12 +452,11 @@ const adminController = {
                     .limit(limitNum);
             }
             
-              // Performans: Tüm Game'leri tek sorguda çek (N+1 sorgu problemini çöz)
-              const playerCodes = results.map(r => r.code);
-              const gameSelectFields = 'playerCode section customerFocusScore uncertaintyScore ieScore idikScore evaluationResult' + (code ? ' answers' : '');
-              const allGames = await Game.find({ 
-                  playerCode: { $in: playerCodes } 
-              }).select(gameSelectFields);
+            // Performans: Tüm Game'leri tek sorguda çek (N+1 sorgu problemini çöz)
+            const playerCodes = results.map(r => r.code);
+            const allGames = await Game.find({ 
+                playerCode: { $in: playerCodes } 
+            }).select('playerCode section customerFocusScore uncertaintyScore ieScore idikScore evaluationResult answers');
             
             // Game'leri playerCode'a göre grupla (memory'de hızlı erişim için)
             const gamesByPlayerCode = {};
