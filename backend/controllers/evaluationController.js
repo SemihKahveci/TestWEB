@@ -742,6 +742,33 @@ async function generateAndSendWord(evaluation, options, res, userCode) {
             day: 'numeric'
         });
 
+        // Metni satırlara bölüp her satır için ayrı Paragraph oluştur (PDF'deki buildContentRows mantığı)
+        const buildWordParagraphs = (text = '', fontSize = 20, fontFamily = "Arial") => {
+            if (!text) return [];
+            const lines = text.split(/\r?\n/);
+            return lines.map(line => {
+                const trimmed = line.trim();
+                if (!trimmed) {
+                    // Boş satırlar için boş paragraph
+                    return new Paragraph({
+                        children: [new TextRun({ text: " ", size: fontSize, font: fontFamily })],
+                        spacing: { after: 120 }
+                    });
+                }
+                return new Paragraph({
+                    children: [
+                        new TextRun({
+                            text: trimmed,
+                            size: fontSize,
+                            font: fontFamily
+                        })
+                    ],
+                    alignment: AlignmentType.JUSTIFIED,
+                    spacing: { after: 120 }
+                });
+            });
+        };
+
         // Footer oluştur
         const footer = new Footer({
             children: [
@@ -1139,17 +1166,7 @@ async function generateAndSendWord(evaluation, options, res, userCode) {
                             ],
                             spacing: { before: 560, after: 200 }
                         }),
-                        new Paragraph({
-                            children: [
-                                new TextRun({
-                                    text: data['Genel Değerlendirme'],
-                                    size: 20,
-                                    font: "Arial" 
-                                })
-                            ],
-                            alignment: AlignmentType.JUSTIFIED, // İki yana yaslama
-                            spacing: { after: 2520 } 
-                        })
+                        ...buildWordParagraphs(data['Genel Değerlendirme'], 20, "Arial")
                     ],
                     footers: {
                         default: footer
@@ -1290,17 +1307,7 @@ async function generateAndSendWord(evaluation, options, res, userCode) {
                             ],
                             spacing: { before: 560, after: 200 } // Skor bar ile mesafe
                         }),
-                        new Paragraph({
-                            children: [
-                                new TextRun({
-                                    text: data['Güçlü Yönler'],
-                                    size: 20,
-                                    font: "Arial" 
-                                })
-                            ],
-                            alignment: AlignmentType.JUSTIFIED, // İki yana yaslama
-                            spacing: { after: 2520 } 
-                        })
+                        ...buildWordParagraphs(data['Güçlü Yönler'], 20, "Arial")
                     ],
                     footers: {
                         default: footer
@@ -1442,17 +1449,7 @@ async function generateAndSendWord(evaluation, options, res, userCode) {
                             ],
                             spacing: { before: 560, after: 200 } // Skor bar ile mesafe
                         }),
-                        new Paragraph({
-                            children: [
-                                new TextRun({
-                                    text: data['Gelişim Alanları'],
-                                    size: 20,
-                                    font: "Arial" 
-                                })
-                            ],
-                            alignment: AlignmentType.JUSTIFIED, // İki yana yaslama
-                            spacing: { after: 2520 } 
-                        })
+                        ...buildWordParagraphs(data['Gelişim Alanları'], 20, "Arial")
                     ],
                     footers: {
                         default: footer
@@ -1593,17 +1590,22 @@ async function generateAndSendWord(evaluation, options, res, userCode) {
                             ],
                             spacing: { before: 560, after: 200 } // Skor bar ile mesafe
                         }),
-                        new Paragraph({
-                            children: [
-                                new TextRun({
-                                    text: data['Mülakat Soruları'],
-                                    size: 20,
-                                    font: "Arial" 
-                                })
-                            ],
-                            alignment: AlignmentType.JUSTIFIED, // İki yana yaslama
-                            spacing: { after: 2520 } 
-                        })
+                        ...buildWordParagraphs(data['Mülakat Soruları'], 20, "Arial"),
+                        // "Neden Bu Sorular?" bölümünü aynı sayfaya ekle
+                        ...(options.whyTheseQuestions && data['Neden Bu Sorular?'] ? [
+                            new Paragraph({
+                                children: [
+                                    new TextRun({
+                                        text: "Neden Bu Sorular?",
+                                        bold: true,
+                                        size: 24,
+                                        color: "001c55" 
+                                    })
+                                ],
+                                spacing: { before: 560, after: 200 } // Skor bar ile mesafe
+                            }),
+                            ...buildWordParagraphs(data['Neden Bu Sorular?'], 20, "Arial")
+                        ] : [])
                     ],
                     footers: {
                         default: footer
@@ -1611,7 +1613,8 @@ async function generateAndSendWord(evaluation, options, res, userCode) {
                 });
             }
 
-            if (options.whyTheseQuestions && data['Neden Bu Sorular?']) {
+            // "Neden Bu Sorular?" bölümü sadece "Mülakat Soruları" yoksa ayrı section olarak ekle
+            if (options.whyTheseQuestions && data['Neden Bu Sorular?'] && (!options.interviewQuestions || !data['Mülakat Soruları'])) {
                 doc.addSection({
                     properties: {},
                     children: [
@@ -1744,17 +1747,7 @@ async function generateAndSendWord(evaluation, options, res, userCode) {
                             ],
                             spacing: { before: 560, after: 200 } // Skor bar ile mesafe
                         }),
-                        new Paragraph({
-                            children: [
-                                new TextRun({
-                                    text: data['Neden Bu Sorular?'],
-                                    size: 20,
-                                    font: "Arial" 
-                                })
-                            ],
-                            alignment: AlignmentType.JUSTIFIED, // İki yana yaslama
-                            spacing: { after: 2520 } 
-                        })
+                        ...buildWordParagraphs(data['Neden Bu Sorular?'], 20, "Arial")
                     ],
                     footers: {
                         default: footer
@@ -1896,17 +1889,7 @@ async function generateAndSendWord(evaluation, options, res, userCode) {
                             ],
                             spacing: { before: 560, after: 200 } // Skor bar ile mesafe
                         }),
-                        new Paragraph({
-                            children: [
-                                new TextRun({
-                                    text: data['Gelişim Önerileri -1'],
-                                    size: 20,
-                                    font: "Arial" 
-                                })
-                            ],
-                            alignment: AlignmentType.JUSTIFIED, // İki yana yaslama
-                            spacing: { after: 2520 } 
-                        })
+                        ...buildWordParagraphs(data['Gelişim Önerileri -1'], 20, "Arial")
                     ],
                     footers: {
                         default: footer
