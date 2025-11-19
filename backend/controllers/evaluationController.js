@@ -356,7 +356,7 @@ async function buildEvaluationHTML(evaluation, options, userCode, isPreview = fa
                 @page { margin: ${isPreview ? '20px' : '2.5cm'}; }
 
                 body { 
-                    font-family: Arial, sans-serif; 
+                    font-family: "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", "Android Emoji", "EmojiSymbols", "EmojiOne Mozilla", "Twemoji Mozilla", "Segoe UI Symbol", Arial, sans-serif; 
                     line-height: 1.6;
                     margin: 0;
                     padding: 0;
@@ -417,6 +417,7 @@ async function buildEvaluationHTML(evaluation, options, userCode, isPreview = fa
 
                 .section-table td {
                     vertical-align: top;
+                    font-family: "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", "Android Emoji", "EmojiSymbols", "EmojiOne Mozilla", "Twemoji Mozilla", "Segoe UI Symbol", Arial, sans-serif;
                 }
 
                 .cover-page {
@@ -700,7 +701,15 @@ async function generateAndSendPDF(evaluation, options, res, userCode) {
               <span style="margin-left:8px;">GİZLİ © ANDRON Game 2025, İzinsiz paylaşılamaz.</span>
               <span style="margin-left:12px;"><span class="pageNumber"></span>/<span class="totalPages"></span></span>
             </div>
-          </div>`
+          </div>`,
+        args: [
+            '--no-sandbox',
+            '--disable-setuid-sandbox',
+            '--disable-dev-shm-usage',
+            '--disable-accelerated-2d-canvas',
+            '--disable-gpu',
+            '--font-render-hinting=none'
+        ]
       };
     const file = await htmlPdf.generatePdf({ content: htmlContent }, pdfOptions);
     res.setHeader('Content-Type', 'application/pdf');
@@ -724,7 +733,15 @@ async function generateAndSendPreview(evaluation, options, res, userCode) {
               <span style="margin-left:8px;">GİZLİ © ANDRON Game 2025, İzinsiz paylaşılamaz.</span>
               <span style="margin-left:12px;"><span class="pageNumber"></span>/<span class="totalPages"></span></span>
             </div>
-          </div>`
+          </div>`,
+        args: [
+            '--no-sandbox',
+            '--disable-setuid-sandbox',
+            '--disable-dev-shm-usage',
+            '--disable-accelerated-2d-canvas',
+            '--disable-gpu',
+            '--font-render-hinting=none'
+        ]
       };
     const file = await htmlPdf.generatePdf({ content: htmlContent }, pdfOptions);
     res.setHeader('Content-Type', 'application/pdf');
