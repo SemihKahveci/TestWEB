@@ -92,12 +92,30 @@ process.on('SIGINT', async () => {
 });
 
 // Middleware
+const allowedOrigins = [
+    "https://androngame.com",
+    "https://www.androngame.com",
+    "http://localhost:3000", // Dev için
+    "http://localhost:5173"
+];
+
 app.use(cors({
-    origin: true, // Tüm origin'lere izin ver
+    origin: function (origin, callback) {
+        // Origin yoksa (Postman / curl) izin ver
+        if (!origin) return callback(null, true);
+
+        if (allowedOrigins.includes(origin)) {
+            return callback(null, true);
+        }
+
+        console.warn("⛔ Engellenen CORS isteği:", origin);
+        return callback(new Error("CORS Engellendi: " + origin), false);
+    },
     credentials: true,
-    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization']
+    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization"],
 }));
+
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ limit: '50mb', extended: true }));
 // Public klasörünü root'tan serve et
