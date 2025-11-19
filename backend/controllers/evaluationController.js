@@ -340,7 +340,7 @@ function buildContentRows(text = '') {
 function wrapEmojis(text) {
     const emojiRegex = /([\u{1F300}-\u{1FAFF}])/gu;
     const safe = escapeHtml(text); 
-    return safe.replace(emojiRegex, '<span class="emoji">$1</span>');
+    return safe.replace(emojiRegex, '$1');
   }
   
 // 🔧 Ortak PDF HTML oluşturucu
