@@ -42,11 +42,8 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
   useEffect(() => {
     const checkSuperAdmin = async () => {
       try {
-        const token = localStorage.getItem('token');
         const response = await fetch('/api/admin/check-superadmin', {
-          headers: {
-            'Authorization': `Bearer ${token}`
-          }
+          credentials: 'include'
         });
         const data = await response.json();
         setIsSuperAdmin(data.isSuperAdmin || false);

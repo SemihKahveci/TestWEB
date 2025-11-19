@@ -135,11 +135,8 @@ const AuthorizationPage: React.FC = () => {
     try {
       setIsLoading(true);
       
-      const token = localStorage.getItem('token');
       const response = await fetch('/api/authorization', {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
+        credentials: 'include'
       });
 
       if (!response.ok) {
@@ -332,13 +329,12 @@ const AuthorizationPage: React.FC = () => {
     try {
       setIsSubmitting(true);
       
-      const token = localStorage.getItem('token');
       const response = await fetch('/api/authorization', {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
+          'Content-Type': 'application/json'
         },
+        credentials: 'include',
         body: JSON.stringify(formData)
       });
 
@@ -370,13 +366,12 @@ const AuthorizationPage: React.FC = () => {
       if (!selectedAuthorization) return;
       setIsSubmitting(true);
       
-      const token = localStorage.getItem('token');
       const response = await fetch(`/api/authorization/${selectedAuthorization._id}`, {
         method: 'PUT',
         headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
+          'Content-Type': 'application/json'
         },
+        credentials: 'include',
         body: JSON.stringify(formData)
       });
 
@@ -410,12 +405,9 @@ const AuthorizationPage: React.FC = () => {
       if (!selectedAuthorization) return;
       setIsSubmitting(true);
       
-      const token = localStorage.getItem('token');
       const response = await fetch(`/api/authorization/${selectedAuthorization._id}`, {
         method: 'DELETE',
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
+        credentials: 'include'
       });
 
       if (!response.ok) {
@@ -583,19 +575,12 @@ const AuthorizationPage: React.FC = () => {
       setImportMessageType('success');
       setIsSubmitting(true);
 
-      const token = localStorage.getItem('token');
-      if (!token) {
-        setImportMessage('Oturum süreniz dolmuş. Lütfen tekrar giriş yapın.');
-        setImportMessageType('error');
-        setIsSubmitting(false);
-        return;
-      }
-
       const formData = new FormData();
       formData.append('excelFile', selectedFile);
 
       const response = await fetch('/api/authorization/import', {
         method: 'POST',
+        credentials: 'include',
         headers: {
           'Authorization': `Bearer ${token}`
         },

@@ -14,9 +14,13 @@ const competencyRoutes = require('./routes/competencyRoutes');
 const organizationRoutes = require('./routes/organizationRoutes');
 const groupRoutes = require('./routes/groupRoutes');
 const authorizationRoutes = require('./routes/authorizationRoutes');
+const cookieParser = require("cookie-parser");
+const authRoutes = require('./routes/authRoutes');
 
 const app = express();
+
 const port = process.env.PORT || 5000;
+
 
 // MongoDB bağlantısı - Güncellenmiş ayarlar ve yeniden deneme mekanizması
 const connectWithRetry = async (retryCount = 0, maxRetries = 5) => {
@@ -98,8 +102,11 @@ const allowedOrigins = [
     "http://localhost:3000", // Dev için
     "http://localhost:5173"
 ];
+// Cookie Parser
+app.use(cookieParser());
 
-app.use(cors({
+// CORS yapılandırması
+const corsOptions = {
     origin: function (origin, callback) {
         // Origin yoksa (Postman / curl) izin ver
         if (!origin) return callback(null, true);
@@ -114,12 +121,21 @@ app.use(cors({
     credentials: true,
     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization"],
-}));
+};
+
+// Preflight request'leri handle et - aynı CORS ayarlarını kullan
+app.options("*", cors(corsOptions));
+
+app.use(cors(corsOptions));
+
+
 
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ limit: '50mb', extended: true }));
 // Public klasörünü root'tan serve et
 app.use(express.static(path.join(__dirname, 'public')));
+
+app.use('/api/auth', authRoutes);
 
 // HTTP sunucusu
 const server = app.listen(port, () => {

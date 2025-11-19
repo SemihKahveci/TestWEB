@@ -81,9 +81,7 @@ const DefineCompanyAdmin: React.FC = () => {
     try {
       setIsLoading(true);
       const response = await fetch('/api/admin/list', {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        }
+        credentials: 'include'
       });
       const data = await response.json();
       if (data.success) {
@@ -225,9 +223,7 @@ const DefineCompanyAdmin: React.FC = () => {
   const handleEditAdmin = async (admin: Admin) => {
     try {
       const response = await fetch(`/api/admin/${admin._id}`, {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        }
+        credentials: 'include'
       });
       const data = await response.json();
       if (data.success) {
@@ -265,9 +261,9 @@ const DefineCompanyAdmin: React.FC = () => {
       const response = await fetch('/api/admin/create', {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`,
           'Content-Type': 'application/json'
         },
+        credentials: 'include',
         body: JSON.stringify({
           name: formData.name,
           email: formData.email,
@@ -309,9 +305,9 @@ const DefineCompanyAdmin: React.FC = () => {
       const response = await fetch(`/api/admin/${selectedAdmin._id}`, {
         method: 'PUT',
         headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`,
           'Content-Type': 'application/json'
         },
+        credentials: 'include',
         body: JSON.stringify(updateData)
       });
       const data = await response.json();
@@ -334,9 +330,7 @@ const DefineCompanyAdmin: React.FC = () => {
       if (!selectedAdmin) return;
       const response = await fetch(`/api/admin/${selectedAdmin._id}`, {
         method: 'DELETE',
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        }
+        credentials: 'include'
       });
       const data = await response.json();
       if (data.success) {

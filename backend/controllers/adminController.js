@@ -68,30 +68,24 @@ const adminController = {
                 return res.status(400).json({ message: 'Email ve şifre gereklidir' });
             }
 
-            // Admin'i bul
             const admin = await Admin.findOne({ email });
             if (!admin) {
-              
                 return res.status(401).json({ message: 'Geçersiz email veya şifre' });
             }
 
-            // Şifreyi kontrol et
             const isMatch = await admin.comparePassword(password);
             if (!isMatch) {
-          
                 return res.status(401).json({ message: 'Geçersiz email veya şifre' });
             }
 
-            // Admin aktif değilse
             if (!admin.isActive) {
-       
                 return res.status(401).json({ message: 'Hesabınız aktif değil' });
             }
 
-            // Token oluştur
+            // JWT oluştur
             const token = jwt.sign(
-                { 
-                    id: admin._id, 
+                {
+                    id: admin._id,
                     email: admin.email,
                     role: admin.role,
                     name: admin.name
@@ -100,9 +94,18 @@ const adminController = {
                 { expiresIn: '7d' }
             );
 
-            res.json({
+            // Token'ı Cookie'ye yaz
+            // Development'ta secure: false, production'da secure: true
+            const isProduction = process.env.NODE_ENV === 'production';
+            res.cookie("access_token", token, {
+                httpOnly: true,
+                secure: isProduction, // Production'da HTTPS zorunlu
+                sameSite: isProduction ? "strict" : "lax", // Development'ta lax, production'da strict
+                maxAge: 7 * 24 * 60 * 60 * 1000
+            });
+
+            return res.json({
                 success: true,
-                token,
                 admin: {
                     id: admin._id,
                     email: admin.email,
@@ -110,9 +113,10 @@ const adminController = {
                     role: admin.role
                 }
             });
+
         } catch (error) {
-            console.error('Login hatası:', error);
-            res.status(500).json({ message: 'Sunucu hatası', error: error.message });
+            console.error("Login hatası:", error);
+            res.status(500).json({ message: "Sunucu hatası" });
         }
     },
 

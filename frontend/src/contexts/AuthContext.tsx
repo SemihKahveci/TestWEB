@@ -36,60 +36,45 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   // API base URL - dinamik olarak belirle
   const API_BASE_URL = (import.meta as any).env?.DEV 
-    ? `${window.location.protocol}//${window.location.hostname}:5000/api`  // Development
+    ? 'http://localhost:5000/api'  // Development
     : '/api';  // Production (aynı domain'de serve edilir)
 
-  // Axios interceptor to add token to requests
-  useEffect(() => {
-    const interceptor = axios.interceptors.request.use(
-      (config) => {
-        const token = localStorage.getItem('token');
-        if (token) {
-          config.headers.Authorization = `Bearer ${token}`;
-        }
-        return config;
-      },
-      (error) => {
-        return Promise.reject(error);
-      }
-    );
+  // Axios instance oluştur - withCredentials her zaman aktif
+  const authAxios = axios.create({
+    baseURL: API_BASE_URL,
+    withCredentials: true,
+    headers: {
+      'Content-Type': 'application/json',
+    },
+  });
 
-    return () => {
-      axios.interceptors.request.eject(interceptor);
-    };
-  }, []);
-
+  // Cookie kullanıldığı için interceptor'a gerek yok, withCredentials: true yeterli
   useEffect(() => {
-    // Check if user is logged in on app start
-    const token = localStorage.getItem('token');
-    if (token) {
-      // Token varsa kullanıcıyı set et (backend'de verify endpoint'i yok)
-      // Token'ı decode edip kullanıcı bilgilerini al
+    const verifyToken = async () => {
       try {
-        const payload = JSON.parse(atob(token.split('.')[1]));
-        setUser({
-          id: payload.id,
-          email: payload.email,
-          name: payload.name,
-          role: payload.role
-        });
-      } catch (error) {
-        // Token geçersizse temizle
-        localStorage.removeItem('token');
+        // Cookie'den token otomatik gönderilecek (withCredentials: true)
+        const res = await authAxios.get('/auth/verify');
+        setUser(res.data.user);
+      } catch (err) {
+        console.warn("Token geçersiz, logout");
+        setUser(null);
       }
-    }
-    setIsLoading(false);
+  
+      setIsLoading(false);
+    };
+  
+    verifyToken();
   }, []);
 
   const login = async (email: string, password: string): Promise<boolean> => {
     try {
-      const response = await axios.post(`${API_BASE_URL}/admin/login`, {
+      const response = await authAxios.post('/auth/login', {
         email,
         password
       });
 
-      const { token, admin } = response.data;
-      localStorage.setItem('token', token);
+      const { admin } = response.data;
+      // Token artık cookie'de, localStorage'a gerek yok
       setUser(admin);
       return true;
     } catch (error) {
@@ -98,10 +83,17 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
   };
 
-  const logout = () => {
-    localStorage.removeItem('token');
+  const logout = async () => {
+    try {
+      await authAxios.post('/auth/logout');
+    } catch (err) {
+      console.error("Logout error:", err);
+    }
+    
+    // Cookie backend'de temizlenecek, localStorage'a gerek yok
     setUser(null);
   };
+  
 
   const value: AuthContextType = {
     user,

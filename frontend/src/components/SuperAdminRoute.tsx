@@ -12,17 +12,8 @@ const SuperAdminRoute: React.FC<SuperAdminRouteProps> = ({ children }) => {
   useEffect(() => {
     const checkSuperAdmin = async () => {
       try {
-        const token = localStorage.getItem('token');
-        if (!token) {
-          setIsSuperAdmin(false);
-          setIsLoading(false);
-          return;
-        }
-
         const response = await fetch('/api/admin/check-superadmin', {
-          headers: {
-            'Authorization': `Bearer ${token}`
-          }
+          credentials: 'include'
         });
 
         if (response.ok) {

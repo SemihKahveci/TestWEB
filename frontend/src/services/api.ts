@@ -8,18 +8,17 @@ const API_BASE_URL = (import.meta as any).env?.DEV
 // Create axios instance
 const api = axios.create({
   baseURL: API_BASE_URL,
+  withCredentials: true,
   headers: {
     'Content-Type': 'application/json',
   },
 });
 
-// Request interceptor to add auth token
+// Cookie kullanıldığı için interceptor'a gerek yok, withCredentials: true yeterli
+// Request interceptor - cookie otomatik gönderilecek
 api.interceptors.request.use(
   (config) => {
-    const token = localStorage.getItem('token');
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
-    }
+    // Cookie otomatik gönderilecek (withCredentials: true zaten ayarlı)
     return config;
   },
   (error) => {
@@ -32,7 +31,7 @@ api.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response?.status === 401) {
-      localStorage.removeItem('token');
+      // Cookie backend'de temizlenecek
       window.location.href = '/login';
     }
     return Promise.reject(error);

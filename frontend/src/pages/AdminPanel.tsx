@@ -314,11 +314,9 @@ const AdminPanel: React.FC = () => {
   const handleView = async (code: string) => {
     
     try {
-      // Backend'den cevapları çek
+      // Backend'den cevapları çek (cookie otomatik gönderilecek)
       const response = await fetch(`${API_BASE_URL}/api/user-results?code=${code}`, {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        }
+        credentials: 'include'
       });
       
       if (!response.ok) {
@@ -370,9 +368,7 @@ const AdminPanel: React.FC = () => {
     try {
       const response = await fetch(`${API_BASE_URL}/api/admin/export-excel/${code}`, {
         method: 'GET',
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        }
+        credentials: 'include'
       });
       
       if (!response.ok) {
@@ -384,9 +380,7 @@ const AdminPanel: React.FC = () => {
       
       // Kullanıcı bilgilerini al
       const userResponse = await fetch(`${API_BASE_URL}/api/user-results?code=${code}`, {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        }
+        credentials: 'include'
       });
       const userData = await userResponse.json();
       
@@ -416,9 +410,9 @@ const AdminPanel: React.FC = () => {
       const response = await fetch(`${API_BASE_URL}/api/evaluation/generateWord`, {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
+          'Content-Type': 'application/json'
         },
+        credentials: 'include',
         body: JSON.stringify({
           userCode: code,
           selectedOptions: pdfOptions // PDF ile aynı seçenekleri kullan
@@ -435,9 +429,7 @@ const AdminPanel: React.FC = () => {
       
       // Kullanıcı bilgilerini al
       const userResponse = await fetch(`${API_BASE_URL}/api/user-results?code=${code}`, {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        }
+        credentials: 'include'
       });
       const userData = await userResponse.json();
       
@@ -496,9 +488,9 @@ const AdminPanel: React.FC = () => {
       const response = await fetch(`${API_BASE_URL}/api/delete-result`, {
         method: 'DELETE',
         headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
+          'Content-Type': 'application/json'
         },
+        credentials: 'include',
         body: JSON.stringify({ code: selectedUser.code })
       });
 
@@ -1438,9 +1430,7 @@ const AdminPanel: React.FC = () => {
                     });
                     
                     const response = await fetch(`${API_BASE_URL}/api/preview-pdf?code=${selectedUser.code}&${pdfParams.toString()}`, {
-                      headers: {
-                        'Authorization': `Bearer ${localStorage.getItem('token')}`
-                      }
+                      credentials: 'include'
                     });
                     
                     if (!response.ok) {
@@ -1488,9 +1478,9 @@ const AdminPanel: React.FC = () => {
                     const response = await fetch(`${API_BASE_URL}/api/evaluation/generatePDF`, {
                       method: 'POST',
                       headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${localStorage.getItem('token')}`
+                        'Content-Type': 'application/json'
                       },
+                      credentials: 'include',
                       body: JSON.stringify({
                         userCode: selectedUser.code,
                         selectedOptions: pdfOptions
@@ -1507,9 +1497,7 @@ const AdminPanel: React.FC = () => {
                     
                     // Kullanıcı bilgilerini al
                     const userResponse = await fetch(`${API_BASE_URL}/api/user-results?code=${selectedUser.code}`, {
-                      headers: {
-                        'Authorization': `Bearer ${localStorage.getItem('token')}`
-                      }
+                      credentials: 'include'
                     });
                     const userData = await userResponse.json();
                     

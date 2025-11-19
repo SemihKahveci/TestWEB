@@ -61,9 +61,7 @@ const SubscriptionSettings: React.FC = () => {
     try {
       setIsLoading(true);
       const response = await fetch('/api/game-management/games', {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        }
+        credentials: 'include'
       });
       if (!response.ok) throw new Error('Veriler yüklenemedi');
       

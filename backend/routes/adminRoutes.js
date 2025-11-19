@@ -7,6 +7,12 @@ const evaluationController = require('../controllers/evaluationController');
 // Admin girişi - Bu route authentication gerektirmez
 router.post('/login', adminController.login);
 
+router.post("/logout", (req, res) => {
+    // Eğer ileride cookie’ye geçersek burada cookie'yi sileceğiz  
+    // Şimdilik sadece başarılı dönüş yapıyoruz
+    return res.json({ success: true, message: "Çıkış başarılı" });
+});
+
 // Excel export - Authentication gerektirmez
 router.get('/export-excel/:code', adminController.exportExcel);
 

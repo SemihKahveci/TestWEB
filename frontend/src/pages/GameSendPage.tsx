@@ -180,9 +180,7 @@ const GameSendPage: React.FC = () => {
       // Cache'i bypass etmek için timestamp parametresi ekle
       const url = forceRefresh ? `/api/credit?t=${Date.now()}` : '/api/credit';
       const creditResponse = await fetch(url, {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        }
+        credentials: 'include'
       });
       
       if (creditResponse.ok) {
@@ -222,11 +220,8 @@ const GameSendPage: React.FC = () => {
   const loadGroups = async () => {
     try {
       setIsLoading(true);
-      const token = localStorage.getItem('token');
       const response = await fetch('/api/group', {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
+        credentials: 'include'
       });
 
       if (!response.ok) {
@@ -255,11 +250,8 @@ const GameSendPage: React.FC = () => {
   const loadTitles = async () => {
     try {
       setIsLoading(true);
-      const token = localStorage.getItem('token');
       const response = await fetch('/api/organization', {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
+        credentials: 'include'
       });
 
       if (!response.ok) {
@@ -497,9 +489,8 @@ const GameSendPage: React.FC = () => {
     if (group) {
       try {
         // Bu gruptaki kişilerin detaylarını al
-        const token = localStorage.getItem('token');
         const response = await fetch('/api/authorization', {
-          headers: { 'Authorization': `Bearer ${token}` }
+          credentials: 'include'
         });
 
         if (response.ok) {
@@ -544,9 +535,8 @@ const GameSendPage: React.FC = () => {
     if (title) {
       try {
         // Bu unvanın pozisyonlarında çalışan kişileri bul
-        const token = localStorage.getItem('token');
         const response = await fetch('/api/authorization', {
-          headers: { 'Authorization': `Bearer ${token}` }
+          credentials: 'include'
         });
 
         if (response.ok) {
@@ -691,8 +681,6 @@ const GameSendPage: React.FC = () => {
         console.log('Selected title:', title);
         
         if (title && title.organizations && title.organizations.length > 0) {
-          const token = localStorage.getItem('token');
-          
           // 1. Bu unvanın pozisyonlarını al (zaten title.organizations'da var)
           const orgPositions = title.organizations
             .map((org: any) => org.pozisyon)
