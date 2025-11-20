@@ -1,10 +1,9 @@
 import React from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { AuthProvider } from './contexts/AuthContext';
 import ProtectedRoute from './components/ProtectedRoute';
 import SuperAdminRoute from './components/SuperAdminRoute';
 import Layout from './components/Layout';
-// import backgroundImage from './assets/background.png';
 
 // Pages
 import LoginPage from './pages/LoginPage';
@@ -20,21 +19,30 @@ import CompanyIdentification from './pages/CompanyIdentification';
 import DefineCompanyAdmin from './pages/DefineCompanyAdmin';
 import SubscriptionSettings from './pages/SubscriptionSettings';
 
-function App() {
-  return (
-    <AuthProvider>
-      <Router>
-        <div className="App" style={{
+const AppContent: React.FC = () => {
+  const location = useLocation();
+  const isLoginPage = location.pathname === '/login';
+
+  const appStyle: React.CSSProperties = {
+    minHeight: '100vh',
+    width: '100%',
+    position: 'relative',
+    ...(isLoginPage
+      ? {
           backgroundImage: `url('/background.png')`,
           backgroundSize: 'cover',
           backgroundPosition: 'center',
           backgroundRepeat: 'no-repeat',
-          backgroundAttachment: 'fixed',
-          minHeight: '100vh',
-          width: '100%',
-          position: 'relative'
-        }}>
-          <Routes>
+          backgroundAttachment: 'fixed'
+        }
+      : {
+          backgroundColor: '#f3f4f6'
+        })
+  };
+
+  return (
+    <div className="App" style={appStyle}>
+      <Routes>
             {/* Public routes */}
             <Route path="/" element={<Navigate to="/login" replace />} />
             <Route path="/login" element={<LoginPage />} />
@@ -149,10 +157,18 @@ function App() {
               </ProtectedRoute>
             } />
             
-            {/* Redirect unknown routes */}
-            <Route path="*" element={<Navigate to="/" replace />} />
-          </Routes>
-        </div>
+      {/* Redirect unknown routes */}
+      <Route path="*" element={<Navigate to="/" replace />} />
+    </Routes>
+    </div>
+  );
+};
+
+function App() {
+  return (
+    <AuthProvider>
+      <Router>
+        <AppContent />
       </Router>
     </AuthProvider>
   );
