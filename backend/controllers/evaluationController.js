@@ -672,8 +672,8 @@ async function buildEvaluationHTML(evaluation, options, userCode, isPreview = fa
             isFirstSection = false;
         }
         if (options.whyTheseQuestions && data['Neden Bu Sorular?']) {
-            // Mülakat Soruları'ndan sonra geldiği için skipPageBreak=true (aynı sayfada)
-            htmlContent += await addSection('Neden Bu Sorular?', data['Neden Bu Sorular?'], false, isFirstSection, true);
+            // Artık ayrı sayfada göster
+            htmlContent += await addSection('Neden Bu Sorular?', data['Neden Bu Sorular?'], false, isFirstSection);
             isFirstSection = false;
         }
 
