@@ -1,4 +1,5 @@
 const nextConfig = {
+  poweredByHeader: false,
   output: 'standalone',
   // basePath sadece production'da aktif olsun
   basePath: process.env.NODE_ENV === 'production' ? '/home' : '',

@@ -106,6 +106,7 @@ const adminController = {
 
             return res.json({
                 success: true,
+                token: token,
                 admin: {
                     id: admin._id,
                     email: admin.email,
