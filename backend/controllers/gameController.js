@@ -6,6 +6,7 @@ const Section = require('../models/section');
 const EvaluationController = require('./evaluationController');
 const mongoose = require('mongoose');
 const { sendEmail } = require('../services/emailService');
+const { safeLog, getSafeErrorMessage, capitalizeName, escapeHtml } = require('../utils/helpers');
 
 class GameController {
     constructor(wss) {
@@ -79,8 +80,8 @@ class GameController {
 
             res.status(200).json(formattedData);
         } catch (error) {
-            console.error('Sonuçlar alınırken hata:', error);
-            res.status(500).json({ error: this.errorMessages.serverError });
+            safeLog('error', 'Sonuçlar alınırken hata', error);
+            res.status(500).json({ error: getSafeErrorMessage(error, this.errorMessages.serverError) });
         }
     }
 
@@ -191,9 +192,10 @@ class GameController {
 
             // Oyun tamamlandığında e-posta gönder
             try {
+                const safeUserName = escapeHtml(capitalizeName(userCode.name));
                 const completionEmailHtml = `
                     <div style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
-                        <p><strong>Kaptan ${userCode.name},</strong></p>
+                        <p><strong>Kaptan ${safeUserName},</strong></p>
 
                         <p>Tebrikler, ANDRON Evreni'ndeki keşif maceranı başarıyla tamamladın! 🚀</p>
 
@@ -210,7 +212,7 @@ class GameController {
                     completionEmailHtml
                 );
             } catch (emailError) {
-                console.error('Tamamlanma e-postası gönderme hatası:', emailError);
+                safeLog('error', 'Tamamlanma e-postası gönderme hatası', emailError);
                 // E-posta hatası oyun kaydetmeyi etkilemesin
             }
 
@@ -227,10 +229,10 @@ class GameController {
             });
 
         } catch (error) {
-            console.error('Oyun sonucu kaydetme hatası:', error);
+            safeLog('error', 'Oyun sonucu kaydetme hatası', error);
             res.status(500).json({
                 success: false,
-                message: this.errorMessages.serverError
+                message: getSafeErrorMessage(error, this.errorMessages.serverError)
             });
         }
     }
@@ -265,11 +267,11 @@ class GameController {
 
             // BY raporlarını kontrol et (Venus - Belirsizlik Yönetimi)
             if (byAnswerString) {
-                console.log('BY raporları aranıyor, cevap string:', byAnswerString);
+                safeLog('debug', 'BY raporları aranıyor, cevap string:', byAnswerString);
                 
                 // Virgülden sonra boşluk olan ve olmayan formatları dene
                 const byAnswerStringNoSpace = byAnswerString.replace(/, /g, ',');
-                console.log('BY raporları aranıyor (boşluksuz), cevap string:', byAnswerStringNoSpace);
+                safeLog('debug', 'BY raporları aranıyor (boşluksuz), cevap string:', byAnswerStringNoSpace);
                 
                 const matchedBY = await mongoose.connection.collection('evaluationanswers').findOne({
                     $or: [
@@ -279,27 +281,27 @@ class GameController {
                 });
 
                 if (matchedBY) {
-                    console.log('BY cevapları bulundu, ID:', matchedBY.ID);
+                    safeLog('debug', 'BY cevapları bulundu, ID:', matchedBY.ID);
                     const byResult = await mongoose.connection.collection('evaluationresults').findOne({ ID: matchedBY.ID });
                     
                     if (byResult) {
-                        console.log('BY raporu bulundu ve eklendi');
+                        safeLog('debug', 'BY raporu bulundu ve eklendi');
                         results.push({ type: 'BY', data: byResult });
                     } else {
-                        console.log('BY raporu bulunamadı, ID:', matchedBY.ID);
+                        safeLog('debug', 'BY raporu bulunamadı, ID:', matchedBY.ID);
                     }
                 } else {
-                    console.log('BY cevapları bulunamadı, aranan string:', byAnswerString, 've', byAnswerStringNoSpace);
+                    safeLog('debug', 'BY cevapları bulunamadı, aranan string:', { byAnswerString, byAnswerStringNoSpace });
                 }
             }
 
             // MO raporlarını kontrol et (Venus - Müşteri Odaklılık)
             if (moAnswerString) {
-                console.log('MO raporları aranıyor, cevap string:', moAnswerString);
+                safeLog('debug', 'MO raporları aranıyor, cevap string:', moAnswerString);
                 
                 // Virgülden sonra boşluk olan ve olmayan formatları dene
                 const moAnswerStringNoSpace = moAnswerString.replace(/, /g, ',');
-                console.log('MO raporları aranıyor (boşluksuz), cevap string:', moAnswerStringNoSpace);
+                safeLog('debug', 'MO raporları aranıyor (boşluksuz), cevap string:', moAnswerStringNoSpace);
                 
                 const matchedMO = await mongoose.connection.collection('evaluationanswersMY').findOne({
                     $or: [
@@ -309,27 +311,27 @@ class GameController {
                 });
 
                 if (matchedMO) {
-                    console.log('MO cevapları bulundu, ID:', matchedMO.ID);
+                    safeLog('debug', 'MO cevapları bulundu, ID:', matchedMO.ID);
                     const moResult = await mongoose.connection.collection('evaluationresultsMY').findOne({ ID: matchedMO.ID });
                     
                     if (moResult) {
-                        console.log('MO raporu bulundu ve eklendi');
+                        safeLog('debug', 'MO raporu bulundu ve eklendi');
                         results.push({ type: 'MO', data: moResult });
                     } else {
-                        console.log('MO raporu bulunamadı, ID:', matchedMO.ID);
+                        safeLog('debug', 'MO raporu bulunamadı, ID:', matchedMO.ID);
                     }
                 } else {
-                    console.log('MO cevapları bulunamadı, aranan string:', moAnswerString, 've', moAnswerStringNoSpace);
+                    safeLog('debug', 'MO cevapları bulunamadı, aranan string:', { moAnswerString, moAnswerStringNoSpace });
                 }
             }
 
             // IE raporlarını kontrol et (Titan - İnsanları Etkileme)
             if (ieAnswerString) {
-                console.log('IE raporları aranıyor, cevap string:', ieAnswerString);
+                safeLog('debug', 'IE raporları aranıyor, cevap string:', ieAnswerString);
                 
                 // Virgülden sonra boşluk olan ve olmayan formatları dene
                 const ieAnswerStringNoSpace = ieAnswerString.replace(/, /g, ',');
-                console.log('IE raporları aranıyor (boşluksuz), cevap string:', ieAnswerStringNoSpace);
+                safeLog('debug', 'IE raporları aranıyor (boşluksuz), cevap string:', ieAnswerStringNoSpace);
                 
                 const matchedIE = await mongoose.connection.collection('evaluationanswersHI').findOne({
                     $or: [
@@ -339,27 +341,27 @@ class GameController {
                 });
 
                 if (matchedIE) {
-                    console.log('IE cevapları bulundu, ID:', matchedIE.ID);
+                    safeLog('debug', 'IE cevapları bulundu, ID:', matchedIE.ID);
                     const ieResult = await mongoose.connection.collection('evaluationresultsHI').findOne({ ID: matchedIE.ID });
                     
                     if (ieResult) {
-                        console.log('IE raporu bulundu ve eklendi');
+                        safeLog('debug', 'IE raporu bulundu ve eklendi');
                         results.push({ type: 'IE', data: ieResult });
                     } else {
-                        console.log('IE raporu bulunamadı, ID:', matchedIE.ID);
+                        safeLog('debug', 'IE raporu bulunamadı, ID:', matchedIE.ID);
                     }
                 } else {
-                    console.log('IE cevapları bulunamadı, aranan string:', ieAnswerString, 've', ieAnswerStringNoSpace);
+                    safeLog('debug', 'IE cevapları bulunamadı, aranan string:', { ieAnswerString, ieAnswerStringNoSpace });
                 }
             }
 
             // IDIK raporlarını kontrol et (Titan - Güven Veren İşbirlikçi ve Sinerji)
             if (idikAnswerString) {
-                console.log('IDIK raporları aranıyor, cevap string:', idikAnswerString);
+                safeLog('debug', 'IDIK raporları aranıyor, cevap string:', idikAnswerString);
                 
                 // Virgülden sonra boşluk olan ve olmayan formatları dene
                 const idikAnswerStringNoSpace = idikAnswerString.replace(/, /g, ',');
-                console.log('IDIK raporları aranıyor (boşluksuz), cevap string:', idikAnswerStringNoSpace);
+                safeLog('debug', 'IDIK raporları aranıyor (boşluksuz), cevap string:', idikAnswerStringNoSpace);
                 
                 const matchedIDIK = await mongoose.connection.collection('evaluationanswersTW').findOne({
                     $or: [
@@ -369,17 +371,17 @@ class GameController {
                 });
 
                 if (matchedIDIK) {
-                    console.log('IDIK cevapları bulundu, ID:', matchedIDIK.ID);
+                    safeLog('debug', 'IDIK cevapları bulundu, ID:', matchedIDIK.ID);
                     const idikResult = await mongoose.connection.collection('evaluationresultsTW').findOne({ ID: matchedIDIK.ID });
                     
                     if (idikResult) {
-                        console.log('IDIK raporu bulundu ve eklendi');
+                        safeLog('debug', 'IDIK raporu bulundu ve eklendi');
                         results.push({ type: 'IDIK', data: idikResult });
                     } else {
-                        console.log('IDIK raporu bulunamadı, ID:', matchedIDIK.ID);
+                        safeLog('debug', 'IDIK raporu bulunamadı, ID:', matchedIDIK.ID);
                     }
                 } else {
-                    console.log('IDIK cevapları bulunamadı, aranan string:', idikAnswerString, 've', idikAnswerStringNoSpace);
+                    safeLog('debug', 'IDIK cevapları bulunamadı, aranan string:', { idikAnswerString, idikAnswerStringNoSpace });
                 }
             }
 
@@ -392,7 +394,7 @@ class GameController {
             return results;
 
         } catch (error) {
-            console.error('Rapor sorgulama hatası:', error);
+            safeLog('error', 'Rapor sorgulama hatası', error);
             return null;
         }
     }
@@ -415,8 +417,8 @@ class GameController {
             this.broadcastUpdate();
             res.json({ success: true, message: 'Tüm sonuçlar başarıyla silindi' });
         } catch (error) {
-            console.error('Sonuçları silerken hata:', error);
-            res.status(500).json({ success: false, message: 'Sonuçlar silinirken bir hata oluştu' });
+            safeLog('error', 'Sonuçları silerken hata', error);
+            res.status(500).json({ success: false, message: getSafeErrorMessage(error, 'Sonuçlar silinirken bir hata oluştu') });
         }
     }
 
@@ -434,20 +436,20 @@ class GameController {
     async getGameAnswers(req, res) {
         try {
             const { code } = req.params;
-            console.log('Oyun cevapları getiriliyor, kod:', code);
+            safeLog('debug', 'Oyun cevapları getiriliyor, kod:', code);
             
             // Game modelinden oyunu bul
             const game = await Game.findOne({ playerCode: code });
             
             if (!game) {
-                console.log('Oyun bulunamadı, kod:', code);
+                safeLog('debug', 'Oyun bulunamadı, kod:', code);
                 return res.status(404).json({
                     success: false,
                     message: 'Oyun bulunamadı'
                 });
             }
 
-            console.log('Oyun bulundu:', {
+            safeLog('debug', 'Oyun bulundu:', {
                 playerCode: game.playerCode,
                 section: game.section,
                 answersCount: game.answers ? game.answers.length : 0,
@@ -456,7 +458,7 @@ class GameController {
 
             // Eğer answers alanı yoksa, oyun verilerini kontrol et
             if (!game.answers || game.answers.length === 0) {
-                console.log('Answers alanı bulunamadı, oyun verisi:', JSON.stringify(game.toObject(), null, 2));
+                safeLog('debug', 'Answers alanı bulunamadı, oyun verisi:', game.toObject());
                 return res.status(200).json({
                     success: true,
                     data: {
@@ -470,7 +472,7 @@ class GameController {
 
             // Cevapları formatla - Game modelindeki doğru alan isimlerini kullan
             const formattedAnswers = game.answers.map((answer, index) => {
-                console.log(`Cevap ${index + 1}:`, answer);
+                safeLog('debug', `Cevap ${index + 1}:`, answer);
                 return {
                     questionNumber: index + 1,
                     questionID: answer.questionId || `Soru ${index + 1}`,
@@ -481,7 +483,7 @@ class GameController {
                 };
             });
 
-            console.log('Formatlanmış cevaplar:', formattedAnswers.length, 'cevap');
+            safeLog('debug', 'Formatlanmış cevaplar:', { count: formattedAnswers.length });
 
             res.status(200).json({
                 success: true,
@@ -493,10 +495,10 @@ class GameController {
             });
 
         } catch (error) {
-            console.error('Oyun cevapları getirme hatası:', error);
+            safeLog('error', 'Oyun cevapları getirme hatası', error);
             res.status(500).json({
                 success: false,
-                message: this.errorMessages.serverError
+                message: getSafeErrorMessage(error, this.errorMessages.serverError)
             });
         }
     }

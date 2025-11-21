@@ -1,4 +1,5 @@
 const Organization = require('../models/Organization');
+const { safeLog, getSafeErrorMessage } = require('../utils/helpers');
 
 // Tüm organizasyonları getir
 const getAllOrganizations = async (req, res) => {
@@ -10,7 +11,7 @@ const getAllOrganizations = async (req, res) => {
             organizations: organizations
         });
     } catch (error) {
-        console.error('Organizasyon listesi getirme hatası:', error);
+        safeLog('error', 'Organizasyon listesi getirme hatası', error);
         res.status(500).json({
             success: false,
             message: 'Organizasyon listesi alınamadı'
@@ -84,7 +85,7 @@ const createOrganization = async (req, res) => {
         });
 
     } catch (error) {
-        console.error('Organizasyon ekleme hatası:', error);
+        safeLog('error', 'Organizasyon ekleme hatası', error);
         res.status(500).json({
             success: false,
             message: 'Organizasyon eklenirken bir hata oluştu'
@@ -169,7 +170,7 @@ const updateOrganization = async (req, res) => {
         });
 
     } catch (error) {
-        console.error('Organizasyon güncelleme hatası:', error);
+        safeLog('error', 'Organizasyon güncelleme hatası', error);
         res.status(500).json({
             success: false,
             message: 'Organizasyon güncellenirken bir hata oluştu'
@@ -197,7 +198,7 @@ const deleteOrganization = async (req, res) => {
         });
 
     } catch (error) {
-        console.error('Organizasyon silme hatası:', error);
+        safeLog('error', 'Organizasyon silme hatası', error);
         res.status(500).json({
             success: false,
             message: 'Organizasyon silinirken bir hata oluştu'
@@ -225,7 +226,7 @@ const getOrganizationById = async (req, res) => {
         });
 
     } catch (error) {
-        console.error('Organizasyon getirme hatası:', error);
+        safeLog('error', 'Organizasyon getirme hatası', error);
         res.status(500).json({
             success: false,
             message: 'Organizasyon alınırken bir hata oluştu'
@@ -405,7 +406,7 @@ const bulkCreateOrganizations = async (req, res) => {
         });
 
     } catch (error) {
-        console.error('Bulk organizasyon ekleme hatası:', error);
+        safeLog('error', 'Bulk organizasyon ekleme hatası', error);
         res.status(500).json({
             success: false,
             message: 'Organizasyonlar eklenirken bir hata oluştu'

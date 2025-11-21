@@ -1,4 +1,5 @@
 const Authorization = require('../models/Authorization');
+const { safeLog, getSafeErrorMessage } = require('../utils/helpers');
 
 // Tüm kişileri getir
 const getAllAuthorizations = async (req, res) => {
@@ -50,7 +51,7 @@ const getAllAuthorizations = async (req, res) => {
 
         res.json(response);
     } catch (error) {
-        console.error('Kişileri getirme hatası:', error);
+        safeLog('error', 'Kişileri getirme hatası', error);
         res.status(500).json({
             success: false,
             message: 'Kişiler getirilirken bir hata oluştu',
@@ -78,7 +79,7 @@ const getAuthorizationById = async (req, res) => {
             authorization
         });
     } catch (error) {
-        console.error('Kişi getirme hatası:', error);
+        safeLog('error', 'Kişi getirme hatası', error);
         res.status(500).json({
             success: false,
             message: 'Kişi getirilirken bir hata oluştu',
@@ -166,7 +167,7 @@ const createAuthorization = async (req, res) => {
             authorization: newAuthorization
         });
     } catch (error) {
-        console.error('Kişi oluşturma hatası:', error);
+        safeLog('error', 'Kişi oluşturma hatası', error);
         res.status(500).json({
             success: false,
             message: 'Kişi oluşturulurken bir hata oluştu',
@@ -248,7 +249,7 @@ const updateAuthorization = async (req, res) => {
             authorization: updatedAuthorization
         });
     } catch (error) {
-        console.error('Kişi güncelleme hatası:', error);
+        safeLog('error', 'Kişi güncelleme hatası', error);
         res.status(500).json({
             success: false,
             message: 'Kişi güncellenirken bir hata oluştu',
@@ -279,7 +280,7 @@ const deleteAuthorization = async (req, res) => {
             message: 'Kişi başarıyla silindi'
         });
     } catch (error) {
-        console.error('Kişi silme hatası:', error);
+        safeLog('error', 'Kişi silme hatası', error);
         res.status(500).json({
             success: false,
             message: 'Kişi silinirken bir hata oluştu',
@@ -470,7 +471,7 @@ const bulkCreateAuthorizations = async (req, res) => {
         });
 
     } catch (error) {
-        console.error('Bulk yetkilendirme ekleme hatası:', error);
+        safeLog('error', 'Bulk yetkilendirme ekleme hatası', error);
         res.status(500).json({
             success: false,
             message: 'Yetkilendirmeler eklenirken bir hata oluştu'

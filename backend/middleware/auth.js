@@ -1,5 +1,6 @@
 const jwt = require("jsonwebtoken");
 const Admin = require("../models/Admin");
+const { safeLog } = require("../utils/helpers");
 
 exports.authenticateAdmin = async (req, res, next) => {
     try {
@@ -22,9 +23,15 @@ exports.authenticateAdmin = async (req, res, next) => {
             return res.status(401).json({ message: "Geçersiz token formatı" });
         }
 
+        // JWT_SECRET zorunlu - fallback yok
+        if (!process.env.JWT_SECRET) {
+            safeLog('error', "JWT_SECRET environment variable is not set!");
+            return res.status(500).json({ message: "Sunucu yapılandırma hatası" });
+        }
+
         const decoded = jwt.verify(
             token,
-            process.env.JWT_SECRET || "andron2025secretkey"
+            process.env.JWT_SECRET
         );
 
         const admin = await Admin.findById(decoded.id);
@@ -35,7 +42,7 @@ exports.authenticateAdmin = async (req, res, next) => {
         req.admin = admin;
         next();
     } catch (error) {
-        console.error("JWT doğrulama hatası:", error);
+        safeLog('error', "JWT doğrulama hatası", error);
         return res.status(401).json({ message: "Oturum doğrulanamadı" });
     }
 };

@@ -4,6 +4,8 @@ const cors = require('cors');
 const mongoose = require('mongoose');
 const path = require('path');
 const WebSocketService = require('./services/websocketService');
+const { safeLog } = require('./utils/helpers');
+const { connectDB, disconnectDB } = require('./config/database');
 const evaluationController = require('./controllers/evaluationController');
 const adminRoutes = require('./routes/adminRoutes');
 const gameManagementRoutes = require('./routes/gameManagementRoutes');
@@ -22,76 +24,13 @@ const app = express();
 const port = process.env.PORT || 5000;
 app.disable('x-powered-by');
 
-// MongoDB bağlantısı - Güncellenmiş ayarlar ve yeniden deneme mekanizması
-const connectWithRetry = async (retryCount = 0, maxRetries = 5) => {
-    try {
-        await mongoose.connect(process.env.MONGODB_URI, {
-            serverSelectionTimeoutMS: 30000, // 30 saniye - daha uzun timeout
-            socketTimeoutMS: 60000, // 60 saniye - daha uzun socket timeout
-            connectTimeoutMS: 30000, // 30 saniye - daha uzun bağlantı timeout
-            maxPoolSize: 20, // Daha fazla bağlantı havuzu
-            minPoolSize: 5, // Daha fazla minimum bağlantı
-            maxIdleTimeMS: 60000, // 60 saniye idle time
-            retryWrites: true,
-            retryReads: true,
-            family: 4, // IPv4 kullan
-            heartbeatFrequencyMS: 10000, // Daha sık heartbeat
-            maxStalenessSeconds: 90, // Stale okuma toleransı
-        });
-        console.log('✅ MongoDB bağlantısı başarılı');
-    } catch (err) {
-        console.error(`❌ MongoDB bağlantı hatası (Deneme ${retryCount + 1}/${maxRetries}):`, err.message);
-        
-        if (retryCount < maxRetries - 1) {
-            const delay = Math.pow(2, retryCount) * 1000; // Exponential backoff: 1s, 2s, 4s, 8s, 16s
-            console.log(`⏳ ${delay/1000} saniye sonra tekrar denenecek...`);
-            setTimeout(() => connectWithRetry(retryCount + 1, maxRetries), delay);
-        } else {
-            console.error('💥 MongoDB bağlantısı kurulamadı, maksimum deneme sayısına ulaşıldı');
-            process.exit(1);
-        }
-    }
-};
-
-// Bağlantıyı başlat
-connectWithRetry();
-
-// MongoDB bağlantı olaylarını dinle - Geliştirilmiş hata yönetimi
-mongoose.connection.on('connected', () => {
-    console.log('✅ MongoDB bağlantısı aktif');
-});
-
-mongoose.connection.on('error', (err) => {
-    console.error('❌ MongoDB bağlantı hatası:', err);
-    console.error('Hata detayları:', {
-        name: err.name,
-        message: err.message,
-        code: err.code,
-        codeName: err.codeName
-    });
-});
-
-mongoose.connection.on('disconnected', () => {
-    console.log('⚠️ MongoDB bağlantısı kesildi');
-});
-
-mongoose.connection.on('reconnected', () => {
-    console.log('🔄 MongoDB bağlantısı yeniden kuruldu');
-});
-
-mongoose.connection.on('close', () => {
-    console.log('🔒 MongoDB bağlantısı kapatıldı');
-});
-
-// Bağlantı durumu kontrolü
-mongoose.connection.on('open', () => {
-    console.log('🚀 MongoDB bağlantısı açık ve hazır');
-});
+// MongoDB bağlantısını başlat
+connectDB();
 
 // Graceful shutdown
 process.on('SIGINT', async () => {
-    console.log('Uygulama kapatılıyor...');
-    await mongoose.connection.close();
+    safeLog('debug', 'Uygulama kapatılıyor...');
+    await disconnectDB();
     process.exit(0);
 });
 
@@ -115,7 +54,7 @@ const corsOptions = {
             return callback(null, true);
         }
 
-        console.warn("⛔ Engellenen CORS isteği:", origin);
+        safeLog('warn', "⛔ Engellenen CORS isteği:", origin);
         return callback(new Error("CORS Engellendi: " + origin), false);
     },
     credentials: true,
@@ -139,7 +78,7 @@ app.use('/api/auth', authRoutes);
 
 // HTTP sunucusu
 const server = app.listen(port, () => {
-    console.log(`Server ${port} portunda çalışıyor`);
+    safeLog('debug', `Server ${port} portunda çalışıyor`);
 });
 
 // WebSocket servisi
@@ -150,7 +89,7 @@ setInterval(async () => {
     try {
         await wsService.getCodeController().checkExpiredCodes();
     } catch (error) {
-        console.error('Otomatik kod kontrolü hatası:', error);
+        safeLog('error', 'Otomatik kod kontrolü hatası', error);
     }
 }, 60 * 60 * 1000); // Her saat (60 dakika * 60 saniye * 1000 milisaniye)
 
@@ -323,7 +262,13 @@ app.use((req, res) => {
 
 // Hata yönetimi
 app.use((err, req, res, next) => {
-    console.error(err.stack);
-    res.status(500).json({ message: 'Bir hata oluştu' });
+    const { safeLog, getSafeErrorMessage } = require('./utils/helpers');
+    safeLog('error', 'Global error handler', err);
+    
+    const isProduction = process.env.NODE_ENV === 'production';
+    res.status(500).json({ 
+        message: 'Bir hata oluştu',
+        ...(isProduction ? {} : { error: err.message, stack: err.stack })
+    });
 });
 

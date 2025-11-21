@@ -1,4 +1,5 @@
 const Group = require('../models/Group');
+const { safeLog, getSafeErrorMessage } = require('../utils/helpers');
 
 // Tüm grupları getir
 const getAllGroups = async (req, res) => {
@@ -40,7 +41,7 @@ const getAllGroups = async (req, res) => {
             }
         });
     } catch (error) {
-        console.error('Grupları getirme hatası:', error);
+        safeLog('error', 'Grupları getirme hatası', error);
         res.status(500).json({
             success: false,
             message: 'Gruplar getirilirken bir hata oluştu',
@@ -68,7 +69,7 @@ const getGroupById = async (req, res) => {
             group
         });
     } catch (error) {
-        console.error('Grup getirme hatası:', error);
+        safeLog('error', 'Grup getirme hatası', error);
         res.status(500).json({
             success: false,
             message: 'Grup getirilirken bir hata oluştu',
@@ -142,7 +143,7 @@ const createGroup = async (req, res) => {
             group: newGroup
         });
     } catch (error) {
-        console.error('Grup oluşturma hatası:', error);
+        safeLog('error', 'Grup oluşturma hatası', error);
         res.status(500).json({
             success: false,
             message: 'Grup oluşturulurken bir hata oluştu',
@@ -233,7 +234,7 @@ const updateGroup = async (req, res) => {
             group: updatedGroup
         });
     } catch (error) {
-        console.error('Grup güncelleme hatası:', error);
+        safeLog('error', 'Grup güncelleme hatası', error);
         res.status(500).json({
             success: false,
             message: 'Grup güncellenirken bir hata oluştu',
@@ -264,7 +265,7 @@ const deleteGroup = async (req, res) => {
             message: 'Grup başarıyla silindi'
         });
     } catch (error) {
-        console.error('Grup silme hatası:', error);
+        safeLog('error', 'Grup silme hatası', error);
         res.status(500).json({
             success: false,
             message: 'Grup silinirken bir hata oluştu',
@@ -295,7 +296,7 @@ const toggleGroupStatus = async (req, res) => {
             group
         });
     } catch (error) {
-        console.error('Grup durumu değiştirme hatası:', error);
+        safeLog('error', 'Grup durumu değiştirme hatası', error);
         res.status(500).json({
             success: false,
             message: 'Grup durumu değiştirilirken bir hata oluştu',
@@ -314,7 +315,7 @@ const getActiveGroups = async (req, res) => {
             groups
         });
     } catch (error) {
-        console.error('Aktif grupları getirme hatası:', error);
+        safeLog('error', 'Aktif grupları getirme hatası', error);
         res.status(500).json({
             success: false,
             message: 'Aktif gruplar getirilirken bir hata oluştu',
@@ -420,7 +421,7 @@ const getMatchingPersonsByOrganizations = async (req, res) => {
         });
 
     } catch (error) {
-        console.error('Eşleşen kişileri getirme hatası:', error);
+        safeLog('error', 'Eşleşen kişileri getirme hatası', error);
         res.status(500).json({
             success: false,
             message: 'Eşleşen kişiler getirilirken bir hata oluştu',

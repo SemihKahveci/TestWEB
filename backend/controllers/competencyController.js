@@ -1,6 +1,7 @@
 const Competency = require('../models/Competency');
 const multer = require('multer');
 const XLSX = require('xlsx');
+const { safeLog, getSafeErrorMessage } = require('../utils/helpers');
 
 const competencyController = {
     // Tüm yetkinlikleri getir
@@ -15,7 +16,7 @@ const competencyController = {
                 competencies
             });
         } catch (error) {
-            console.error('Yetkinlik listesi alma hatası:', error);
+            safeLog('error', 'Yetkinlik listesi alma hatası', error);
             res.status(500).json({
                 success: false,
                 message: 'Yetkinlik listesi alınırken bir hata oluştu',
@@ -43,7 +44,7 @@ const competencyController = {
                 competency
             });
         } catch (error) {
-            console.error('Yetkinlik getirme hatası:', error);
+            safeLog('error', 'Yetkinlik getirme hatası', error);
             res.status(500).json({
                 success: false,
                 message: 'Yetkinlik getirilirken bir hata oluştu',
@@ -162,7 +163,7 @@ const competencyController = {
                 competency
             });
         } catch (error) {
-            console.error('Yetkinlik oluşturma hatası:', error);
+            safeLog('error', 'Yetkinlik oluşturma hatası', error);
             res.status(500).json({
                 success: false,
                 message: 'Yetkinlik oluşturulurken bir hata oluştu',
@@ -289,7 +290,7 @@ const competencyController = {
                 competency
             });
         } catch (error) {
-            console.error('Yetkinlik güncelleme hatası:', error);
+            safeLog('error', 'Yetkinlik güncelleme hatası', error);
             res.status(500).json({
                 success: false,
                 message: 'Yetkinlik güncellenirken bir hata oluştu',
@@ -316,7 +317,7 @@ const competencyController = {
                 message: 'Yetkinlik başarıyla silindi'
             });
         } catch (error) {
-            console.error('Yetkinlik silme hatası:', error);
+            safeLog('error', 'Yetkinlik silme hatası', error);
             res.status(500).json({
                 success: false,
                 message: 'Yetkinlik silinirken bir hata oluştu',
@@ -513,7 +514,7 @@ const competencyController = {
             });
 
         } catch (error) {
-            console.error('Excel import hatası:', error);
+            safeLog('error', 'Excel import hatası', error);
             res.status(500).json({
                 success: false,
                 message: 'Excel import işlemi sırasında bir hata oluştu',

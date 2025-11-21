@@ -29,11 +29,12 @@ const sendEmail = async (to, subject, html, replyTo = null, fromEmail = null) =>
         const result = await mg.messages.create(process.env.MAILGUN_DOMAIN, data);
         return { success: true, messageId: result.id };
     } catch (error) {
-        console.error('E-posta gönderme hatası:', error);
+        const { safeLog } = require('../utils/helpers');
+        safeLog('error', 'E-posta gönderme hatası', error);
         return { 
             success: false, 
             error: error.message || 'Mailgun servisi hatası',
-            details: error.response?.data || null
+            ...(process.env.NODE_ENV !== 'production' && { details: error.response?.data || null })
         };
     }
 };

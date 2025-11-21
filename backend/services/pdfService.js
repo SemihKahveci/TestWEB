@@ -1,4 +1,6 @@
 const htmlPdf = require('html-pdf-node');
+const { escapeHtml } = require('../utils/helpers');
+
 const options = { 
     format: 'A4',
     args: ['--no-sandbox', '--disable-setuid-sandbox']
@@ -56,10 +58,10 @@ const generatePDF = async (data) => {
                 <div class="section">
                     <h2>Kullanıcı Bilgileri</h2>
                     <div class="info">
-                        <p><strong>Ad Soyad:</strong> ${userCode.name || '-'}</p>
-                        <p><strong>E-posta:</strong> ${userCode.email || '-'}</p>
-                        <p><strong>Planet:</strong> ${userCode.planet || '-'}</p>
-                        <p><strong>Kod:</strong> ${userCode.code || '-'}</p>
+                    <p><strong>Ad Soyad:</strong> ${escapeHtml(userCode.name || '-')}</p>
+                    <p><strong>E-posta:</strong> ${escapeHtml(userCode.email || '-')}</p>
+                    <p><strong>Planet:</strong> ${escapeHtml(userCode.planet || '-')}</p>
+                    <p><strong>Kod:</strong> ${escapeHtml(userCode.code || '-')}</p>
                         <p><strong>Gönderim Tarihi:</strong> ${userCode.sentDate ? new Date(userCode.sentDate).toLocaleString('tr-TR') : '-'}</p>
                         <p><strong>Tamamlanma Tarihi:</strong> ${userCode.completionDate ? new Date(userCode.completionDate).toLocaleString('tr-TR') : '-'}</p>
                     </div>
@@ -95,15 +97,11 @@ const generatePDF = async (data) => {
         // PDF oluştur
         const file = await htmlPdf.generatePdf({ content: html }, options);
         return file;
-    } catch (error) {
-        console.error('PDF oluşturma hatası:', error);
-        console.error('Hata detayı:', {
-            message: error.message,
-            stack: error.stack,
-            name: error.name
-        });
-        throw error;
-    }
+        } catch (error) {
+            const { safeLog } = require('../utils/helpers');
+            safeLog('error', 'PDF oluşturma hatası', error);
+            throw error;
+        }
 };
 
 module.exports = {

@@ -7,7 +7,7 @@ const Admin = require('../models/Admin');
 const bcrypt = require('bcryptjs');
 const UserCode = require('../models/userCode');
 const Game = require('../models/game');
-const { answerMultipliers } = require('../config/constants');
+const { capitalizeName, escapeHtml, safeLog, getSafeErrorMessage } = require('../utils/helpers');
 const XLSX = require('xlsx');
 
 // Şifre validasyon fonksiyonu
@@ -82,6 +82,12 @@ const adminController = {
                 return res.status(401).json({ message: 'Hesabınız aktif değil' });
             }
 
+            // JWT_SECRET kontrolü
+            if (!process.env.JWT_SECRET) {
+                safeLog('error', 'JWT_SECRET environment variable is not set!');
+                return res.status(500).json({ message: 'Sunucu yapılandırma hatası' });
+            }
+
             // JWT oluştur
             const token = jwt.sign(
                 {
@@ -90,7 +96,7 @@ const adminController = {
                     role: admin.role,
                     name: admin.name
                 },
-                process.env.JWT_SECRET || 'andron2025secretkey',
+                process.env.JWT_SECRET,
                 { expiresIn: '7d' }
             );
 
@@ -116,8 +122,8 @@ const adminController = {
             });
 
         } catch (error) {
-            console.error("Login hatası:", error);
-            res.status(500).json({ message: "Sunucu hatası" });
+            safeLog('error', 'Login hatası', error);
+            res.status(500).json({ message: getSafeErrorMessage(error, "Sunucu hatası") });
         }
     },
 
@@ -135,8 +141,8 @@ const adminController = {
             const evaluation = await EvaluationResult.create(evaluationData);
             res.status(201).json({ message: 'Değerlendirme başarıyla oluşturuldu', evaluation });
         } catch (error) {
-            console.error('Değerlendirme oluşturma hatası:', error);
-            res.status(500).json({ message: 'Değerlendirme oluşturulurken bir hata oluştu' });
+            safeLog('error', 'Değerlendirme oluşturma hatası', error);
+            res.status(500).json({ message: getSafeErrorMessage(error, 'Değerlendirme oluşturulurken bir hata oluştu') });
         }
     },
 
@@ -153,8 +159,8 @@ const adminController = {
 
             res.json({ message: 'Değerlendirme başarıyla silindi' });
         } catch (error) {
-            console.error('Değerlendirme silme hatası:', error);
-            res.status(500).json({ message: 'Değerlendirme silinirken bir hata oluştu' });
+            safeLog('error', 'Değerlendirme silme hatası', error);
+            res.status(500).json({ message: getSafeErrorMessage(error, 'Değerlendirme silinirken bir hata oluştu') });
         }
     },
 
@@ -212,16 +218,10 @@ const adminController = {
             res.send(pdfBuffer);
 
         } catch (error) {
-            console.error('PDF oluşturma hatası:', error);
-            console.error('Hata detayı:', {
-                message: error.message,
-                stack: error.stack,
-                name: error.name
-            });
+            safeLog('error', 'PDF oluşturma hatası', error);
             res.status(500).json({ 
-                message: 'PDF oluşturulurken bir hata oluştu', 
-                error: error.message,
-                details: error.stack
+                message: getSafeErrorMessage(error, 'PDF oluşturulurken bir hata oluştu'),
+                ...(process.env.NODE_ENV !== 'production' && { error: error.message, details: error.stack })
             });
         }
     },
@@ -280,8 +280,11 @@ const adminController = {
             res.send(pdfBuffer);
 
         } catch (error) {
-            console.error('PDF önizleme hatası:', error);
-            res.status(500).json({ message: 'PDF önizlenirken bir hata oluştu', error: error.message });
+            safeLog('error', 'PDF önizleme hatası', error);
+            res.status(500).json({ 
+                message: getSafeErrorMessage(error, 'PDF önizlenirken bir hata oluştu'),
+                ...(process.env.NODE_ENV !== 'production' && { error: error.message })
+            });
         }
     },
 
@@ -317,24 +320,20 @@ const adminController = {
                 return res.status(400).json({ success: false, message: 'Kod bulunamadı' });
             }
 
-            // Admin adının ilk harfini büyük yap
-            const capitalizeName = (name) => {
-                if (!name) return '';
-                return name.charAt(0).toUpperCase() + name.slice(1).toLowerCase();
-            };
-
-            // E-posta içeriği
+            // E-posta içeriği (XSS koruması ile)
+            const safeName = escapeHtml(capitalizeName(name));
+            const safeCode = escapeHtml(code);
             const emailHtml = `
                 <div style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
-                    <p><strong>Kaptan ${capitalizeName(name)},</strong></p>
+                    <p><strong>Kaptan ${safeName},</strong></p>
 
                     <p>Artık komuta sende, yeni yetkinlik değerlendirme çözümümüz ile ANDRON Evreni'ne ilk adımını at ve 15-20 dakikalık maceraya hazır ol! 🚀</p>
 
                     <p>🎥 Görevine başlamadan önce <a href="https://www.youtube.com/watch?v=QALP4qOnFws" style="color: #0286F7; text-decoration: none; font-weight: bold;">"Oyun Deneyim Rehberi"</a>ni izle ve dikkat edilmesi gereken püf noktaları öğren.</p>
 
                     <p><strong>🔺Giriş Bilgileri:</strong></p>
-                    <p>🗝 Tek Kullanımlık Giriş Kodu: <strong>${code}</strong><br>
-                    ⏱️ <strong>${formattedExpiryDate}</strong> tarihine kadar geçerlidir.</p>
+                    <p>🗝 Tek Kullanımlık Giriş Kodu: <strong>${safeCode}</strong><br>
+                    ⏱️ <strong>${escapeHtml(formattedExpiryDate)}</strong> tarihine kadar geçerlidir.</p>
 
                     <p><strong>🔺Uygulamayı İndir ve Başla:</strong></p>
                     <p>
@@ -543,7 +542,7 @@ const adminController = {
             // UserCode güncellemelerini arka planda çalıştır (response'u beklemeden)
             if (updatePromises.length > 0) {
                 Promise.all(updatePromises).catch(err => {
-                    console.error('UserCode güncelleme hatası (non-blocking):', err);
+                    safeLog('error', 'UserCode güncelleme hatası (non-blocking)', err);
                 });
             }
             
@@ -558,10 +557,10 @@ const adminController = {
                 }
             });
         } catch (error) {
-            console.error('Sonuçları getirme hatası:', error);
+            safeLog('error', 'Sonuçları getirme hatası', error);
             res.status(500).json({
                 success: false,
-                message: 'Sonuçlar alınırken bir hata oluştu'
+                message: getSafeErrorMessage(error, 'Sonuçlar alınırken bir hata oluştu')
             });
         }
     },
@@ -601,10 +600,10 @@ const adminController = {
                 result
             });
         } catch (error) {
-            console.error('Durum güncelleme hatası:', error);
+            safeLog('error', 'Durum güncelleme hatası', error);
             res.status(500).json({
                 success: false,
-                message: 'Durum güncellenirken bir hata oluştu'
+                message: getSafeErrorMessage(error, 'Durum güncellenirken bir hata oluştu')
             });
         }
     },
@@ -643,11 +642,11 @@ const adminController = {
                 }
             });
         } catch (error) {
-            console.error('Admin oluşturma hatası:', error);
+            safeLog('error', 'Admin oluşturma hatası', error);
             res.status(500).json({ 
                 success: false,
-                message: 'Admin oluşturulurken bir hata oluştu',
-                error: error.message 
+                message: getSafeErrorMessage(error, 'Admin oluşturulurken bir hata oluştu'),
+                ...(process.env.NODE_ENV !== 'production' && { error: error.message })
             });
         }
     },
@@ -690,11 +689,11 @@ const adminController = {
                 }
             });
         } catch (error) {
-            console.error('Admin güncelleme hatası:', error);
+            safeLog('error', 'Admin güncelleme hatası', error);
             res.status(500).json({ 
                 success: false,
-                message: 'Admin güncellenirken bir hata oluştu',
-                error: error.message 
+                message: getSafeErrorMessage(error, 'Admin güncellenirken bir hata oluştu'),
+                ...(process.env.NODE_ENV !== 'production' && { error: error.message })
             });
         }
     },
@@ -708,11 +707,11 @@ const adminController = {
                 admins: admins
             });
         } catch (error) {
-            console.error('Admin listesi alma hatası:', error);
+            safeLog('error', 'Admin listesi alma hatası', error);
             res.status(500).json({ 
                 success: false,
-                message: 'Admin listesi alınırken bir hata oluştu',
-                error: error.message 
+                message: getSafeErrorMessage(error, 'Admin listesi alınırken bir hata oluştu'),
+                ...(process.env.NODE_ENV !== 'production' && { error: error.message })
             });
         }
     },
@@ -735,11 +734,11 @@ const adminController = {
                 admin: admin
             });
         } catch (error) {
-            console.error('Admin getirme hatası:', error);
+            safeLog('error', 'Admin getirme hatası', error);
             res.status(500).json({ 
                 success: false,
-                message: 'Admin bilgileri alınırken bir hata oluştu',
-                error: error.message 
+                message: getSafeErrorMessage(error, 'Admin bilgileri alınırken bir hata oluştu'),
+                ...(process.env.NODE_ENV !== 'production' && { error: error.message })
             });
         }
     },
@@ -761,8 +760,8 @@ const adminController = {
 
             res.json({ message: 'Sonuç başarıyla silindi' });
         } catch (error) {
-            console.error('Sonuç silme hatası:', error);
-            res.status(500).json({ message: 'Sonuç silinirken bir hata oluştu' });
+            safeLog('error', 'Sonuç silme hatası', error);
+            res.status(500).json({ message: getSafeErrorMessage(error, 'Sonuç silinirken bir hata oluştu') });
         }
     },
 
@@ -786,11 +785,11 @@ const adminController = {
                 message: 'Admin başarıyla silindi' 
             });
         } catch (error) {
-            console.error('Admin silme hatası:', error);
+            safeLog('error', 'Admin silme hatası', error);
             res.status(500).json({ 
                 success: false,
-                message: 'Admin silinirken bir hata oluştu',
-                error: error.message 
+                message: getSafeErrorMessage(error, 'Admin silinirken bir hata oluştu'),
+                ...(process.env.NODE_ENV !== 'production' && { error: error.message })
             });
         }
     },
@@ -807,15 +806,11 @@ const adminController = {
                 });
             }
 
-            // Admin adının ilk harfini büyük yap
-            const capitalizeName = (name) => {
-                if (!name) return '';
-                return name.charAt(0).toUpperCase() + name.slice(1).toLowerCase();
-            };
-
+            // E-posta içeriği (XSS koruması ile)
+            const safeName = escapeHtml(capitalizeName(name));
             const completionEmailHtml = `
                 <div style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
-                    <p><strong>Kaptan ${capitalizeName(name)},</strong></p>
+                    <p><strong>Kaptan ${safeName},</strong></p>
 
                     <p>Tebrikler, ANDRON Evreni'ndeki keşif maceranı başarıyla tamamladın! 🚀</p>
 
@@ -846,11 +841,11 @@ const adminController = {
             }
 
         } catch (error) {
-            console.error('Tamamlanma e-postası gönderme hatası:', error);
+            safeLog('error', 'Tamamlanma e-postası gönderme hatası', error);
             res.status(500).json({
                 success: false,
-                message: 'E-posta gönderilirken bir hata oluştu',
-                error: error.message
+                message: getSafeErrorMessage(error, 'E-posta gönderilirken bir hata oluştu'),
+                ...(process.env.NODE_ENV !== 'production' && { error: error.message })
             });
         }
     },
@@ -889,7 +884,7 @@ const adminController = {
             let ieScore = (titanGame ? titanGame.ieScore : null) || userCode.ieScore || '-';
             let idikScore = (titanGame ? titanGame.idikScore : null) || userCode.idikScore || '-';
             
-            console.log('Doğru skorlar:', {
+            safeLog('debug', 'Doğru skorlar:', {
                 customerFocusScore: customerFocusScore,
                 uncertaintyScore: uncertaintyScore,
                 ieScore: ieScore,
@@ -970,10 +965,10 @@ const adminController = {
             res.send(excelBuffer);
 
         } catch (error) {
-            console.error('Excel export hatası:', error);
+            safeLog('error', 'Excel export hatası', error);
             res.status(500).json({ 
-                message: 'Excel oluşturulurken bir hata oluştu', 
-                error: error.message 
+                message: getSafeErrorMessage(error, 'Excel oluşturulurken bir hata oluştu'),
+                ...(process.env.NODE_ENV !== 'production' && { error: error.message })
             });
         }
     },
@@ -1016,21 +1011,17 @@ const adminController = {
             // Yeni kodu kaydet
             await mongoose.connection.db.collection('resetcodes').insertOne(resetCodeData);
 
-            // Admin adının ilk harfini büyük yap
-            const capitalizeName = (name) => {
-                if (!name) return '';
-                return name.charAt(0).toUpperCase() + name.slice(1).toLowerCase();
-            };
-
-            // E-posta içeriği
+            // E-posta içeriği (XSS koruması ile)
+            const safeAdminName = escapeHtml(capitalizeName(admin.name));
+            const safeResetCode = escapeHtml(resetCode);
             const emailHtml = `
                 <div style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
-                    <p><strong>Merhaba ${capitalizeName(admin.name)},</strong></p>
+                    <p><strong>Merhaba ${safeAdminName},</strong></p>
 
                     <p>Şifre sıfırlama talebiniz alınmıştır. Aşağıdaki kodu kullanarak şifrenizi sıfırlayabilirsiniz:</p>
 
                     <div style="background-color: #f8f9fa; border: 1px solid #dee2e6; border-radius: 8px; padding: 20px; text-align: center; margin: 20px 0;">
-                        <h2 style="color: #3B82F6; margin: 0; font-size: 32px; letter-spacing: 5px;">${resetCode}</h2>
+                        <h2 style="color: #3B82F6; margin: 0; font-size: 32px; letter-spacing: 5px;">${safeResetCode}</h2>
                     </div>
 
                     <p><strong>Önemli:</strong></p>
@@ -1067,10 +1058,10 @@ const adminController = {
             }
 
         } catch (error) {
-            console.error('Şifre sıfırlama kodu gönderme hatası:', error);
+            safeLog('error', 'Şifre sıfırlama kodu gönderme hatası', error);
             res.status(500).json({ 
                 success: false, 
-                message: 'Şifre sıfırlama kodu gönderilirken bir hata oluştu' 
+                message: getSafeErrorMessage(error, 'Şifre sıfırlama kodu gönderilirken bir hata oluştu')
             });
         }
     },
@@ -1108,10 +1099,10 @@ const adminController = {
             });
 
         } catch (error) {
-            console.error('Kod doğrulama hatası:', error);
+            safeLog('error', 'Kod doğrulama hatası', error);
             res.status(500).json({ 
                 success: false, 
-                message: 'Kod doğrulanırken bir hata oluştu' 
+                message: getSafeErrorMessage(error, 'Kod doğrulanırken bir hata oluştu')
             });
         }
     },
@@ -1177,10 +1168,10 @@ const adminController = {
             });
 
         } catch (error) {
-            console.error('Şifre sıfırlama hatası:', error);
+            safeLog('error', 'Şifre sıfırlama hatası', error);
             res.status(500).json({ 
                 success: false, 
-                message: 'Şifre sıfırlanırken bir hata oluştu' 
+                message: getSafeErrorMessage(error, 'Şifre sıfırlanırken bir hata oluştu')
             });
         }
     },
@@ -1190,7 +1181,7 @@ const adminController = {
         try {
             const { to, subject, html, replyTo } = req.body;
 
-            console.log('Contact email request received:', {
+            safeLog('debug', 'Contact email request received:', {
                 to,
                 subject,
                 hasHtml: !!html,
@@ -1198,43 +1189,42 @@ const adminController = {
             });
 
             if (!to || !subject || !html) {
-                console.error('Missing required fields:', { to, subject, hasHtml: !!html });
+                safeLog('error', 'Missing required fields:', { to, subject, hasHtml: !!html });
                 return res.status(400).json({ 
                     success: false, 
                     message: 'To, subject ve html gereklidir' 
                 });
             }
 
-            console.log('Sending email via emailService...');
+            safeLog('debug', 'Sending email via emailService...');
             // Contact form için özel from email: sekahveci@androngame.com
             const contactFromEmail = process.env.CONTACT_FROM_EMAIL || 'sekahveci@androngame.com';
             const emailResult = await sendEmail(to, subject, html, replyTo, contactFromEmail);
 
-            console.log('Email result:', emailResult);
+            safeLog('debug', 'Email result:', emailResult);
 
             if (emailResult.success) {
-                console.log('Email sent successfully, messageId:', emailResult.messageId);
+                safeLog('debug', 'Email sent successfully, messageId:', emailResult.messageId);
                 res.json({
                     success: true,
                     message: 'E-posta başarıyla gönderildi',
                     messageId: emailResult.messageId
                 });
             } else {
-                console.error('Email sending failed:', emailResult.error, emailResult.details);
+                safeLog('error', 'Email sending failed:', emailResult.error, emailResult.details);
                 res.status(500).json({
                     success: false,
-                    message: 'E-posta gönderilirken bir hata oluştu',
-                    error: emailResult.error,
-                    details: emailResult.details
+                    message: getSafeErrorMessage(new Error(emailResult.error), 'E-posta gönderilirken bir hata oluştu'),
+                    ...(process.env.NODE_ENV !== 'production' && { error: emailResult.error, details: emailResult.details })
                 });
             }
 
         } catch (error) {
-            console.error('Contact e-postası gönderme hatası:', error);
+            safeLog('error', 'Contact e-postası gönderme hatası', error);
             res.status(500).json({
                 success: false,
-                message: 'E-posta gönderilirken bir hata oluştu',
-                error: error.message
+                message: getSafeErrorMessage(error, 'E-posta gönderilirken bir hata oluştu'),
+                ...(process.env.NODE_ENV !== 'production' && { error: error.message })
             });
         }
     }

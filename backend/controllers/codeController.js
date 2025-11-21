@@ -3,6 +3,7 @@ const Game = require('../models/game');
 const EvaluationResult = require('../models/evaluationResult');
 const Credit = require('../models/Credit');
 const mongoose = require('mongoose');
+const { safeLog, getSafeErrorMessage } = require('../utils/helpers');
 
 
 class CodeController {
@@ -48,8 +49,8 @@ class CodeController {
             
             res.json({ success: true, code });
         } catch (error) {
-            console.error('Kod oluşturma hatası:', error);
-            res.status(500).json({ success: false, error: 'Kod oluşturulurken bir hata oluştu' });
+            safeLog('error', 'Kod oluşturma hatası', error);
+            res.status(500).json({ success: false, error: getSafeErrorMessage(error, 'Kod oluşturulurken bir hata oluştu') });
         }
     }
 
@@ -66,10 +67,10 @@ class CodeController {
                 message: 'Kodlar başarıyla listelendi'
             });
         } catch (error) {
-            console.error('Kodları listeleme hatası:', error);
+            safeLog('error', 'Kodları listeleme hatası', error);
             res.status(500).json({
                 success: false,
-                message: this.errorMessages.serverError
+                message: getSafeErrorMessage(error, this.errorMessages.serverError)
             });
         }
     }
@@ -135,22 +136,22 @@ class CodeController {
             await userCode.save();
 
             const allPlanets = userCode.allPlanets || [userCode.planet];
-            console.log(`Tüm seçilen gezegenler: ${allPlanets}`);
+            safeLog('debug', 'Tüm seçilen gezegenler:', allPlanets);
             
             const sectionNames = allPlanets.map(planet => {
                 if (planet === 'venus') {
-                    console.log('Venus -> section 0');
+                    safeLog('debug', 'Venus -> section 0');
                     return '0';
                 } else if (planet === 'titan') {
-                    console.log('Titan -> section 1');
+                    safeLog('debug', 'Titan -> section 1');
                     return '1';
                 } else {
-                    console.log(`Bilinmeyen gezegen: '${planet}' -> varsayılan 0`);
+                    safeLog('debug', `Bilinmeyen gezegen: '${planet}' -> varsayılan 0`);
                     return '0';
                 }
             });
             
-            console.log(`Oluşturulan section'lar: ${sectionNames}`);
+            safeLog('debug', 'Oluşturulan section\'lar:', sectionNames);
 
             res.status(200).json({
                 success: true,
@@ -159,10 +160,10 @@ class CodeController {
                 allPlanets: allPlanets
             });
         } catch (error) {
-            console.error('Kod doğrulama hatası:', error);
+            safeLog('error', 'Kod doğrulama hatası', error);
             res.status(500).json({
                 success: false,
-                message: this.errorMessages.serverError
+                message: getSafeErrorMessage(error, this.errorMessages.serverError)
             });
         }
     }
@@ -221,10 +222,10 @@ class CodeController {
                             });
                             
                             await credit.save();
-                            console.log(`✅ ${code.name} için ${planetCount} kredi geri yüklendi`);
+                            safeLog('debug', `✅ ${code.name} için ${planetCount} kredi geri yüklendi`);
                         }
                     } catch (creditError) {
-                        console.error(`❌ ${code.name} için kredi geri yükleme hatası:`, creditError);
+                        safeLog('error', `${code.name} için kredi geri yükleme hatası:`, creditError);
                     }
                 }
 
@@ -239,10 +240,10 @@ class CodeController {
                     }
                 );
 
-                console.log(`${expiredCodes.length} adet kod süresi doldu ve güncellendi.`);
+                safeLog('debug', `${expiredCodes.length} adet kod süresi doldu ve güncellendi.`);
             }
         } catch (error) {
-            console.error('Süresi dolan kodları kontrol etme hatası:', error);
+            safeLog('error', 'Süresi dolan kodları kontrol etme hatası', error);
         }
     }
 
@@ -257,10 +258,10 @@ class CodeController {
                 message: 'Tüm kodlar başarıyla silindi'
             });
         } catch (error) {
-            console.error('Kodları silme hatası:', error);
+            safeLog('error', 'Kodları silme hatası', error);
             res.status(500).json({
                 success: false,
-                message: this.errorMessages.serverError
+                message: getSafeErrorMessage(error, this.errorMessages.serverError)
             });
         }
     }
@@ -291,10 +292,10 @@ class CodeController {
                 message: 'Kod başarıyla silindi'
             });
         } catch (error) {
-            console.error('Kod silme hatası:', error);
+            safeLog('error', 'Kod silme hatası', error);
             res.status(500).json({
                 success: false,
-                message: this.errorMessages.serverError
+                message: getSafeErrorMessage(error, this.errorMessages.serverError)
             });
         }
     }

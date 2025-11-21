@@ -1,4 +1,5 @@
 const Credit = require('../models/Credit');
+const { safeLog, getSafeErrorMessage } = require('../utils/helpers');
 
 // Cache for total credits to avoid repeated API calls
 let totalCreditsCache = {
@@ -38,7 +39,7 @@ const getTotalCreditsFromCache = async (req) => {
     
     return totalCredits;
   } catch (error) {
-    console.error('Error fetching total credits:', error);
+    safeLog('error', 'Error fetching total credits', error);
     // Return cached value if available, otherwise 0
     return totalCreditsCache.value || 0;
   }
@@ -69,7 +70,7 @@ const getUserCredits = async (req, res) => {
       const currentTotalCredits = await getTotalCreditsFromCache(req);
       
       if (credit.totalCredits !== currentTotalCredits) {
-        console.log(`Toplam kredi güncelleniyor: ${credit.totalCredits} -> ${currentTotalCredits}`);
+        safeLog('debug', `Toplam kredi güncelleniyor: ${credit.totalCredits} -> ${currentTotalCredits}`);
         credit.totalCredits = currentTotalCredits;
         credit.remainingCredits = currentTotalCredits - credit.usedCredits;
         await credit.save();
@@ -86,7 +87,7 @@ const getUserCredits = async (req, res) => {
       }
     });
   } catch (error) {
-    console.error('Get user credits error:', error);
+    safeLog('error', 'Get user credits error', error);
     res.status(500).json({
       success: false,
       message: 'Kredi bilgileri alınamadı'
@@ -139,7 +140,7 @@ const updateTotalCredits = async (req, res) => {
       }
     });
   } catch (error) {
-    console.error('Update total credits error:', error);
+    safeLog('error', 'Update total credits error', error);
     res.status(500).json({
       success: false,
       message: 'Kredi güncellenemedi'
@@ -221,7 +222,7 @@ const deductCredits = async (req, res) => {
       }
     });
   } catch (error) {
-    console.error('Deduct credits error:', error);
+    safeLog('error', 'Deduct credits error', error);
     res.status(500).json({
       success: false,
       message: 'Kredi düşürülemedi'
@@ -261,7 +262,7 @@ const getCreditTransactions = async (req, res) => {
       limit: parseInt(limit)
     });
   } catch (error) {
-    console.error('Get credit transactions error:', error);
+    safeLog('error', 'Get credit transactions error', error);
     res.status(500).json({
       success: false,
       message: 'Kredi işlemleri alınamadı'
@@ -319,7 +320,7 @@ const restoreCredits = async (req, res) => {
       }
     });
   } catch (error) {
-    console.error('Restore credits error:', error);
+    safeLog('error', 'Restore credits error', error);
     res.status(500).json({
       success: false,
       message: 'Kredi geri yüklenemedi'

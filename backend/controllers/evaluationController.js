@@ -6,6 +6,7 @@ const mongoose = require('mongoose');
 const UserCode = require('../models/userCode');
 const Game = require('../models/game');
 const { Document, Packer, Paragraph, TextRun, HeadingLevel, AlignmentType, Footer, PageNumber, BorderStyle, Table, TableRow, TableCell, WidthType } = require('docx');
+const { safeLog, getSafeErrorMessage } = require('../utils/helpers');
 
 const evaluationController = {
     async getEvaluationById(req, res) {
@@ -85,7 +86,7 @@ const evaluationController = {
 
             return generateAndSendPDF(uniqueResults, options, res, userCode);
         } catch (error) {
-            console.error('PDF oluşturma hatası:', error);
+            safeLog('error', 'PDF oluşturma hatası', error);
             res.status(500).json({ message: 'PDF oluşturulurken bir hata oluştu' });
         }
     },
@@ -151,7 +152,7 @@ const evaluationController = {
 
             return generateAndSendWord(uniqueResults, options, res, userCode);
         } catch (error) {
-            console.error('Word oluşturma hatası:', error);
+            safeLog('error', 'Word oluşturma hatası', error);
             res.status(500).json({ message: 'Word oluşturulurken bir hata oluştu' });
         }
     },
@@ -214,7 +215,7 @@ const evaluationController = {
 
             return generateAndSendPreview(uniqueResults, options, res, code);
         } catch (error) {
-            console.error('PDF önizleme hatası:', error);
+            safeLog('error', 'PDF önizleme hatası', error);
             res.status(500).json({ message: 'PDF oluşturulurken bir hata oluştu' });
         }
     },
@@ -225,7 +226,7 @@ const evaluationController = {
             const evaluations = await EvaluationResult.find().sort({ createdAt: -1 });
             res.json(evaluations);
         } catch (error) {
-            console.error('Değerlendirmeleri getirme hatası:', error);
+            safeLog('error', 'Değerlendirmeleri getirme hatası', error);
             res.status(500).json({ error: 'Değerlendirmeler yüklenirken bir hata oluştu' });
         }
     }
@@ -257,7 +258,7 @@ async function getUserInfo(userCode) {
             completionDate: new Date()
         };
     } catch (error) {
-        console.error('Kullanıcı bilgisi alınırken hata:', error);
+        safeLog('error', 'Kullanıcı bilgisi alınırken hata', error);
         return {
             name: 'Bilinmeyen',
             completionDate: new Date()
@@ -299,7 +300,7 @@ async function sortReportsByPlanetOrder(evaluation, userCode) {
         return sortedEvaluation;
         
     } catch (error) {
-        console.error('Gezegen sırası alınırken hata:', error);
+        safeLog('error', 'Gezegen sırası alınırken hata', error);
         return evaluation;
     }
 }

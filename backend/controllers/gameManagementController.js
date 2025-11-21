@@ -1,5 +1,6 @@
 const GameManagement = require('../models/gameManagement');
 const { invalidateCache } = require('./creditController');
+const { safeLog, getSafeErrorMessage } = require('../utils/helpers');
 
 class GameManagementController {
     // Tüm oyun yönetimi verilerini getir
@@ -15,7 +16,7 @@ class GameManagementController {
             const total = await GameManagement.countDocuments();
             res.json({ games, total });
         } catch (error) {
-            console.error('Oyun verileri getirme hatası:', error);
+            safeLog('error', 'Oyun verileri getirme hatası', error);
             res.status(500).json({ message: 'Oyun verileri getirilemedi' });
         }
     }
@@ -50,7 +51,7 @@ class GameManagementController {
             
             res.status(201).json(newGame);
         } catch (error) {
-            console.error('Oyun ekleme hatası:', error);
+            safeLog('error', 'Oyun ekleme hatası', error);
             res.status(500).json({ message: 'Oyun eklenemedi' });
         }
     }
@@ -101,7 +102,7 @@ class GameManagementController {
 
             res.json({ success: true, message: 'Oyun başarıyla güncellendi', game: updatedGame });
         } catch (error) {
-            console.error('Oyun güncelleme hatası:', error);
+            safeLog('error', 'Oyun güncelleme hatası', error);
             res.status(500).json({ success: false, message: 'Oyun güncellenemedi' });
         }
     }
@@ -121,7 +122,7 @@ class GameManagementController {
 
             res.json({ message: 'Oyun başarıyla silindi' });
         } catch (error) {
-            console.error('Oyun silme hatası:', error);
+            safeLog('error', 'Oyun silme hatası', error);
             res.status(500).json({ message: 'Oyun silinemedi' });
         }
     }
@@ -138,7 +139,7 @@ class GameManagementController {
 
             res.json({ success: true, game });
         } catch (error) {
-            console.error('Oyun getirme hatası:', error);
+            safeLog('error', 'Oyun getirme hatası', error);
             res.status(500).json({ success: false, message: 'Oyun getirilemedi' });
         }
     }
@@ -155,7 +156,7 @@ class GameManagementController {
 
             res.json(game);
         } catch (error) {
-            console.error('Oyun getirme hatası:', error);
+            safeLog('error', 'Oyun getirme hatası', error);
             res.status(500).json({ message: 'Oyun getirilemedi' });
         }
     }

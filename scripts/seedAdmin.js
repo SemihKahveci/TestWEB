@@ -10,10 +10,17 @@ const createSuperAdmin = async () => {
             useUnifiedTopology: true
         });
 
-        // Super admin bilgileri
+        // Super admin bilgileri - Şifre environment variable'dan alınmalı
+        const defaultPassword = process.env.SUPER_ADMIN_PASSWORD || 'CHANGE_ME_IN_PRODUCTION';
+        
+        if (defaultPassword === 'CHANGE_ME_IN_PRODUCTION') {
+            console.warn('⚠️  UYARI: SUPER_ADMIN_PASSWORD environment variable ayarlanmamış!');
+            console.warn('⚠️  Production ortamında mutlaka güçlü bir şifre ayarlayın!');
+        }
+
         const superAdminData = {
             email: 'info@androngame.com',
-            password: 'andron2025',
+            password: defaultPassword,
             name: 'Super Admin',
             role: 'superadmin',
             isActive: true
@@ -32,7 +39,12 @@ const createSuperAdmin = async () => {
 
         console.log('Super admin başarıyla oluşturuldu:');
         console.log('Email:', superAdminData.email);
-        console.log('Şifre:', superAdminData.password);
+        // Production'da şifreyi loglamayın
+        if (process.env.NODE_ENV !== 'production') {
+            console.log('Şifre:', superAdminData.password);
+        } else {
+            console.log('Şifre: [GÜVENLİK NEDENİYLE GİZLENDİ]');
+        }
 
     } catch (error) {
         console.error('Super admin oluşturma hatası:', error);
