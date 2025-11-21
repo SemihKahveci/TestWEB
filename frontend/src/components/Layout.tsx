@@ -56,6 +56,17 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
     checkSuperAdmin();
   }, []);
 
+  // Location değiştiğinde, eğer aktif path companySettingsItems içindeyse expand'i açık tut
+  useEffect(() => {
+    const companySettingsPaths = ['/company-identification', '/define-company-admin', '/game-management'];
+    const isCompanySettingsPath = companySettingsPaths.includes(location.pathname);
+    
+    // Sadece path company settings içindeyse expand'i aç (state zaten true ise güncelleme yapma)
+    if (isCompanySettingsPath) {
+      setCompanySettingsExpanded(prev => prev ? prev : true);
+    }
+  }, [location.pathname]);
+
   const mainMenuItems = [
     { path: '/admin', label: 'Genel Takip Sistemi', icon: '🏠' },
     { path: '/results', label: 'Kişi Skorları Sayfası', icon: '📈' },

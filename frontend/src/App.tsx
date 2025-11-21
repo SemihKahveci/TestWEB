@@ -121,16 +121,6 @@ const AppContent: React.FC = () => {
               </ProtectedRoute>
             } />
             
-            <Route path="/company-identification" element={
-              <ProtectedRoute>
-                <SuperAdminRoute>
-                  <Layout>
-                    <CompanyIdentification />
-                  </Layout>
-                </SuperAdminRoute>
-              </ProtectedRoute>
-            } />
-            
             <Route path="/define-company-admin" element={
               <ProtectedRoute>
                 <SuperAdminRoute>
