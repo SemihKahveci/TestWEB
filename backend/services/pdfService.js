@@ -97,11 +97,11 @@ const generatePDF = async (data) => {
         // PDF oluştur
         const file = await htmlPdf.generatePdf({ content: html }, options);
         return file;
-        } catch (error) {
+    } catch (error) {
             const { safeLog } = require('../utils/helpers');
             safeLog('error', 'PDF oluşturma hatası', error);
-            throw error;
-        }
+        throw error;
+    }
 };
 
 module.exports = {

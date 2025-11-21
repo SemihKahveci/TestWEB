@@ -1,5 +1,6 @@
 const Group = require('../models/Group');
 const { safeLog, getSafeErrorMessage } = require('../utils/helpers');
+const { getCompanyFilter, addCompanyIdToData } = require('../middleware/auth');
 
 // Tüm grupları getir
 const getAllGroups = async (req, res) => {
@@ -7,7 +8,9 @@ const getAllGroups = async (req, res) => {
         const { page = 1, limit = 10, search = '', status = '' } = req.query;
         
         // Arama ve filtreleme kriterleri
-        let filter = {};
+        // Multi-tenant: Super admin için tüm veriler, normal admin için sadece kendi company'si
+        const companyFilter = getCompanyFilter(req);
+        let filter = { ...companyFilter };
         
         if (search) {
             filter.name = { $regex: search, $options: 'i' };
@@ -55,12 +58,14 @@ const getGroupById = async (req, res) => {
     try {
         const { id } = req.params;
         
-        const group = await Group.findById(id).populate('createdBy', 'username email');
+        // Multi-tenant: companyId kontrolü yap
+        const companyFilter = getCompanyFilter(req);
+        const group = await Group.findOne({ _id: id, ...companyFilter }).populate('createdBy', 'username email');
         
         if (!group) {
             return res.status(404).json({
                 success: false,
-                message: 'Grup bulunamadı'
+                message: 'Grup bulunamadı veya yetkiniz yok'
             });
         }
 
@@ -159,12 +164,14 @@ const updateGroup = async (req, res) => {
         const { name, status, organizations, persons, planets } = req.body;
         const updatedBy = req.admin?.id;
 
+        // Multi-tenant: companyId kontrolü yap
+        const companyFilter = getCompanyFilter(req);
         // Grup var mı kontrol et
-        const group = await Group.findById(id);
+        const group = await Group.findOne({ _id: id, ...companyFilter });
         if (!group) {
             return res.status(404).json({
                 success: false,
-                message: 'Grup bulunamadı'
+                message: 'Grup bulunamadı veya yetkiniz yok'
             });
         }
 
@@ -172,10 +179,11 @@ const updateGroup = async (req, res) => {
         const updateData = {};
         
         if (name && name.trim()) {
-            // Aynı isimde başka grup var mı kontrol et
+            // Aynı isimde başka grup var mı kontrol et (aynı company içinde)
             const existingGroup = await Group.findOne({ 
                 name: name.trim(),
-                _id: { $ne: id }
+                _id: { $ne: id },
+                ...companyFilter
             });
 
             if (existingGroup) {
@@ -216,12 +224,19 @@ const updateGroup = async (req, res) => {
             updateData.planets = planets;
         }
 
-        // Grubu güncelle
-        const updatedGroup = await Group.findByIdAndUpdate(
-            id,
+        // Grubu güncelle - companyId kontrolü ile
+        const updatedGroup = await Group.findOneAndUpdate(
+            { _id: id, ...companyFilter },
             updateData,
             { new: true, runValidators: true }
         );
+        
+        if (!updatedGroup) {
+            return res.status(404).json({
+                success: false,
+                message: 'Grup bulunamadı veya yetkiniz yok'
+            });
+        }
 
         // Populate ile createdBy bilgisini ekle (eğer varsa)
         if (updatedGroup.createdBy) {
@@ -248,17 +263,19 @@ const deleteGroup = async (req, res) => {
     try {
         const { id } = req.params;
 
+        // Multi-tenant: companyId kontrolü yap
+        const companyFilter = getCompanyFilter(req);
         // Grup var mı kontrol et
-        const group = await Group.findById(id);
+        const group = await Group.findOne({ _id: id, ...companyFilter });
         if (!group) {
             return res.status(404).json({
                 success: false,
-                message: 'Grup bulunamadı'
+                message: 'Grup bulunamadı veya yetkiniz yok'
             });
         }
 
         // Grubu sil
-        await Group.findByIdAndDelete(id);
+        await Group.findOneAndDelete({ _id: id, ...companyFilter });
 
         res.json({
             success: true,
@@ -279,11 +296,13 @@ const toggleGroupStatus = async (req, res) => {
     try {
         const { id } = req.params;
 
-        const group = await Group.findById(id);
+        // Multi-tenant: companyId kontrolü yap
+        const companyFilter = getCompanyFilter(req);
+        const group = await Group.findOne({ _id: id, ...companyFilter });
         if (!group) {
             return res.status(404).json({
                 success: false,
-                message: 'Grup bulunamadı'
+                message: 'Grup bulunamadı veya yetkiniz yok'
             });
         }
 

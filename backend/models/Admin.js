@@ -17,10 +17,18 @@ const adminSchema = new mongoose.Schema({
         type: String,
         required: true
     },
+    companyId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'CompanyManagement',
+        required: function() {
+            // Super admin için companyId zorunlu değil
+            return this.role !== 'superadmin';
+        }
+    },
     company: {
         type: String,
-        required: true,
         trim: true
+        // Company name - display için kullanılır
     },
     role: {
         type: String,

@@ -45,9 +45,11 @@ class GameController {
     // Sonuçları getir
     async getResults(req, res) {
         try {
+            // Multi-tenant: Super admin için tüm veriler, normal admin için sadece kendi company'si
+            const companyFilter = getCompanyFilter(req);
             // Hem Game hem de UserCode verilerini al
-            const games = await Game.find().sort({ date: -1 });
-            const userCodes = await UserCode.find().sort({ sentDate: -1 });
+            const games = await Game.find(companyFilter).sort({ date: -1 });
+            const userCodes = await UserCode.find(companyFilter).sort({ sentDate: -1 });
             
             if (!games || games.length === 0) {
                 return res.status(200).json([]);
@@ -99,6 +101,9 @@ class GameController {
                 });
             }
 
+            // UserCode'u bul
+            // Not: Oyun oynayan kullanıcı için companyId kontrolü yapılmaz, sadece kod kontrolü yapılır
+            // Bu endpoint public'tir ve oyun oynayan kullanıcılar tarafından çağrılır
             const userCode = await UserCode.findOne({ code: data.playerCode });
             if (!userCode) {
                 return res.status(400).json({
@@ -175,8 +180,8 @@ class GameController {
                 idikScore: Math.round(idikScore)
             };
 
-            // Dummy datayı Game modeline ekle
-            const newGame = new Game({
+            // Dummy datayı Game modeline ekle - companyId userCode'dan alınır
+            const gameData = {
                 playerCode: data.playerCode,
                 section: data.section,
                 answers: data.answers,
@@ -185,9 +190,11 @@ class GameController {
                 customerFocusScore: Math.round(customerFocusScore),
                 uncertaintyScore: Math.round(uncertaintyScore),
                 ieScore: Math.round(ieScore),
-                idikScore: Math.round(idikScore)
-            });
+                idikScore: Math.round(idikScore),
+                companyId: userCode.companyId // UserCode'dan companyId'yi al
+            };
 
+            const newGame = new Game(gameData);
             await newGame.save();
 
             // Oyun tamamlandığında e-posta gönder

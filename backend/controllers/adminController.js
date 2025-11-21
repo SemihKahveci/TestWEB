@@ -9,6 +9,8 @@ const UserCode = require('../models/userCode');
 const Game = require('../models/game');
 const { capitalizeName, escapeHtml, safeLog, getSafeErrorMessage } = require('../utils/helpers');
 const XLSX = require('xlsx');
+const fs = require('fs');
+const path = require('path');
 
 // Şifre validasyon fonksiyonu
 const validatePassword = (password) => {
@@ -131,14 +133,18 @@ const adminController = {
         try {
             const evaluationData = req.body;
             
+            // Multi-tenant: companyId kontrolü yap
+            const { getCompanyFilter, addCompanyIdToData } = require('../middleware/auth');
+            const companyFilter = getCompanyFilter(req);
             // Aynı ID'ye sahip değerlendirme var mı kontrol et
-            const existingEvaluation = await EvaluationResult.findOne({ id: evaluationData.id });
+            const existingEvaluation = await EvaluationResult.findOne({ id: evaluationData.id, ...companyFilter });
             if (existingEvaluation) {
                 return res.status(400).json({ message: 'Bu ID\'ye sahip bir değerlendirme zaten mevcut' });
             }
 
-            // Yeni değerlendirmeyi oluştur
-            const evaluation = await EvaluationResult.create(evaluationData);
+            // Yeni değerlendirmeyi oluştur - companyId otomatik eklenir
+            const dataWithCompanyId = addCompanyIdToData(req, evaluationData);
+            const evaluation = await EvaluationResult.create(dataWithCompanyId);
             res.status(201).json({ message: 'Değerlendirme başarıyla oluşturuldu', evaluation });
         } catch (error) {
             safeLog('error', 'Değerlendirme oluşturma hatası', error);
@@ -150,8 +156,11 @@ const adminController = {
         try {
             const { id } = req.params;
             
+            // Multi-tenant: companyId kontrolü yap
+            const { getCompanyFilter } = require('../middleware/auth');
+            const companyFilter = getCompanyFilter(req);
             // Değerlendirmeyi bul ve sil
-            const evaluation = await EvaluationResult.findOneAndDelete({ id: id });
+            const evaluation = await EvaluationResult.findOneAndDelete({ id: id, ...companyFilter });
             
             if (!evaluation) {
                 return res.status(404).json({ message: 'Değerlendirme bulunamadı' });
@@ -168,14 +177,17 @@ const adminController = {
         try {
             const { code, email, options } = req.body;
                   
+            // Multi-tenant: companyId kontrolü yap
+            const { getCompanyFilter } = require('../middleware/auth');
+            const companyFilter = getCompanyFilter(req);
             // Kullanıcı kodunu bul
-            const userCode = await UserCode.findOne({ code });
+            const userCode = await UserCode.findOne({ code, ...companyFilter });
             if (!userCode) {
                 return res.status(404).json({ message: 'Kod bulunamadı' });
             }
 
             // Tüm oyunları bul (2 gezegen için 2 farklı Game kaydı olabilir)
-            const games = await Game.find({ playerCode: code });
+            const games = await Game.find({ playerCode: code, ...companyFilter });
             if (!games || games.length === 0) {
                 return res.status(404).json({ message: 'Oyun sonuçları bulunamadı' });
             }
@@ -230,14 +242,17 @@ const adminController = {
         try {
             const { code, email, options } = req.body;
             
+            // Multi-tenant: companyId kontrolü yap
+            const { getCompanyFilter } = require('../middleware/auth');
+            const companyFilter = getCompanyFilter(req);
             // Kullanıcı kodunu bul
-            const userCode = await UserCode.findOne({ code });
+            const userCode = await UserCode.findOne({ code, ...companyFilter });
             if (!userCode) {
                 return res.status(404).json({ message: 'Kod bulunamadı' });
             }
 
             // Tüm oyunları bul (2 gezegen için 2 farklı Game kaydı olabilir)
-            const games = await Game.find({ playerCode: code });
+            const games = await Game.find({ playerCode: code, ...companyFilter });
             if (!games || games.length === 0) {
                 return res.status(404).json({ message: 'Oyun sonuçları bulunamadı' });
             }
@@ -302,9 +317,26 @@ const adminController = {
             expiryDate.setHours(expiryDate.getHours() + 240);
             const formattedExpiryDate = expiryDate.toLocaleDateString('tr-TR');
 
-            // Kodu veritabanına kaydet
+            // Multi-tenant: Önce kodu bul ve companyId kontrolü yap
+            const { getCompanyFilter } = require('../middleware/auth');
+            const companyFilter = getCompanyFilter(req);
+            
+            // Önce kodu bul (companyFilter ile)
+            const existingCode = await UserCode.findOne({ code, ...companyFilter });
+            
+            if (!existingCode) {
+                safeLog('error', 'Kod bulunamadı veya yetkisiz erişim', { 
+                    code, 
+                    adminId: req.admin?._id?.toString(),
+                    adminRole: req.admin?.role,
+                    companyFilter 
+                });
+                return res.status(400).json({ success: false, message: 'Kod bulunamadı veya bu koda erişim yetkiniz yok' });
+            }
+            
+            // Kodu güncelle
             const userCode = await UserCode.findOneAndUpdate(
-                { code },
+                { code, ...companyFilter },
                 {
                     name,
                     email,
@@ -317,7 +349,7 @@ const adminController = {
             );
 
             if (!userCode) {
-                return res.status(400).json({ success: false, message: 'Kod bulunamadı' });
+                return res.status(400).json({ success: false, message: 'Kod güncellenemedi' });
             }
 
             // E-posta içeriği (XSS koruması ile)
@@ -413,18 +445,31 @@ const adminController = {
         try {
             const { code, page, limit, searchTerm, statusFilter, showExpiredWarning } = req.query;
             
-            // Pagination parametreleri
-            const pageNum = parseInt(page) || 1;
-            const limitNum = parseInt(limit) || 10;
-            const skip = (pageNum - 1) * limitNum;
+            // Pagination parametreleri (page ve limit undefined ise tüm verileri getir)
+            const pageNum = page ? parseInt(page) : undefined;
+            const limitNum = limit ? parseInt(limit) : undefined;
+            const skip = (pageNum && limitNum) ? (pageNum - 1) * limitNum : undefined;
+            
+            // Multi-tenant: companyId kontrolü yap
+            const { getCompanyFilter } = require('../middleware/auth');
+            const companyFilter = getCompanyFilter(req);
+            
+            // Debug: companyFilter'ı logla
+            safeLog('debug', 'getUserResults - companyFilter', { 
+                companyFilter, 
+                adminId: req.admin?._id?.toString(),
+                adminEmail: req.admin?.email,
+                adminRole: req.admin?.role,
+                adminCompanyId: req.admin?.companyId?.toString()
+            });
             
             let results;
             let totalCount;
-            let query = {};
+            let query = { ...companyFilter };
             
             if (code) {
                 // Tek kod için pagination yok
-                results = await UserCode.find({ code });
+                results = await UserCode.find({ code, ...companyFilter });
                 totalCount = results.length;
             } else {
                 // Filtreleme query'si oluştur
@@ -449,17 +494,21 @@ const adminController = {
                 // Toplam sayıyı hesapla (filtrelemeden sonra)
                 totalCount = await UserCode.countDocuments(query);
                 
-                // Sorguyu çalıştır
-                results = await UserCode.find(query)
-                    .sort({ sentDate: -1 })
-                    .skip(skip)
-                    .limit(limitNum);
+                // Sorguyu çalıştır (pagination varsa uygula, yoksa tüm verileri getir)
+                let queryBuilder = UserCode.find(query).sort({ sentDate: -1 });
+                
+                if (skip !== undefined && limitNum !== undefined) {
+                    queryBuilder = queryBuilder.skip(skip).limit(limitNum);
+                }
+                
+                results = await queryBuilder;
             }
             
             // Performans: Tüm Game'leri tek sorguda çek (N+1 sorgu problemini çöz)
             const playerCodes = results.map(r => r.code);
             const allGames = await Game.find({ 
-                playerCode: { $in: playerCodes } 
+                playerCode: { $in: playerCodes },
+                ...companyFilter
             }).select('playerCode section customerFocusScore uncertaintyScore ieScore idikScore evaluationResult answers');
             
             // Game'leri playerCode'a göre grupla (memory'de hızlı erişim için)
@@ -508,10 +557,13 @@ const adminController = {
                         updateData.uncertaintyScore = venusGame.uncertaintyScore;
                     }
                     
-                    // UserCode güncellemesini topla (non-blocking)
+                    // UserCode güncellemesini topla (non-blocking) - companyId kontrolü ile
                     if (Object.keys(updateData).length > 0) {
                         updatePromises.push(
-                            UserCode.findByIdAndUpdate(result._id, updateData)
+                            UserCode.findOneAndUpdate(
+                                { _id: result._id, ...companyFilter },
+                                updateData
+                            )
                         );
                     }
                 }
@@ -611,7 +663,7 @@ const adminController = {
     // Yeni admin oluşturma
     createAdmin: async (req, res) => {
         try {
-            const { email, password, name, role, company } = req.body;
+            const { email, password, name, role, companyId, company } = req.body;
 
             // Email kontrolü
             const existingAdmin = await Admin.findOne({ email });
@@ -619,12 +671,18 @@ const adminController = {
                 return res.status(400).json({ message: 'Bu email adresi zaten kullanımda' });
             }
 
+            // Super admin için companyId zorunlu değil, normal admin için zorunlu
+            if (role !== 'superadmin' && !companyId) {
+                return res.status(400).json({ message: 'Normal admin için companyId zorunludur' });
+            }
+
             // Yeni admin oluştur
             const admin = new Admin({
                 email,
                 password,
                 name,
-                company,
+                companyId: role === 'superadmin' ? undefined : companyId,
+                company: company || undefined, // Company name (display için)
                 role: role || 'admin'
             });
 
@@ -637,6 +695,7 @@ const adminController = {
                     id: admin._id,
                     email: admin.email,
                     name: admin.name,
+                    companyId: admin.companyId,
                     company: admin.company,
                     role: admin.role
                 }
@@ -655,7 +714,7 @@ const adminController = {
     updateAdmin: async (req, res) => {
         try {
             const { id } = req.params;
-            const { email, password, name, company, role, isActive } = req.body;
+            const { email, password, name, companyId, company, role, isActive } = req.body;
 
             // Admin'i bul
             const admin = await Admin.findById(id);
@@ -670,7 +729,14 @@ const adminController = {
             if (email) admin.email = email;
             if (password) admin.password = password;
             if (name) admin.name = name;
-            if (company) admin.company = company;
+            if (companyId !== undefined) {
+                // Super admin için companyId zorunlu değil, normal admin için zorunlu
+                if (role !== 'superadmin' && !companyId) {
+                    return res.status(400).json({ message: 'Normal admin için companyId zorunludur' });
+                }
+                admin.companyId = role === 'superadmin' ? undefined : companyId;
+            }
+            if (company !== undefined) admin.company = company; // Company name
             if (role) admin.role = role;
             if (typeof isActive === 'boolean') admin.isActive = isActive;
 
@@ -683,6 +749,7 @@ const adminController = {
                     id: admin._id,
                     email: admin.email,
                     name: admin.name,
+                    companyId: admin.companyId,
                     company: admin.company,
                     role: admin.role,
                     isActive: admin.isActive
@@ -752,11 +819,15 @@ const adminController = {
                 return res.status(400).json({ message: 'Kod gereklidir' });
             }
 
+            // Multi-tenant: companyId kontrolü yap
+            const { getCompanyFilter } = require('../middleware/auth');
+            const companyFilter = getCompanyFilter(req);
+
             // Game modelinden sil
-            await mongoose.model('Game').deleteMany({ playerCode: code });
+            await mongoose.model('Game').deleteMany({ playerCode: code, ...companyFilter });
             
             // UserCode modelinden tamamen sil
-            await mongoose.model('UserCode').findOneAndDelete({ code });
+            await mongoose.model('UserCode').findOneAndDelete({ code, ...companyFilter });
 
             res.json({ message: 'Sonuç başarıyla silindi' });
         } catch (error) {
@@ -850,6 +921,75 @@ const adminController = {
         }
     },
 
+    // Şirket raporlarını toplu export et (Excel)
+    exportCompanyReports: async (req, res) => {
+        try {
+            const { companyId } = req.params;
+            
+            if (!companyId) {
+                return res.status(400).json({ 
+                    success: false,
+                    message: 'Company ID gereklidir' 
+                });
+            }
+
+            // Multi-tenant: Super admin tüm şirketleri görebilir, normal admin sadece kendi şirketini
+            const { getCompanyFilter } = require('../middleware/auth');
+            const companyFilter = getCompanyFilter(req);
+            
+            // Normal admin başka şirketin raporlarını göremez
+            if (req.admin.role !== 'superadmin' && req.admin.companyId?.toString() !== companyId) {
+                return res.status(403).json({ 
+                    success: false,
+                    message: 'Bu şirketin raporlarını görme yetkiniz yok' 
+                });
+            }
+
+            // Şirketi bul
+            const CompanyManagement = require('../models/companyManagement');
+            const company = await CompanyManagement.findById(companyId);
+            if (!company) {
+                return res.status(404).json({ 
+                    success: false,
+                    message: 'Şirket bulunamadı' 
+                });
+            }
+
+            // Script'teki export fonksiyonunu kullan
+            const { exportToExcel } = require('../../scripts/exportCompanyReports');
+            
+            // Geçici olarak dosyayı oluştur
+            const filePath = await exportToExcel(companyId, company.firmName);
+            
+            if (!filePath) {
+                return res.status(404).json({ 
+                    success: false,
+                    message: 'Bu şirket için export edilecek veri bulunamadı' 
+                });
+            }
+
+            // Dosyayı oku ve gönder
+            const fileBuffer = fs.readFileSync(filePath);
+            const fileName = path.basename(filePath);
+
+            // Dosyayı gönder
+            res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+            res.setHeader('Content-Disposition', `attachment; filename="${fileName}"`);
+            res.send(fileBuffer);
+
+            // Dosyayı sil (opsiyonel - disk alanı için)
+            // fs.unlinkSync(filePath);
+
+        } catch (error) {
+            safeLog('error', 'Şirket raporları export hatası', error);
+            res.status(500).json({ 
+                success: false,
+                message: getSafeErrorMessage(error, 'Raporlar export edilirken bir hata oluştu'),
+                ...(process.env.NODE_ENV !== 'production' && { error: error.message })
+            });
+        }
+    },
+
     // Excel export fonksiyonu
     exportExcel: async (req, res) => {
         try {
@@ -859,14 +999,17 @@ const adminController = {
                 return res.status(400).json({ message: 'Kod gereklidir' });
             }
 
+            // Multi-tenant: companyId kontrolü yap
+            const { getCompanyFilter } = require('../middleware/auth');
+            const companyFilter = getCompanyFilter(req);
             // Kullanıcı kodunu bul
-            const userCode = await UserCode.findOne({ code });
+            const userCode = await UserCode.findOne({ code, ...companyFilter });
             if (!userCode) {
                 return res.status(404).json({ message: 'Kod bulunamadı' });
             }
 
             // Oyun sonuçlarını bul
-            const games = await Game.find({ playerCode: code });
+            const games = await Game.find({ playerCode: code, ...companyFilter });
             if (!games || games.length === 0) {
                 return res.status(404).json({ message: 'Oyun sonuçları bulunamadı' });
             }

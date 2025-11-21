@@ -7,13 +7,16 @@ const UserCode = require('../models/userCode');
 const Game = require('../models/game');
 const { Document, Packer, Paragraph, TextRun, HeadingLevel, AlignmentType, Footer, PageNumber, BorderStyle, Table, TableRow, TableCell, WidthType } = require('docx');
 const { safeLog, getSafeErrorMessage } = require('../utils/helpers');
+const { getCompanyFilter } = require('../middleware/auth');
 
 const evaluationController = {
     async getEvaluationById(req, res) {
         try {
             const { id } = req.params;
-     
-            const evaluation = await EvaluationResult.findOne({ ID: id });
+            
+            // Multi-tenant: companyId kontrolü yap
+            const companyFilter = getCompanyFilter(req);
+            const evaluation = await EvaluationResult.findOne({ ID: id, ...companyFilter });
           
             if (!evaluation) {
                 return res.status(404).json({ error: 'Değerlendirme bulunamadı' });
@@ -39,15 +42,18 @@ const evaluationController = {
                 developmentSuggestions: selectedOptions.developmentSuggestions === true || selectedOptions.developmentSuggestions === 'true'
             };
 
+            // Multi-tenant: companyId kontrolü yap
+            const companyFilter = getCompanyFilter(req);
+            const companyId = companyFilter.companyId || null;
             // Tüm oyunları bul (2 gezegen için 2 farklı Game kaydı olabilir)
-            const games = await Game.find({ playerCode: userCode });
+            const games = await Game.find({ playerCode: userCode, ...companyFilter });
             if (!games || games.length === 0) {
                 // Game bulunamazsa EvaluationResult koleksiyonunda ara
-                const evaluation = await EvaluationResult.findOne({ ID: userCode });
+                const evaluation = await EvaluationResult.findOne({ ID: userCode, ...companyFilter });
                 if (!evaluation) {
                     return res.status(404).json({ message: 'Değerlendirme bulunamadı' });
                 }
-                return generateAndSendPDF(evaluation, options, res, userCode);
+                return generateAndSendPDF(evaluation, options, res, userCode, companyId);
             }
             
             // Tüm oyunlardaki evaluationResult'ları birleştir
@@ -66,11 +72,11 @@ const evaluationController = {
 
             // Eğer hiç evaluationResult bulunamadıysa, EvaluationResult koleksiyonunda ara
             if (allEvaluationResults.length === 0) {
-                const evaluation = await EvaluationResult.findOne({ ID: userCode });
+                const evaluation = await EvaluationResult.findOne({ ID: userCode, ...companyFilter });
                 if (!evaluation) {
                     return res.status(404).json({ message: 'Değerlendirme bulunamadı' });
                 }
-                return generateAndSendPDF(evaluation, options, res, userCode);
+                return generateAndSendPDF(evaluation, options, res, userCode, companyId);
             }
 
             // Benzersiz raporları filtrele (aynı ID'li raporları tekrarlama)
@@ -84,7 +90,7 @@ const evaluationController = {
                 }
             }
 
-            return generateAndSendPDF(uniqueResults, options, res, userCode);
+            return generateAndSendPDF(uniqueResults, options, res, userCode, companyId);
         } catch (error) {
             safeLog('error', 'PDF oluşturma hatası', error);
             res.status(500).json({ message: 'PDF oluşturulurken bir hata oluştu' });
@@ -105,15 +111,18 @@ const evaluationController = {
                 developmentSuggestions: selectedOptions.developmentSuggestions === true || selectedOptions.developmentSuggestions === 'true'
             };
 
+            // Multi-tenant: companyId kontrolü yap
+            const companyFilter = getCompanyFilter(req);
+            const companyId = companyFilter.companyId || null;
             // Tüm oyunları bul (2 gezegen için 2 farklı Game kaydı olabilir)
-            const games = await Game.find({ playerCode: userCode });
+            const games = await Game.find({ playerCode: userCode, ...companyFilter });
             if (!games || games.length === 0) {
                 // Game bulunamazsa EvaluationResult koleksiyonunda ara
-                const evaluation = await EvaluationResult.findOne({ ID: userCode });
+                const evaluation = await EvaluationResult.findOne({ ID: userCode, ...companyFilter });
                 if (!evaluation) {
                     return res.status(404).json({ message: 'Değerlendirme bulunamadı' });
                 }
-                return generateAndSendWord(evaluation, options, res, userCode);
+                return generateAndSendWord(evaluation, options, res, userCode, companyId);
             }
             
             // Tüm oyunlardaki evaluationResult'ları birleştir
@@ -132,11 +141,11 @@ const evaluationController = {
 
             // Eğer hiç evaluationResult bulunamadıysa, EvaluationResult koleksiyonunda ara
             if (allEvaluationResults.length === 0) {
-                const evaluation = await EvaluationResult.findOne({ ID: userCode });
+                const evaluation = await EvaluationResult.findOne({ ID: userCode, ...companyFilter });
                 if (!evaluation) {
                     return res.status(404).json({ message: 'Değerlendirme bulunamadı' });
                 }
-                return generateAndSendWord(evaluation, options, res, userCode);
+                return generateAndSendWord(evaluation, options, res, userCode, companyId);
             }
 
             // Benzersiz raporları filtrele (aynı ID'li raporları tekrarlama)
@@ -150,7 +159,7 @@ const evaluationController = {
                 }
             }
 
-            return generateAndSendWord(uniqueResults, options, res, userCode);
+            return generateAndSendWord(uniqueResults, options, res, userCode, companyId);
         } catch (error) {
             safeLog('error', 'Word oluşturma hatası', error);
             res.status(500).json({ message: 'Word oluşturulurken bir hata oluştu' });
@@ -168,15 +177,18 @@ const evaluationController = {
                 developmentSuggestions: req.query.developmentSuggestions === 'true'
             };
 
+            // Multi-tenant: companyId kontrolü yap
+            const companyFilter = getCompanyFilter(req);
+            const companyId = companyFilter.companyId || null;
             // Tüm oyunları bul (2 gezegen için 2 farklı Game kaydı olabilir)
-            const games = await Game.find({ playerCode: code });
+            const games = await Game.find({ playerCode: code, ...companyFilter });
             if (!games || games.length === 0) {
                 // Game bulunamazsa EvaluationResult koleksiyonunda ara
-                const evaluation = await EvaluationResult.findOne({ ID: code });
+                const evaluation = await EvaluationResult.findOne({ ID: code, ...companyFilter });
                 if (!evaluation) {
                     return res.status(404).json({ message: 'Değerlendirme bulunamadı' });
                 }
-                return generateAndSendPreview(evaluation, options, res, code);
+                return generateAndSendPreview(evaluation, options, res, code, companyId);
             }
             
             // Tüm oyunlardaki evaluationResult'ları birleştir
@@ -195,11 +207,11 @@ const evaluationController = {
 
             // Eğer hiç evaluationResult bulunamadıysa, EvaluationResult koleksiyonunda ara
             if (allEvaluationResults.length === 0) {
-                const evaluation = await EvaluationResult.findOne({ ID: code });
+                const evaluation = await EvaluationResult.findOne({ ID: code, ...companyFilter });
                 if (!evaluation) {
                     return res.status(404).json({ message: 'Değerlendirme bulunamadı' });
                 }
-                return generateAndSendPreview(evaluation, options, res, code);
+                return generateAndSendPreview(evaluation, options, res, code, companyId);
             }
 
             // Benzersiz raporları filtrele (aynı ID'li raporları tekrarlama)
@@ -213,7 +225,7 @@ const evaluationController = {
                 }
             }
 
-            return generateAndSendPreview(uniqueResults, options, res, code);
+            return generateAndSendPreview(uniqueResults, options, res, code, companyId);
         } catch (error) {
             safeLog('error', 'PDF önizleme hatası', error);
             res.status(500).json({ message: 'PDF oluşturulurken bir hata oluştu' });
@@ -223,7 +235,9 @@ const evaluationController = {
     // Tüm değerlendirmeleri getir
     getAllEvaluations: async (req, res) => {
         try {
-            const evaluations = await EvaluationResult.find().sort({ createdAt: -1 });
+            // Multi-tenant: companyId kontrolü yap
+            const companyFilter = getCompanyFilter(req);
+            const evaluations = await EvaluationResult.find(companyFilter).sort({ createdAt: -1 });
             res.json(evaluations);
         } catch (error) {
             safeLog('error', 'Değerlendirmeleri getirme hatası', error);
@@ -244,9 +258,10 @@ function getReportTitle(type) {
 }
 
 // Kullanıcı bilgilerini al
-async function getUserInfo(userCode) {
+async function getUserInfo(userCode, companyId = null) {
     try {
-        const userCodeData = await UserCode.findOne({ code: userCode });
+        const filter = companyId ? { code: userCode, companyId } : { code: userCode };
+        const userCodeData = await UserCode.findOne(filter);
         if (userCodeData) {
             return {
                 name: userCodeData.name || 'Bilinmeyen',
@@ -267,11 +282,12 @@ async function getUserInfo(userCode) {
 }
 
 // Gezegen seçim sırasına göre raporları sıralama fonksiyonu
-async function sortReportsByPlanetOrder(evaluation, userCode) {
+async function sortReportsByPlanetOrder(evaluation, userCode, companyId = null) {
     try {
         if (!userCode) return evaluation;
         
-        const userCodeData = await UserCode.findOne({ code: userCode });
+        const filter = companyId ? { code: userCode, companyId } : { code: userCode };
+        const userCodeData = await UserCode.findOne(filter);
         if (!userCodeData || !userCodeData.allPlanets || userCodeData.allPlanets.length === 0) {
             return evaluation;
         }
@@ -345,9 +361,9 @@ function wrapEmojis(text) {
   }
   
 // 🔧 Ortak PDF HTML oluşturucu
-async function buildEvaluationHTML(evaluation, options, userCode, isPreview = false) {
-    const sortedEvaluation = await sortReportsByPlanetOrder(evaluation, userCode);
-    const userInfo = await getUserInfo(userCode);
+async function buildEvaluationHTML(evaluation, options, userCode, isPreview = false, companyId = null) {
+    const sortedEvaluation = await sortReportsByPlanetOrder(evaluation, userCode, companyId);
+    const userInfo = await getUserInfo(userCode, companyId);
     const formattedDate = userInfo.completionDate.toLocaleDateString('tr-TR', {
         year: 'numeric',
         month: 'long',
@@ -581,7 +597,8 @@ async function buildEvaluationHTML(evaluation, options, userCode, isPreview = fa
 
         const addSection = async (title, content, isLastSection, isFirstSection = false, skipPageBreak = false) => {
             let score = 0;
-            const games = await Game.find({ playerCode: userCode });
+            const filter = companyId ? { playerCode: userCode, companyId } : { playerCode: userCode };
+            const games = await Game.find(filter);
         
             switch (report.type) {
                 case 'MO': {
@@ -692,8 +709,8 @@ async function buildEvaluationHTML(evaluation, options, userCode, isPreview = fa
     return htmlContent;
 }
 
-async function generateAndSendPDF(evaluation, options, res, userCode) {
-    const htmlContent = await buildEvaluationHTML(evaluation, options, userCode, false);
+async function generateAndSendPDF(evaluation, options, res, userCode, companyId = null) {
+    const htmlContent = await buildEvaluationHTML(evaluation, options, userCode, false, companyId);
     const pdfOptions = { 
         format: 'A4',
         printBackground: true,
@@ -716,8 +733,8 @@ async function generateAndSendPDF(evaluation, options, res, userCode) {
     res.send(file);
 }
 
-async function generateAndSendPreview(evaluation, options, res, userCode) {
-    const htmlContent = await buildEvaluationHTML(evaluation, options, userCode, true);
+async function generateAndSendPreview(evaluation, options, res, userCode, companyId = null) {
+    const htmlContent = await buildEvaluationHTML(evaluation, options, userCode, true, companyId);
     const pdfOptions = { 
         format: 'A4',
         printBackground: true,
@@ -740,10 +757,10 @@ async function generateAndSendPreview(evaluation, options, res, userCode) {
     res.send(file);
 }
 
-async function generateAndSendWord(evaluation, options, res, userCode) {
+async function generateAndSendWord(evaluation, options, res, userCode, companyId = null) {
     try {
-        const sortedEvaluation = await sortReportsByPlanetOrder(evaluation, userCode);
-        const userInfo = await getUserInfo(userCode);
+        const sortedEvaluation = await sortReportsByPlanetOrder(evaluation, userCode, companyId);
+        const userInfo = await getUserInfo(userCode, companyId);
         const formattedDate = userInfo.completionDate.toLocaleDateString('tr-TR', {
             year: 'numeric',
             month: 'long',
@@ -941,7 +958,8 @@ async function generateAndSendWord(evaluation, options, res, userCode) {
 
             // Skor hesaplama 
             let competencyScore = 0;
-            const competencyGames = await Game.find({ playerCode: userCode });
+            const filter = companyId ? { playerCode: userCode, companyId } : { playerCode: userCode };
+            const competencyGames = await Game.find(filter);
             
             switch (report.type) {
                 case 'MO':
@@ -1010,33 +1028,6 @@ async function generateAndSendWord(evaluation, options, res, userCode) {
                     default: footer
                 }
             });
-
-            // Skor hesaplama
-            let score = 0;
-            const games = await Game.find({ playerCode: userCode });
-            
-            switch (report.type) {
-                case 'MO':
-                    const venusGame = competencyGames.find(g => g.section === '0' || g.section === 0);
-                    competencyScore = venusGame ? venusGame.customerFocusScore : 0;
-                    break;
-                case 'BY':
-                    const venusGame2 = competencyGames.find(g => g.section === '0' || g.section === 0);
-                    competencyScore = venusGame2 ? venusGame2.uncertaintyScore : 0;
-                    break;
-                case 'IE':
-                    const titanGame = competencyGames.find(g => g.section === '1' || g.section === 1);
-                    competencyScore = titanGame ? titanGame.ieScore : 0;
-                    break;
-                case 'IDIK':
-                    const titanGame2 = competencyGames.find(g => g.section === '1' || g.section === 1);
-                    competencyScore = titanGame2 ? titanGame2.idikScore : 0;
-                    break;
-                default:
-                    competencyScore = 0;
-            }
-            
-            competencyScore = (!competencyScore || competencyScore === '-') ? 0 : Math.round(parseFloat(competencyScore));
 
             // Skor gösterimi
 

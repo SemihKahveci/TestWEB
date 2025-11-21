@@ -35,6 +35,7 @@ const ResultsPage: React.FC = () => {
   const [itemsPerPage] = useState(10);
   const [totalCount, setTotalCount] = useState(0);
   const [totalPages, setTotalPages] = useState(0);
+  const [originalTotalCount, setOriginalTotalCount] = useState(0); // Filtreleme öncesi toplam kayıt sayısı
   
   // Popup states
   const [showFilterPopup, setShowFilterPopup] = useState(false);
@@ -55,12 +56,18 @@ const ResultsPage: React.FC = () => {
     startDate: '',
     endDate: ''
   });
+  const [filtersApplied, setFiltersApplied] = useState(false); // Filtreleme yapıldı mı?
   const [isMobile, setIsMobile] = useState(false);
   
   const hasLoaded = useRef(false);
+  const lastSearchTerm = useRef<string>('');
 
-  const loadData = useCallback(async (showLoading = true) => {
+  const loadData = useCallback(async (showLoading = true, page?: number, search?: string) => {
     try {
+      // Parametreler verilmediyse state'ten al
+      const pageToUse = page ?? currentPage;
+      const searchToUse = search ?? debouncedSearchTerm;
+      
       // Sadece ilk yüklemede veya sayfa değiştiğinde loading göster
       // Arama için loading gösterme (arka planda çalışsın)
       if (showLoading) {
@@ -71,18 +78,19 @@ const ResultsPage: React.FC = () => {
       
       // Pagination ile veri çek (sadece "Tamamlandı" statüsündeki kayıtlar)
       const response = await evaluationAPI.getAll(
-        currentPage, 
+        pageToUse, 
         itemsPerPage, 
-        debouncedSearchTerm, // Debounced search term kullan
+        searchToUse, // Debounced search term kullan
         'Tamamlandı', // Sadece tamamlanan sonuçlar
         true // showExpiredWarning (tüm kayıtları göster)
       );
       
       if (response.data.success && response.data.results) {
-        // Pagination bilgilerini kaydet
-        if (response.data.pagination) {
+        // Pagination bilgilerini kaydet (sadece filtreleme yapılmamışsa)
+        if (response.data.pagination && !filtersApplied) {
           setTotalCount(response.data.pagination.total);
           setTotalPages(response.data.pagination.totalPages);
+          setOriginalTotalCount(response.data.pagination.total);
         }
         
         // Gruplama yok, tüm veriler güncelliğe göre sıralanmış şekilde geliyor
@@ -93,21 +101,29 @@ const ResultsPage: React.FC = () => {
         }));
         
         setResults(formattedResults);
-        setFilteredResults(formattedResults);
+        // Eğer filtreleme yapılmamışsa filteredResults'ı güncelle
+        // Filtreleme yapılmışsa, filtreleme sonuçlarını koru
+        if (!filtersApplied) {
+          setFilteredResults(formattedResults);
+        }
       } else {
         console.error('❌ API başarısız:', response.data.message);
         setResults([]);
-        setFilteredResults([]);
+        if (!filtersApplied) {
+          setFilteredResults([]);
+        }
       }
     } catch (error) {
       console.error('❌ Results veri yükleme hatası:', error);
       setResults([]);
-      setFilteredResults([]);
+      if (!filtersApplied) {
+        setFilteredResults([]);
+      }
     } finally {
       setIsLoading(false);
       setIsSearching(false);
     }
-  }, [currentPage, itemsPerPage, debouncedSearchTerm]);
+  }, [currentPage, itemsPerPage, debouncedSearchTerm, filtersApplied]);
 
   // Responsive kontrolü
   useEffect(() => {
@@ -137,7 +153,15 @@ const ResultsPage: React.FC = () => {
   }, [searchTerm]);
 
   // Frontend'de anlık filtreleme (akıllı arama)
+  // Eğer filtreleme yapılmışsa, filtreleme sonuçları üzerinde arama yap
   useEffect(() => {
+    if (filtersApplied) {
+      // Filtreleme yapılmışsa, filtreleme sonuçlarını koru ve sadece arama yap
+      // Bu useEffect filtreleme sonuçlarını bozmaz
+      return;
+    }
+    
+    // Filtreleme yapılmamışsa normal arama yap
     if (searchTerm) {
       // Frontend'de anlık filtreleme yap
       const filtered = results.filter(result =>
@@ -148,29 +172,34 @@ const ResultsPage: React.FC = () => {
       // Arama yoksa tüm sonuçları göster
       setFilteredResults(results);
     }
-  }, [searchTerm, results]);
+  }, [searchTerm, results, filtersApplied]);
 
+  // Debounced search term değiştiğinde sayfayı 1'e resetle ve veri çek
   useEffect(() => {
-    // İlk yükleme ve sayfa değiştiğinde veri çek (loading göster)
+    if (hasLoaded.current && lastSearchTerm.current !== debouncedSearchTerm) {
+      // Arama değiştiğinde sayfayı 1'e resetle ve veri çek
+      lastSearchTerm.current = debouncedSearchTerm;
+      if (currentPage !== 1) {
+        setCurrentPage(1);
+      } else {
+        // Sayfa zaten 1'deyse direkt veri çek
+        loadData(false, 1, debouncedSearchTerm);
+      }
+    }
+  }, [debouncedSearchTerm, loadData, currentPage]);
+
+  // İlk yükleme ve sayfa değiştiğinde veri çek (arama değişmediğinde)
+  useEffect(() => {
     if (!hasLoaded.current) {
       hasLoaded.current = true;
+      lastSearchTerm.current = debouncedSearchTerm;
       loadData(true); // İlk yüklemede loading göster
-    } else {
-      loadData(false); // Sonraki yüklemelerde loading gösterme
+    } else if (lastSearchTerm.current === debouncedSearchTerm) {
+      // Sadece sayfa değiştiğinde veri çek (arama değişmediğinde)
+      // Arama değiştiğinde yukarıdaki useEffect zaten çağrılıyor
+      loadData(false); // Sayfa değiştiğinde loading gösterme
     }
-  }, [currentPage]);
-
-  // Debounced search term değiştiğinde backend'den veri çek (arka planda)
-  useEffect(() => {
-    if (hasLoaded.current) {
-      loadData(false); // Arama için loading gösterme
-    }
-  }, [debouncedSearchTerm]);
-
-  useEffect(() => {
-    // Search değiştiğinde sayfayı 1'e resetle
-    setCurrentPage(1);
-  }, [debouncedSearchTerm]);
+  }, [currentPage, loadData, debouncedSearchTerm]);
 
   const formatDate = (dateString: string) => {
     if (!dateString) return '-';
@@ -244,7 +273,7 @@ const ResultsPage: React.FC = () => {
 
 
   // Filtreleme fonksiyonu
-  const applyFilters = () => {
+  const applyFilters = async () => {
     try {
 
       // Tarih kontrolü
@@ -291,7 +320,32 @@ const ResultsPage: React.FC = () => {
         return;
       }
 
-      const filteredItems = results.filter(item => {
+      // Filtreleme yapmadan önce backend'den TÜM verileri çek
+      setIsSearching(true);
+      const response = await evaluationAPI.getAll(
+        undefined, // page: undefined (tüm sayfalar)
+        undefined, // limit: undefined (limit yok, tüm veriler)
+        debouncedSearchTerm || '', // searchTerm korunuyor
+        'Tamamlandı', // Sadece tamamlanan sonuçlar
+        true // showExpiredWarning
+      );
+
+      if (!response.data.success || !response.data.results) {
+        setErrorMessage('Veriler yüklenirken bir hata oluştu.');
+        setShowErrorPopup(true);
+        setIsSearching(false);
+        return;
+      }
+
+      // Tüm sonuçları al
+      const allResults = response.data.results.map((result: any) => ({
+        ...result,
+        isGrouped: false,
+        groupCount: 1
+      }));
+
+      // Tüm veriler üzerinde filtreleme yap
+      const filteredItems = allResults.filter(item => {
         try {
           if (!item || !item.name) {
             return false;
@@ -362,11 +416,21 @@ const ResultsPage: React.FC = () => {
 
       // Gruplama yok, sadece filtreleme yap
       setFilteredResults(filteredItems);
+      setFiltersApplied(true); // Filtreleme yapıldığını işaretle
+      
+      // Filtreleme sonuçlarına göre sayfalama bilgilerini güncelle
+      const filteredCount = filteredItems.length;
+      setTotalCount(filteredCount);
+      setTotalPages(Math.ceil(filteredCount / itemsPerPage));
       setCurrentPage(1);
 
+      setIsSearching(false);
       setShowFilterPopup(false);
     } catch (error) {
       console.error('Filtreleme hatası:', error);
+      setIsSearching(false);
+      setErrorMessage('Filtreleme yapılırken bir hata oluştu!');
+      setShowErrorPopup(true);
     }
   };
 
@@ -384,8 +448,11 @@ const ResultsPage: React.FC = () => {
       startDate: '',
       endDate: ''
     });
-    setFilteredResults(results);
+    setFiltersApplied(false); // Filtreleme temizlendiğini işaretle
+    
+    // Backend'den tekrar veri çek (pagination ile)
     setCurrentPage(1);
+    loadData(true); // Loading göster
   };
 
   // Filtre popup'ını kapat
@@ -400,26 +467,64 @@ const ResultsPage: React.FC = () => {
   };
 
 
-  const handleDownloadExcel = () => {
+  const handleDownloadExcel = async () => {
     try {
+      // Loading gösterme - arka planda çalışsın
+      
       // Skor değerini formatla - 0 ise "-" göster
       const formatScoreForExcel = (score: number | string) => {
         if (score === null || score === undefined || score === '-' || score === 0 || score === '0') return '-';
         return typeof score === 'number' ? score.toFixed(1) : score;
       };
 
-      // Filtrelenmiş sonuçları al (sadece tamamlanmış oyunlar)
-      let dataToExport = filteredResults
-        .filter(item => item.status === 'Tamamlandı')
-        .map(item => ({
-          'Ad Soyad': item.name || '-',
-          'E-posta': item.email || '-',
-          'Tamamlanma Tarihi': formatDate(item.completionDate) || '-',
-          'Müşteri Odaklılık Skoru': formatScoreForExcel(item.customerFocusScore),
-          'Belirsizlik Yönetimi Skoru': formatScoreForExcel(item.uncertaintyScore),
-          'İnsanları Etkileme Skoru': formatScoreForExcel(item.ieScore),
-          'Güven Veren İşbirliği ve Sinerji Skoru': formatScoreForExcel(item.idikScore)
-        }));
+      let dataToExport: any[] = [];
+
+      // Eğer filtreleme yapılmışsa, sadece filtreli sonuçları kullan
+      if (filtersApplied) {
+        // Filtreli sonuçları kullan
+        dataToExport = filteredResults
+          .filter(item => item.status === 'Tamamlandı')
+          .map(item => ({
+            'Ad Soyad': item.name || '-',
+            'E-posta': item.email || '-',
+            'Tamamlanma Tarihi': formatDate(item.completionDate) || '-',
+            'Müşteri Odaklılık Skoru': formatScoreForExcel(item.customerFocusScore),
+            'Belirsizlik Yönetimi Skoru': formatScoreForExcel(item.uncertaintyScore),
+            'İnsanları Etkileme Skoru': formatScoreForExcel(item.ieScore),
+            'Güven Veren İşbirliği ve Sinerji Skoru': formatScoreForExcel(item.idikScore)
+          }));
+      } else {
+        // Filtreleme yapılmamışsa, backend'den tüm verileri çek
+        const response = await evaluationAPI.getAll(
+          undefined, // page: undefined (tüm sayfalar)
+          undefined, // limit: undefined (limit yok, tüm veriler)
+          debouncedSearchTerm || '', // searchTerm korunuyor
+          'Tamamlandı', // Sadece tamamlanan sonuçlar
+          true // showExpiredWarning
+        );
+
+        if (!response.data.success || !response.data.results) {
+          setErrorMessage('Veriler yüklenirken bir hata oluştu.');
+          setShowErrorPopup(true);
+          return;
+        }
+
+        // Tüm sonuçları al
+        const allResults = response.data.results;
+
+        // Excel için veriyi formatla
+        dataToExport = allResults
+          .filter(item => item.status === 'Tamamlandı')
+          .map(item => ({
+            'Ad Soyad': item.name || '-',
+            'E-posta': item.email || '-',
+            'Tamamlanma Tarihi': formatDate(item.completionDate) || '-',
+            'Müşteri Odaklılık Skoru': formatScoreForExcel(item.customerFocusScore),
+            'Belirsizlik Yönetimi Skoru': formatScoreForExcel(item.uncertaintyScore),
+            'İnsanları Etkileme Skoru': formatScoreForExcel(item.ieScore),
+            'Güven Veren İşbirliği ve Sinerji Skoru': formatScoreForExcel(item.idikScore)
+          }));
+      }
 
       if (dataToExport.length === 0) {
         setErrorMessage('İndirilecek veri bulunamadı.');
@@ -462,8 +567,10 @@ const ResultsPage: React.FC = () => {
     }
   };
 
-  // Pagination artık backend'de yapılıyor, filteredResults zaten sayfalanmış veri
-  const paginatedResults = filteredResults;
+  // Pagination: Eğer filtreleme yapılmışsa frontend'de sayfalama yap, yoksa backend'den gelen sayfalanmış veriyi kullan
+  const paginatedResults = filtersApplied 
+    ? filteredResults.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage)
+    : filteredResults;
 
   if (isLoading) {
     return (

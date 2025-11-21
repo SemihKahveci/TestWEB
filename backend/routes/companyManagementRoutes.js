@@ -1,6 +1,11 @@
 const express = require('express');
 const router = express.Router();
 const companyManagementController = require('../controllers/companyManagementController');
+const { authenticateAdmin, isSuperAdmin } = require('../middleware/auth');
+
+// Tüm route'lar authentication ve super admin kontrolü gerektirir
+router.use(authenticateAdmin);
+router.use(isSuperAdmin);
 
 // POST /api/company-management
 router.post('/', companyManagementController.createCompany);

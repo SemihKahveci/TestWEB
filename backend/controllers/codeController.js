@@ -34,7 +34,9 @@ class CodeController {
             const expiryDate = new Date();
             expiryDate.setHours(expiryDate.getHours() + 72);
 
-            const newCode = new UserCode({ 
+            // Multi-tenant: companyId otomatik eklenir
+            const { addCompanyIdToData } = require('../middleware/auth');
+            const codeData = addCompanyIdToData(req, {
                 code,
                 name,
                 email,
@@ -44,6 +46,17 @@ class CodeController {
                 sentDate: new Date(),
                 expiryDate
             });
+            
+            // Normal admin için companyId kontrolü (super admin için optional)
+            if (!codeData.companyId && req.admin && req.admin.role !== 'superadmin') {
+                safeLog('error', 'Admin kod oluştururken companyId eksik', { adminId: req.admin._id });
+                return res.status(400).json({ 
+                    success: false, 
+                    message: 'Admin companyId\'si bulunamadı. Lütfen admin hesabınızı kontrol edin.' 
+                });
+            }
+            
+            const newCode = new UserCode(codeData);
             
             await newCode.save();
             
@@ -57,8 +70,10 @@ class CodeController {
     // Kodları listele
     async listCodes(req, res) {
         try {
-            // Tüm kodları listele (kullanılmış ve kullanılmamış)
-            const codes = await UserCode.find({})
+            // Multi-tenant: Super admin için tüm kodlar, normal admin için sadece kendi company'si
+            const { getCompanyFilter } = require('../middleware/auth');
+            const companyFilter = getCompanyFilter(req);
+            const codes = await UserCode.find(companyFilter)
                 .sort({ createdAt: -1 });
 
             res.status(200).json({
@@ -100,6 +115,8 @@ class CodeController {
                 });
             }
 
+            // Multi-tenant: Oyun oynayan kullanıcı için companyId kontrolü yapılmaz
+            // Kod doğrulama için sadece kod kontrolü yeterli (güvenlik için)
             const userCode = await UserCode.findOne({ code });
             if (!userCode) {
                 return res.status(400).json({
@@ -189,23 +206,34 @@ class CodeController {
                         // Kredi miktarını hesapla (gezegen sayısı)
                         const planetCount = code.allPlanets ? code.allPlanets.length : 1;
                         
-                        // Admin ID'yi bul (varsayılan olarak ilk admin'i kullan)
+                        // Admin ID'yi bul - UserCode'dan companyId'yi al
                         const Admin = require('../models/Admin');
-                        const admin = await Admin.findOne();
+                        const admin = await Admin.findOne({ companyId: code.companyId });
                         
                         if (admin) {
-                            // Kredi kaydını bul veya oluştur
-                            let credit = await Credit.findOne({ userId: admin._id });
+                            // Kredi kaydını bul veya oluştur - companyId filtresi ile
+                            const { getCompanyFilter } = require('../middleware/auth');
+                            // Burada req yok, bu yüzden manuel filtre oluştur
+                            const creditFilter = code.companyId ? { userId: admin._id, companyId: code.companyId } : { userId: admin._id };
+                            let credit = await Credit.findOne(creditFilter);
                             
                             if (!credit) {
-                                // Yeni kredi kaydı oluştur
-                                credit = new Credit({
+                                // Yeni kredi kaydı oluştur - companyId ekle
+                                const creditData = code.companyId ? {
+                                    userId: admin._id,
+                                    companyId: code.companyId,
+                                    totalCredits: 0,
+                                    usedCredits: 0,
+                                    remainingCredits: 0,
+                                    transactions: []
+                                } : {
                                     userId: admin._id,
                                     totalCredits: 0,
                                     usedCredits: 0,
                                     remainingCredits: 0,
                                     transactions: []
-                                });
+                                };
+                                credit = new Credit(creditData);
                                 await credit.save();
                             }
                             

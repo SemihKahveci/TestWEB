@@ -1,10 +1,13 @@
 const Organization = require('../models/Organization');
 const { safeLog, getSafeErrorMessage } = require('../utils/helpers');
+const { getCompanyFilter, addCompanyIdToData } = require('../middleware/auth');
 
 // Tüm organizasyonları getir
 const getAllOrganizations = async (req, res) => {
     try {
-        const organizations = await Organization.find().sort({ createdAt: -1 });
+        // Multi-tenant: Super admin için tüm veriler, normal admin için sadece kendi company'si
+        const filter = getCompanyFilter(req);
+        const organizations = await Organization.find(filter).sort({ createdAt: -1 });
         
         res.json({
             success: true,
@@ -73,8 +76,9 @@ const createOrganization = async (req, res) => {
             });
         }
 
-        // Yeni organizasyon oluştur
-        const newOrganization = new Organization(cleanedData);
+        // Yeni organizasyon oluştur - companyId otomatik eklenir
+        const dataWithCompanyId = addCompanyIdToData(req, cleanedData);
+        const newOrganization = new Organization(dataWithCompanyId);
 
         const savedOrganization = await newOrganization.save();
 
@@ -132,7 +136,10 @@ const updateOrganization = async (req, res) => {
         };
 
         // Birebir aynı organizasyon var mı kontrol et (tüm alanlar aynıysa, kendisi hariç)
+        // Multi-tenant: companyId filtresi ekle
+        const companyFilter = getCompanyFilter(req);
         const existingOrganization = await Organization.findOne({
+            ...companyFilter,
             genelMudurYardimciligi: cleanedData.genelMudurYardimciligi,
             direktörlük: cleanedData.direktörlük,
             müdürlük: cleanedData.müdürlük,
@@ -149,9 +156,18 @@ const updateOrganization = async (req, res) => {
             });
         }
 
-        // Organizasyonu güncelle
-        const updatedOrganization = await Organization.findByIdAndUpdate(
-            id,
+        // Organizasyonu güncelle - companyId kontrolü yap (companyFilter zaten tanımlı)
+        const existingOrg = await Organization.findOne({ _id: id, ...companyFilter });
+        if (!existingOrg) {
+            return res.status(404).json({
+                success: false,
+                message: 'Organizasyon bulunamadı veya yetkiniz yok'
+            });
+        }
+        
+        // companyFilter zaten tanımlı (satır 140)
+        const updatedOrganization = await Organization.findOneAndUpdate(
+            { _id: id, ...companyFilter },
             cleanedData,
             { new: true, runValidators: true }
         );
@@ -182,8 +198,10 @@ const updateOrganization = async (req, res) => {
 const deleteOrganization = async (req, res) => {
     try {
         const { id } = req.params;
-
-        const deletedOrganization = await Organization.findByIdAndDelete(id);
+        
+        // Multi-tenant: companyId kontrolü yap
+        const companyFilter = getCompanyFilter(req);
+        const deletedOrganization = await Organization.findOneAndDelete({ _id: id, ...companyFilter });
 
         if (!deletedOrganization) {
             return res.status(404).json({
@@ -210,8 +228,10 @@ const deleteOrganization = async (req, res) => {
 const getOrganizationById = async (req, res) => {
     try {
         const { id } = req.params;
-
-        const organization = await Organization.findById(id);
+        
+        // Multi-tenant: companyId kontrolü yap
+        const companyFilter = getCompanyFilter(req);
+        const organization = await Organization.findOne({ _id: id, ...companyFilter });
 
         if (!organization) {
             return res.status(404).json({
@@ -347,8 +367,10 @@ const bulkCreateOrganizations = async (req, res) => {
             const rowNumber = i + 2; // Excel'de satır numarası
             
             try {
-                // Birebir aynı organizasyon var mı kontrol et
+                // Birebir aynı organizasyon var mı kontrol et - companyId filtresi ekle
+                const companyFilter = getCompanyFilter(req);
                 const existingOrganization = await Organization.findOne({
+                    ...companyFilter,
                     genelMudurYardimciligi: org.genelMudurYardimciligi,
                     direktörlük: org.direktörlük,
                     müdürlük: org.müdürlük,
@@ -365,8 +387,9 @@ const bulkCreateOrganizations = async (req, res) => {
                     continue;
                 }
 
-                // Yeni organizasyon oluştur
-                const newOrganization = new Organization(org);
+                // Yeni organizasyon oluştur - companyId otomatik eklenir
+                const dataWithCompanyId = addCompanyIdToData(req, org);
+                const newOrganization = new Organization(dataWithCompanyId);
                 await newOrganization.save();
                 results.success.push({
                     row: rowNumber,

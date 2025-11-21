@@ -67,6 +67,12 @@ const userCodeSchema = new mongoose.Schema({
     createdAt: {
         type: Date,
         default: Date.now
+    },
+    companyId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'CompanyManagement',
+        required: false, // Super admin için optional, normal admin için addCompanyIdToData ile otomatik eklenir
+        index: true
     }
 });
 

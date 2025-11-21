@@ -41,7 +41,7 @@ const createSuperAdmin = async () => {
         console.log('Email:', superAdminData.email);
         // Production'da şifreyi loglamayın
         if (process.env.NODE_ENV !== 'production') {
-            console.log('Şifre:', superAdminData.password);
+        console.log('Şifre:', superAdminData.password);
         } else {
             console.log('Şifre: [GÜVENLİK NEDENİYLE GİZLENDİ]');
         }

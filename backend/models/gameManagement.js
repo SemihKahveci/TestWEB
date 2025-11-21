@@ -40,6 +40,12 @@ const gameManagementSchema = new mongoose.Schema({
     updatedAt: {
         type: Date,
         default: Date.now
+    },
+    companyId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'CompanyManagement',
+        required: true,
+        index: true
     }
 });
 

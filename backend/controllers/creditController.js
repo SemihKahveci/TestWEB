@@ -1,5 +1,6 @@
 const Credit = require('../models/Credit');
 const { safeLog, getSafeErrorMessage } = require('../utils/helpers');
+const { getCompanyFilter, addCompanyIdToData } = require('../middleware/auth');
 
 // Cache for total credits to avoid repeated API calls
 let totalCreditsCache = {
@@ -50,20 +51,24 @@ const getUserCredits = async (req, res) => {
   try {
     const userId = req.admin._id; // Admin ID from auth middleware
     
-    let credit = await Credit.findOne({ userId });
+    // Multi-tenant: companyId kontrolü yap
+    const companyFilter = getCompanyFilter(req);
+    let credit = await Credit.findOne({ userId, ...companyFilter });
     
     if (!credit) {
       // Create new credit record if doesn't exist
       // Use cached total credits for faster response
       const totalCredits = await getTotalCreditsFromCache(req);
       
-      credit = new Credit({
+      // Yeni kredi kaydı oluştur - companyId otomatik eklenir
+      const dataWithCompanyId = addCompanyIdToData(req, {
         userId,
         totalCredits: totalCredits,
         usedCredits: 0,
         remainingCredits: totalCredits,
         transactions: []
       });
+      credit = new Credit(dataWithCompanyId);
       await credit.save();
     } else {
       // Mevcut kredi kaydı varsa, toplam krediyi güncelle
@@ -101,16 +106,20 @@ const updateTotalCredits = async (req, res) => {
     const userId = req.admin._id;
     const { amount, description } = req.body;
     
-    let credit = await Credit.findOne({ userId });
+    // Multi-tenant: companyId kontrolü yap
+    const companyFilter = getCompanyFilter(req);
+    let credit = await Credit.findOne({ userId, ...companyFilter });
     
     if (!credit) {
-      credit = new Credit({
+      // Yeni kredi kaydı oluştur - companyId otomatik eklenir
+      const dataWithCompanyId = addCompanyIdToData(req, {
         userId,
         totalCredits: 0,
         usedCredits: 0,
         remainingCredits: 0,
         transactions: []
       });
+      credit = new Credit(dataWithCompanyId);
     }
     
     // Add new credits
@@ -166,20 +175,24 @@ const deductCredits = async (req, res) => {
       });
     }
     
-    let credit = await Credit.findOne({ userId });
+    // Multi-tenant: companyId kontrolü yap
+    const companyFilter = getCompanyFilter(req);
+    let credit = await Credit.findOne({ userId, ...companyFilter });
     
     if (!credit) {
       // Create new credit record if doesn't exist
       // Use cached total credits for faster response
       const totalCredits = await getTotalCreditsFromCache(req);
       
-      credit = new Credit({
+      // Yeni kredi kaydı oluştur - companyId otomatik eklenir
+      const dataWithCompanyId = addCompanyIdToData(req, {
         userId,
         totalCredits: totalCredits,
         usedCredits: 0,
         remainingCredits: totalCredits,
         transactions: []
       });
+      credit = new Credit(dataWithCompanyId);
       await credit.save();
     }
     
@@ -236,7 +249,9 @@ const getCreditTransactions = async (req, res) => {
     const userId = req.admin._id;
     const { page = 1, limit = 20 } = req.query;
     
-    const credit = await Credit.findOne({ userId });
+    // Multi-tenant: companyId kontrolü yap
+    const companyFilter = getCompanyFilter(req);
+    const credit = await Credit.findOne({ userId, ...companyFilter });
     
     if (!credit) {
       return res.json({
@@ -287,7 +302,9 @@ const restoreCredits = async (req, res) => {
       });
     }
 
-    let credit = await Credit.findOne({ userId });
+    // Multi-tenant: companyId kontrolü yap
+    const companyFilter = getCompanyFilter(req);
+    let credit = await Credit.findOne({ userId, ...companyFilter });
     
     if (!credit) {
       return res.status(404).json({

@@ -32,6 +32,12 @@ const authorizationSchema = new mongoose.Schema({
         type: mongoose.Schema.Types.ObjectId,
         ref: 'Admin',
         required: false
+    },
+    companyId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'CompanyManagement',
+        required: true,
+        index: true
     }
 }, {
     timestamps: true

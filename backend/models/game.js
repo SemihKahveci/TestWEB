@@ -64,6 +64,12 @@ const gameSchema = new mongoose.Schema({
     idikScore: {
         type: String,
         default: '-'
+    },
+    companyId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'CompanyManagement',
+        required: false, // Eski veriler için optional, yeni veriler için addCompanyIdToData ile otomatik eklenir
+        index: true
     }
 });
 

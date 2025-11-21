@@ -30,6 +30,12 @@ const organizationSchema = new mongoose.Schema({
         type: String,
         required: true,
         trim: true
+    },
+    companyId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'CompanyManagement',
+        required: true,
+        index: true
     }
 }, {
     timestamps: true

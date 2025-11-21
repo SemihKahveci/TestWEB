@@ -1,19 +1,22 @@
 const GameManagement = require('../models/gameManagement');
 const { invalidateCache } = require('./creditController');
 const { safeLog, getSafeErrorMessage } = require('../utils/helpers');
+const { getCompanyFilter, addCompanyIdToData } = require('../middleware/auth');
 
 class GameManagementController {
     // Tüm oyun yönetimi verilerini getir
     async getAllGames(req, res) {
         try {
+            // Multi-tenant: Super admin için tüm veriler, normal admin için sadece kendi company'si
+            const companyFilter = getCompanyFilter(req);
             const page = parseInt(req.query.page) || 1;
             const limit = parseInt(req.query.limit) || 20;
             const skip = (page - 1) * limit;
-            const games = await GameManagement.find({}, 'firmName invoiceNo credit date')
+            const games = await GameManagement.find(companyFilter, 'firmName invoiceNo credit date')
                 .sort({ createdAt: -1 })
                 .skip(skip)
                 .limit(limit);
-            const total = await GameManagement.countDocuments();
+            const total = await GameManagement.countDocuments(companyFilter);
             res.json({ games, total });
         } catch (error) {
             safeLog('error', 'Oyun verileri getirme hatası', error);
@@ -37,12 +40,14 @@ class GameManagementController {
                 return res.status(400).json({ message: 'Sadece PDF, JPEG ve PNG formatları kabul edilir' });
             }
 
-            const newGame = new GameManagement({
+            // Yeni oyun oluştur - companyId otomatik eklenir
+            const dataWithCompanyId = addCompanyIdToData(req, {
                 firmName,
                 invoiceNo,
                 credit: Number(credit),
                 invoiceFile
             });
+            const newGame = new GameManagement(dataWithCompanyId);
 
             await newGame.save();
             
@@ -67,10 +72,11 @@ class GameManagementController {
                 return res.status(400).json({ success: false, message: 'Tüm zorunlu alanlar doldurulmalıdır' });
             }
 
-            // Mevcut oyunu kontrol et
-            const existingGame = await GameManagement.findById(id);
+            // Mevcut oyunu kontrol et - companyId kontrolü yap
+            const companyFilter = getCompanyFilter(req);
+            const existingGame = await GameManagement.findOne({ _id: id, ...companyFilter });
             if (!existingGame) {
-                return res.status(404).json({ success: false, message: 'Oyun bulunamadı' });
+                return res.status(404).json({ success: false, message: 'Oyun bulunamadı veya yetkiniz yok' });
             }
 
             // Güncelleme verisi hazırla
@@ -91,11 +97,16 @@ class GameManagementController {
                 updateData.invoiceFile = invoiceFile;
             }
 
-            const updatedGame = await GameManagement.findByIdAndUpdate(
-                id,
+            // companyFilter zaten tanımlı (satır 76)
+            const updatedGame = await GameManagement.findOneAndUpdate(
+                { _id: id, ...companyFilter },
                 updateData,
                 { new: true }
             );
+            
+            if (!updatedGame) {
+                return res.status(404).json({ success: false, message: 'Oyun bulunamadı veya yetkiniz yok' });
+            }
 
             // Kredi cache'ini invalidate et çünkü toplam kredi değişmiş olabilir
             invalidateCache();
@@ -111,7 +122,9 @@ class GameManagementController {
     async deleteGame(req, res) {
         try {
             const { id } = req.params;
-            const deletedGame = await GameManagement.findByIdAndDelete(id);
+            // Multi-tenant: companyId kontrolü yap
+            const companyFilter = getCompanyFilter(req);
+            const deletedGame = await GameManagement.findOneAndDelete({ _id: id, ...companyFilter });
 
             if (!deletedGame) {
                 return res.status(404).json({ message: 'Oyun bulunamadı' });
@@ -131,7 +144,9 @@ class GameManagementController {
     async getGameById(req, res) {
         try {
             const { id } = req.params;
-            const game = await GameManagement.findById(id);
+            // Multi-tenant: companyId kontrolü yap
+            const companyFilter = getCompanyFilter(req);
+            const game = await GameManagement.findOne({ _id: id, ...companyFilter });
 
             if (!game) {
                 return res.status(404).json({ success: false, message: 'Oyun bulunamadı' });
@@ -148,7 +163,9 @@ class GameManagementController {
     async getGameByFirmName(req, res) {
         try {
             const { firmName } = req.params;
-            const game = await GameManagement.findOne({ firmName });
+            // Multi-tenant: companyId kontrolü yap
+            const companyFilter = getCompanyFilter(req);
+            const game = await GameManagement.findOne({ firmName, ...companyFilter });
 
             if (!game) {
                 return res.status(404).json({ message: 'Oyun bulunamadı' });

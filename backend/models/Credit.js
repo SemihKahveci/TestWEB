@@ -5,6 +5,12 @@ const creditSchema = new mongoose.Schema({
     type: String,
     required: true
   },
+  companyId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'CompanyManagement',
+    required: true,
+    index: true
+  },
   totalCredits: {
     type: Number,
     required: true,

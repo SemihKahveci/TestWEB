@@ -54,3 +54,80 @@ exports.isSuperAdmin = (req, res, next) => {
     }
     next();
 };
+
+/**
+ * Multi-tenant query helper
+ * Super admin için tüm verileri, normal admin için sadece kendi company'sini döndürür
+ * @param {Object} req - Express request object
+ * @returns {Object} MongoDB query filter
+ */
+exports.getCompanyFilter = (req) => {
+    if (!req.admin) {
+        return {};
+    }
+    
+    // Super admin için tüm verileri göster
+    if (req.admin.role === 'superadmin') {
+        return {};
+    }
+    
+    // Normal admin için sadece kendi company'sini göster
+    if (req.admin.companyId) {
+        // ObjectId'yi string'e çevir ve MongoDB ObjectId olarak kullan
+        const mongoose = require('mongoose');
+        const companyId = req.admin.companyId instanceof mongoose.Types.ObjectId 
+            ? req.admin.companyId 
+            : new mongoose.Types.ObjectId(req.admin.companyId);
+        
+        const { safeLog } = require('../utils/helpers');
+        safeLog('debug', 'Company filter applied', { 
+            adminId: req.admin._id?.toString(), 
+            adminEmail: req.admin.email,
+            companyId: companyId.toString(),
+            role: req.admin.role
+        });
+        
+        // Sadece bu companyId'ye sahip kayıtları göster (companyId null veya undefined olanları gösterme)
+        return { companyId: companyId };
+    }
+    
+    // CompanyId yoksa hiçbir sonuç döndürme (güvenlik)
+    // Eski veriler companyId olmadan kaydedilmiş olabilir, bu yüzden onları gösterme
+    // Hiçbir kayıt döndürmemek için imkansız bir filtre kullan
+    return { _id: null }; // Hiçbir kayıt eşleşmeyecek
+};
+
+/**
+ * Yeni kayıt oluştururken companyId'yi otomatik ekler
+ * @param {Object} req - Express request object
+ * @param {Object} data - Kayıt verisi
+ * @returns {Object} companyId eklenmiş veri
+ */
+exports.addCompanyIdToData = (req, data) => {
+    if (!req.admin) {
+        // Admin yoksa data'yı olduğu gibi döndür (güvenlik için)
+        return data;
+    }
+    
+    // Eğer data'da zaten companyId varsa, onu kullan
+    if (data.companyId) {
+        return data;
+    }
+    
+    // Super admin için: Eğer companyId yoksa, req.body'den veya req.query'den al
+    // Normal admin için: Otomatik olarak admin'in companyId'sini ekle
+    if (req.admin.role === 'superadmin') {
+        // Super admin için req.body veya req.query'den companyId alınabilir
+        // Eğer yoksa ve model required ise, hata fırlatılmalı
+        // Şimdilik data'yı olduğu gibi döndür (frontend'den gönderilmesi gerekir)
+        return data;
+    }
+    
+    // Normal admin için otomatik companyId ekle
+    if (req.admin.companyId) {
+        return { ...data, companyId: req.admin.companyId };
+    }
+    
+    // CompanyId yoksa data'yı olduğu gibi döndür (validation hatası verecek)
+    return data;
+};

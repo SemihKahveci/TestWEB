@@ -67,6 +67,12 @@ const competencySchema = new mongoose.Schema({
         ref: 'Admin',
         required: true
     },
+    companyId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'CompanyManagement',
+        required: true,
+        index: true
+    },
     createdAt: {
         type: Date,
         default: Date.now

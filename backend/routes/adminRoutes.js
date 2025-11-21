@@ -16,6 +16,9 @@ router.post("/logout", (req, res) => {
 // Excel export - Authentication gerektirmez
 router.get('/export-excel/:code', adminController.exportExcel);
 
+// Şirket raporlarını toplu export et (Excel) - Authentication gerektirir
+router.get('/export-company-reports/:companyId', adminController.exportCompanyReports);
+
 // Contact form e-postası gönder (authentication gerektirmez)
 router.post('/send-contact-email', adminController.sendContactEmail);
 

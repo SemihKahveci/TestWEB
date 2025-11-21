@@ -2,12 +2,15 @@ const Competency = require('../models/Competency');
 const multer = require('multer');
 const XLSX = require('xlsx');
 const { safeLog, getSafeErrorMessage } = require('../utils/helpers');
+const { getCompanyFilter, addCompanyIdToData } = require('../middleware/auth');
 
 const competencyController = {
     // Tüm yetkinlikleri getir
     getCompetencies: async (req, res) => {
         try {
-            const competencies = await Competency.find()
+            // Multi-tenant: Super admin için tüm veriler, normal admin için sadece kendi company'si
+            const companyFilter = getCompanyFilter(req);
+            const competencies = await Competency.find(companyFilter)
                 .populate('createdBy', 'name email')
                 .sort({ createdAt: -1 });
             
@@ -29,7 +32,9 @@ const competencyController = {
     getCompetencyById: async (req, res) => {
         try {
             const { id } = req.params;
-            const competency = await Competency.findById(id)
+            // Multi-tenant: companyId kontrolü yap
+            const companyFilter = getCompanyFilter(req);
+            const competency = await Competency.findOne({ _id: id, ...companyFilter })
                 .populate('createdBy', 'name email');
             
             if (!competency) {
@@ -132,8 +137,8 @@ const competencyController = {
                 });
             }
 
-            // Yeni yetkinlik oluştur
-            const competency = new Competency({
+            // Yeni yetkinlik oluştur - companyId otomatik eklenir
+            const dataWithCompanyId = addCompanyIdToData(req, {
                 title,
                 customerFocus: {
                     min: parseInt(customerFocusMin),
@@ -151,8 +156,9 @@ const competencyController = {
                     min: parseInt(collaborationMin),
                     max: parseInt(collaborationMax)
                 },
-                createdBy: req.admin.id
+                createdBy: req.admin._id || req.admin.id
             });
+            const competency = new Competency(dataWithCompanyId);
 
             await competency.save();
             await competency.populate('createdBy', 'name email');
@@ -188,12 +194,14 @@ const competencyController = {
                 collaborationMax
             } = req.body;
 
+            // Multi-tenant: companyId kontrolü yap
+            const companyFilter = getCompanyFilter(req);
             // Yetkinliği bul
-            const competency = await Competency.findById(id);
+            const competency = await Competency.findOne({ _id: id, ...companyFilter });
             if (!competency) {
                 return res.status(404).json({
                     success: false,
-                    message: 'Yetkinlik bulunamadı'
+                    message: 'Yetkinlik bulunamadı veya yetkiniz yok'
                 });
             }
 
@@ -304,11 +312,13 @@ const competencyController = {
         try {
             const { id } = req.params;
             
-            const competency = await Competency.findByIdAndDelete(id);
+            // Multi-tenant: companyId kontrolü yap
+            const companyFilter = getCompanyFilter(req);
+            const competency = await Competency.findOneAndDelete({ _id: id, ...companyFilter });
             if (!competency) {
                 return res.status(404).json({
                     success: false,
-                    message: 'Yetkinlik bulunamadı'
+                    message: 'Yetkinlik bulunamadı veya yetkiniz yok'
                 });
             }
 
@@ -453,19 +463,21 @@ const competencyController = {
                         continue;
                     }
 
-                    // Önce mevcut kaydı ara (case-insensitive ve trim ile)
+                    // Önce mevcut kaydı ara (case-insensitive ve trim ile) - companyId filtresi ile
                     const trimmedTitle = title.trim();
-                    
+                    // Multi-tenant: companyId kontrolü yap
+                    const companyFilter = getCompanyFilter(req);
                     const existingCompetency = await Competency.findOne({ 
-                        title: { $regex: new RegExp(`^${trimmedTitle.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`, 'i') }
+                        title: { $regex: new RegExp(`^${trimmedTitle.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`, 'i') },
+                        ...companyFilter
                     });
 
 
                     let competency;
                     if (existingCompetency) {
-                        // Mevcut kaydı güncelle
-                        competency = await Competency.findByIdAndUpdate(
-                            existingCompetency._id,
+                        // Mevcut kaydı güncelle - companyId filtresi ile
+                        competency = await Competency.findOneAndUpdate(
+                            { _id: existingCompetency._id, ...companyFilter },
                             {
                                 title: trimmedTitle,
                                 customerFocus: { min: numericValues.customerFocusMin, max: numericValues.customerFocusMax },
@@ -477,8 +489,8 @@ const competencyController = {
                             { new: true, runValidators: true }
                         );
                     } else {
-                        // Yeni kayıt oluştur
-                        competency = new Competency({
+                        // Yeni kayıt oluştur - companyId otomatik eklenir
+                        const competencyData = addCompanyIdToData(req, {
                             title: trimmedTitle,
                             customerFocus: { min: numericValues.customerFocusMin, max: numericValues.customerFocusMax },
                             uncertaintyManagement: { min: numericValues.uncertaintyMin, max: numericValues.uncertaintyMax },
@@ -486,6 +498,7 @@ const competencyController = {
                             collaboration: { min: numericValues.collaborationMin, max: numericValues.collaborationMax },
                             createdBy: adminId
                         });
+                        competency = new Competency(competencyData);
                         await competency.save();
                     }
 

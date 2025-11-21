@@ -1,5 +1,6 @@
 const Authorization = require('../models/Authorization');
 const { safeLog, getSafeErrorMessage } = require('../utils/helpers');
+const { getCompanyFilter, addCompanyIdToData } = require('../middleware/auth');
 
 // Tüm kişileri getir
 const getAllAuthorizations = async (req, res) => {
@@ -7,7 +8,9 @@ const getAllAuthorizations = async (req, res) => {
         const { page = 1, limit, search = '', status = '' } = req.query;
         
         // Arama ve filtreleme kriterleri
-        let filter = {};
+        // Multi-tenant: Super admin için tüm veriler, normal admin için sadece kendi company'si
+        const companyFilter = getCompanyFilter(req);
+        let filter = { ...companyFilter };
         
         if (search) {
             filter.$or = [
@@ -65,7 +68,9 @@ const getAuthorizationById = async (req, res) => {
     try {
         const { id } = req.params;
         
-        const authorization = await Authorization.findById(id).populate('createdBy', 'username email');
+        // Multi-tenant: companyId kontrolü yap
+        const companyFilter = getCompanyFilter(req);
+        const authorization = await Authorization.findOne({ _id: id, ...companyFilter }).populate('createdBy', 'username email');
         
         if (!authorization) {
             return res.status(404).json({
@@ -147,14 +152,15 @@ const createAuthorization = async (req, res) => {
             });
         }
 
-        // Yeni kişi oluştur
-        const newAuthorization = new Authorization({
+        // Yeni kişi oluştur - companyId otomatik eklenir
+        const dataWithCompanyId = addCompanyIdToData(req, {
             sicilNo: sicilNo.trim(),
             personName: personName.trim(),
             email: email.trim().toLowerCase(),
             title: title.trim(),
             createdBy: createdBy
         });
+        const newAuthorization = new Authorization(dataWithCompanyId);
 
         await newAuthorization.save();
 
@@ -182,12 +188,14 @@ const updateAuthorization = async (req, res) => {
         const { id } = req.params;
         const { sicilNo, personName, email, title } = req.body;
 
+        // Multi-tenant: companyId kontrolü yap
+        const companyFilter = getCompanyFilter(req);
         // Kişi var mı kontrol et
-        const authorization = await Authorization.findById(id);
+        const authorization = await Authorization.findOne({ _id: id, ...companyFilter });
         if (!authorization) {
             return res.status(404).json({
                 success: false,
-                message: 'Kişi bulunamadı'
+                message: 'Kişi bulunamadı veya yetkiniz yok'
             });
         }
 
@@ -195,10 +203,11 @@ const updateAuthorization = async (req, res) => {
         const updateData = {};
         
         if (sicilNo && sicilNo.trim()) {
-            // Aynı sicil numarasında başka kişi var mı kontrol et
+            // Aynı sicil numarasında başka kişi var mı kontrol et (aynı company içinde)
             const existingAuthorization = await Authorization.findOne({ 
                 sicilNo: sicilNo.trim(),
-                _id: { $ne: id }
+                _id: { $ne: id },
+                ...companyFilter
             });
 
             if (existingAuthorization) {
@@ -216,10 +225,11 @@ const updateAuthorization = async (req, res) => {
         }
 
         if (email && email.trim()) {
-            // Aynı email adresinde başka kişi var mı kontrol et
+            // Aynı email adresinde başka kişi var mı kontrol et (aynı company içinde)
             const existingEmail = await Authorization.findOne({ 
                 email: email.trim().toLowerCase(),
-                _id: { $ne: id }
+                _id: { $ne: id },
+                ...companyFilter
             });
 
             if (existingEmail) {
@@ -236,12 +246,19 @@ const updateAuthorization = async (req, res) => {
             updateData.title = title.trim();
         }
 
-        // Kişiyi güncelle
-        const updatedAuthorization = await Authorization.findByIdAndUpdate(
-            id,
+        // Kişiyi güncelle - companyId kontrolü ile
+        const updatedAuthorization = await Authorization.findOneAndUpdate(
+            { _id: id, ...companyFilter },
             updateData,
             { new: true, runValidators: true }
         ).populate('createdBy', 'username email');
+        
+        if (!updatedAuthorization) {
+            return res.status(404).json({
+                success: false,
+                message: 'Kişi bulunamadı veya yetkiniz yok'
+            });
+        }
 
         res.json({
             success: true,
@@ -263,17 +280,18 @@ const deleteAuthorization = async (req, res) => {
     try {
         const { id } = req.params;
 
-        // Kişi var mı kontrol et
-        const authorization = await Authorization.findById(id);
+        // Kişi var mı kontrol et - companyId kontrolü yap
+        const companyFilter = getCompanyFilter(req);
+        const authorization = await Authorization.findOne({ _id: id, ...companyFilter });
         if (!authorization) {
             return res.status(404).json({
                 success: false,
-                message: 'Kişi bulunamadı'
+                message: 'Kişi bulunamadı veya yetkiniz yok'
             });
         }
 
         // Kişiyi sil
-        await Authorization.findByIdAndDelete(id);
+        await Authorization.findOneAndDelete({ _id: id, ...companyFilter });
 
         res.json({
             success: true,
@@ -438,8 +456,9 @@ const bulkCreateAuthorizations = async (req, res) => {
                     continue;
                 }
 
-                // Yeni yetkilendirme oluştur
-                const newAuthorization = new Authorization(auth);
+                // Yeni yetkilendirme oluştur - companyId otomatik eklenir
+                const dataWithCompanyId = addCompanyIdToData(req, auth);
+                const newAuthorization = new Authorization(dataWithCompanyId);
                 await newAuthorization.save();
                 results.success.push({
                     row: rowNumber,

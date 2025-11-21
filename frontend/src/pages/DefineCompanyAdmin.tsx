@@ -34,6 +34,7 @@ const DefineCompanyAdmin: React.FC = () => {
     name: '',
     email: '',
     company: '',
+    companyId: '',
     password: ''
   });
 
@@ -152,9 +153,9 @@ const DefineCompanyAdmin: React.FC = () => {
   };
 
   // Firma seçme fonksiyonu
-  const handleCompanySelect = (firmName: string) => {
-    setFormData({ ...formData, company: firmName });
-    setCompanySearchTerm(firmName);
+  const handleCompanySelect = (company: any) => {
+    setFormData({ ...formData, company: company.firmName, companyId: company._id });
+    setCompanySearchTerm(company.firmName);
     setShowCompanyDropdown(false);
     setFilteredCompanies(companies); // Reset filter
   };
@@ -213,7 +214,7 @@ const DefineCompanyAdmin: React.FC = () => {
   };
 
   const handleAddAdmin = () => {
-    setFormData({ name: '', email: '', company: '', password: '' });
+    setFormData({ name: '', email: '', company: '', companyId: '', password: '' });
     setCompanySearchTerm('');
     setShowCompanyDropdown(false);
     setFilteredCompanies(companies);
@@ -232,6 +233,7 @@ const DefineCompanyAdmin: React.FC = () => {
           name: data.admin.name || '',
           email: data.admin.email || '',
           company: data.admin.company || '',
+          companyId: data.admin.companyId || '',
           password: ''
         });
         setShowEditPopup(true);
@@ -268,6 +270,7 @@ const DefineCompanyAdmin: React.FC = () => {
           name: formData.name,
           email: formData.email,
           company: formData.company,
+          companyId: formData.companyId,
           password: formData.password,
           role: 'admin'
         })
@@ -294,7 +297,8 @@ const DefineCompanyAdmin: React.FC = () => {
       const updateData: any = {
         name: formData.name,
         email: formData.email,
-        company: formData.company
+        company: formData.company,
+        companyId: formData.companyId
       };
       
       // Şifre varsa ekle
@@ -920,7 +924,7 @@ const DefineCompanyAdmin: React.FC = () => {
                           filteredCompanies.map((company: any) => (
                             <div
                               key={company._id}
-                              onClick={() => handleCompanySelect(company.firmName)}
+                              onClick={() => handleCompanySelect(company)}
                               style={{
                                 padding: '12px 16px',
                                 cursor: 'pointer',
@@ -1145,21 +1149,147 @@ const DefineCompanyAdmin: React.FC = () => {
                 }}>
                   Firma
                 </label>
-                <input
-                  type="text"
-                  value={formData.company}
-                  onChange={(e) => setFormData({...formData, company: e.target.value})}
-                  placeholder="Firma adını giriniz"
-                  style={{
-                    width: '100%',
-                    padding: '8px 16px',
-                    border: '1px solid #D1D5DB',
-                    borderRadius: '4px',
-                    fontSize: '14px',
-                    fontFamily: 'Inter',
-                    outline: 'none'
-                  }}
-                />
+                <div style={{ position: 'relative' }} data-company-dropdown>
+                  {/* Custom Dropdown */}
+                  <div
+                    onClick={() => setShowCompanyDropdown(!showCompanyDropdown)}
+                    style={{
+                      padding: '12px 16px',
+                      border: '1px solid #D1D5DB',
+                      borderRadius: '6px',
+                      fontSize: '14px',
+                      color: '#232D42',
+                      backgroundColor: '#FFFFFF',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      userSelect: 'none',
+                      fontFamily: 'Inter'
+                    }}
+                  >
+                    <span style={{ color: companySearchTerm ? '#232D42' : '#8A92A6' }}>
+                      {companySearchTerm || `Firma seçin (${companies.length} firma mevcut)`}
+                    </span>
+                    <i 
+                      className={`fas fa-chevron-${showCompanyDropdown ? 'up' : 'down'}`}
+                      style={{ 
+                        color: '#8A92A6',
+                        fontSize: '12px',
+                        transition: 'transform 0.3s ease'
+                      }}
+                    />
+                  </div>
+                  {/* Dropdown Menu */}
+                  {showCompanyDropdown && (
+                    <div style={{
+                      position: 'absolute',
+                      top: '100%',
+                      left: 0,
+                      right: 0,
+                      backgroundColor: '#FFFFFF',
+                      border: '1px solid #D1D5DB',
+                      borderRadius: '6px',
+                      boxShadow: '0 8px 25px rgba(0, 0, 0, 0.15)',
+                      zIndex: 9999,
+                      maxHeight: '400px',
+                      overflow: 'hidden',
+                      marginTop: '4px'
+                    }}>
+                      {/* Search Input */}
+                      <div style={{ padding: '8px', borderBottom: '1px solid #E9ECEF', position: 'relative' }}>
+                        <input
+                          type="text"
+                          placeholder="Firma ara..."
+                          value={companySearchTerm}
+                          onChange={(e) => {
+                            handleCompanySearch(e.target.value);
+                          }}
+                          style={{
+                            width: '100%',
+                            padding: '8px 12px 8px 32px',
+                            border: '1px solid #E9ECEF',
+                            borderRadius: '4px',
+                            fontSize: '14px',
+                            outline: 'none',
+                            fontFamily: 'Inter'
+                          }}
+                          onClick={(e) => e.stopPropagation()}
+                        />
+                        <i className="fas fa-search" style={{
+                          position: 'absolute',
+                          left: '16px',
+                          top: '50%',
+                          transform: 'translateY(-50%)',
+                          color: '#6B7280',
+                          fontSize: '12px'
+                        }} />
+                        {companySearchTerm && (
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setCompanySearchTerm('');
+                              handleCompanySearch('');
+                            }}
+                            style={{
+                              position: 'absolute',
+                              right: '12px',
+                              top: '50%',
+                              transform: 'translateY(-50%)',
+                              background: 'none',
+                              border: 'none',
+                              color: '#6B7280',
+                              cursor: 'pointer',
+                              fontSize: '12px',
+                              padding: '2px'
+                            }}
+                          >
+                            <i className="fas fa-times"></i>
+                          </button>
+                        )}
+                      </div>
+
+                      {/* Options */}
+                      <div style={{ maxHeight: '300px', overflowY: 'auto' }}>
+                        {filteredCompanies.length > 0 ? (
+                          filteredCompanies.map((company: any) => (
+                            <div
+                              key={company._id}
+                              onClick={() => handleCompanySelect(company)}
+                              style={{
+                                padding: '12px 16px',
+                                cursor: 'pointer',
+                                fontSize: '14px',
+                                fontFamily: 'Inter',
+                                color: '#232D42',
+                                borderBottom: '1px solid #F1F3F4',
+                                transition: 'background-color 0.2s ease'
+                              }}
+                              onMouseEnter={(e) => {
+                                e.currentTarget.style.backgroundColor = '#F8F9FA';
+                              }}
+                              onMouseLeave={(e) => {
+                                e.currentTarget.style.backgroundColor = 'transparent';
+                              }}
+                            >
+                              {highlightText(company.firmName, companySearchTerm)}
+                            </div>
+                          ))
+                        ) : (
+                          <div style={{
+                            padding: '12px 16px',
+                            fontSize: '14px',
+                            fontFamily: 'Inter',
+                            color: '#8A92A6',
+                            textAlign: 'center'
+                          }}>
+                            Firma bulunamadı
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
+                </div>
               </div>
               <div>
                 <label style={{

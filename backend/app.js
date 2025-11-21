@@ -168,17 +168,22 @@ apiRouter.get('/health', async (req, res) => {
     }
 });
 
+// Authentication middleware'i import et
+const { authenticateAdmin } = require('./middleware/auth');
+
 // Kod işlemleri
-apiRouter.post('/generate-code', wsService.getCodeController().generateCode.bind(wsService.getCodeController()));
+apiRouter.post('/generate-code', authenticateAdmin, wsService.getCodeController().generateCode.bind(wsService.getCodeController()));
 apiRouter.get('/active-codes', wsService.getCodeController().listCodes.bind(wsService.getCodeController()));
 apiRouter.post('/verify-code', wsService.getCodeController().verifyGameCode.bind(wsService.getCodeController()));
 apiRouter.delete('/delete-code', wsService.getCodeController().deleteCode.bind(wsService.getCodeController()));
 apiRouter.delete('/delete-all-codes', wsService.getCodeController().deleteAllCodes.bind(wsService.getCodeController()));
-apiRouter.post('/send-code', adminController.sendCode.bind(adminController));
-apiRouter.post('/update-code-status', adminController.updateCodeStatus.bind(adminController));
-apiRouter.get('/user-results', adminController.getUserResults.bind(adminController));
-apiRouter.post('/update-result-status', adminController.updateResultStatus.bind(adminController));
-apiRouter.delete('/delete-result', adminController.deleteResult.bind(adminController));
+
+apiRouter.post('/send-code', authenticateAdmin, adminController.sendCode.bind(adminController));
+
+apiRouter.post('/update-code-status', authenticateAdmin, adminController.updateCodeStatus.bind(adminController));
+apiRouter.get('/user-results', authenticateAdmin, adminController.getUserResults.bind(adminController));
+apiRouter.post('/update-result-status', authenticateAdmin, adminController.updateResultStatus.bind(adminController));
+apiRouter.delete('/delete-result', authenticateAdmin, adminController.deleteResult.bind(adminController));
 
 
 
