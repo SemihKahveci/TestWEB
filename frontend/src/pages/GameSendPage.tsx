@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { creditAPI } from '../services/api';
+import { safeLog } from '../utils/logger';
 
 interface Planet {
   value: string;
@@ -194,7 +195,8 @@ const GameSendPage: React.FC = () => {
           localStorage.setItem('usedCredits', usedCredits.toString());
           localStorage.setItem('totalCredits', totalCredits.toString());
           
-          console.log('Kredi bilgileri güncellendi:', { totalCredits, usedCredits, remainingCredits });
+          // Production'da kredi bilgileri loglanmaz (güvenlik)
+          safeLog('debug', 'Kredi bilgileri güncellendi', { totalCredits, usedCredits, remainingCredits });
         } else {
           setRemainingCredits(0);
         }
@@ -202,7 +204,7 @@ const GameSendPage: React.FC = () => {
         throw new Error('API yanıtı başarısız');
       }
     } catch (error) {
-      console.error('Kredi bilgisi yüklenirken hata:', error);
+      safeLog('error', 'Kredi bilgisi yüklenirken hata', error);
       // Fallback: localStorage'dan al
       const fallbackRemaining = parseInt(localStorage.getItem('remainingCredits') || '0');
       const fallbackUsed = parseInt(localStorage.getItem('usedCredits') || '0');
@@ -239,7 +241,7 @@ const GameSendPage: React.FC = () => {
         throw new Error(result.message || 'Grup listesi alınamadı');
       }
     } catch (error) {
-      console.error('Grup listesi yükleme hatası:', error);
+      safeLog('error', 'Grup listesi yükleme hatası', error);
       showMessage('Hata', 'Grup listesi yüklenemedi', 'error');
     } finally {
       setIsLoading(false);
@@ -273,7 +275,7 @@ const GameSendPage: React.FC = () => {
         throw new Error(result.message || 'Unvan listesi alınamadı');
       }
     } catch (error) {
-      console.error('Unvan listesi yükleme hatası:', error);
+      safeLog('error', 'Unvan listesi yükleme hatası', error);
       showMessage('Hata', 'Unvan listesi yüklenemedi', 'error');
     } finally {
       setIsLoading(false);
@@ -523,7 +525,7 @@ const GameSendPage: React.FC = () => {
           }
         }
       } catch (error) {
-        console.error('Grup detayları yükleme hatası:', error);
+        safeLog('error', 'Grup detayları yükleme hatası', error);
         showMessage('Hata', 'Grup detayları yüklenemedi', 'error');
       }
     }
@@ -569,7 +571,7 @@ const GameSendPage: React.FC = () => {
           }
         }
       } catch (error) {
-        console.error('Unvan detayları yükleme hatası:', error);
+        safeLog('error', 'Unvan detayları yükleme hatası', error);
         showMessage('Hata', 'Unvan detayları yüklenemedi', 'error');
       }
     }
@@ -653,7 +655,7 @@ const GameSendPage: React.FC = () => {
         showMessage('Hata', 'Gönderilemedi: ' + sendData.message, 'error');
       }
     } catch (error) {
-      console.error('Kod gönderme hatası:', error);
+      safeLog('error', 'Kod gönderme hatası', error);
       showMessage('Hata', 'Gönderilemedi: Bir hata oluştu', 'error');
     } finally {
       setIsSubmitting(false);
@@ -678,7 +680,7 @@ const GameSendPage: React.FC = () => {
 
       for (const titleId of selectedTitles) {
         const title = titles.find(t => t._id === titleId);
-        console.log('Selected title:', title);
+        safeLog('debug', 'Selected title:', title);
         
         if (title && title.organizations && title.organizations.length > 0) {
           // 1. Bu unvanın pozisyonlarını al (zaten title.organizations'da var)
@@ -687,10 +689,10 @@ const GameSendPage: React.FC = () => {
             .filter(Boolean)
             .filter((position: string, index: number, arr: string[]) => arr.indexOf(position) === index); // Tekrarları kaldır
           
-          console.log('Positions for this title:', orgPositions);
+          safeLog('debug', 'Positions for this title:', orgPositions);
           
           if (orgPositions.length === 0) {
-            console.log('No positions found for this title');
+            safeLog('debug', 'No positions found for this title');
             continue;
           }
           
@@ -702,16 +704,16 @@ const GameSendPage: React.FC = () => {
           if (response.ok) {
             const result = await response.json();
             if (result.success) {
-              console.log('Available authorizations:', result.authorizations.length);
+              safeLog('debug', 'Available authorizations:', result.authorizations.length);
               
               // Debug: Authorization'daki tüm title'ları göster
               const allAuthTitles = [...new Set(result.authorizations.map((p: any) => p.title))];
-              console.log('All titles in authorization:', allAuthTitles);
-              console.log('Looking for positions:', orgPositions);
+              safeLog('debug', 'All titles in authorization:', allAuthTitles);
+              safeLog('debug', 'Looking for positions:', orgPositions);
               
               // Debug: Authorization verilerinin yapısını kontrol et
-              console.log('First authorization sample:', result.authorizations[0]);
-              console.log('Authorization fields:', Object.keys(result.authorizations[0] || {}));
+              safeLog('debug', 'First authorization sample:', result.authorizations[0]);
+              safeLog('debug', 'Authorization fields:', Object.keys(result.authorizations[0] || {}));
               
               // Bu pozisyonlardaki kişileri bul (title alanında arama yap)
               const matchingPersons = result.authorizations.filter((person: any) => 
@@ -719,10 +721,10 @@ const GameSendPage: React.FC = () => {
               );
               
               // Debug: Title eşleştirmesini kontrol et
-              console.log('Title matching debug:');
+              safeLog('debug', 'Title matching debug:');
               result.authorizations.forEach((person: any, index: number) => {
                 if (index < 3) { // İlk 3 kişiyi kontrol et
-                  console.log(`Person ${index}:`, {
+                  safeLog('debug', `Person ${index}:`, {
                     name: person.personName,
                     title: person.title,
                     isMatch: orgPositions.includes(person.title)
@@ -730,16 +732,16 @@ const GameSendPage: React.FC = () => {
                 }
               });
               
-              console.log(`Found ${matchingPersons.length} persons in positions: ${orgPositions.join(', ')}`);
+              safeLog('debug', `Found ${matchingPersons.length} persons in positions: ${orgPositions.join(', ')}`);
               
               // Debug: Eşleşmeyen pozisyonları göster
               const unmatchedPositions = orgPositions.filter(pos => !allAuthTitles.includes(pos));
               if (unmatchedPositions.length > 0) {
-                console.log('Unmatched positions:', unmatchedPositions);
+                safeLog('debug', 'Unmatched positions:', unmatchedPositions);
               }
               
               for (const person of matchingPersons) {
-                console.log('Person details:', {
+                safeLog('debug', 'Person details:', {
                   name: person.personName,
                   email: person.email,
                   pozisyon: person.pozisyon
@@ -773,7 +775,7 @@ const GameSendPage: React.FC = () => {
         }
       });
     } catch (error) {
-      console.error('Unvan gönderim hatası:', error);
+      safeLog('error', 'Unvan gönderim hatası', error);
       showMessage('Hata', 'Gönderim sırasında bir hata oluştu!', 'error');
     }
   };
@@ -833,7 +835,7 @@ const GameSendPage: React.FC = () => {
         }
       });
     } catch (error) {
-      console.error('Grup gönderim hatası:', error);
+      safeLog('error', 'Grup gönderim hatası', error);
       showMessage('Hata', 'Gönderim sırasında bir hata oluştu!', 'error');
     }
   };
@@ -940,7 +942,7 @@ const GameSendPage: React.FC = () => {
         }
       } else if (successCount > 0 && errorCount > 0) {
         showMessage('Kısmi Başarı', `${successCount} kişiye gönderildi, ${errorCount} kişiye gönderilemedi. (${totalCreditCost} kredi düşüldü)`, 'warning', errors);
-        console.error('Gönderim hataları:', errors);
+        safeLog('error', 'Gönderim hataları', errors);
         // Kredi düşür (sadece başarılı gönderimler için - API ile)
         try {
           const deductResponse = await creditAPI.deductCredits({
@@ -964,13 +966,13 @@ const GameSendPage: React.FC = () => {
         }
       } else {
         showMessage('Hata', 'Hiçbir kişiye gönderilemedi!', 'error', errors);
-        console.error('Tüm gönderim hataları:', errors);
+        safeLog('error', 'Tüm gönderim hataları', errors);
       }
 
       // Clear selections
       setSelectedGroups([]);
     } catch (error) {
-      console.error('Grup gönderim hatası:', error);
+      safeLog('error', 'Grup gönderim hatası', error);
       showMessage('Hata', 'Gönderim sırasında bir hata oluştu!', 'error');
     } finally {
       setIsSubmitting(false);
@@ -1070,7 +1072,7 @@ const GameSendPage: React.FC = () => {
         }
       } else if (successCount > 0 && errorCount > 0) {
         showMessage('Kısmi Başarı', `${successCount} kişiye gönderildi, ${errorCount} kişiye gönderilemedi. (${totalCreditCost} kredi düşüldü)`, 'warning', errors);
-        console.error('Gönderim hataları:', errors);
+        safeLog('error', 'Gönderim hataları', errors);
         // Kredi düşür (sadece başarılı gönderimler için - API ile)
         try {
           const deductResponse = await creditAPI.deductCredits({
@@ -1094,14 +1096,14 @@ const GameSendPage: React.FC = () => {
         }
       } else {
         showMessage('Hata', 'Hiçbir kişiye gönderilemedi!', 'error', errors);
-        console.error('Tüm gönderim hataları:', errors);
+        safeLog('error', 'Tüm gönderim hataları', errors);
       }
 
       // Clear selections
       setSelectedTitles([]);
       setSelectedTitlePlanets([]);
     } catch (error) {
-      console.error('Unvan gönderim hatası:', error);
+      safeLog('error', 'Unvan gönderim hatası', error);
       showMessage('Hata', 'Gönderim sırasında bir hata oluştu!', 'error');
     } finally {
       setIsSubmitting(false);

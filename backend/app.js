@@ -18,6 +18,7 @@ const groupRoutes = require('./routes/groupRoutes');
 const authorizationRoutes = require('./routes/authorizationRoutes');
 const cookieParser = require("cookie-parser");
 const authRoutes = require('./routes/authRoutes');
+const rateLimit = require('express-rate-limit');
 
 const app = express();
 
@@ -98,12 +99,28 @@ setTimeout(async () => {
     try {
         await wsService.getCodeController().checkExpiredCodes();
     } catch (error) {
-        console.error('İlk kod kontrolü hatası:', error);
+        safeLog('error', 'İlk kod kontrolü hatası', error);
     }
 }, 5000); // 5 saniye sonra ilk kontrolü yap
 
 // API Routes
 const apiRouter = express.Router();
+
+// 🛡️ Genel API koruması (DDoS ve brute-force)
+const generalApiLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000, // 15 dakika
+    max: 100, // 100 istek
+    message: {
+        success: false,
+        message: "Çok fazla istek. Lütfen birkaç dakika sonra tekrar deneyin."
+    },
+    standardHeaders: true,
+    legacyHeaders: false,
+    skipSuccessfulRequests: true, // Başarılı istekleri sayma (sadece hatalı istekleri say)
+});
+
+// Genel API korumasını tüm /api/* endpoint'lerine uygula
+apiRouter.use(generalApiLimiter);
 
 // WebSocket durumu
 apiRouter.get('/ws-status', (req, res) => {

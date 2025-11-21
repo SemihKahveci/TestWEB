@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { creditAPI } from '../services/api';
+import { safeLog } from '../utils/logger';
 
 interface Game {
   _id: string;
@@ -38,7 +39,7 @@ const SubscriptionSettings: React.FC = () => {
             localStorage.setItem('totalCredits', totalCredits.toString());
           }
         } catch (error) {
-          console.error('Kredi bilgisi yüklenirken hata:', error);
+          safeLog('error', 'Kredi bilgisi yüklenirken hata', error);
         }
       };
       
@@ -68,7 +69,7 @@ const SubscriptionSettings: React.FC = () => {
       const data = await response.json();
       setGames(data.games || []);
     } catch (error) {
-      console.error('Oyunlar yüklenirken hata:', error);
+      safeLog('error', 'Oyunlar yüklenirken hata', error);
     } finally {
       setIsLoading(false);
     }
@@ -146,7 +147,8 @@ const SubscriptionSettings: React.FC = () => {
                   description: `Oyun yönetimi güncellemesi: ${difference > 0 ? '+' : ''}${difference} kredi`
                 });
                 
-                console.log(`Toplam kredi güncellendi: ${currentTotalCredits} -> ${totalCredits} (${difference > 0 ? '+' : ''}${difference})`);
+                // Production'da kredi bilgileri loglanmaz (güvenlik)
+                safeLog('debug', `Toplam kredi güncellendi: ${currentTotalCredits} -> ${totalCredits} (${difference > 0 ? '+' : ''}${difference})`);
               }
             }
           }
