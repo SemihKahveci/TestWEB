@@ -11,6 +11,7 @@ const { capitalizeName, escapeHtml, safeLog, getSafeErrorMessage } = require('..
 const XLSX = require('xlsx');
 const fs = require('fs');
 const path = require('path');
+const { adminLoginLimiter } = require('../middleware/rateLimiters');
 
 // Şifre validasyon fonksiyonu
 const validatePassword = (password) => {
@@ -111,6 +112,17 @@ const adminController = {
                 sameSite: isProduction ? "strict" : "lax", // Development'ta lax, production'da strict
                 maxAge: 7 * 24 * 60 * 60 * 1000
             });
+
+            // Başarılı girişte rate limit'i resetle
+            try {
+                const clientIp = req.ip || req.connection.remoteAddress || req.socket.remoteAddress;
+                if (adminLoginLimiter && typeof adminLoginLimiter.resetKey === 'function') {
+                    adminLoginLimiter.resetKey(clientIp);
+                }
+            } catch (resetError) {
+                // Rate limit reset hatası kritik değil, sadece logla
+                safeLog('warn', 'Rate limit reset hatası:', resetError);
+            }
 
             return res.json({
                 success: true,

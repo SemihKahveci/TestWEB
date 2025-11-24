@@ -66,11 +66,24 @@ const LoginPage: React.FC = () => {
       const success = await login(email, password);
       if (success) {
         navigate('/admin');
-      } else {
-        setError('E-posta veya şifre hatalı');
       }
-    } catch (error) {
+    } catch (error: any) {
+      // Rate limit hatası (429) veya diğer hatalar için backend'den gelen mesajı göster
+      if (error?.response?.status === 429) {
+        // Rate limit hatası - backend'den gelen mesajı kullan
+        const rateLimitMessage = error?.response?.data?.message || 
+          'Çok fazla başarısız giriş denemesi. Lütfen birkaç dakika sonra tekrar deneyin.';
+        setError(rateLimitMessage);
+      } else if (error?.response?.status === 401) {
+        // Yetkilendirme hatası - email veya şifre hatalı
+        setError('E-posta veya şifre hatalı');
+      } else if (error?.response?.data?.message) {
+        // Backend'den gelen diğer hata mesajları
+        setError(error.response.data.message);
+      } else {
+        // Genel hata mesajı
       setError('Giriş yapılırken bir hata oluştu');
+      }
     } finally {
       setIsLoading(false);
     }

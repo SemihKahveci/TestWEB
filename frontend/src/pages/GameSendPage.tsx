@@ -691,25 +691,25 @@ const GameSendPage: React.FC = () => {
         setSelectedPlanets([]);
         // Kredi düşür (API ile) - Super admin için atla
         if (!isSuperAdmin) {
-          try {
-            const deductResponse = await creditAPI.deductCredits({
-              amount: creditCost,
-              type: 'game_send',
-              description: `Kişi gönderimi: ${personName} (${creditCost} gezegen)`
-            });
+        try {
+          const deductResponse = await creditAPI.deductCredits({
+            amount: creditCost,
+            type: 'game_send',
+            description: `Kişi gönderimi: ${personName} (${creditCost} gezegen)`
+          });
+          
+          if (deductResponse.data.success) {
+            // localStorage'ı güncelle
+            const { totalCredits, usedCredits, remainingCredits } = deductResponse.data.credit;
+            localStorage.setItem('remainingCredits', remainingCredits.toString());
+            localStorage.setItem('usedCredits', usedCredits.toString());
+            localStorage.setItem('totalCredits', totalCredits.toString());
             
-            if (deductResponse.data.success) {
-              // localStorage'ı güncelle
-              const { totalCredits, usedCredits, remainingCredits } = deductResponse.data.credit;
-              localStorage.setItem('remainingCredits', remainingCredits.toString());
-              localStorage.setItem('usedCredits', usedCredits.toString());
-              localStorage.setItem('totalCredits', totalCredits.toString());
-              
-              // UI'yi güncelle
-              setRemainingCredits(remainingCredits);
-            }
-          } catch (error) {
-            showMessage('Hata', `Kredi düşürülemedi: ${error.response?.data?.message || error.message}`, 'error');
+            // UI'yi güncelle
+            setRemainingCredits(remainingCredits);
+          }
+        } catch (error) {
+          showMessage('Hata', `Kredi düşürülemedi: ${error.response?.data?.message || error.message}`, 'error');
           }
         }
       } else {
@@ -983,25 +983,25 @@ const GameSendPage: React.FC = () => {
         showMessage('Başarılı', creditMessage, 'success');
         // Kredi düşür (API ile) - Super admin için atla
         if (!isSuperAdmin) {
-          try {
-            const deductResponse = await creditAPI.deductCredits({
-              amount: totalCreditCost,
-              type: 'game_send',
-              description: `Grup gönderimi: ${successCount} kişi (${totalCreditCost} kredi)`
-            });
+        try {
+          const deductResponse = await creditAPI.deductCredits({
+            amount: totalCreditCost,
+            type: 'game_send',
+            description: `Grup gönderimi: ${successCount} kişi (${totalCreditCost} kredi)`
+          });
+          
+          if (deductResponse.data.success) {
+            // localStorage'ı güncelle
+            const { totalCredits, usedCredits, remainingCredits } = deductResponse.data.credit;
+            localStorage.setItem('remainingCredits', remainingCredits.toString());
+            localStorage.setItem('usedCredits', usedCredits.toString());
+            localStorage.setItem('totalCredits', totalCredits.toString());
             
-            if (deductResponse.data.success) {
-              // localStorage'ı güncelle
-              const { totalCredits, usedCredits, remainingCredits } = deductResponse.data.credit;
-              localStorage.setItem('remainingCredits', remainingCredits.toString());
-              localStorage.setItem('usedCredits', usedCredits.toString());
-              localStorage.setItem('totalCredits', totalCredits.toString());
-              
-              // UI'yi güncelle
-              setRemainingCredits(remainingCredits);
-            }
-          } catch (error) {
-            showMessage('Hata', `Kredi düşürülemedi: ${error.response?.data?.message || error.message}`, 'error');
+            // UI'yi güncelle
+            setRemainingCredits(remainingCredits);
+          }
+        } catch (error) {
+          showMessage('Hata', `Kredi düşürülemedi: ${error.response?.data?.message || error.message}`, 'error');
           }
         }
       } else if (successCount > 0 && errorCount > 0) {
@@ -1010,9 +1010,9 @@ const GameSendPage: React.FC = () => {
         safeLog('error', 'Gönderim hataları', errors);
         // Kredi düşür (sadece başarılı gönderimler için - API ile) - Super admin için atla
         if (!isSuperAdmin) {
-          try {
-            const deductResponse = await creditAPI.deductCredits({
-              amount: totalCreditCost,
+        try {
+          const deductResponse = await creditAPI.deductCredits({
+            amount: totalCreditCost,
             type: 'game_send',
             description: `Grup gönderimi (kısmi): ${successCount} kişi (${totalCreditCost} kredi)`
           });
@@ -1027,8 +1027,8 @@ const GameSendPage: React.FC = () => {
             // UI'yi güncelle
             setRemainingCredits(remainingCredits);
           }
-          } catch (error) {
-            showMessage('Hata', `Kredi düşürülemedi: ${error.response?.data?.message || error.message}`, 'error');
+        } catch (error) {
+          showMessage('Hata', `Kredi düşürülemedi: ${error.response?.data?.message || error.message}`, 'error');
           }
         }
       } else {
@@ -1119,39 +1119,12 @@ const GameSendPage: React.FC = () => {
         showMessage('Başarılı', creditMessage, 'success');
         // Kredi düşür (API ile) - Super admin için atla
         if (!isSuperAdmin) {
-          try {
-            const deductResponse = await creditAPI.deductCredits({
-              amount: totalCreditCost,
-              type: 'game_send',
-              description: `Unvan gönderimi: ${successCount} kişi (${totalCreditCost} kredi)`
-            });
-            
-            if (deductResponse.data.success) {
-              // localStorage'ı güncelle
-              const { totalCredits, usedCredits, remainingCredits } = deductResponse.data.credit;
-              localStorage.setItem('remainingCredits', remainingCredits.toString());
-              localStorage.setItem('usedCredits', usedCredits.toString());
-              localStorage.setItem('totalCredits', totalCredits.toString());
-              
-              // UI'yi güncelle
-              setRemainingCredits(remainingCredits);
-            }
-          } catch (error) {
-            showMessage('Hata', `Kredi düşürülemedi: ${error.response?.data?.message || error.message}`, 'error');
-          }
-        }
-      } else if (successCount > 0 && errorCount > 0) {
-        const creditMessage = isSuperAdmin ? `${successCount} kişiye gönderildi, ${errorCount} kişiye gönderilemedi.` : `${successCount} kişiye gönderildi, ${errorCount} kişiye gönderilemedi. (${totalCreditCost} kredi düşüldü)`;
-        showMessage('Kısmi Başarı', creditMessage, 'warning', errors);
-        safeLog('error', 'Gönderim hataları', errors);
-        // Kredi düşür (sadece başarılı gönderimler için - API ile) - Super admin için atla
-        if (!isSuperAdmin) {
-          try {
-            const deductResponse = await creditAPI.deductCredits({
-              amount: totalCreditCost,
-              type: 'game_send',
-              description: `Unvan gönderimi (kısmi): ${successCount} kişi (${totalCreditCost} kredi)`
-            });
+        try {
+          const deductResponse = await creditAPI.deductCredits({
+            amount: totalCreditCost,
+            type: 'game_send',
+            description: `Unvan gönderimi: ${successCount} kişi (${totalCreditCost} kredi)`
+          });
           
           if (deductResponse.data.success) {
             // localStorage'ı güncelle
@@ -1163,8 +1136,35 @@ const GameSendPage: React.FC = () => {
             // UI'yi güncelle
             setRemainingCredits(remainingCredits);
           }
-          } catch (error) {
-            showMessage('Hata', `Kredi düşürülemedi: ${error.response?.data?.message || error.message}`, 'error');
+        } catch (error) {
+          showMessage('Hata', `Kredi düşürülemedi: ${error.response?.data?.message || error.message}`, 'error');
+          }
+        }
+      } else if (successCount > 0 && errorCount > 0) {
+        const creditMessage = isSuperAdmin ? `${successCount} kişiye gönderildi, ${errorCount} kişiye gönderilemedi.` : `${successCount} kişiye gönderildi, ${errorCount} kişiye gönderilemedi. (${totalCreditCost} kredi düşüldü)`;
+        showMessage('Kısmi Başarı', creditMessage, 'warning', errors);
+        safeLog('error', 'Gönderim hataları', errors);
+        // Kredi düşür (sadece başarılı gönderimler için - API ile) - Super admin için atla
+        if (!isSuperAdmin) {
+        try {
+          const deductResponse = await creditAPI.deductCredits({
+            amount: totalCreditCost,
+            type: 'game_send',
+            description: `Unvan gönderimi (kısmi): ${successCount} kişi (${totalCreditCost} kredi)`
+          });
+          
+          if (deductResponse.data.success) {
+            // localStorage'ı güncelle
+            const { totalCredits, usedCredits, remainingCredits } = deductResponse.data.credit;
+            localStorage.setItem('remainingCredits', remainingCredits.toString());
+            localStorage.setItem('usedCredits', usedCredits.toString());
+            localStorage.setItem('totalCredits', totalCredits.toString());
+            
+            // UI'yi güncelle
+            setRemainingCredits(remainingCredits);
+          }
+        } catch (error) {
+          showMessage('Hata', `Kredi düşürülemedi: ${error.response?.data?.message || error.message}`, 'error');
           }
         }
       } else {
