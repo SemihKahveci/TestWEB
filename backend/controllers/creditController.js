@@ -2,77 +2,105 @@ const Credit = require('../models/Credit');
 const { safeLog, getSafeErrorMessage } = require('../utils/helpers');
 const { getCompanyFilter, addCompanyIdToData } = require('../middleware/auth');
 
-// Cache for total credits to avoid repeated API calls
-let totalCreditsCache = {
-  value: 0,
-  lastUpdated: null,
-  ttl: 5 * 60 * 1000 // 5 minutes cache
-};
+// Cache for total credits per companyId to avoid repeated API calls
+const totalCreditsCache = new Map(); // companyId -> { value, lastUpdated }
+const CACHE_TTL = 5 * 60 * 1000; // 5 minutes cache
 
-// Helper function to get total credits with caching
-const getTotalCreditsFromCache = async (req) => {
+// Helper function to get total credits with caching (companyId bazında)
+const getTotalCreditsFromCache = async (req, companyId) => {
   const now = new Date();
+  const companyIdStr = companyId?.toString() || 'default';
   
-  // If cache is valid, return cached value
-  if (totalCreditsCache.lastUpdated && 
-      (now - totalCreditsCache.lastUpdated) < totalCreditsCache.ttl) {
-    return totalCreditsCache.value;
+  // If cache is valid for this company, return cached value
+  const cached = totalCreditsCache.get(companyIdStr);
+  if (cached && 
+      cached.lastUpdated && 
+      (now - cached.lastUpdated) < CACHE_TTL) {
+    return cached.value;
   }
   
   // Cache expired or doesn't exist, fetch from API
   try {
-    const gameResponse = await fetch(`${process.env.API_BASE_URL || 'http://localhost:5000'}/api/game-management/games`, {
-      headers: {
-        'Authorization': req.headers.authorization
-      }
+    // GameManagement'ten tüm oyunları al (companyId filtresi zaten getAllGames'de yapılıyor)
+    const GameManagement = require('../models/gameManagement');
+    const { getCompanyFilter } = require('../middleware/auth');
+    
+    // companyId'yi req'e ekle (getCompanyFilter için)
+    const companyFilter = companyId 
+      ? { companyId: companyId instanceof require('mongoose').Types.ObjectId ? companyId : new require('mongoose').Types.ObjectId(companyId) }
+      : getCompanyFilter(req);
+    
+    const games = await GameManagement.find(companyFilter, 'credit');
+    const totalCredits = games.reduce((sum, game) => sum + (game.credit || 0), 0);
+    
+    // Update cache for this company
+    totalCreditsCache.set(companyIdStr, {
+      value: totalCredits,
+      lastUpdated: now
     });
-    
-    let totalCredits = 0;
-    if (gameResponse.ok) {
-      const gameData = await gameResponse.json();
-      const games = gameData.games || [];
-      totalCredits = games.reduce((sum, game) => sum + (game.credit || 0), 0);
-    }
-    
-    // Update cache
-    totalCreditsCache.value = totalCredits;
-    totalCreditsCache.lastUpdated = now;
     
     return totalCredits;
   } catch (error) {
     safeLog('error', 'Error fetching total credits', error);
     // Return cached value if available, otherwise 0
-    return totalCreditsCache.value || 0;
+    return cached?.value || 0;
   }
 };
 
-// Get user's credit information
+// Get user's credit information (companyId bazında - aynı companyId'ye sahip adminler ortak kredi havuzunu görür)
 const getUserCredits = async (req, res) => {
   try {
-    const userId = req.admin._id; // Admin ID from auth middleware
+    const userId = req.admin._id; // Admin ID from auth middleware (transaction geçmişi için)
     
-    // Multi-tenant: companyId kontrolü yap
-    const companyFilter = getCompanyFilter(req);
-    let credit = await Credit.findOne({ userId, ...companyFilter });
+    // Aynı companyId'ye sahip tüm adminler aynı kredi kaydını paylaşır
+    // companyId'yi al: normal admin için req.admin.companyId, super admin için req.query.companyId (GET request)
+    let companyId = req.admin.companyId;
+    
+    // Super admin için query parametresinden al (GET request'te body yerine query kullanılır)
+    if (req.admin.role === 'superadmin' && req.query?.companyId) {
+      companyId = req.query.companyId;
+    }
+    
+    // Super admin için companyId yoksa, hata döndür (super admin company seçmeli)
+    if (!companyId) {
+      if (req.admin.role === 'superadmin') {
+        return res.status(400).json({
+          success: false,
+          message: 'Super admin için company ID gereklidir. Lütfen bir company seçin.'
+        });
+      }
+      return res.status(400).json({
+        success: false,
+        message: 'Company ID bulunamadı'
+      });
+    }
+    
+    // companyId'yi ObjectId'ye çevir
+    const mongoose = require('mongoose');
+    const companyIdObj = companyId instanceof mongoose.Types.ObjectId 
+      ? companyId 
+      : new mongoose.Types.ObjectId(companyId);
+    
+    let credit = await Credit.findOne({ companyId: companyIdObj });
     
     if (!credit) {
       // Create new credit record if doesn't exist
       // Use cached total credits for faster response
-      const totalCredits = await getTotalCreditsFromCache(req);
+      const totalCredits = await getTotalCreditsFromCache(req, companyIdObj);
       
-      // Yeni kredi kaydı oluştur - companyId otomatik eklenir
-      const dataWithCompanyId = addCompanyIdToData(req, {
-        userId,
+      // Yeni kredi kaydı oluştur - companyId bazında
+      credit = new Credit({
+        userId: userId.toString(), // İlk oluşturan admin (opsiyonel)
+        companyId: companyIdObj,
         totalCredits: totalCredits,
         usedCredits: 0,
         remainingCredits: totalCredits,
         transactions: []
       });
-      credit = new Credit(dataWithCompanyId);
       await credit.save();
     } else {
       // Mevcut kredi kaydı varsa, toplam krediyi güncelle
-      const currentTotalCredits = await getTotalCreditsFromCache(req);
+      const currentTotalCredits = await getTotalCreditsFromCache(req, companyIdObj);
       
       if (credit.totalCredits !== currentTotalCredits) {
         safeLog('debug', `Toplam kredi güncelleniyor: ${credit.totalCredits} -> ${currentTotalCredits}`);
@@ -100,40 +128,56 @@ const getUserCredits = async (req, res) => {
   }
 };
 
-// Update total credits (when new credits are purchased)
+// Update total credits (when new credits are purchased) - companyId bazında
 const updateTotalCredits = async (req, res) => {
   try {
     const userId = req.admin._id;
     const { amount, description } = req.body;
     
-    // Multi-tenant: companyId kontrolü yap
-    const companyFilter = getCompanyFilter(req);
-    let credit = await Credit.findOne({ userId, ...companyFilter });
+    // companyId'yi al
+    const companyId = req.admin.role === 'superadmin' && req.body?.companyId 
+      ? req.body.companyId 
+      : req.admin.companyId;
+    
+    if (!companyId) {
+      return res.status(400).json({
+        success: false,
+        message: 'Company ID bulunamadı'
+      });
+    }
+    
+    // companyId'yi ObjectId'ye çevir
+    const mongoose = require('mongoose');
+    const companyIdObj = companyId instanceof mongoose.Types.ObjectId 
+      ? companyId 
+      : new mongoose.Types.ObjectId(companyId);
+    
+    let credit = await Credit.findOne({ companyId: companyIdObj });
     
     if (!credit) {
-      // Yeni kredi kaydı oluştur - companyId otomatik eklenir
-      const dataWithCompanyId = addCompanyIdToData(req, {
-        userId,
+      // Yeni kredi kaydı oluştur - companyId bazında
+      credit = new Credit({
+        userId: userId.toString(), // İlk oluşturan admin (opsiyonel)
+        companyId: companyIdObj,
         totalCredits: 0,
         usedCredits: 0,
         remainingCredits: 0,
         transactions: []
       });
-      credit = new Credit(dataWithCompanyId);
     }
     
     // Add new credits
     credit.totalCredits += amount;
     credit.remainingCredits = credit.totalCredits - credit.usedCredits;
     
-    // Invalidate cache since total credits changed
-    totalCreditsCache.lastUpdated = null;
+    // Invalidate cache since total credits changed (companyId bazında)
+    invalidateCache(companyIdObj);
     
     // Add transaction
     credit.transactions.push({
       type: 'credit_purchase',
       amount: amount,
-      description: description || 'Kredi satın alındı',
+      description: description || `Kredi satın alındı (Admin: ${req.admin.name})`,
       timestamp: new Date()
     });
     
@@ -157,7 +201,7 @@ const updateTotalCredits = async (req, res) => {
   }
 };
 
-// Deduct credits for game sending
+// Deduct credits for game sending - companyId bazında
 const deductCredits = async (req, res) => {
   try {
     const userId = req.admin._id;
@@ -175,35 +219,51 @@ const deductCredits = async (req, res) => {
       });
     }
     
-    // Multi-tenant: companyId kontrolü yap
-    const companyFilter = getCompanyFilter(req);
-    let credit = await Credit.findOne({ userId, ...companyFilter });
+    // companyId'yi al
+    const companyId = req.admin.role === 'superadmin' && req.body?.companyId 
+      ? req.body.companyId 
+      : req.admin.companyId;
+    
+    if (!companyId) {
+      return res.status(400).json({
+        success: false,
+        message: 'Company ID bulunamadı'
+      });
+    }
+    
+    // companyId'yi ObjectId'ye çevir
+    const mongoose = require('mongoose');
+    const companyIdObj = companyId instanceof mongoose.Types.ObjectId 
+      ? companyId 
+      : new mongoose.Types.ObjectId(companyId);
+    
+    let credit = await Credit.findOne({ companyId: companyIdObj });
     
     if (!credit) {
       // Create new credit record if doesn't exist
       // Use cached total credits for faster response
-      const totalCredits = await getTotalCreditsFromCache(req);
+      const totalCredits = await getTotalCreditsFromCache(req, companyIdObj);
       
-      // Yeni kredi kaydı oluştur - companyId otomatik eklenir
-      const dataWithCompanyId = addCompanyIdToData(req, {
-        userId,
+      // Yeni kredi kaydı oluştur - companyId bazında
+      credit = new Credit({
+        userId: userId.toString(), // İlk oluşturan admin (opsiyonel)
+        companyId: companyIdObj,
         totalCredits: totalCredits,
         usedCredits: 0,
         remainingCredits: totalCredits,
         transactions: []
       });
-      credit = new Credit(dataWithCompanyId);
       await credit.save();
     }
     
     // If totalCredits is 0, update it from cache
     if (credit.totalCredits === 0) {
-      const newTotalCredits = await getTotalCreditsFromCache(req);
+      const newTotalCredits = await getTotalCreditsFromCache(req, companyIdObj);
       credit.totalCredits = newTotalCredits;
       credit.remainingCredits = newTotalCredits - credit.usedCredits;
     }
     
-    // Check if user has enough credits
+    // Check if company has enough credits
     if (credit.remainingCredits < amount) {
       return res.status(400).json({
         success: false,
@@ -219,7 +279,7 @@ const deductCredits = async (req, res) => {
     credit.transactions.push({
       type: type || 'game_send',
       amount: amount,
-      description: description,
+      description: description || `Oyun gönderildi (Admin: ${req.admin.name})`,
       timestamp: new Date()
     });
     
@@ -243,15 +303,25 @@ const deductCredits = async (req, res) => {
   }
 };
 
-// Get credit transactions
+// Get credit transactions - companyId bazında
 const getCreditTransactions = async (req, res) => {
   try {
     const userId = req.admin._id;
     const { page = 1, limit = 20 } = req.query;
     
-    // Multi-tenant: companyId kontrolü yap
-    const companyFilter = getCompanyFilter(req);
-    const credit = await Credit.findOne({ userId, ...companyFilter });
+    // companyId'yi al
+    const companyId = req.admin.role === 'superadmin' && req.body?.companyId 
+      ? req.body.companyId 
+      : req.admin.companyId;
+    
+    if (!companyId) {
+      return res.status(400).json({
+        success: false,
+        message: 'Company ID bulunamadı'
+      });
+    }
+    
+    const credit = await Credit.findOne({ companyId });
     
     if (!credit) {
       return res.json({
@@ -285,7 +355,7 @@ const getCreditTransactions = async (req, res) => {
   }
 };
 
-// Restore credits for expired games
+// Restore credits for expired games - companyId bazında
 const restoreCredits = async (req, res) => {
   try {
     const userId = req.admin._id;
@@ -302,9 +372,19 @@ const restoreCredits = async (req, res) => {
       });
     }
 
-    // Multi-tenant: companyId kontrolü yap
-    const companyFilter = getCompanyFilter(req);
-    let credit = await Credit.findOne({ userId, ...companyFilter });
+    // companyId'yi al
+    const companyId = req.admin.role === 'superadmin' && req.body?.companyId 
+      ? req.body.companyId 
+      : req.admin.companyId;
+    
+    if (!companyId) {
+      return res.status(400).json({
+        success: false,
+        message: 'Company ID bulunamadı'
+      });
+    }
+
+    let credit = await Credit.findOne({ companyId });
     
     if (!credit) {
       return res.status(404).json({
@@ -321,7 +401,7 @@ const restoreCredits = async (req, res) => {
     credit.transactions.push({
       type: type || 'credit_restore',
       amount: amount,
-      description: description,
+      description: description || `Kredi geri yüklendi (Admin: ${req.admin.name})`,
       timestamp: new Date()
     });
 
@@ -346,8 +426,14 @@ const restoreCredits = async (req, res) => {
 };
 
 // Function to invalidate cache (exported for use by other controllers)
-const invalidateCache = () => {
-  totalCreditsCache.lastUpdated = null;
+// companyId verilirse sadece o company'nin cache'ini invalidate eder, verilmezse tüm cache'i temizler
+const invalidateCache = (companyId = null) => {
+  if (companyId) {
+    const companyIdStr = companyId.toString();
+    totalCreditsCache.delete(companyIdStr);
+  } else {
+    totalCreditsCache.clear();
+  }
 };
 
 module.exports = {

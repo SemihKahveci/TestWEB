@@ -114,12 +114,15 @@ exports.addCompanyIdToData = (req, data) => {
         return data;
     }
     
-    // Super admin için: Eğer companyId yoksa, req.body'den veya req.query'den al
+    // Super admin için: req.body'den companyId al
     // Normal admin için: Otomatik olarak admin'in companyId'sini ekle
     if (req.admin.role === 'superadmin') {
-        // Super admin için req.body veya req.query'den companyId alınabilir
-        // Eğer yoksa ve model required ise, hata fırlatılmalı
-        // Şimdilik data'yı olduğu gibi döndür (frontend'den gönderilmesi gerekir)
+        // Super admin için req.body'den companyId al
+        if (req.body && req.body.companyId) {
+            const mongoose = require('mongoose');
+            return { ...data, companyId: new mongoose.Types.ObjectId(req.body.companyId) };
+        }
+        // Eğer yoksa data'yı olduğu gibi döndür (validation hatası verecek)
         return data;
     }
     

@@ -18,13 +18,38 @@ interface Game {
 const SubscriptionSettings: React.FC = () => {
   const [games, setGames] = useState<Game[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isSuperAdmin, setIsSuperAdmin] = useState(false);
+  const [isSuperAdminChecked, setIsSuperAdminChecked] = useState(false); // Super admin kontrolü tamamlandı mı?
+
+  // Super admin kontrolü
+  useEffect(() => {
+    const checkSuperAdmin = async () => {
+      try {
+        const response = await fetch('/api/admin/check-superadmin', {
+          credentials: 'include'
+        });
+        const data = await response.json();
+        setIsSuperAdmin(data.isSuperAdmin || false);
+      } catch (error) {
+        console.error('Super admin kontrolü hatası:', error);
+        setIsSuperAdmin(false);
+      } finally {
+        setIsSuperAdminChecked(true); // Kontrol tamamlandı
+      }
+    };
+    checkSuperAdmin();
+  }, []);
 
   useEffect(() => {
     loadGames();
   }, []);
 
-  // Kredi bilgilerini yeniden yükle (GameSendPage'den güncelleme için)
+  // Kredi bilgilerini yeniden yükle (GameSendPage'den güncelleme için) - super admin değilse
   useEffect(() => {
+    // Super admin kontrolü tamamlanana kadar bekle
+    if (!isSuperAdminChecked) return;
+    if (isSuperAdmin) return; // Super admin için kredi bilgisi yüklenmez
+    
     const handleStorageChange = () => {
       const loadCreditInfo = async () => {
         try {
@@ -56,7 +81,7 @@ const SubscriptionSettings: React.FC = () => {
       window.removeEventListener('storage', handleStorageChange);
       window.removeEventListener('focus', handleStorageChange);
     };
-  }, []);
+  }, [isSuperAdmin, isSuperAdminChecked]);
 
   const loadGames = async () => {
     try {
@@ -103,14 +128,26 @@ const SubscriptionSettings: React.FC = () => {
   // Kullanılan kredi hesaplama
   // Credit API'den kullanılan kredi bilgisini al
   const [usedCredits, setUsedCredits] = useState(0);
+  const [remainingCredits, setRemainingCredits] = useState(0);
   
   useEffect(() => {
+    // Super admin kontrolü tamamlanana kadar bekle
+    if (!isSuperAdminChecked) return;
+    
     const loadCreditInfo = async () => {
+      // Super admin için kredi bilgisi yükleme
+      if (isSuperAdmin) {
+        setUsedCredits(0);
+        setRemainingCredits(0);
+        return;
+      }
+      
       try {
         const response = await creditAPI.getUserCredits();
         if (response.data.success) {
           const { totalCredits, usedCredits, remainingCredits } = response.data.credit;
           setUsedCredits(usedCredits);
+          setRemainingCredits(remainingCredits);
           
           // localStorage'ı güncelle
           localStorage.setItem('remainingCredits', remainingCredits.toString());
@@ -121,15 +158,22 @@ const SubscriptionSettings: React.FC = () => {
         console.error('Kredi bilgisi yüklenirken hata:', error);
         // Fallback: localStorage'dan al
         setUsedCredits(parseInt(localStorage.getItem('usedCredits') || '0'));
+        setRemainingCredits(parseInt(localStorage.getItem('remainingCredits') || '0'));
       }
     };
     
     loadCreditInfo();
-  }, []);
+  }, [isSuperAdmin, isSuperAdminChecked]);
 
-  // Toplam kredi değiştiğinde veritabanını güncelle
+  // Toplam kredi değiştiğinde veritabanını güncelle (super admin değilse)
   useEffect(() => {
+    // Super admin kontrolü tamamlanana kadar bekle
+    if (!isSuperAdminChecked) return;
+    
     const updateTotalCreditsInDB = async () => {
+      // Super admin için kredi güncelleme yapılmaz
+      if (isSuperAdmin) return;
+      
       if (totalCredits > 0) {
         try {
           // Mevcut kredi bilgilerini al
@@ -158,14 +202,18 @@ const SubscriptionSettings: React.FC = () => {
       }
     };
 
-    // Sadece games yüklendikten sonra çalıştır
-    if (!isLoading && games.length > 0) {
+    // Sadece games yüklendikten sonra çalıştır (super admin değilse)
+    if (!isLoading && games.length > 0 && !isSuperAdmin && isSuperAdminChecked) {
       updateTotalCreditsInDB();
     }
-  }, [totalCredits, isLoading, games.length]);
+  }, [totalCredits, isLoading, games.length, isSuperAdmin, isSuperAdminChecked]);
   
-  const remainingCredits = totalCreditAmount - usedCredits; // Kalan kredi
-  const usedPercentage = totalCreditAmount > 0 ? (usedCredits / totalCreditAmount) * 100 : 0; // Kullanım yüzdesi
+  // Super admin için sonsuz kredi
+  const displayTotalCredits = isSuperAdmin ? '∞' : totalCreditAmount;
+  const displayUsedCredits = isSuperAdmin ? 0 : usedCredits;
+  const displayRemainingCredits = isSuperAdmin ? '∞' : (totalCreditAmount - usedCredits);
+  const calculatedRemainingCredits = isSuperAdmin ? 0 : (totalCreditAmount - usedCredits); // Kalan kredi (hesaplama için)
+  const usedPercentage = isSuperAdmin ? 0 : (totalCreditAmount > 0 ? (usedCredits / totalCreditAmount) * 100 : 0); // Kullanım yüzdesi
 
   return (
     <div style={{
@@ -358,7 +406,7 @@ const SubscriptionSettings: React.FC = () => {
                 fontWeight: 600,
                 wordWrap: 'break-word'
               }}>
-                {totalCredits.toLocaleString()} Kredi
+                {isSuperAdmin ? '∞' : `${totalCredits.toLocaleString()} Kredi`}
               </div>
             </div>
             <div style={{
@@ -496,7 +544,7 @@ const SubscriptionSettings: React.FC = () => {
                   fontWeight: 700,
                   lineHeight: '16px'
                 }}>
-                  {remainingCredits.toLocaleString()} Kredi
+                  {isSuperAdmin ? '∞' : `${calculatedRemainingCredits.toLocaleString()} Kredi`}
                 </div>
                 <div style={{
                   position: 'absolute',
@@ -509,7 +557,7 @@ const SubscriptionSettings: React.FC = () => {
                   fontWeight: 700,
                   lineHeight: '16px'
                 }}>
-                  {usedCredits.toLocaleString()} Kredi
+                  {isSuperAdmin ? '0' : `${usedCredits.toLocaleString()} Kredi`}
                 </div>
               </div>
 

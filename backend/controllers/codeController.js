@@ -210,30 +210,20 @@ class CodeController {
                         const Admin = require('../models/Admin');
                         const admin = await Admin.findOne({ companyId: code.companyId });
                         
-                        if (admin) {
-                            // Kredi kaydını bul veya oluştur - companyId filtresi ile
-                            const { getCompanyFilter } = require('../middleware/auth');
-                            // Burada req yok, bu yüzden manuel filtre oluştur
-                            const creditFilter = code.companyId ? { userId: admin._id, companyId: code.companyId } : { userId: admin._id };
-                            let credit = await Credit.findOne(creditFilter);
+                        if (admin && code.companyId) {
+                            // Kredi kaydını bul veya oluştur - companyId bazında (aynı companyId'ye sahip tüm adminler ortak kredi havuzunu kullanır)
+                            let credit = await Credit.findOne({ companyId: code.companyId });
                             
                             if (!credit) {
-                                // Yeni kredi kaydı oluştur - companyId ekle
-                                const creditData = code.companyId ? {
-                                    userId: admin._id,
+                                // Yeni kredi kaydı oluştur - companyId bazında
+                                credit = new Credit({
+                                    userId: admin._id.toString(), // İlk oluşturan admin (opsiyonel)
                                     companyId: code.companyId,
                                     totalCredits: 0,
                                     usedCredits: 0,
                                     remainingCredits: 0,
                                     transactions: []
-                                } : {
-                                    userId: admin._id,
-                                    totalCredits: 0,
-                                    usedCredits: 0,
-                                    remainingCredits: 0,
-                                    transactions: []
-                                };
-                                credit = new Credit(creditData);
+                                });
                                 await credit.save();
                             }
                             

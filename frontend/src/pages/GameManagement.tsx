@@ -46,6 +46,7 @@ const GameManagement: React.FC = () => {
   // Form states
   const [formData, setFormData] = useState({
     firmName: '',
+    companyId: '',
     invoiceNo: '',
     credit: '',
     invoiceFile: null as File | null
@@ -168,9 +169,9 @@ const GameManagement: React.FC = () => {
   };
 
   // Firma seçme fonksiyonu
-  const handleCompanySelect = (firmName: string) => {
-    setFormData({ ...formData, firmName: firmName });
-    setCompanySearchTerm(firmName);
+  const handleCompanySelect = (company: Company) => {
+    setFormData({ ...formData, firmName: company.firmName, companyId: company._id });
+    setCompanySearchTerm(company.firmName);
     setShowCompanyDropdown(false);
     setFilteredCompanies(companies); // Reset filter
   };
@@ -229,7 +230,7 @@ const GameManagement: React.FC = () => {
   };
 
   const handleAddGame = () => {
-    setFormData({ firmName: '', invoiceNo: '', credit: '', invoiceFile: null });
+    setFormData({ firmName: '', companyId: '', invoiceNo: '', credit: '', invoiceFile: null });
     setCompanySearchTerm('');
     setShowCompanyDropdown(false);
     setFilteredCompanies(companies);
@@ -247,6 +248,7 @@ const GameManagement: React.FC = () => {
       setSelectedGame(gameData.game);
       setFormData({
         firmName: gameData.game.firmName || '',
+        companyId: gameData.game.companyId || '',
         invoiceNo: gameData.game.invoiceNo || '',
         credit: gameData.game.credit?.toString() || '',
         invoiceFile: null
@@ -347,6 +349,7 @@ const GameManagement: React.FC = () => {
         },
         body: JSON.stringify({
           firmName: formData.firmName,
+          companyId: formData.companyId,
           invoiceNo: formData.invoiceNo,
           credit: Number(formData.credit),
           invoiceFile: invoiceFileData
@@ -388,6 +391,7 @@ const GameManagement: React.FC = () => {
       
       const updateData: any = {
         firmName: formData.firmName,
+        companyId: formData.companyId,
         invoiceNo: formData.invoiceNo,
         credit: Number(formData.credit)
       };
@@ -1145,7 +1149,7 @@ const GameManagement: React.FC = () => {
                           filteredCompanies.map((company) => (
                             <div
                               key={company._id}
-                              onClick={() => handleCompanySelect(company.firmName)}
+                              onClick={() => handleCompanySelect(company)}
                               style={{
                                 padding: '12px 16px',
                                 cursor: 'pointer',

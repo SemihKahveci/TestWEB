@@ -3,13 +3,13 @@ const mongoose = require('mongoose');
 const creditSchema = new mongoose.Schema({
   userId: {
     type: String,
-    required: true
+    required: false // Opsiyonel: Transaction geçmişi için kullanılabilir
   },
   companyId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'CompanyManagement',
     required: true,
-    index: true
+    unique: true // Her company için tek bir kredi kaydı olmalı (unique zaten index oluşturur)
   },
   totalCredits: {
     type: Number,
@@ -49,7 +49,6 @@ const creditSchema = new mongoose.Schema({
   timestamps: true
 });
 
-// Index for faster queries
-creditSchema.index({ userId: 1 });
+// companyId için unique index zaten schema'da tanımlı (unique: true)
 
 module.exports = mongoose.model('Credit', creditSchema);

@@ -27,7 +27,7 @@ class GameManagementController {
     // Yeni oyun verisi ekle
     async addGame(req, res) {
         try {
-            const { firmName, invoiceNo, credit, invoiceFile } = req.body;
+            const { firmName, invoiceNo, credit, invoiceFile, companyId } = req.body;
 
             // Validasyon
             if (!firmName || !invoiceNo || !credit || !invoiceFile) {
@@ -41,18 +41,35 @@ class GameManagementController {
             }
 
             // Yeni oyun oluştur - companyId otomatik eklenir
-            const dataWithCompanyId = addCompanyIdToData(req, {
+            const dataToAdd = {
                 firmName,
                 invoiceNo,
                 credit: Number(credit),
                 invoiceFile
+            };
+            
+            // Frontend'den companyId geldiyse ekle
+            if (companyId) {
+                dataToAdd.companyId = companyId;
+            }
+            
+            const dataWithCompanyId = addCompanyIdToData(req, dataToAdd);
+            
+            // Debug: companyId kontrolü
+            safeLog('debug', 'addGame - companyId kontrolü', {
+                hasCompanyId: !!dataWithCompanyId.companyId,
+                companyId: dataWithCompanyId.companyId,
+                adminRole: req.admin?.role,
+                adminCompanyId: req.admin?.companyId,
+                bodyCompanyId: companyId
             });
+            
             const newGame = new GameManagement(dataWithCompanyId);
 
             await newGame.save();
             
-            // Kredi cache'ini invalidate et çünkü toplam kredi değişmiş olabilir
-            invalidateCache();
+            // Kredi cache'ini invalidate et çünkü toplam kredi değişmiş olabilir (companyId bazında)
+            invalidateCache(dataWithCompanyId.companyId);
             
             res.status(201).json(newGame);
         } catch (error) {
@@ -108,8 +125,8 @@ class GameManagementController {
                 return res.status(404).json({ success: false, message: 'Oyun bulunamadı veya yetkiniz yok' });
             }
 
-            // Kredi cache'ini invalidate et çünkü toplam kredi değişmiş olabilir
-            invalidateCache();
+            // Kredi cache'ini invalidate et çünkü toplam kredi değişmiş olabilir (companyId bazında)
+            invalidateCache(updatedGame.companyId);
 
             res.json({ success: true, message: 'Oyun başarıyla güncellendi', game: updatedGame });
         } catch (error) {
@@ -130,8 +147,8 @@ class GameManagementController {
                 return res.status(404).json({ message: 'Oyun bulunamadı' });
             }
 
-            // Kredi cache'ini invalidate et çünkü toplam kredi değişmiş olabilir
-            invalidateCache();
+            // Kredi cache'ini invalidate et çünkü toplam kredi değişmiş olabilir (companyId bazında)
+            invalidateCache(deletedGame.companyId);
 
             res.json({ message: 'Oyun başarıyla silindi' });
         } catch (error) {

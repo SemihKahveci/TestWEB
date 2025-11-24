@@ -1,6 +1,10 @@
 const express = require('express');
 const router = express.Router();
 const gameManagementController = require('../controllers/gameManagementController');
+const { authenticateAdmin } = require('../middleware/auth');
+
+// Tüm route'lar authentication gerektirir
+router.use(authenticateAdmin);
 
 // Tüm oyun verilerini getir
 router.get('/games', gameManagementController.getAllGames);

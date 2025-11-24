@@ -219,46 +219,48 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
               Ayarlar
             </div>
             
-            {/* Firma Ayarları - Expandable */}
-            <div
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                padding: '12px 24px',
-                fontSize: '14px',
-                fontWeight: 500,
-                color: '#6B7280',
-                backgroundColor: 'transparent',
-                cursor: 'pointer',
-                transition: 'all 0.2s',
-                fontFamily: 'Inter'
-              }}
-              onClick={() => setCompanySettingsExpanded(!companySettingsExpanded)}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.backgroundColor = '#F9FAFB';
-                e.currentTarget.style.color = '#374151';
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.backgroundColor = 'transparent';
-                e.currentTarget.style.color = '#6B7280';
-              }}
-            >
-              <span style={{ marginRight: '12px', fontSize: '16px' }}>🏢</span>
-              <span style={{ flex: 1 }}>Firma Ayarları</span>
-              <span style={{ 
-                fontSize: '12px', 
-                transform: companySettingsExpanded ? 'rotate(45deg)' : 'rotate(0deg)',
-                transition: 'transform 0.2s'
-              }}>+</span>
-            </div>
+            {/* Firma Ayarları - Expandable (Sadece super admin için) */}
+            {isSuperAdmin && companySettingsItems.length > 0 && (
+              <>
+                <div
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    padding: '12px 24px',
+                    fontSize: '14px',
+                    fontWeight: 500,
+                    color: '#6B7280',
+                    backgroundColor: 'transparent',
+                    cursor: 'pointer',
+                    transition: 'all 0.2s',
+                    fontFamily: 'Inter'
+                  }}
+                  onClick={() => setCompanySettingsExpanded(!companySettingsExpanded)}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.backgroundColor = '#F9FAFB';
+                    e.currentTarget.style.color = '#374151';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.backgroundColor = 'transparent';
+                    e.currentTarget.style.color = '#6B7280';
+                  }}
+                >
+                  <span style={{ marginRight: '12px', fontSize: '16px' }}>🏢</span>
+                  <span style={{ flex: 1 }}>Firma Ayarları</span>
+                  <span style={{ 
+                    fontSize: '12px', 
+                    transform: companySettingsExpanded ? 'rotate(45deg)' : 'rotate(0deg)',
+                    transition: 'transform 0.2s'
+                  }}>+</span>
+                </div>
 
-            {/* Firma Ayarları Submenu */}
-            {companySettingsExpanded && (
-              <div style={{
-                backgroundColor: '#F8F9FA',
-                borderLeft: '3px solid #3B82F6'
-              }}>
-                {companySettingsItems.map((item) => (
+                {/* Firma Ayarları Submenu */}
+                {companySettingsExpanded && (
+                  <div style={{
+                    backgroundColor: '#F8F9FA',
+                    borderLeft: '3px solid #3B82F6'
+                  }}>
+                    {companySettingsItems.map((item) => (
                   <Link
                     key={item.path}
                     to={item.path}
@@ -293,7 +295,9 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                     {item.label}
                   </Link>
                 ))}
-              </div>
+                  </div>
+                )}
+              </>
             )}
 
             {/* Diğer Ayarlar */}
