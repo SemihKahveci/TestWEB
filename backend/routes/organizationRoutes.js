@@ -33,7 +33,7 @@ const upload = multer({
 router.get('/', authenticateAdmin, getAllOrganizations);
 
 // Excel'den organizasyon import etme
-router.post('/import', upload.single('excelFile'), (err, req, res, next) => {
+router.post('/import', authenticateAdmin, upload.single('excelFile'), (err, req, res, next) => {
     if (err instanceof multer.MulterError) {
         if (err.code === 'LIMIT_FILE_SIZE') {
             return res.status(400).json({

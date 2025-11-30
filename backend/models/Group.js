@@ -13,7 +13,8 @@ const groupSchema = new mongoose.Schema({
         default: 'Aktif'
     },
     organizations: [{
-        type: String,
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Organization',
         required: true
     }],
     persons: [{

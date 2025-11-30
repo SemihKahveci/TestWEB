@@ -26,6 +26,7 @@ const getAllGroups = async (req, res) => {
         // Grupları getir
         const groups = await Group.find(filter)
             .populate('createdBy', 'username email')
+            .populate('organizations')
             .sort({ createdAt: -1 })
             .skip(skip)
             .limit(parseInt(limit));
@@ -60,7 +61,9 @@ const getGroupById = async (req, res) => {
         
         // Multi-tenant: companyId kontrolü yap
         const companyFilter = getCompanyFilter(req);
-        const group = await Group.findOne({ _id: id, ...companyFilter }).populate('createdBy', 'username email');
+        const group = await Group.findOne({ _id: id, ...companyFilter })
+            .populate('createdBy', 'username email')
+            .populate('organizations');
         
         if (!group) {
             return res.status(404).json({
@@ -141,7 +144,8 @@ const createGroup = async (req, res) => {
 
         await newGroup.save();
 
-        // Populate ile createdBy bilgisini ekle (eğer varsa)
+        // Populate ile createdBy ve organizations bilgisini ekle
+        await newGroup.populate('organizations');
         if (createdBy) {
             await newGroup.populate('createdBy', 'username email');
         }
@@ -242,7 +246,8 @@ const updateGroup = async (req, res) => {
             });
         }
 
-        // Populate ile createdBy bilgisini ekle (eğer varsa)
+        // Populate ile createdBy ve organizations bilgisini ekle
+        await updatedGroup.populate('organizations');
         if (updatedGroup.createdBy) {
             await updatedGroup.populate('createdBy', 'username email');
         }

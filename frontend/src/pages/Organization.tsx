@@ -518,12 +518,9 @@ const Organization: React.FC = () => {
       const formDataToSend = new FormData();
       formDataToSend.append('excelFile', selectedFile);
 
-      const token = localStorage.getItem('token');
       const response = await fetch('/api/organization/import', {
         method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`
-        },
+        credentials: 'include',
         body: formDataToSend
       });
 

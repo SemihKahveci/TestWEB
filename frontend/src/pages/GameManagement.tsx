@@ -317,20 +317,30 @@ const GameManagement: React.FC = () => {
   };
 
   const handleSubmitAdd = async () => {
+    // Form validation - Tüm alanlar zorunlu
+    if (!formData.firmName.trim()) {
+      showError('Firma adı zorunludur!');
+      return;
+    }
+    if (!formData.companyId || !formData.companyId.trim()) {
+      showError('Lütfen firma seçiniz!');
+      return;
+    }
+    if (!formData.invoiceNo.trim()) {
+      showError('Fatura numarası zorunludur!');
+      return;
+    }
+    if (!formData.credit || !formData.credit.trim() || Number(formData.credit) <= 0) {
+      showError('Geçerli bir kredi miktarı giriniz!');
+      return;
+    }
+    if (!formData.invoiceFile) {
+      showError('Fatura dosyası zorunludur!');
+      return;
+    }
+
     try {
-      // Form validation
-      if (!formData.firmName.trim()) {
-        showError('Firma adı zorunludur!');
-        return;
-      }
-      if (!formData.invoiceNo.trim()) {
-        showError('Fatura numarası zorunludur!');
-        return;
-      }
-      if (!formData.credit || Number(formData.credit) <= 0) {
-        showError('Geçerli bir kredi miktarı giriniz!');
-        return;
-      }
+      setIsSubmitting(true);
       
       let invoiceFileData: { fileName: string; fileType: string; fileData: string } | null = null;
       if (formData.invoiceFile) {
@@ -347,6 +357,7 @@ const GameManagement: React.FC = () => {
         headers: {
           'Content-Type': 'application/json',
         },
+        credentials: 'include',
         body: JSON.stringify({
           firmName: formData.firmName,
           companyId: formData.companyId,
@@ -372,6 +383,8 @@ const GameManagement: React.FC = () => {
     } catch (error: any) {
       console.error('💥 Oyun ekleme hatası:', error);
       showError(error.message || 'Oyun eklenirken bir hata oluştu');
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -1251,7 +1264,7 @@ const GameManagement: React.FC = () => {
                   fontFamily: 'Inter',
                   fontSize: '14px'
                 }}>
-                  Fatura Yükle
+                  Fatura Yükle <span style={{ color: '#EF4444' }}>*</span>
                 </label>
                 <input
                   type="file"

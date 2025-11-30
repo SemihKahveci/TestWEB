@@ -9,6 +9,7 @@ interface Authorization {
   personName?: string;
   email?: string;
   title?: string;
+  organizationId?: any; // Populated organization object
 }
 
 interface Organization {
@@ -70,7 +71,8 @@ const AuthorizationPage: React.FC = () => {
     sicilNo: '',
     personName: '',
     email: '',
-    title: ''
+    title: '',
+    organizationId: ''
   });
 
   // Pagination states
@@ -237,7 +239,13 @@ const AuthorizationPage: React.FC = () => {
 
   // Pozisyon seçme fonksiyonu
   const handlePositionSelect = (position: string) => {
-    setFormData({ ...formData, title: position });
+    // Pozisyon seçildiğinde organization ID'sini bul
+    const matchingOrg = organizations.find(org => org.pozisyon === position);
+    setFormData({ 
+      ...formData, 
+      title: position,
+      organizationId: matchingOrg?._id || ''
+    });
     setPositionSearchTerm(position);
     setShowPositionDropdown(false);
   };
@@ -300,7 +308,8 @@ const AuthorizationPage: React.FC = () => {
       sicilNo: '',
       personName: '',
       email: '',
-      title: ''
+      title: '',
+      organizationId: ''
     });
     setPositionSearchTerm('');
     setShowPositionDropdown(false);
@@ -309,13 +318,16 @@ const AuthorizationPage: React.FC = () => {
 
   const handleEditAuthorization = (authorization: Authorization) => {
     setSelectedAuthorization(authorization);
+    // organizationId varsa populate edilmiş organization'dan pozisyonu al
+    const title = (authorization as any).organizationId?.pozisyon || authorization.title || '';
     setFormData({
       sicilNo: authorization.sicilNo || '',
       personName: authorization.personName || '',
       email: authorization.email || '',
-      title: authorization.title || ''
+      title: title,
+      organizationId: (authorization as any).organizationId?._id || ''
     });
-    setPositionSearchTerm(authorization.title || '');
+    setPositionSearchTerm(title);
     setShowPositionDropdown(false);
     setShowEditPopup(true);
   };
@@ -326,6 +338,31 @@ const AuthorizationPage: React.FC = () => {
   };
 
   const handleSubmitAdd = async () => {
+    // Validasyon kontrolleri
+    if (!formData.sicilNo || !formData.sicilNo.trim()) {
+      setErrorMessage('Lütfen sicil numarasını giriniz!');
+      setShowErrorPopup(true);
+      return;
+    }
+
+    if (!formData.personName || !formData.personName.trim()) {
+      setErrorMessage('Lütfen kişi adını giriniz!');
+      setShowErrorPopup(true);
+      return;
+    }
+
+    if (!formData.email || !formData.email.trim()) {
+      setErrorMessage('Lütfen email adresini giriniz!');
+      setShowErrorPopup(true);
+      return;
+    }
+
+    if (!formData.title || !formData.title.trim()) {
+      setErrorMessage('Lütfen pozisyon seçiniz!');
+      setShowErrorPopup(true);
+      return;
+    }
+
     try {
       setIsSubmitting(true);
       
@@ -362,8 +399,34 @@ const AuthorizationPage: React.FC = () => {
   };
 
   const handleSubmitEdit = async () => {
+    if (!selectedAuthorization) return;
+
+    // Validasyon kontrolleri
+    if (!formData.sicilNo || !formData.sicilNo.trim()) {
+      setErrorMessage('Lütfen sicil numarasını giriniz!');
+      setShowErrorPopup(true);
+      return;
+    }
+
+    if (!formData.personName || !formData.personName.trim()) {
+      setErrorMessage('Lütfen kişi adını giriniz!');
+      setShowErrorPopup(true);
+      return;
+    }
+
+    if (!formData.email || !formData.email.trim()) {
+      setErrorMessage('Lütfen email adresini giriniz!');
+      setShowErrorPopup(true);
+      return;
+    }
+
+    if (!formData.title || !formData.title.trim()) {
+      setErrorMessage('Lütfen pozisyon seçiniz!');
+      setShowErrorPopup(true);
+      return;
+    }
+
     try {
-      if (!selectedAuthorization) return;
       setIsSubmitting(true);
       
       const response = await fetch(`/api/authorization/${selectedAuthorization._id}`, {
@@ -581,9 +644,6 @@ const AuthorizationPage: React.FC = () => {
       const response = await fetch('/api/authorization/import', {
         method: 'POST',
         credentials: 'include',
-        headers: {
-          'Authorization': `Bearer ${token}`
-        },
         body: formData
       });
 
@@ -1058,7 +1118,7 @@ const AuthorizationPage: React.FC = () => {
                       fontFamily: 'Montserrat',
                       fontWeight: 500
                     }}>
-                      {authorization.title || '-'}
+                      {authorization.organizationId?.pozisyon || authorization.title || '-'}
                     </td>
                     <td style={{
                       padding: '16px',
@@ -1196,7 +1256,7 @@ const AuthorizationPage: React.FC = () => {
                     marginBottom: '8px',
                     fontFamily: 'Inter'
                   }}>
-                    Sicil No
+                    Sicil No <span style={{ color: '#EF4444' }}>*</span>
                   </label>
                   <input
                     type="text"
@@ -1224,7 +1284,7 @@ const AuthorizationPage: React.FC = () => {
                     marginBottom: '8px',
                     fontFamily: 'Inter'
                   }}>
-                    Kişi Adı
+                    Kişi Adı <span style={{ color: '#EF4444' }}>*</span>
                   </label>
                   <input
                     type="text"
@@ -1252,7 +1312,7 @@ const AuthorizationPage: React.FC = () => {
                     marginBottom: '8px',
                     fontFamily: 'Inter'
                   }}>
-                    Email
+                    Email <span style={{ color: '#EF4444' }}>*</span>
                   </label>
                   <input
                     type="email"
@@ -1280,7 +1340,7 @@ const AuthorizationPage: React.FC = () => {
                     marginBottom: '8px',
                     fontFamily: 'Inter'
                   }}>
-                    Pozisyon
+                    Pozisyon <span style={{ color: '#EF4444' }}>*</span>
                   </label>
                   {/* Custom Dropdown */}
                   <div
@@ -1511,7 +1571,7 @@ const AuthorizationPage: React.FC = () => {
                     marginBottom: '8px',
                     fontFamily: 'Inter'
                   }}>
-                    Sicil No
+                    Sicil No <span style={{ color: '#EF4444' }}>*</span>
                   </label>
                   <input
                     type="text"
@@ -1539,7 +1599,7 @@ const AuthorizationPage: React.FC = () => {
                     marginBottom: '8px',
                     fontFamily: 'Inter'
                   }}>
-                    Kişi Adı
+                    Kişi Adı <span style={{ color: '#EF4444' }}>*</span>
                   </label>
                   <input
                     type="text"
@@ -1567,7 +1627,7 @@ const AuthorizationPage: React.FC = () => {
                     marginBottom: '8px',
                     fontFamily: 'Inter'
                   }}>
-                    Email
+                    Email <span style={{ color: '#EF4444' }}>*</span>
                   </label>
                   <input
                     type="email"
@@ -1595,7 +1655,7 @@ const AuthorizationPage: React.FC = () => {
                     marginBottom: '8px',
                     fontFamily: 'Inter'
                   }}>
-                    Pozisyon
+                    Pozisyon <span style={{ color: '#EF4444' }}>*</span>
                   </label>
                   {/* Custom Dropdown */}
                   <div

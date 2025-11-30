@@ -856,9 +856,8 @@ const GameSendPage: React.FC = () => {
         const group = groups.find(g => g._id === groupId);
         if (group && group.persons && group.persons.length > 0) {
           // Get person details from authorization API
-          const token = localStorage.getItem('token');
           const response = await fetch('/api/authorization', {
-            headers: { 'Authorization': `Bearer ${token}` }
+            credentials: 'include'
           });
 
           if (response.ok) {

@@ -18,6 +18,7 @@ interface Organization {
   value: string;
   label: string;
   type: string;
+  orgId?: string; // Organization ID'si (kalıcı çözüm için)
 }
 
 interface Person {
@@ -60,7 +61,8 @@ const Grouping: React.FC = () => {
   });
   
   // Selection states
-  const [selectedOrganizations, setSelectedOrganizations] = useState<string[]>([]);
+  const [selectedOrganizations, setSelectedOrganizations] = useState<string[]>([]); // Organization ID'leri saklanacak
+  const [selectedOrganizationIds, setSelectedOrganizationIds] = useState<string[]>([]); // Organization ID'leri için ayrı state
   const [selectedPersons, setSelectedPersons] = useState<string[]>([]);
   const [selectedPlanets, setSelectedPlanets] = useState<string[]>([]);
   const [manualPersons, setManualPersons] = useState<string[]>([]); // Manuel eklenen kişiler
@@ -68,6 +70,7 @@ const Grouping: React.FC = () => {
   
   // Data states
   const [organizations, setOrganizations] = useState<Organization[]>([]);
+  const [allOrganizationsData, setAllOrganizationsData] = useState<any[]>([]); // Tüm organization verilerini sakla (ID eşleştirmesi için)
   const [persons, setPersons] = useState<Person[]>([]);
   const [planets, setPlanets] = useState<Planet[]>([]);
   
@@ -175,11 +178,8 @@ const Grouping: React.FC = () => {
     try {
       setIsLoading(true);
       
-      const token = localStorage.getItem('token');
       const response = await fetch('/api/group', {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
+        credentials: 'include'
       });
 
       if (!response.ok) {
@@ -215,11 +215,8 @@ const Grouping: React.FC = () => {
 
   const loadOrganizations = async () => {
     try {
-      const token = localStorage.getItem('token');
       const response = await fetch('/api/organization', {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
+        credentials: 'include'
       });
 
       if (response.ok) {
@@ -227,12 +224,16 @@ const Grouping: React.FC = () => {
         if (result.success) {
           const orgs: Organization[] = [];
           
+          // Organization'ları state'te sakla (ID eşleştirmesi için)
+          const allOrgs = result.organizations || [];
+          setAllOrganizationsData(allOrgs); // Tüm organization verilerini sakla
+          
           // Her alan için benzersiz değerleri topla ve alfabetik sırala
-          const genelMudurYardimciliklari = [...new Set(result.organizations?.map((org: any) => org.genelMudurYardimciligi).filter(Boolean) || [])] as string[];
-          const direktörlükler = [...new Set(result.organizations?.map((org: any) => org.direktörlük).filter(Boolean) || [])] as string[];
-          const müdürlükler = [...new Set(result.organizations?.map((org: any) => org.müdürlük).filter(Boolean) || [])] as string[];
-          const grupLiderlikleri = [...new Set(result.organizations?.map((org: any) => org.grupLiderligi).filter(Boolean) || [])] as string[];
-          const pozisyonlar = [...new Set(result.organizations?.map((org: any) => org.pozisyon).filter(Boolean) || [])] as string[];
+          const genelMudurYardimciliklari = [...new Set(allOrgs.map((org: any) => org.genelMudurYardimciligi).filter(Boolean) || [])] as string[];
+          const direktörlükler = [...new Set(allOrgs.map((org: any) => org.direktörlük).filter(Boolean) || [])] as string[];
+          const müdürlükler = [...new Set(allOrgs.map((org: any) => org.müdürlük).filter(Boolean) || [])] as string[];
+          const grupLiderlikleri = [...new Set(allOrgs.map((org: any) => org.grupLiderligi).filter(Boolean) || [])] as string[];
+          const pozisyonlar = [...new Set(allOrgs.map((org: any) => org.pozisyon).filter(Boolean) || [])] as string[];
           
           // Alfabetik sıralama
           genelMudurYardimciliklari.sort((a, b) => a.localeCompare(b, 'tr'));
@@ -240,49 +241,59 @@ const Grouping: React.FC = () => {
           müdürlükler.sort((a, b) => a.localeCompare(b, 'tr'));
           grupLiderlikleri.sort((a, b) => a.localeCompare(b, 'tr'));
           pozisyonlar.sort((a, b) => a.localeCompare(b, 'tr'));
-          
-          // Genel Müdür Yardımcılıkları
+
+          // Genel Müdür Yardımcılıkları - İlk eşleşeni al
           genelMudurYardimciliklari.forEach(value => {
+            const matchingOrg = allOrgs.find((org: any) => org.genelMudurYardimciligi === value);
             orgs.push({
               value: `genelMudurYardimciligi:${value}`,
               label: value,
-              type: 'genelMudurYardimciligi'
+              type: 'genelMudurYardimciligi',
+              orgId: matchingOrg?._id
             });
           });
           
-          // Direktörlükler
+          // Direktörlükler - İlk eşleşeni al
           direktörlükler.forEach(value => {
+            const matchingOrg = allOrgs.find((org: any) => org.direktörlük === value);
             orgs.push({
               value: `direktörlük:${value}`,
               label: value,
-              type: 'direktörlük'
+              type: 'direktörlük',
+              orgId: matchingOrg?._id
             });
           });
           
-          // Müdürlükler
+          // Müdürlükler - İlk eşleşeni al
           müdürlükler.forEach(value => {
+            const matchingOrg = allOrgs.find((org: any) => org.müdürlük === value);
             orgs.push({
               value: `müdürlük:${value}`,
               label: value,
-              type: 'müdürlük'
+              type: 'müdürlük',
+              orgId: matchingOrg?._id
             });
           });
           
-          // Departman/Şeflik
+          // Departman/Şeflik - İlk eşleşeni al
           grupLiderlikleri.forEach(value => {
+            const matchingOrg = allOrgs.find((org: any) => org.grupLiderligi === value);
             orgs.push({
               value: `grupLiderligi:${value}`,
               label: value,
-              type: 'grupLiderligi'
+              type: 'grupLiderligi',
+              orgId: matchingOrg?._id
             });
           });
           
-          // Pozisyonlar
+          // Pozisyonlar - İlk eşleşeni al
           pozisyonlar.forEach(value => {
+            const matchingOrg = allOrgs.find((org: any) => org.pozisyon === value);
             orgs.push({
               value: `pozisyon:${value}`,
               label: value,
-              type: 'pozisyon'
+              type: 'pozisyon',
+              orgId: matchingOrg?._id
             });
           });
           
@@ -297,11 +308,8 @@ const Grouping: React.FC = () => {
 
   const loadPersons = async () => {
     try {
-      const token = localStorage.getItem('token');
       const response = await fetch('/api/authorization', {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
+        credentials: 'include'
       });
 
       if (response.ok) {
@@ -337,13 +345,9 @@ const Grouping: React.FC = () => {
       const orgType = organizationValue.split(':')[0];
       const orgName = organizationValue.split(':')[1];
       
-      const token = localStorage.getItem('token');
-      
       // 1. Önce Organization API'sinden pozisyonları bul
       const orgResponse = await fetch('/api/organization', {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
+        credentials: 'include'
       });
       
       if (!orgResponse.ok) {
@@ -379,9 +383,7 @@ const Grouping: React.FC = () => {
       
       // 2. Authorization API'sinden bu pozisyonlara sahip kişileri bul
       const authResponse = await fetch('/api/authorization', {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
+        credentials: 'include'
       });
       
       if (!authResponse.ok) {
@@ -423,13 +425,9 @@ const Grouping: React.FC = () => {
       const orgType = organizationValue.split(':')[0];
       const orgName = organizationValue.split(':')[1];
       
-      const token = localStorage.getItem('token');
-      
       // 1. Önce Organization API'sinden pozisyonları bul
       const orgResponse = await fetch('/api/organization', {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
+        credentials: 'include'
       });
       
       if (!orgResponse.ok) {
@@ -465,9 +463,7 @@ const Grouping: React.FC = () => {
       
       // 2. Authorization API'sinden bu pozisyonlara sahip kişileri bul
       const authResponse = await fetch('/api/authorization', {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
+        credentials: 'include'
       });
       
       if (!authResponse.ok) {
@@ -564,7 +560,27 @@ const Grouping: React.FC = () => {
   const handleOrganizationSelect = (orgValue: string) => {
     const selectedOrg = organizations.find(org => org.value === orgValue);
     if (selectedOrg) {
+      // Organization ID'sini bul
+      let orgId: string | undefined = selectedOrg.orgId;
+      
+      // Eğer orgId yoksa, allOrganizationsData'dan bul
+      if (!orgId && allOrganizationsData.length > 0) {
+        const [orgType, orgName] = orgValue.split(':');
+        const matchingOrg = allOrganizationsData.find((org: any) => {
+          if (orgType === 'genelMudurYardimciligi') return org.genelMudurYardimciligi === orgName;
+          if (orgType === 'direktörlük') return org.direktörlük === orgName;
+          if (orgType === 'müdürlük') return org.müdürlük === orgName;
+          if (orgType === 'grupLiderligi') return org.grupLiderligi === orgName;
+          if (orgType === 'pozisyon') return org.pozisyon === orgName;
+          return false;
+        });
+        orgId = matchingOrg?._id;
+      }
+      
       setSelectedOrganizations(prev => [...prev, orgValue]);
+      if (orgId) {
+        setSelectedOrganizationIds(prev => [...prev, orgId!]);
+      }
       setOrganizationSearchTerm('');
       setShowOrganizationDropdown(false);
       setFilteredOrganizations(organizations); // Reset filter
@@ -773,6 +789,7 @@ const Grouping: React.FC = () => {
       isActive: true
     });
     setSelectedOrganizations([]);
+    setSelectedOrganizationIds([]);
     setSelectedPersons([]);
     setSelectedPlanets([]);
     setManualPersons([]);
@@ -796,11 +813,8 @@ const Grouping: React.FC = () => {
 
   const handleEditGroup = async (group: Group) => {
     try {
-      const token = localStorage.getItem('token');
       const response = await fetch(`/api/group/${group._id}`, {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
+        credentials: 'include'
       });
 
       if (!response.ok) {
@@ -819,14 +833,41 @@ const Grouping: React.FC = () => {
         
         // Seçili öğeleri temizle ve doldur
         setSelectedOrganizations([]);
+        setSelectedOrganizationIds([]);
         setSelectedPersons([]);
         setSelectedPlanets([]);
         setManualPersons([]);
         setAutoPersons([]);
         
-        // Organizasyonları doldur
+        // Organizasyonları doldur - Eğer populate edilmişse (object), ID'leri al
         if (groupData.organizations && groupData.organizations.length > 0) {
-          setSelectedOrganizations([...groupData.organizations]);
+          const orgIds: string[] = [];
+          const orgValues: string[] = [];
+          
+          groupData.organizations.forEach((org: any) => {
+            if (typeof org === 'string') {
+              // Eski format (string) - backward compatibility
+              orgValues.push(org);
+            } else if (org._id) {
+              // Yeni format (populated object) - ID'yi al
+              orgIds.push(org._id);
+              // Display için string formatını oluştur
+              if (org.genelMudurYardimciligi && org.genelMudurYardimciligi !== '-') {
+                orgValues.push(`genelMudurYardimciligi:${org.genelMudurYardimciligi}`);
+              } else if (org.direktörlük && org.direktörlük !== '-') {
+                orgValues.push(`direktörlük:${org.direktörlük}`);
+              } else if (org.müdürlük && org.müdürlük !== '-') {
+                orgValues.push(`müdürlük:${org.müdürlük}`);
+              } else if (org.grupLiderligi && org.grupLiderligi !== '-') {
+                orgValues.push(`grupLiderligi:${org.grupLiderligi}`);
+              } else if (org.pozisyon) {
+                orgValues.push(`pozisyon:${org.pozisyon}`);
+              }
+            }
+          });
+          
+          setSelectedOrganizationIds(orgIds);
+          setSelectedOrganizations(orgValues.length > 0 ? orgValues : groupData.organizations);
         }
         
         // Kişileri doldur - hepsini manuel olarak işaretle (düzenleme modunda)
@@ -879,6 +920,7 @@ const Grouping: React.FC = () => {
   const handleSaveGroup = async () => {
     if (isSubmitting) return;
 
+    // Grup adı kontrolü
     const groupName = formData.groupName.trim();
     if (!groupName) {
       setErrorMessage('Lütfen grup adını giriniz!');
@@ -886,12 +928,21 @@ const Grouping: React.FC = () => {
       return;
     }
 
-    if (selectedOrganizations.length === 0 && selectedPersons.length === 0) {
-      setErrorMessage('Lütfen en az bir organizasyon veya kişi seçiniz!');
+    // Organizasyon kontrolü - ZORUNLU
+    if (selectedOrganizations.length === 0) {
+      setErrorMessage('Lütfen en az bir organizasyon seçiniz!');
       setShowErrorPopup(true);
       return;
     }
 
+    // Kişi kontrolü - ZORUNLU
+    if (selectedPersons.length === 0) {
+      setErrorMessage('Lütfen en az bir kişi seçiniz!');
+      setShowErrorPopup(true);
+      return;
+    }
+
+    // Gezegen kontrolü - ZORUNLU
     if (selectedPlanets.length === 0) {
       setErrorMessage('Lütfen en az bir gezegen seçiniz!');
       setShowErrorPopup(true);
@@ -900,12 +951,11 @@ const Grouping: React.FC = () => {
 
     try {
       setIsSubmitting(true);
-      const token = localStorage.getItem('token');
       
       const groupData = {
         name: groupName, // Backend 'name' alanını bekliyor
         status: formData.isActive ? 'Aktif' : 'Pasif', // Backend 'Aktif'/'Pasif' bekliyor
-        organizations: selectedOrganizations,
+        organizations: selectedOrganizationIds.length > 0 ? selectedOrganizationIds : selectedOrganizations, // ID varsa ID gönder, yoksa string gönder (backward compatibility)
         persons: selectedPersons,
         planets: selectedPlanets
       };
@@ -916,9 +966,9 @@ const Grouping: React.FC = () => {
 
       const response = await fetch(url, {
         method,
+        credentials: 'include',
         headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
+          'Content-Type': 'application/json'
         },
         body: JSON.stringify(groupData)
       });
@@ -935,9 +985,11 @@ const Grouping: React.FC = () => {
       } else {
         throw new Error(result.message || 'Grup kaydedilemedi');
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('❌ Grup kaydetme hatası:', error);
-      setErrorMessage('Grup kaydedilirken bir hata oluştu');
+      // Backend'den gelen hata mesajını göster
+      const errorMessage = error.message || 'Grup kaydedilirken bir hata oluştu';
+      setErrorMessage(errorMessage);
       setShowErrorPopup(true);
     } finally {
       setIsSubmitting(false);
@@ -948,12 +1000,9 @@ const Grouping: React.FC = () => {
     if (!selectedGroup) return;
 
     try {
-      const token = localStorage.getItem('token');
       const response = await fetch(`/api/group/${selectedGroup._id}`, {
         method: 'DELETE',
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
+        credentials: 'include'
       });
 
       const result = await response.json();
@@ -1014,6 +1063,12 @@ const Grouping: React.FC = () => {
     const newOrganizations = selectedOrganizations.filter(org => org !== orgValue);
     setSelectedOrganizations(newOrganizations);
     
+    // ID'yi de kaldır
+    const selectedOrg = organizations.find(org => org.value === orgValue);
+    if (selectedOrg && selectedOrg.orgId) {
+      setSelectedOrganizationIds(prev => prev.filter(id => id !== selectedOrg.orgId));
+    }
+    
     // Kaldırılan organizasyona ait kişileri bul ve kaldır
     await removePersonsForOrganization(orgValue);
     
@@ -1029,11 +1084,10 @@ const Grouping: React.FC = () => {
     }
 
     try {
-      const token = localStorage.getItem('token');
       const response = await fetch('/api/group/matching-persons', {
         method: 'POST',
+        credentials: 'include',
         headers: {
-          'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({
@@ -1084,8 +1138,6 @@ const Grouping: React.FC = () => {
   // Organizasyon değişikliklerinde eşleşen kişileri güncelle (belirli organizasyon listesi ile)
   const updateMatchingPersonsForOrganizations = async (organizations: string[]) => {
     try {
-      const token = localStorage.getItem('token');
-      
       // Eğer organizasyon yoksa, sadece manuel eklenen kişileri tut
       if (organizations.length === 0) {
         // Otomatik eklenen kişileri temizle, manuel eklenenleri koru
@@ -1096,8 +1148,8 @@ const Grouping: React.FC = () => {
 
       const response = await fetch('/api/group/matching-persons', {
         method: 'POST',
+        credentials: 'include',
         headers: {
-          'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({
@@ -3129,8 +3181,31 @@ const Grouping: React.FC = () => {
                     flexWrap: 'wrap',
                     gap: '8px'
                   }}>
-                    {selectedGroup.organizations.map((org, index) => {
-                      const displayValue = org.includes(':') ? org.split(':')[1] : org;
+                    {selectedGroup.organizations.map((org: any, index) => {
+                      let displayValue = '';
+                      
+                      // Eğer organization populate edilmişse (object), güncel isimleri göster
+                      if (typeof org === 'object' && org !== null && org._id) {
+                        // Populated organization object - güncel isimleri göster
+                        if (org.genelMudurYardimciligi && org.genelMudurYardimciligi !== '-') {
+                          displayValue = org.genelMudurYardimciligi;
+                        } else if (org.direktörlük && org.direktörlük !== '-') {
+                          displayValue = org.direktörlük;
+                        } else if (org.müdürlük && org.müdürlük !== '-') {
+                          displayValue = org.müdürlük;
+                        } else if (org.grupLiderligi && org.grupLiderligi !== '-') {
+                          displayValue = org.grupLiderligi;
+                        } else if (org.pozisyon) {
+                          displayValue = org.pozisyon;
+                        } else {
+                          displayValue = 'Bilinmeyen';
+                        }
+                      } else {
+                        // String format (eski format veya populate edilmemiş)
+                        const orgString = typeof org === 'string' ? org : String(org);
+                        displayValue = orgString.includes(':') ? orgString.split(':')[1] : orgString;
+                      }
+                      
                       return (
                         <span key={index} style={{
                           background: '#E9ECEF',

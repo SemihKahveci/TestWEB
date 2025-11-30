@@ -392,6 +392,16 @@ const bulkCreateOrganizations = async (req, res) => {
 
                 // Yeni organizasyon oluştur - companyId otomatik eklenir
                 const dataWithCompanyId = addCompanyIdToData(req, org);
+                
+                // Normal admin için companyId kontrolü
+                if (req.admin && req.admin.role !== 'superadmin' && !dataWithCompanyId.companyId) {
+                    results.errors.push({
+                        row: rowNumber,
+                        message: 'Company ID bulunamadı. Lütfen sistem yöneticinizle iletişime geçin.'
+                    });
+                    continue;
+                }
+                
                 const newOrganization = new Organization(dataWithCompanyId);
                 await newOrganization.save();
                 results.success.push({
@@ -400,15 +410,23 @@ const bulkCreateOrganizations = async (req, res) => {
                 });
 
             } catch (error) {
+                // MongoDB validation hatalarını daha iyi göster
+                let errorMessage = error.message || 'Bilinmeyen hata';
+                if (error.name === 'ValidationError') {
+                    const validationErrors = Object.values(error.errors || {}).map((err) => err.message);
+                    if (validationErrors.length > 0) {
+                        errorMessage = validationErrors.join(', ');
+                    }
+                }
                 results.errors.push({
                     row: rowNumber,
-                    message: error.message || 'Bilinmeyen hata'
+                    message: errorMessage
                 });
             }
         }
 
         // Sonuçları döndür
-        if (results.success.length === 0) {
+        if (results.success.length === 0 && results.errors.length > 0) {
             return res.status(400).json({
                 success: false,
                 message: 'Hiçbir organizasyon eklenemedi',
@@ -416,7 +434,17 @@ const bulkCreateOrganizations = async (req, res) => {
             });
         }
 
-        // Eğer herhangi bir hata varsa, hiçbir veri eklenmesin
+        // Eğer hem başarılı hem de hatalı kayıtlar varsa, kısmi başarı döndür
+        if (results.success.length > 0 && results.errors.length > 0) {
+            return res.status(200).json({
+                success: true,
+                message: `${results.success.length} organizasyon başarıyla eklendi, ${results.errors.length} satırda hata oluştu`,
+                count: results.success.length,
+                errors: results.errors
+            });
+        }
+
+        // Sadece hata varsa ve hiç başarılı kayıt yoksa
         if (results.errors.length > 0) {
             return res.status(400).json({
                 success: false,
@@ -425,6 +453,7 @@ const bulkCreateOrganizations = async (req, res) => {
             });
         }
 
+        // Tüm kayıtlar başarılı
         res.json({
             success: true,
             message: `${results.success.length} organizasyon başarıyla eklendi`,

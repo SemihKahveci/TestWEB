@@ -66,24 +66,14 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   // Cookie kullanıldığı için interceptor'a gerek yok, withCredentials: true yeterli
   useEffect(() => {
     const verifyToken = async () => {
-      // Eğer daha önce hiç giriş yapılmamışsa (localStorage'da flag yoksa), verify isteği atma
-      const hasLoggedIn = localStorage.getItem('hasLoggedIn');
-      if (!hasLoggedIn) {
-        setIsLoading(false);
-        setUser(null);
-        return;
-      }
-
       try {
         // Cookie'den token otomatik gönderilecek (withCredentials: true)
         const res = await authAxios.get('/auth/verify');
         setUser(res.data.user);
       } catch (err: any) {
-        // 401 hatası geldiyse, flag'i temizle (cookie silinmiş olabilir)
-        if (err?.response?.status === 401) {
-          localStorage.removeItem('hasLoggedIn');
-        } else if (err?.response?.status !== 401) {
-          // 401 dışındaki hataları logla
+        // 401 hatası beklenen bir durum (kullanıcı giriş yapmamış olabilir)
+        // Sadece 401 dışındaki hataları logla
+        if (err?.response?.status !== 401) {
           console.warn("Token doğrulama hatası:", err);
         }
         setUser(null);
@@ -102,9 +92,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       });
 
       const { admin } = response.data;
-      // Token artık cookie'de, localStorage'a gerek yok
-      // Ancak verify isteği atmak için flag set et
-      localStorage.setItem('hasLoggedIn', 'true');
+      // Token cookie'de otomatik olarak saklanıyor
       setUser(admin);
       return true;
   };
@@ -117,8 +105,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
     
     // Cookie backend'de temizlenecek
-    // Flag'i de temizle, böylece bir sonraki yüklemede verify isteği atılmasın
-    localStorage.removeItem('hasLoggedIn');
     setUser(null);
   };
   

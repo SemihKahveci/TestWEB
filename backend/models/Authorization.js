@@ -24,9 +24,15 @@ const authorizationSchema = new mongoose.Schema({
     },
     title: {
         type: String,
-        required: [true, 'Pozisyon gereklidir'],
+        required: false, // Backward compatibility için optional, organizationId kullanılacak
         trim: true,
         maxlength: [100, 'Pozisyon 100 karakterden fazla olamaz']
+    },
+    organizationId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Organization',
+        required: false, // Backward compatibility için optional
+        index: true
     },
     createdBy: {
         type: mongoose.Schema.Types.ObjectId,

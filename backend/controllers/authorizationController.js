@@ -23,6 +23,7 @@ const getAllAuthorizations = async (req, res) => {
         
         let query = Authorization.find(filter)
             .populate('createdBy', 'username email')
+            .populate('organizationId')
             .sort({ createdAt: -1 });
 
         // Limit belirtilmişse sayfalama uygula
@@ -70,7 +71,9 @@ const getAuthorizationById = async (req, res) => {
         
         // Multi-tenant: companyId kontrolü yap
         const companyFilter = getCompanyFilter(req);
-        const authorization = await Authorization.findOne({ _id: id, ...companyFilter }).populate('createdBy', 'username email');
+        const authorization = await Authorization.findOne({ _id: id, ...companyFilter })
+            .populate('createdBy', 'username email')
+            .populate('organizationId');
         
         if (!authorization) {
             return res.status(404).json({
@@ -96,7 +99,7 @@ const getAuthorizationById = async (req, res) => {
 // Yeni kişi oluştur
 const createAuthorization = async (req, res) => {
     try {
-        const { sicilNo, personName, email, title } = req.body;
+        const { sicilNo, personName, email, title, organizationId } = req.body;
         const createdBy = req.admin?.id; // Middleware'den gelen admin ID (opsiyonel)
 
         // Gerekli alanları kontrol et
@@ -121,10 +124,26 @@ const createAuthorization = async (req, res) => {
             });
         }
 
-        if (!title || !title.trim()) {
+        // organizationId veya title gereklidir
+        let finalOrganizationId = organizationId;
+        
+        // Eğer organizationId yoksa ama title varsa, title'dan organizationId bul
+        if (!finalOrganizationId && title && title.trim()) {
+            const Organization = require('../models/Organization');
+            const companyFilter = getCompanyFilter(req);
+            const matchingOrg = await Organization.findOne({
+                ...companyFilter,
+                pozisyon: title.trim()
+            });
+            if (matchingOrg) {
+                finalOrganizationId = matchingOrg._id;
+            }
+        }
+
+        if (!finalOrganizationId && !title) {
             return res.status(400).json({
                 success: false,
-                message: 'Pozisyon gereklidir'
+                message: 'Pozisyon veya organizasyon gereklidir'
             });
         }
 
@@ -161,15 +180,17 @@ const createAuthorization = async (req, res) => {
             sicilNo: sicilNo.trim(),
             personName: personName.trim(),
             email: email.trim().toLowerCase(),
-            title: title.trim(),
+            title: title ? title.trim() : undefined, // Backward compatibility için
+            organizationId: finalOrganizationId,
             createdBy: createdBy
         });
         const newAuthorization = new Authorization(dataWithCompanyId);
 
         await newAuthorization.save();
 
-        // Populate ile createdBy bilgisini ekle
+        // Populate ile createdBy ve organizationId bilgisini ekle
         await newAuthorization.populate('createdBy', 'username email');
+        await newAuthorization.populate('organizationId');
 
         res.status(201).json({
             success: true,
@@ -190,7 +211,7 @@ const createAuthorization = async (req, res) => {
 const updateAuthorization = async (req, res) => {
     try {
         const { id } = req.params;
-        const { sicilNo, personName, email, title } = req.body;
+        const { sicilNo, personName, email, title, organizationId } = req.body;
 
         // Multi-tenant: companyId kontrolü yap
         const companyFilter = getCompanyFilter(req);
@@ -246,22 +267,46 @@ const updateAuthorization = async (req, res) => {
             updateData.email = email.trim().toLowerCase();
         }
 
-        if (title && title.trim()) {
-            updateData.title = title.trim();
+        // organizationId veya title güncellemesi
+        if (organizationId) {
+            updateData.organizationId = organizationId;
+            // organizationId varsa title'ı kaldır (organizationId öncelikli)
+            updateData.title = undefined;
+        } else if (title && title.trim()) {
+            // Eğer organizationId yoksa ama title varsa, title'dan organizationId bul
+            const Organization = require('../models/Organization');
+            const matchingOrg = await Organization.findOne({
+                ...companyFilter,
+                pozisyon: title.trim()
+            });
+            if (matchingOrg) {
+                updateData.organizationId = matchingOrg._id;
+                updateData.title = undefined; // organizationId varsa title'ı kaldır
+            } else {
+                // Eşleşen organization bulunamazsa title'ı sakla (backward compatibility)
+                updateData.title = title.trim();
+            }
         }
+
 
         // Kişiyi güncelle - companyId kontrolü ile
         const updatedAuthorization = await Authorization.findOneAndUpdate(
             { _id: id, ...companyFilter },
             updateData,
             { new: true, runValidators: true }
-        ).populate('createdBy', 'username email');
+        );
         
         if (!updatedAuthorization) {
             return res.status(404).json({
                 success: false,
                 message: 'Kişi bulunamadı veya yetkiniz yok'
             });
+        }
+
+        // Populate ile createdBy ve organizationId bilgisini ekle
+        await updatedAuthorization.populate('organizationId');
+        if (updatedAuthorization.createdBy) {
+            await updatedAuthorization.populate('createdBy', 'username email');
         }
 
         res.json({

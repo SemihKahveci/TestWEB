@@ -119,11 +119,8 @@ const CompetencySettings: React.FC = () => {
   const loadCompetencies = async () => {
     try {
       setIsLoading(true);
-      const token = localStorage.getItem('token');
       const response = await fetch('/api/competency', {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
+        credentials: 'include'
       });
       
       if (!response.ok) throw new Error('Veriler yüklenemedi');
@@ -310,12 +307,11 @@ const CompetencySettings: React.FC = () => {
     try {
       setIsSubmitting(true);
       
-      const token = localStorage.getItem('token');
       const response = await fetch('/api/competency', {
         method: 'POST',
+        credentials: 'include',
         headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
+          'Content-Type': 'application/json'
         },
         body: JSON.stringify({
           title: formData.title,
@@ -379,12 +375,11 @@ const CompetencySettings: React.FC = () => {
       if (!selectedCompetency) return;
       setIsSubmitting(true);
       
-      const token = localStorage.getItem('token');
       const response = await fetch(`/api/competency/${selectedCompetency._id}`, {
         method: 'PUT',
+        credentials: 'include',
         headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
+          'Content-Type': 'application/json'
         },
         body: JSON.stringify({
           title: formData.title,
@@ -447,14 +442,11 @@ const CompetencySettings: React.FC = () => {
     try {
       setIsSubmitting(true);
       
-      const token = localStorage.getItem('token');
       // Her bir yetkinliği tek tek sil
       const deletePromises = selectedItems.map(id => 
         fetch(`/api/competency/${id}`, {
           method: 'DELETE',
-          headers: {
-            'Authorization': `Bearer ${token}`
-          }
+          credentials: 'include'
         })
       );
       
@@ -491,15 +483,12 @@ const CompetencySettings: React.FC = () => {
     try {
       setIsImporting(true);
       
-      const token = localStorage.getItem('token');
       const formData = new FormData();
       formData.append('excelFile', file);
 
       const response = await fetch('/api/competency/import', {
         method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`
-        },
+        credentials: 'include',
         body: formData
       });
 
@@ -648,12 +637,9 @@ const CompetencySettings: React.FC = () => {
       const formData = new FormData();
       formData.append('excelFile', selectedFile);
 
-      const token = localStorage.getItem('token');
       const response = await fetch('/api/competency/import', {
         method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`
-        },
+        credentials: 'include',
         body: formData
       });
 

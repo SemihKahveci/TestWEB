@@ -93,16 +93,13 @@ const ScriptFiles: React.FC = () => {
     try {
       setIsSubmitting(true);
       
-      const token = localStorage.getItem('token');
       const formData = new FormData();
       formData.append('excelFile', selectedFile);
       formData.append('competencyName', selectedCompetency);
 
       const response = await fetch('/api/script-files/upload', {
         method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`
-        },
+        credentials: 'include',
         body: formData
       });
 
@@ -141,16 +138,13 @@ const ScriptFiles: React.FC = () => {
     try {
       setIsSubmitting(true);
       
-      const token = localStorage.getItem('token');
       const formData = new FormData();
       formData.append('excelFile', selectedFile);
       formData.append('competencyName', selectedCompetency);
 
       const response = await fetch('/api/script-files/update', {
         method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`
-        },
+        credentials: 'include',
         body: formData
       });
 
@@ -188,16 +182,13 @@ const ScriptFiles: React.FC = () => {
     try {
       setIsSubmitting(true);
       
-      const token = localStorage.getItem('token');
       const formData = new FormData();
       formData.append('excelFile', selectedFile);
       formData.append('competencyName', selectedCompetency);
 
       const response = await fetch('/api/script-files/update-ids', {
         method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`
-        },
+        credentials: 'include',
         body: formData
       });
 
