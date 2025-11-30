@@ -113,7 +113,10 @@ const createGroup = async (req, res) => {
         }
 
         // Aynı isimde grup var mı kontrol et
+        // Multi-tenant: companyId filtresi ekle
+        const companyFilter = getCompanyFilter(req);
         const existingGroup = await Group.findOne({ 
+            ...companyFilter,
             name: name.trim()
         });
 
@@ -124,8 +127,8 @@ const createGroup = async (req, res) => {
             });
         }
 
-        // Yeni grup oluştur
-        const newGroup = new Group({
+        // Yeni grup oluştur - companyId otomatik eklenir
+        const dataWithCompanyId = addCompanyIdToData(req, {
             name: name.trim(),
             status: status || 'Aktif',
             organizations: organizations,
@@ -134,6 +137,7 @@ const createGroup = async (req, res) => {
             isActive: status === 'Aktif' || status === undefined,
             createdBy: createdBy
         });
+        const newGroup = new Group(dataWithCompanyId);
 
         await newGroup.save();
 

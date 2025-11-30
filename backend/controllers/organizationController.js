@@ -60,7 +60,10 @@ const createOrganization = async (req, res) => {
         };
 
         // Birebir aynı organizasyon var mı kontrol et (tüm alanlar aynıysa)
+        // Multi-tenant: companyId filtresi ekle
+        const companyFilter = getCompanyFilter(req);
         const existingOrganization = await Organization.findOne({
+            ...companyFilter,
             genelMudurYardimciligi: cleanedData.genelMudurYardimciligi,
             direktörlük: cleanedData.direktörlük,
             müdürlük: cleanedData.müdürlük,

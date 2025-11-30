@@ -18,6 +18,7 @@ import ResultsPage from './pages/ResultsPage';
 import CompanyIdentification from './pages/CompanyIdentification';
 import DefineCompanyAdmin from './pages/DefineCompanyAdmin';
 import SubscriptionSettings from './pages/SubscriptionSettings';
+import ScriptFiles from './pages/ScriptFiles';
 
 const AppContent: React.FC = () => {
   const location = useLocation();
@@ -144,6 +145,16 @@ const AppContent: React.FC = () => {
                 <Layout>
                   <CompanyIdentification />
                 </Layout>
+              </ProtectedRoute>
+            } />
+            
+            <Route path="/script-files" element={
+              <ProtectedRoute>
+                <SuperAdminRoute>
+                  <Layout>
+                    <ScriptFiles />
+                  </Layout>
+                </SuperAdminRoute>
               </ProtectedRoute>
             } />
             

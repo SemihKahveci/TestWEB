@@ -129,7 +129,10 @@ const createAuthorization = async (req, res) => {
         }
 
         // Aynı sicil numarasında kişi var mı kontrol et
+        // Multi-tenant: companyId filtresi ekle
+        const companyFilter = getCompanyFilter(req);
         const existingAuthorization = await Authorization.findOne({ 
+            ...companyFilter,
             sicilNo: sicilNo.trim()
         });
 
@@ -142,6 +145,7 @@ const createAuthorization = async (req, res) => {
 
         // Aynı email adresinde kişi var mı kontrol et
         const existingEmail = await Authorization.findOne({ 
+            ...companyFilter,
             email: email.trim().toLowerCase()
         });
 
@@ -414,8 +418,12 @@ const bulkCreateAuthorizations = async (req, res) => {
             const rowNumber = i + 2; // Excel'de satır numarası
             
             try {
+                // Multi-tenant: companyId filtresi ekle
+                const companyFilter = getCompanyFilter(req);
+                
                 // Sicil No duplicate kontrolü
                 const existingSicilNo = await Authorization.findOne({
+                    ...companyFilter,
                     sicilNo: auth.sicilNo
                 });
 
@@ -429,6 +437,7 @@ const bulkCreateAuthorizations = async (req, res) => {
 
                 // Email duplicate kontrolü
                 const existingEmail = await Authorization.findOne({
+                    ...companyFilter,
                     email: auth.email
                 });
 
@@ -442,6 +451,7 @@ const bulkCreateAuthorizations = async (req, res) => {
 
                 // Aynı yetkilendirme var mı kontrol et
                 const existingAuthorization = await Authorization.findOne({
+                    ...companyFilter,
                     sicilNo: auth.sicilNo,
                     personName: auth.personName,
                     email: auth.email,

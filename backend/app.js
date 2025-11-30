@@ -232,6 +232,10 @@ apiRouter.use('/authorization', authorizationRoutes);
 const creditRoutes = require('./routes/creditRoutes');
 apiRouter.use('/credit', creditRoutes);
 
+// Script Files işlemleri
+const scriptFilesRoutes = require('./routes/scriptFilesRoutes');
+apiRouter.use('/script-files', scriptFilesRoutes);
+
 // API route'larını uygula
 app.use('/api', apiRouter);
 

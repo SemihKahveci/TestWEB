@@ -85,6 +85,10 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
     { path: '/competency-settings', label: 'Yetkinlik Ayarları', icon: '⚙️' },
   ];
 
+  const superAdminSettingsItems = [
+    { path: '/script-files', label: 'Komut Dosyaları', icon: '📄', superAdminOnly: true },
+  ];
+
   const isActive = (path: string) => {
     if (path === '/organization') {
       return location.pathname === '/organization' || 
@@ -302,6 +306,43 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
 
             {/* Diğer Ayarlar */}
             {otherSettingsItems.map((item) => (
+              <Link
+                key={item.path}
+                to={item.path}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  padding: '12px 24px',
+                  fontSize: '14px',
+                  fontWeight: 500,
+                  color: isActive(item.path) ? '#3B82F6' : '#6B7280',
+                  backgroundColor: isActive(item.path) ? '#EFF6FF' : 'transparent',
+                  borderRight: isActive(item.path) ? '3px solid #3B82F6' : '3px solid transparent',
+                  textDecoration: 'none',
+                  transition: 'all 0.2s',
+                  fontFamily: 'Inter'
+                }}
+                onMouseEnter={(e) => {
+                  if (!isActive(item.path)) {
+                    e.currentTarget.style.backgroundColor = '#F9FAFB';
+                    e.currentTarget.style.color = '#374151';
+                  }
+                }}
+                onMouseLeave={(e) => {
+                  if (!isActive(item.path)) {
+                    e.currentTarget.style.backgroundColor = 'transparent';
+                    e.currentTarget.style.color = '#6B7280';
+                  }
+                }}
+                onClick={() => setSidebarOpen(false)}
+              >
+                <span style={{ marginRight: '12px', fontSize: '16px' }}>{item.icon}</span>
+                {item.label}
+              </Link>
+            ))}
+
+            {/* Super Admin Ayarlar */}
+            {isSuperAdmin && superAdminSettingsItems.map((item) => (
               <Link
                 key={item.path}
                 to={item.path}
