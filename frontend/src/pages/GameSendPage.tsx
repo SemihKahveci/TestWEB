@@ -559,8 +559,12 @@ const GameSendPage: React.FC = () => {
           if (result.success) {
             // Grup kişilerinin detaylarını bul
             const groupPersons: any[] = [];
-            for (const personValue of group.persons) {
-              const personName = personValue.includes(':') ? personValue.split(':')[1] : personValue;
+            // group.persons'un array olduğundan emin ol
+            const personsArray = Array.isArray(group.persons) ? group.persons : [];
+            for (const personValue of personsArray) {
+              // personValue'nun string olduğundan emin ol
+              const personValueStr = typeof personValue === 'string' ? personValue : String(personValue || '');
+              const personName = personValueStr.includes(':') ? personValueStr.split(':')[1] : personValueStr;
               const personDetail = result.authorizations.find((p: any) => p.personName === personName);
               
               if (personDetail) {
@@ -574,9 +578,18 @@ const GameSendPage: React.FC = () => {
             }
 
             // Group details'e kişi bilgilerini ekle
+            // planets ve organizations array'lerinin de güvenli olduğundan emin ol
+            const planetsArray = Array.isArray(group.planets) 
+              ? group.planets.filter(p => p != null) 
+              : [];
+            const organizationsArray = Array.isArray(group.organizations) 
+              ? group.organizations.filter(o => o != null) 
+              : [];
             const groupWithPersons = {
               ...group,
-              persons: groupPersons
+              persons: groupPersons,
+              planets: planetsArray,
+              organizations: organizationsArray
             };
 
             setSelectedGroupDetails(groupWithPersons);
@@ -2598,7 +2611,7 @@ const GameSendPage: React.FC = () => {
             </div>
 
             {/* Organizations */}
-            {selectedGroupDetails.organizations && selectedGroupDetails.organizations.length > 0 && (
+            {selectedGroupDetails.organizations && Array.isArray(selectedGroupDetails.organizations) && selectedGroupDetails.organizations.length > 0 && (
               <div style={{ marginBottom: '20px' }}>
                 <h4 style={{
                   color: '#232D42',
@@ -2613,25 +2626,50 @@ const GameSendPage: React.FC = () => {
                   flexWrap: 'wrap',
                   gap: '8px'
                 }}>
-                  {selectedGroupDetails.organizations.map((org, index) => {
-                    const displayValue = org.includes(':') ? org.split(':')[1] : org;
-                    return (
-                      <span
-                        key={index}
-                        style={{
-                          background: '#E8F5E8',
-                          border: '1px solid #C8E6C9',
-                          color: '#388E3C',
-                          padding: '6px 12px',
-                          borderRadius: '16px',
-                          fontSize: '12px',
-                          fontWeight: 500
-                        }}
-                      >
-                        {displayValue}
-                      </span>
-                    );
-                  })}
+                  {selectedGroupDetails.organizations
+                    .filter(org => org != null) // null/undefined değerleri filtrele
+                    .map((org: any, index) => {
+                      let displayValue = '';
+                      
+                      // Eğer organization populate edilmişse (object), güncel isimleri göster
+                      if (typeof org === 'object' && org !== null && org._id) {
+                        // Populated organization object - güncel isimleri göster
+                        if (org.genelMudurYardimciligi && org.genelMudurYardimciligi !== '-') {
+                          displayValue = org.genelMudurYardimciligi;
+                        } else if (org.direktörlük && org.direktörlük !== '-') {
+                          displayValue = org.direktörlük;
+                        } else if (org.müdürlük && org.müdürlük !== '-') {
+                          displayValue = org.müdürlük;
+                        } else if (org.grupLiderligi && org.grupLiderligi !== '-') {
+                          displayValue = org.grupLiderligi;
+                        } else if (org.pozisyon) {
+                          displayValue = org.pozisyon;
+                        } else {
+                          displayValue = 'Bilinmeyen';
+                        }
+                      } else {
+                        // String format (eski format veya populate edilmemiş)
+                        const orgString = typeof org === 'string' ? org : String(org || '');
+                        displayValue = orgString.includes(':') ? orgString.split(':')[1] : orgString;
+                      }
+                      
+                      return (
+                        <span
+                          key={index}
+                          style={{
+                            background: '#E8F5E8',
+                            border: '1px solid #C8E6C9',
+                            color: '#388E3C',
+                            padding: '6px 12px',
+                            borderRadius: '16px',
+                            fontSize: '12px',
+                            fontWeight: 500
+                          }}
+                        >
+                          {displayValue}
+                        </span>
+                      );
+                    })}
                 </div>
               </div>
             )}
@@ -2698,7 +2736,7 @@ const GameSendPage: React.FC = () => {
             )}
 
             {/* Planets */}
-            {selectedGroupDetails.planets && selectedGroupDetails.planets.length > 0 && (
+            {selectedGroupDetails.planets && Array.isArray(selectedGroupDetails.planets) && selectedGroupDetails.planets.length > 0 && (
               <div style={{ marginBottom: '20px' }}>
                 <h4 style={{
                   color: '#232D42',
@@ -2713,25 +2751,35 @@ const GameSendPage: React.FC = () => {
                   flexWrap: 'wrap',
                   gap: '8px'
                 }}>
-                  {selectedGroupDetails.planets.map((planet, index) => {
-                    const displayValue = planet.includes(':') ? planet.split(':')[1] : planet;
-                    return (
-                      <span
-                        key={index}
-                        style={{
-                          background: '#F3E5F5',
-                          border: '1px solid #E1BEE7',
-                          color: '#7B1FA2',
-                          padding: '6px 12px',
-                          borderRadius: '16px',
-                          fontSize: '12px',
-                          fontWeight: 500
-                        }}
-                      >
-                        {capitalizeFirstLetter(displayValue)}
-                      </span>
-                    );
-                  })}
+                  {selectedGroupDetails.planets
+                    .filter(planet => planet != null) // null/undefined değerleri filtrele
+                    .map((planet, index) => {
+                      // planet'in string olduğundan emin ol
+                      const planetStr = typeof planet === 'string' ? planet : String(planet || '');
+                      // Önce availablePlanets'ten bul, yoksa string olarak kullan
+                      const planetObj = availablePlanets.find(p => p.value === planetStr);
+                      let displayValue = planetObj ? planetObj.label : planetStr;
+                      // Eğer hala ':' içeriyorsa (eski format), split et
+                      if (typeof displayValue === 'string' && displayValue.includes(':')) {
+                        displayValue = displayValue.split(':')[1];
+                      }
+                      return (
+                        <span
+                          key={index}
+                          style={{
+                            background: '#F3E5F5',
+                            border: '1px solid #E1BEE7',
+                            color: '#7B1FA2',
+                            padding: '6px 12px',
+                            borderRadius: '16px',
+                            fontSize: '12px',
+                            fontWeight: 500
+                          }}
+                        >
+                          {capitalizeFirstLetter(displayValue)}
+                        </span>
+                      );
+                    })}
                 </div>
               </div>
             )}
