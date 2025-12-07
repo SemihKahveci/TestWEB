@@ -70,8 +70,8 @@ app.use(cors(corsOptions));
 
 
 
-app.use(express.json({ limit: '50mb' }));
-app.use(express.urlencoded({ limit: '50mb', extended: true }));
+app.use(express.json({ limit: '100mb' }));
+app.use(express.urlencoded({ limit: '100mb', extended: true }));
 // Public klasörünü root'tan serve et
 app.use(express.static(path.join(__dirname, 'public')));
 

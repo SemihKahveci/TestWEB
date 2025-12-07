@@ -18,7 +18,7 @@ const upload = multer({
         }
     },
     limits: {
-        fileSize: 5 * 1024 * 1024 // 5MB limit
+        fileSize: 100 * 1024 * 1024 // 100MB limit (app.js'deki body parser limiti ile uyumlu)
     }
 });
 
@@ -26,43 +26,13 @@ const upload = multer({
 router.use(authenticateAdmin);
 router.use(isSuperAdmin);
 
-// Excel dosyası yükleme
-router.post('/upload', upload.single('excelFile'), (err, req, res, next) => {
-    if (err instanceof multer.MulterError) {
-        if (err.code === 'LIMIT_FILE_SIZE') {
-            return res.status(400).json({
-                success: false,
-                message: 'Dosya çok büyük. Maksimum 5MB dosya yükleyebilirsiniz.'
-            });
-        }
-        return res.status(400).json({
-            success: false,
-            message: `Dosya yükleme hatası: ${err.message}`
-        });
-    } else if (err) {
-        return res.status(400).json({
-            success: false,
-            message: err.message
-        });
-    }
-    next();
-}, (req, res, next) => {
-    if (!req.file) {
-        return res.status(400).json({
-            success: false,
-            message: 'Dosya yüklenemedi. Lütfen .xlsx veya .xls formatında bir dosya seçin.'
-        });
-    }
-    next();
-}, scriptFilesController.uploadScriptFile);
-
 // Script güncelleme (Güncelle butonu)
 router.post('/update', upload.single('excelFile'), (err, req, res, next) => {
     if (err instanceof multer.MulterError) {
         if (err.code === 'LIMIT_FILE_SIZE') {
             return res.status(400).json({
                 success: false,
-                message: 'Dosya çok büyük. Maksimum 5MB dosya yükleyebilirsiniz.'
+                message: 'Dosya çok büyük. Maksimum 100MB dosya yükleyebilirsiniz.'
             });
         }
         return res.status(400).json({
@@ -92,7 +62,7 @@ router.post('/update-ids', upload.single('excelFile'), (err, req, res, next) => 
         if (err.code === 'LIMIT_FILE_SIZE') {
             return res.status(400).json({
                 success: false,
-                message: 'Dosya çok büyük. Maksimum 5MB dosya yükleyebilirsiniz.'
+                message: 'Dosya çok büyük. Maksimum 100MB dosya yükleyebilirsiniz.'
             });
         }
         return res.status(400).json({

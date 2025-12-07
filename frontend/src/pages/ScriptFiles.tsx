@@ -466,44 +466,6 @@ const ScriptFiles: React.FC = () => {
             marginTop: '8px'
           }}>
             <button
-              onClick={handleSubmit}
-              disabled={!selectedCompetency || !selectedFile || isSubmitting}
-              style={{
-                padding: '12px 24px',
-                background: (!selectedCompetency || !selectedFile || isSubmitting) ? '#E9ECEF' : '#3B82F6',
-                color: (!selectedCompetency || !selectedFile || isSubmitting) ? '#6C757D' : 'white',
-                border: 'none',
-                borderRadius: '6px',
-                fontFamily: 'Inter',
-                fontSize: '14px',
-                fontWeight: 500,
-                cursor: (!selectedCompetency || !selectedFile || isSubmitting) ? 'not-allowed' : 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '8px',
-                transition: 'all 0.2s'
-              }}
-            >
-              {isSubmitting ? (
-                <>
-                  <div style={{
-                    width: '16px',
-                    height: '16px',
-                    border: '2px solid transparent',
-                    borderTop: '2px solid white',
-                    borderRadius: '50%',
-                    animation: 'spin 1s linear infinite'
-                  }}></div>
-                  Yükleniyor...
-                </>
-              ) : (
-                <>
-                  <i className="fas fa-upload"></i>
-                  Yükle
-                </>
-              )}
-            </button>
-            <button
               onClick={handleUpdateReports}
               disabled={!selectedCompetency || !selectedFile || isSubmitting}
               style={{
