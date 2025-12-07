@@ -957,11 +957,19 @@ const GameSendPage: React.FC = () => {
                   successCount++;
                 } else {
                   errorCount++;
-                  errors.push(`${person.name}: ${sendData.message}`);
+                  errors.push(`${person.name}: ${sendData.message || 'Gönderim hatası'}`);
                 }
               } else {
+                // 500 hatası için daha detaylı mesaj
+                let errorMessage = 'Gönderim hatası';
+                try {
+                  const errorData = await sendResponse.json();
+                  errorMessage = errorData.message || errorMessage;
+                } catch {
+                  errorMessage = `Sunucu hatası (${sendResponse.status})`;
+                }
                 errorCount++;
-                errors.push(`${person.name}: Gönderim hatası`);
+                errors.push(`${person.name}: ${errorMessage}`);
               }
             } else {
               errorCount++;
@@ -1102,11 +1110,19 @@ const GameSendPage: React.FC = () => {
                   successCount++;
                 } else {
                   errorCount++;
-                  errors.push(`${person.name}: ${sendData.message}`);
+                  errors.push(`${person.name}: ${sendData.message || 'Gönderim hatası'}`);
                 }
               } else {
+                // 500 hatası için daha detaylı mesaj
+                let errorMessage = 'Gönderim hatası';
+                try {
+                  const errorData = await sendResponse.json();
+                  errorMessage = errorData.message || errorMessage;
+                } catch {
+                  errorMessage = `Sunucu hatası (${sendResponse.status})`;
+                }
                 errorCount++;
-                errors.push(`${person.name}: Gönderim hatası`);
+                errors.push(`${person.name}: ${errorMessage}`);
               }
             } else {
               errorCount++;

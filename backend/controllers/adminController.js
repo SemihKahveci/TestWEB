@@ -333,35 +333,66 @@ const adminController = {
             const { getCompanyFilter } = require('../middleware/auth');
             const companyFilter = getCompanyFilter(req);
             
-            // Önce kodu bul (companyFilter ile)
-            const existingCode = await UserCode.findOne({ code, ...companyFilter });
-            
-            if (!existingCode) {
-                safeLog('error', 'Kod bulunamadı veya yetkisiz erişim', { 
-                    code, 
-                    adminId: req.admin?._id?.toString(),
-                    adminRole: req.admin?.role,
-                    companyFilter 
-                });
-                return res.status(400).json({ success: false, message: 'Kod bulunamadı veya bu koda erişim yetkiniz yok' });
+            // Önce kodu bul (companyFilter ile) - retry mekanizması ile
+            let existingCode;
+            let userCode;
+            const dbMaxRetries = 3;
+            let dbRetryCount = 0;
+
+            while (dbRetryCount < dbMaxRetries) {
+                try {
+                    existingCode = await UserCode.findOne({ code, ...companyFilter });
+                    
+                    if (!existingCode) {
+                        safeLog('error', 'Kod bulunamadı veya yetkisiz erişim', { 
+                            code, 
+                            adminId: req.admin?._id?.toString(),
+                            adminRole: req.admin?.role,
+                            companyFilter 
+                        });
+                        return res.status(400).json({ success: false, message: 'Kod bulunamadı veya bu koda erişim yetkiniz yok' });
+                    }
+                    
+                    // Kodu güncelle
+                    userCode = await UserCode.findOneAndUpdate(
+                        { code, ...companyFilter },
+                        {
+                            name,
+                            email,
+                            planet,
+                            status: 'Beklemede',
+                            sentDate: new Date(),
+                            expiryDate
+                        },
+                        { new: true }
+                    );
+
+                    if (userCode) {
+                        break; // Başarılı, döngüden çık
+                    } else {
+                        dbRetryCount++;
+                        if (dbRetryCount < dbMaxRetries) {
+                            await new Promise(resolve => setTimeout(resolve, 500 * dbRetryCount));
+                            safeLog('warn', `Kod güncelleme başarısız, tekrar deneniyor (${dbRetryCount}/${dbMaxRetries})`, { code });
+                        }
+                    }
+                } catch (dbError) {
+                    dbRetryCount++;
+                    if (dbRetryCount < dbMaxRetries) {
+                        await new Promise(resolve => setTimeout(resolve, 500 * dbRetryCount));
+                        safeLog('warn', `Database hatası, tekrar deneniyor (${dbRetryCount}/${dbMaxRetries})`, {
+                            error: getSafeErrorMessage(dbError),
+                            code
+                        });
+                    } else {
+                        throw dbError; // Son denemede hata fırlat
+                    }
+                }
             }
-            
-            // Kodu güncelle
-            const userCode = await UserCode.findOneAndUpdate(
-                { code, ...companyFilter },
-                {
-                    name,
-                    email,
-                    planet,
-                    status: 'Beklemede',
-                    sentDate: new Date(),
-                    expiryDate
-                },
-                { new: true }
-            );
 
             if (!userCode) {
-                return res.status(400).json({ success: false, message: 'Kod güncellenemedi' });
+                safeLog('error', 'Kod güncelleme tüm denemelerde başarısız', { code });
+                return res.status(500).json({ success: false, message: 'Kod güncellenemedi. Lütfen tekrar deneyin.' });
             }
 
             // E-posta içeriği (XSS koruması ile)
@@ -394,14 +425,48 @@ const adminController = {
                 </div>
             `;
 
-            // E-posta gönder
-            const emailResult = await sendEmail(
-                email,
-                'ANDRON Game Deneyimine Davetlisin!',
-                emailHtml
-            );
+            // E-posta gönder (retry mekanizması ile)
+            let emailResult;
+            const maxRetries = 3;
+            let retryCount = 0;
+            let lastError = null;
 
-            if (emailResult.success) {
+            while (retryCount < maxRetries) {
+                try {
+                    emailResult = await sendEmail(
+                        email,
+                        'ANDRON Game Deneyimine Davetlisin!',
+                        emailHtml
+                    );
+
+                    if (emailResult.success) {
+                        break; // Başarılı, döngüden çık
+                    } else {
+                        lastError = emailResult.error || 'Bilinmeyen hata';
+                        retryCount++;
+                        if (retryCount < maxRetries) {
+                            // Exponential backoff: 1s, 2s, 4s
+                            await new Promise(resolve => setTimeout(resolve, Math.pow(2, retryCount) * 1000));
+                            safeLog('warn', `E-posta gönderimi başarısız, tekrar deneniyor (${retryCount}/${maxRetries})`, {
+                                email,
+                                error: lastError
+                            });
+                        }
+                    }
+                } catch (emailError) {
+                    lastError = getSafeErrorMessage(emailError);
+                    retryCount++;
+                    if (retryCount < maxRetries) {
+                        await new Promise(resolve => setTimeout(resolve, Math.pow(2, retryCount) * 1000));
+                        safeLog('warn', `E-posta gönderimi hatası, tekrar deneniyor (${retryCount}/${maxRetries})`, {
+                            email,
+                            error: lastError
+                        });
+                    }
+                }
+            }
+
+            if (emailResult && emailResult.success) {
                 // 72 saat sonra kodu sil
                 // setTimeout(async () => {
                 //     try {
@@ -412,14 +477,30 @@ const adminController = {
 
                 res.json({ success: true, message: 'Kod başarıyla gönderildi' });
             } else {
+                safeLog('error', 'E-posta gönderimi tüm denemelerde başarısız', {
+                    email,
+                    code,
+                    error: lastError,
+                    retryCount
+                });
                 res.status(500).json({ 
                     success: false, 
-                    message: `E-posta gönderilemedi: ${emailResult.error || 'Bilinmeyen hata'}` 
+                    message: `E-posta gönderilemedi: ${lastError || 'Bilinmeyen hata'}` 
                 });
             }
         } catch (error) {
- 
-            res.status(500).json({ success: false, message: 'Kod gönderilirken bir hata oluştu' });
+            safeLog('error', 'Kod gönderme hatası', {
+                error: getSafeErrorMessage(error),
+                code: req.body?.code,
+                email: req.body?.email,
+                name: req.body?.name,
+                stack: error.stack
+            });
+            res.status(500).json({ 
+                success: false, 
+                message: 'Kod gönderilirken bir hata oluştu',
+                error: process.env.NODE_ENV === 'development' ? getSafeErrorMessage(error) : undefined
+            });
         }
     },
 
