@@ -333,66 +333,17 @@ const adminController = {
             const { getCompanyFilter } = require('../middleware/auth');
             const companyFilter = getCompanyFilter(req);
             
-            // Önce kodu bul (companyFilter ile) - retry mekanizması ile
-            let existingCode;
-            let userCode;
-            const dbMaxRetries = 3;
-            let dbRetryCount = 0;
-
-            while (dbRetryCount < dbMaxRetries) {
-                try {
-                    existingCode = await UserCode.findOne({ code, ...companyFilter });
-                    
-                    if (!existingCode) {
-                        safeLog('error', 'Kod bulunamadı veya yetkisiz erişim', { 
-                            code, 
-                            adminId: req.admin?._id?.toString(),
-                            adminRole: req.admin?.role,
-                            companyFilter 
-                        });
-                        return res.status(400).json({ success: false, message: 'Kod bulunamadı veya bu koda erişim yetkiniz yok' });
-                    }
-                    
-                    // Kodu güncelle
-                    userCode = await UserCode.findOneAndUpdate(
-                        { code, ...companyFilter },
-                        {
-                            name,
-                            email,
-                            planet,
-                            status: 'Beklemede',
-                            sentDate: new Date(),
-                            expiryDate
-                        },
-                        { new: true }
-                    );
-
-                    if (userCode) {
-                        break; // Başarılı, döngüden çık
-                    } else {
-                        dbRetryCount++;
-                        if (dbRetryCount < dbMaxRetries) {
-                            await new Promise(resolve => setTimeout(resolve, 500 * dbRetryCount));
-                            safeLog('warn', `Kod güncelleme başarısız, tekrar deneniyor (${dbRetryCount}/${dbMaxRetries})`, { code });
-                        }
-                    }
-                } catch (dbError) {
-                    dbRetryCount++;
-                    if (dbRetryCount < dbMaxRetries) {
-                        await new Promise(resolve => setTimeout(resolve, 500 * dbRetryCount));
-                        safeLog('warn', `Database hatası, tekrar deneniyor (${dbRetryCount}/${dbMaxRetries})`, {
-                            error: getSafeErrorMessage(dbError),
-                            code
-                        });
-                    } else {
-                        throw dbError; // Son denemede hata fırlat
-                    }
-                }
-            }
-
-            if (!userCode) {
-                safeLog('error', 'Kod güncelleme tüm denemelerde başarısız', { code });
-                return res.status(500).json({ success: false, message: 'Kod güncellenemedi. Lütfen tekrar deneyin.' });
+            // Önce kodu bul (companyFilter ile) - sadece kontrol için
+            const existingCode = await UserCode.findOne({ code, ...companyFilter });
+            
+            if (!existingCode) {
+                safeLog('error', 'Kod bulunamadı veya yetkisiz erişim', { 
+                    code, 
+                    adminId: req.admin?._id?.toString(),
+                    adminRole: req.admin?.role,
+                    companyFilter 
+                });
+                return res.status(400).json({ success: false, message: 'Kod bulunamadı veya bu koda erişim yetkiniz yok' });
             }
 
             // E-posta içeriği (XSS koruması ile)
@@ -472,6 +423,58 @@ const adminController = {
             }
 
             if (emailResult && emailResult.success) {
+                // Mail başarıyla gönderildi, şimdi UserCode'u güncelle (results sayfasına eklemek için)
+                // Retry mekanizması ile güncelleme yap
+                let userCode = null;
+                const dbMaxRetries = 3;
+                let dbRetryCount = 0;
+
+                while (dbRetryCount < dbMaxRetries) {
+                    try {
+                        userCode = await UserCode.findOneAndUpdate(
+                            { code, ...companyFilter },
+                            {
+                                name,
+                                email,
+                                planet,
+                                status: 'Beklemede',
+                                sentDate: new Date(),
+                                expiryDate
+                            },
+                            { new: true }
+                        );
+
+                        if (userCode) {
+                            break; // Başarılı, döngüden çık
+                        } else {
+                            dbRetryCount++;
+                            if (dbRetryCount < dbMaxRetries) {
+                                await new Promise(resolve => setTimeout(resolve, 500 * dbRetryCount));
+                                safeLog('warn', `UserCode güncelleme başarısız, tekrar deneniyor (${dbRetryCount}/${dbMaxRetries})`, { code });
+                            }
+                        }
+                    } catch (updateError) {
+                        dbRetryCount++;
+                        if (dbRetryCount < dbMaxRetries) {
+                            await new Promise(resolve => setTimeout(resolve, 500 * dbRetryCount));
+                            safeLog('warn', `UserCode güncelleme hatası, tekrar deneniyor (${dbRetryCount}/${dbMaxRetries})`, {
+                                error: getSafeErrorMessage(updateError),
+                                code
+                            });
+                        } else {
+                            // Son denemede hata logla ama mail gönderildiği için devam et
+                            safeLog('error', 'UserCode güncelleme tüm denemelerde başarısız (mail gönderildi)', {
+                                error: getSafeErrorMessage(updateError),
+                                code
+                            });
+                        }
+                    }
+                }
+
+                if (!userCode) {
+                    safeLog('warn', 'Mail gönderildi ama UserCode güncellenemedi (tüm denemeler başarısız)', { code });
+                }
+
                 // 72 saat sonra kodu sil
                 // setTimeout(async () => {
                 //     try {
