@@ -663,6 +663,7 @@ const GameSendPage: React.FC = () => {
       // Generate code
       const codeResponse = await fetch('/api/generate-code', {
         method: 'POST',
+        credentials: 'include',
         headers: {
           'Content-Type': 'application/json'
         },
@@ -682,6 +683,7 @@ const GameSendPage: React.FC = () => {
       // Send code
       const sendResponse = await fetch('/api/send-code', {
         method: 'POST',
+        credentials: 'include',
         headers: {
           'Content-Type': 'application/json'
         },
@@ -926,6 +928,7 @@ const GameSendPage: React.FC = () => {
           // Generate code for each person
           const codeResponse = await fetch('/api/generate-code', {
             method: 'POST',
+            credentials: 'include',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
               name: person.name,
@@ -941,6 +944,7 @@ const GameSendPage: React.FC = () => {
               // Send code to person
               const sendResponse = await fetch('/api/send-code', {
                 method: 'POST',
+                credentials: 'include',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                   code: codeData.code,
@@ -1079,6 +1083,7 @@ const GameSendPage: React.FC = () => {
           // Generate code for each person
           const codeResponse = await fetch('/api/generate-code', {
             method: 'POST',
+            credentials: 'include',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
               name: person.name,
@@ -1094,6 +1099,7 @@ const GameSendPage: React.FC = () => {
               // Send code to person
               const sendResponse = await fetch('/api/send-code', {
                 method: 'POST',
+                credentials: 'include',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                   code: codeData.code,

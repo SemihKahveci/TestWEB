@@ -426,7 +426,7 @@ const adminController = {
             `;
 
             // E-posta gönder (retry mekanizması ile)
-            let emailResult;
+            let emailResult = null;
             const maxRetries = 3;
             let retryCount = 0;
             let lastError = null;
@@ -439,10 +439,14 @@ const adminController = {
                         emailHtml
                     );
 
-                    if (emailResult.success) {
+                    if (emailResult && emailResult.success) {
+                        safeLog('info', 'E-posta başarıyla gönderildi', {
+                            email,
+                            messageId: emailResult.messageId
+                        });
                         break; // Başarılı, döngüden çık
                     } else {
-                        lastError = emailResult.error || 'Bilinmeyen hata';
+                        lastError = emailResult?.error || 'Bilinmeyen hata';
                         retryCount++;
                         if (retryCount < maxRetries) {
                             // Exponential backoff: 1s, 2s, 4s
@@ -455,6 +459,7 @@ const adminController = {
                     }
                 } catch (emailError) {
                     lastError = getSafeErrorMessage(emailError);
+                    emailResult = null; // Hata durumunda emailResult'ı sıfırla
                     retryCount++;
                     if (retryCount < maxRetries) {
                         await new Promise(resolve => setTimeout(resolve, Math.pow(2, retryCount) * 1000));
@@ -481,11 +486,35 @@ const adminController = {
                     email,
                     code,
                     error: lastError,
-                    retryCount
+                    retryCount,
+                    emailResult: emailResult ? {
+                        success: emailResult.success,
+                        error: emailResult.error,
+                        details: emailResult.details
+                    } : null,
+                    environment: process.env.NODE_ENV,
+                    hasMailgunKey: !!process.env.MAILGUN_API_KEY,
+                    hasMailgunDomain: !!process.env.MAILGUN_DOMAIN,
+                    hasFromEmail: !!process.env.MAILGUN_FROM_EMAIL
                 });
+                
+                // Daha açıklayıcı hata mesajı
+                let errorMessage = `E-posta gönderilemedi: ${lastError || 'Bilinmeyen hata'}`;
+                if (lastError && lastError.includes('yapılandırılmamış')) {
+                    errorMessage = 'Mail servisi yapılandırması eksik. Lütfen sunucu yöneticisi ile iletişime geçin.';
+                } else if (lastError && lastError.includes('API anahtarı')) {
+                    errorMessage = 'Mail servisi API anahtarı geçersiz. Lütfen sunucu yöneticisi ile iletişime geçin.';
+                } else if (lastError && lastError.includes('domain')) {
+                    errorMessage = 'Mail servisi domain doğrulaması başarısız. Lütfen sunucu yöneticisi ile iletişime geçin.';
+                }
+                
                 res.status(500).json({ 
                     success: false, 
-                    message: `E-posta gönderilemedi: ${lastError || 'Bilinmeyen hata'}` 
+                    message: errorMessage,
+                    ...(process.env.NODE_ENV !== 'production' && { 
+                        error: lastError,
+                        details: emailResult?.details || null
+                    })
                 });
             }
         } catch (error) {
