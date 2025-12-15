@@ -391,10 +391,6 @@ const adminController = {
                     );
 
                     if (emailResult && emailResult.success) {
-                        safeLog('info', 'E-posta başarıyla gönderildi', {
-                            email,
-                            messageId: emailResult.messageId
-                        });
                         break; // Başarılı, döngüden çık
                     } else {
                         lastError = emailResult?.error || 'Bilinmeyen hata';
@@ -489,16 +485,7 @@ const adminController = {
                     email,
                     code,
                     error: lastError,
-                    retryCount,
-                    emailResult: emailResult ? {
-                        success: emailResult.success,
-                        error: emailResult.error,
-                        details: emailResult.details
-                    } : null,
-                    environment: process.env.NODE_ENV,
-                    hasMailgunKey: !!process.env.MAILGUN_API_KEY,
-                    hasMailgunDomain: !!process.env.MAILGUN_DOMAIN,
-                    hasFromEmail: !!process.env.MAILGUN_FROM_EMAIL
+                    retryCount
                 });
                 
                 // Daha açıklayıcı hata mesajı

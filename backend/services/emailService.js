@@ -42,14 +42,6 @@ const sendEmail = async (to, subject, html, replyTo = null, fromEmail = null) =>
         
         const fromName = process.env.MAILGUN_FROM_NAME || 'ANDRON Game';
         
-        safeLog('debug', 'Mail gönderme başlatılıyor', {
-            to,
-            from: `${fromName} <${fromAddress}>`,
-            domain: process.env.MAILGUN_DOMAIN,
-            hasApiKey: !!process.env.MAILGUN_API_KEY,
-            environment: process.env.NODE_ENV
-        });
-        
         const data = {
             from: `${fromName} <${fromAddress}>`,
             to: to,
@@ -68,34 +60,18 @@ const sendEmail = async (to, subject, html, replyTo = null, fromEmail = null) =>
 
         const mailgunPromise = mg.messages.create(process.env.MAILGUN_DOMAIN, data);
         
-        safeLog('debug', 'Mailgun API çağrısı yapılıyor...');
         const result = await Promise.race([mailgunPromise, timeoutPromise]);
         
         if (result && result.id) {
-            safeLog('info', 'E-posta başarıyla gönderildi', {
-                to,
-                messageId: result.id,
-                domain: process.env.MAILGUN_DOMAIN
-            });
             return { success: true, messageId: result.id };
         } else {
-            safeLog('error', 'Mailgun API geçersiz yanıt döndü', { result });
             return { 
                 success: false, 
                 error: 'Mailgun API geçersiz yanıt döndü'
             };
         }
     } catch (error) {
-        safeLog('error', 'E-posta gönderme hatası', {
-            error: error.message,
-            stack: error.stack,
-            to,
-            domain: process.env.MAILGUN_DOMAIN,
-            hasApiKey: !!process.env.MAILGUN_API_KEY,
-            response: error.response?.data || null,
-            status: error.response?.status || null,
-            statusText: error.response?.statusText || null
-        });
+        safeLog('error', 'E-posta gönderme hatası', error);
         
         // Daha detaylı hata mesajı
         let errorMessage = error.message || 'Mailgun servisi hatası';
