@@ -86,7 +86,9 @@ const DefineCompanyAdmin: React.FC = () => {
       });
       const data = await response.json();
       if (data.success) {
-        setAdmins(data.admins);
+        // Super admin'i listeden filtrele
+        const filteredAdmins = data.admins.filter((admin: Admin) => admin.role !== 'superadmin');
+        setAdmins(filteredAdmins);
       } else {
         console.error('❌ API hatası:', data.message);
       }

@@ -656,6 +656,15 @@ const GameSendPage: React.FC = () => {
       return;
     }
 
+    // Super admin değilse kredi kontrolü yap
+    if (!isSuperAdmin) {
+      const creditCost = selectedPlanets.length;
+      if (remainingCredits < creditCost) {
+        showMessage('Hata', `Yetersiz kredi! Mevcut kredi: ${remainingCredits}, Gerekli kredi: ${creditCost}`, 'error');
+        return;
+      }
+    }
+
     try {
       setIsSubmitting(true);
       const primaryPlanet = selectedPlanets[0];
@@ -843,6 +852,17 @@ const GameSendPage: React.FC = () => {
         return;
       }
 
+      // Super admin değilse kredi kontrolü yap
+      if (!isSuperAdmin) {
+        // Toplam kredi maliyetini hesapla
+        const totalCreditCost = allPersons.length * selectedTitlePlanets.length;
+        
+        if (remainingCredits < totalCreditCost) {
+          showMessage('Hata', `Yetersiz kredi! Mevcut kredi: ${remainingCredits}, Gerekli kredi: ${totalCreditCost}`, 'error');
+          return;
+        }
+      }
+
       // Show confirmation
       const confirmMessage = `${allPersons.length} kişiye oyun kodu gönderilecek. Devam etmek istiyor musunuz?`;
       showConfirm('Onay', confirmMessage, (result) => {
@@ -900,6 +920,24 @@ const GameSendPage: React.FC = () => {
       if (allPersons.length === 0) {
         showMessage('Hata', 'Seçilen gruplarda email adresi olan kişi bulunamadı!', 'error');
         return;
+      }
+
+      // Super admin değilse kredi kontrolü yap
+      if (!isSuperAdmin) {
+        // Toplam kredi maliyetini hesapla
+        let totalCreditCost = 0;
+        for (const groupId of selectedGroups) {
+          const group = groups.find(g => g._id === groupId);
+          if (group && group.planets) {
+            const groupPersonCount = group.persons ? group.persons.length : 0;
+            totalCreditCost += groupPersonCount * group.planets.length;
+          }
+        }
+        
+        if (remainingCredits < totalCreditCost) {
+          showMessage('Hata', `Yetersiz kredi! Mevcut kredi: ${remainingCredits}, Gerekli kredi: ${totalCreditCost}`, 'error');
+          return;
+        }
       }
 
       // Show confirmation
