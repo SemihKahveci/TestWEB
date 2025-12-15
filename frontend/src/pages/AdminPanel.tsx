@@ -166,9 +166,11 @@ const AdminPanel: React.FC = () => {
   // Frontend'de anlık filtreleme (akıllı arama)
   useEffect(() => {
     if (searchTerm) {
-      // Frontend'de anlık filtreleme yap
+      // Frontend'de anlık filtreleme yap (isim ve email üzerinde)
+      const searchLower = searchTerm.toLowerCase();
       const filtered = results.filter(result =>
-        result.name && result.name.toLowerCase().includes(searchTerm.toLowerCase())
+        (result.name && result.name.toLowerCase().includes(searchLower)) ||
+        (result.email && result.email.toLowerCase().includes(searchLower))
       );
       setFilteredResults(filtered);
     } else {

@@ -600,7 +600,10 @@ const adminController = {
                 
                 // Search term varsa isim ile filtrele
                 if (searchTerm) {
-                    query.name = { $regex: searchTerm, $options: 'i' };
+                    query.$or = [
+                        { name: { $regex: searchTerm, $options: 'i' } },
+                        { email: { $regex: searchTerm, $options: 'i' } }
+                    ];
                 }
                 
                 // Toplam sayıyı hesapla (filtrelemeden sonra)
