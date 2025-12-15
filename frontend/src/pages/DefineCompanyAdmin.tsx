@@ -231,13 +231,16 @@ const DefineCompanyAdmin: React.FC = () => {
       const data = await response.json();
       if (data.success) {
         setSelectedAdmin(data.admin);
+        const companyName = data.admin.company || '';
         setFormData({
           name: data.admin.name || '',
           email: data.admin.email || '',
-          company: data.admin.company || '',
+          company: companyName,
           companyId: data.admin.companyId || '',
           password: ''
         });
+        // Firma adını dropdown'da göstermek için companySearchTerm'i set et
+        setCompanySearchTerm(companyName);
         setShowEditPopup(true);
       }
     } catch (error) {
