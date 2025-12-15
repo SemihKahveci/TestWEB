@@ -70,7 +70,7 @@ const competencySchema = new mongoose.Schema({
     companyId: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'CompanyManagement',
-        required: true,
+        required: false, // Super admin için optional, normal admin için addCompanyIdToData ile otomatik eklenir
         index: true
     },
     createdAt: {

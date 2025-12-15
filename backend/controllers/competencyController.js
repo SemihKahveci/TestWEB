@@ -138,7 +138,15 @@ const competencyController = {
             }
 
             // Yeni yetkinlik oluştur - companyId otomatik eklenir
-            const dataWithCompanyId = addCompanyIdToData(req, {
+            const adminId = req.admin?._id || req.admin?.id;
+            if (!adminId) {
+                return res.status(401).json({
+                    success: false,
+                    message: 'Yetkilendirme hatası: Admin bilgisi bulunamadı'
+                });
+            }
+
+            const competencyData = {
                 title,
                 customerFocus: {
                     min: parseInt(customerFocusMin),
@@ -156,8 +164,19 @@ const competencyController = {
                     min: parseInt(collaborationMin),
                     max: parseInt(collaborationMax)
                 },
-                createdBy: req.admin._id || req.admin.id
-            });
+                createdBy: adminId
+            };
+
+            const dataWithCompanyId = addCompanyIdToData(req, competencyData);
+            
+            // Normal admin için companyId kontrolü (super admin için kontrol yapılmaz)
+            if (req.admin && req.admin.role !== 'superadmin' && !dataWithCompanyId.companyId) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'Company ID bulunamadı. Lütfen sistem yöneticisine başvurun.'
+                });
+            }
+
             const competency = new Competency(dataWithCompanyId);
 
             await competency.save();
@@ -170,9 +189,10 @@ const competencyController = {
             });
         } catch (error) {
             safeLog('error', 'Yetkinlik oluşturma hatası', error);
+            const errorMessage = getSafeErrorMessage(error);
             res.status(500).json({
                 success: false,
-                message: 'Yetkinlik oluşturulurken bir hata oluştu',
+                message: errorMessage || 'Yetkinlik oluşturulurken bir hata oluştu',
                 error: error.message
             });
         }

@@ -327,14 +327,26 @@ const CompetencySettings: React.FC = () => {
       });
 
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Yetkinlik eklenemedi');
+        let errorMessage = 'Yetkinlik eklenemedi';
+        try {
+          const errorData = await response.json();
+          errorMessage = errorData.message || errorData.error || errorMessage;
+        } catch (parseError) {
+          // JSON parse edilemezse status text'i kullan
+          errorMessage = `Sunucu hatası: ${response.status} ${response.statusText}`;
+        }
+        throw new Error(errorMessage);
       }
 
       const responseData = await response.json();
       
-      // Yeni yetkinliği listeye ekle - form verilerinden oluştur
-      const newCompetency = {
+      // Backend'den dönen _id'yi kontrol et
+      if (!responseData._id && !responseData.competency?._id) {
+        throw new Error('Yetkinlik oluşturuldu ancak ID alınamadı');
+      }
+      
+      // Yeni yetkinliği listeye ekle - backend'den dönen veriyi kullan
+      const newCompetency = responseData.competency || {
         _id: responseData._id || Date.now().toString(),
         title: formData.title,
         customerFocus: {
@@ -362,7 +374,6 @@ const CompetencySettings: React.FC = () => {
       setShowSuccessPopup(true);
       setSuccessMessage('Yetkinlik başarıyla eklendi!');
     } catch (error: any) {
-      console.error('💥 Yetkinlik ekleme hatası:', error);
       setErrorMessage(error.message || 'Yetkinlik eklenirken bir hata oluştu');
       setShowErrorPopup(true);
     } finally {
