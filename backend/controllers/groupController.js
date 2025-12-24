@@ -210,9 +210,13 @@ const updateGroup = async (req, res) => {
         }
 
         // Organizasyon ve kişi güncellemeleri için validation
-        if (organizations !== undefined && persons !== undefined) {
+        // Eğer organizations veya persons gönderilmişse, en az biri dolu olmalı
+        if (organizations !== undefined || persons !== undefined) {
+            const orgsLength = organizations !== undefined ? organizations.length : (group.organizations?.length || 0);
+            const personsLength = persons !== undefined ? persons.length : (group.persons?.length || 0);
+            
             // En az bir organizasyon VEYA en az bir kişi seçilmiş olmalı
-            if (organizations.length === 0 && persons.length === 0) {
+            if (orgsLength === 0 && personsLength === 0) {
                 return res.status(400).json({
                     success: false,
                     message: 'En az bir organizasyon veya kişi seçilmelidir'
@@ -220,11 +224,13 @@ const updateGroup = async (req, res) => {
             }
         }
 
-        if (organizations && organizations.length > 0) {
+        // Organizations güncellemesi - undefined değilse (boş array bile olsa) güncelle
+        if (organizations !== undefined) {
             updateData.organizations = organizations;
         }
 
-        if (persons && persons.length > 0) {
+        // Persons güncellemesi - undefined değilse (boş array bile olsa) güncelle
+        if (persons !== undefined) {
             updateData.persons = persons;
         }
 

@@ -492,6 +492,26 @@ const competencyController = {
                         ...companyFilter
                     });
 
+                    // Eğer mevcut kayıt varsa, tüm değerlerin aynı olup olmadığını kontrol et
+                    if (existingCompetency) {
+                        const isDuplicate = 
+                            existingCompetency.customerFocus?.min === numericValues.customerFocusMin &&
+                            existingCompetency.customerFocus?.max === numericValues.customerFocusMax &&
+                            existingCompetency.uncertaintyManagement?.min === numericValues.uncertaintyMin &&
+                            existingCompetency.uncertaintyManagement?.max === numericValues.uncertaintyMax &&
+                            existingCompetency.influence?.min === numericValues.influenceMin &&
+                            existingCompetency.influence?.max === numericValues.influenceMax &&
+                            existingCompetency.collaboration?.min === numericValues.collaborationMin &&
+                            existingCompetency.collaboration?.max === numericValues.collaborationMax;
+
+                        if (isDuplicate) {
+                            errors.push({
+                                row: rowNumber,
+                                message: 'Bu yetkinlik ayarları zaten mevcut! Aynı bilgilerle tekrar ekleyemezsiniz.'
+                            });
+                            continue;
+                        }
+                    }
 
                     let competency;
                     if (existingCompetency) {

@@ -928,16 +928,9 @@ const Grouping: React.FC = () => {
       return;
     }
 
-    // Organizasyon kontrolü - ZORUNLU
-    if (selectedOrganizations.length === 0) {
-      setErrorMessage('Lütfen en az bir organizasyon seçiniz!');
-      setShowErrorPopup(true);
-      return;
-    }
-
-    // Kişi kontrolü - ZORUNLU
-    if (selectedPersons.length === 0) {
-      setErrorMessage('Lütfen en az bir kişi seçiniz!');
+    // Organizasyon veya Kişi kontrolü - En az biri dolu olmalı
+    if (selectedOrganizations.length === 0 && selectedPersons.length === 0) {
+      setErrorMessage('Lütfen en az bir organizasyon veya kişi seçiniz!');
       setShowErrorPopup(true);
       return;
     }

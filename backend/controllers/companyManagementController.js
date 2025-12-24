@@ -1,4 +1,5 @@
 const CompanyManagement = require('../models/companyManagement');
+const Admin = require('../models/Admin');
 
 exports.createCompany = async (req, res) => {
     try {
@@ -70,6 +71,12 @@ exports.updateCompany = async (req, res) => {
             return res.status(400).json({ success: false, message: 'Geçerli bir email adresi giriniz.' });
         }
         
+        // Önce firma bilgisini al (companyId için)
+        const existingCompany = await CompanyManagement.findOne({ vkn: vkn });
+        if (!existingCompany) {
+            return res.status(404).json({ success: false, message: 'Firma bulunamadı.' });
+        }
+        
         const updatedCompany = await CompanyManagement.findOneAndUpdate(
             { vkn: vkn },
             { firmName, firmMail },
@@ -78,6 +85,14 @@ exports.updateCompany = async (req, res) => {
         
         if (!updatedCompany) {
             return res.status(404).json({ success: false, message: 'Firma bulunamadı.' });
+        }
+        
+        // Firma adı değiştiyse, bu firmaya ait tüm admin kayıtlarındaki company alanını güncelle
+        if (firmName && firmName !== existingCompany.firmName) {
+            await Admin.updateMany(
+                { companyId: existingCompany._id },
+                { $set: { company: firmName } }
+            );
         }
         
         res.json({ success: true, message: 'Firma başarıyla güncellendi.', company: updatedCompany });

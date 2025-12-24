@@ -503,15 +503,53 @@ const CompetencySettings: React.FC = () => {
         body: formData
       });
 
+      // HTTP status koduna göre hata yönetimi
+      if (!response.ok) {
+        if (response.status === 401) {
+          setErrorMessage('Yetkiniz bulunmuyor. Lütfen tekrar giriş yapın.');
+          setShowErrorPopup(true);
+          return;
+        } else if (response.status === 413) {
+          setErrorMessage('Dosya çok büyük. Lütfen daha küçük bir dosya seçin.');
+          setShowErrorPopup(true);
+          return;
+        } else if (response.status === 400) {
+          // Backend'den gelen detaylı hata mesajını kullan
+          const errorResult = await response.json();
+          let errorMessage = errorResult.message || 'Dosya formatı hatalı. Lütfen geçerli bir Excel dosyası seçin.';
+          if (errorResult.errors && errorResult.errors.length > 0) {
+            errorMessage += '\n\nDetaylar:\n';
+            errorResult.errors.forEach((error: any) => {
+              if (typeof error === 'object' && error.row && error.message) {
+                errorMessage += `• Satır ${error.row}: ${error.message}\n`;
+              } else {
+                errorMessage += `• ${error}\n`;
+              }
+            });
+          }
+          setErrorMessage(errorMessage);
+          setShowErrorPopup(true);
+          return;
+        } else {
+          setErrorMessage(`Sunucu hatası (${response.status}). Lütfen tekrar deneyin.`);
+          setShowErrorPopup(true);
+          return;
+        }
+      }
+
       const result = await response.json();
 
       if (result.success) {
         let message = `Başarıyla ${result.importedCount} yetkinlik import edildi!`;
         if (result.errors && result.errors.length > 0) {
-          message += `\n\nHatalar:\n${result.errors.slice(0, 5).join('\n')}`;
-          if (result.errors.length > 5) {
-            message += `\n... ve ${result.errors.length - 5} hata daha`;
-          }
+          message += '\n\nHatalar:\n';
+          result.errors.forEach((error: any) => {
+            if (typeof error === 'object' && error.row && error.message) {
+              message += `• Satır ${error.row}: ${error.message}\n`;
+            } else {
+              message += `• ${error}\n`;
+            }
+          });
         }
         setShowImportPopup(false);
         setShowSuccessPopup(true);
@@ -520,10 +558,14 @@ const CompetencySettings: React.FC = () => {
       } else {
         let errorMessage = result.message || 'Import işlemi başarısız!';
         if (result.errors && result.errors.length > 0) {
-          errorMessage += `\n\nHatalar:\n${result.errors.slice(0, 5).join('\n')}`;
-          if (result.errors.length > 5) {
-            errorMessage += `\n... ve ${result.errors.length - 5} hata daha`;
-          }
+          errorMessage += '\n\nDetaylar:\n';
+          result.errors.forEach((error: any) => {
+            if (typeof error === 'object' && error.row && error.message) {
+              errorMessage += `• Satır ${error.row}: ${error.message}\n`;
+            } else {
+              errorMessage += `• ${error}\n`;
+            }
+          });
         }
         setErrorMessage(errorMessage);
         setShowErrorPopup(true);
@@ -654,15 +696,53 @@ const CompetencySettings: React.FC = () => {
         body: formData
       });
 
+      // HTTP status koduna göre hata yönetimi
+      if (!response.ok) {
+        if (response.status === 401) {
+          setErrorMessage('Yetkiniz bulunmuyor. Lütfen tekrar giriş yapın.');
+          setShowErrorPopup(true);
+          return;
+        } else if (response.status === 413) {
+          setErrorMessage('Dosya çok büyük. Lütfen daha küçük bir dosya seçin.');
+          setShowErrorPopup(true);
+          return;
+        } else if (response.status === 400) {
+          // Backend'den gelen detaylı hata mesajını kullan
+          const errorResult = await response.json();
+          let errorMessage = errorResult.message || 'Dosya formatı hatalı. Lütfen geçerli bir Excel dosyası seçin.';
+          if (errorResult.errors && errorResult.errors.length > 0) {
+            errorMessage += '\n\nDetaylar:\n';
+            errorResult.errors.forEach((error: any) => {
+              if (typeof error === 'object' && error.row && error.message) {
+                errorMessage += `• Satır ${error.row}: ${error.message}\n`;
+              } else {
+                errorMessage += `• ${error}\n`;
+              }
+            });
+          }
+          setErrorMessage(errorMessage);
+          setShowErrorPopup(true);
+          return;
+        } else {
+          setErrorMessage(`Sunucu hatası (${response.status}). Lütfen tekrar deneyin.`);
+          setShowErrorPopup(true);
+          return;
+        }
+      }
+
       const result = await response.json();
 
       if (result.success) {
         let message = `Başarıyla ${result.importedCount} yetkinlik import edildi!`;
         if (result.errors && result.errors.length > 0) {
-          message += `\n\nHatalar:\n${result.errors.slice(0, 5).join('\n')}`;
-          if (result.errors.length > 5) {
-            message += `\n... ve ${result.errors.length - 5} hata daha`;
-          }
+          message += '\n\nHatalar:\n';
+          result.errors.forEach((error: any) => {
+            if (typeof error === 'object' && error.row && error.message) {
+              message += `• Satır ${error.row}: ${error.message}\n`;
+            } else {
+              message += `• ${error}\n`;
+            }
+          });
         }
         setSuccessMessage(message);
         setShowSuccessPopup(true);
@@ -670,7 +750,18 @@ const CompetencySettings: React.FC = () => {
         setSelectedFile(null);
         loadCompetencies();
       } else {
-        setErrorMessage(result.message || 'Import işlemi başarısız!');
+        let errorMessage = result.message || 'Import işlemi başarısız!';
+        if (result.errors && result.errors.length > 0) {
+          errorMessage += '\n\nDetaylar:\n';
+          result.errors.forEach((error: any) => {
+            if (typeof error === 'object' && error.row && error.message) {
+              errorMessage += `• Satır ${error.row}: ${error.message}\n`;
+            } else {
+              errorMessage += `• ${error}\n`;
+            }
+          });
+        }
+        setErrorMessage(errorMessage);
         setShowErrorPopup(true);
       }
     } catch (error) {
