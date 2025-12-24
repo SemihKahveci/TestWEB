@@ -317,17 +317,28 @@ const Grouping: React.FC = () => {
         if (result.success) {
           const persons: Person[] = [];
           
-          // Sadece ad soyadları topla (benzersiz değerler)
-          const adSoyadlar = [...new Set(result.authorizations?.map((auth: any) => auth.personName).filter(Boolean) || [])] as string[];
+          // Tüm kişileri al (aynı isimdeki kişileri de dahil et)
+          const authorizations = result.authorizations || [];
           
-          // Alfabetik sıralama (Türkçe karakter desteği ile)
-          adSoyadlar.sort((a, b) => a.localeCompare(b, 'tr'));
+          // Her kişiyi ekle (isim - sicil no formatında)
+          authorizations.forEach((auth: any) => {
+            if (auth.personName) {
+              const sicilNo = auth.sicilNo || '';
+              const label = sicilNo ? `${auth.personName} - ${sicilNo}` : auth.personName;
+              const value = sicilNo ? `personName:${auth.personName}:sicilNo:${sicilNo}` : `personName:${auth.personName}`;
+              
+              persons.push({
+                value: value,
+                label: label
+              });
+            }
+          });
           
-          adSoyadlar.forEach(value => {
-            persons.push({
-              value: `personName:${value}`,
-              label: value
-            });
+          // Alfabetik sıralama (Türkçe karakter desteği ile) - isme göre
+          persons.sort((a, b) => {
+            const nameA = a.label.split(' - ')[0];
+            const nameB = b.label.split(' - ')[0];
+            return nameA.localeCompare(nameB, 'tr');
           });
           
           setPersons(persons);
@@ -398,15 +409,16 @@ const Grouping: React.FC = () => {
       
       const authorizations = authResult.authorizations || [];
       
-      // Bu pozisyonlara sahip tüm kişileri bul
+      // Bu pozisyonlara sahip tüm kişileri bul (tüm kişileri göster, tekrarları kaldırma)
       const matchingPersons = authorizations
         .filter((auth: any) => orgPositions.includes(auth.title))
-        .map((auth: any) => auth.personName)
-        .filter(Boolean)
-        .filter((name: string, index: number, arr: string[]) => arr.indexOf(name) === index); // Tekrarları kaldır
+        .filter((auth: any) => auth.personName); // Sadece personName'i olanları al
       
-      // Bu kişileri otomatik olarak seçili kişilere ekle
-      const newPersonValues = matchingPersons.map(name => `personName:${name}`);
+      // Bu kişileri otomatik olarak seçili kişilere ekle (isim - sicil no formatında)
+      const newPersonValues = matchingPersons.map((auth: any) => {
+        const sicilNo = auth.sicilNo || '';
+        return sicilNo ? `personName:${auth.personName}:sicilNo:${sicilNo}` : `personName:${auth.personName}`;
+      });
       const uniqueNewPersons = newPersonValues.filter(personValue => !selectedPersons.includes(personValue));
       
       if (uniqueNewPersons.length > 0) {
@@ -478,15 +490,16 @@ const Grouping: React.FC = () => {
       
       const authorizations = authResult.authorizations || [];
       
-      // Bu pozisyonlara sahip tüm kişileri bul
+      // Bu pozisyonlara sahip tüm kişileri bul (tüm kişileri göster, tekrarları kaldırma)
       const matchingPersons = authorizations
         .filter((auth: any) => orgPositions.includes(auth.title))
-        .map((auth: any) => auth.personName)
-        .filter(Boolean)
-        .filter((name: string, index: number, arr: string[]) => arr.indexOf(name) === index); // Tekrarları kaldır
+        .filter((auth: any) => auth.personName); // Sadece personName'i olanları al
       
-      // Bu kişileri seçili kişiler listesinden kaldır
-      const personValuesToRemove = matchingPersons.map(name => `personName:${name}`);
+      // Bu kişileri seçili kişiler listesinden kaldır (isim - sicil no formatında)
+      const personValuesToRemove = matchingPersons.map((auth: any) => {
+        const sicilNo = auth.sicilNo || '';
+        return sicilNo ? `personName:${auth.personName}:sicilNo:${sicilNo}` : `personName:${auth.personName}`;
+      });
       
       setSelectedPersons(prev => {
         const remainingPersons = prev.filter(personValue => !personValuesToRemove.includes(personValue));
@@ -629,6 +642,32 @@ const Grouping: React.FC = () => {
       
       setFilteredPersons(filtered);
     }
+  };
+
+  // Person value'dan label'ı bul (isim - sicil no formatında)
+  const getPersonLabel = (personValue: string): string => {
+    const person = persons.find(p => p.value === personValue);
+    if (person) {
+      return person.label;
+    }
+    // Eğer persons listesinde bulunamazsa, value'dan parse et
+    if (personValue.includes('sicilNo:')) {
+      const parts = personValue.split(':');
+      const nameIndex = parts.indexOf('personName');
+      const sicilIndex = parts.indexOf('sicilNo');
+      if (nameIndex !== -1 && sicilIndex !== -1) {
+        const name = parts[nameIndex + 1];
+        const sicilNo = parts[sicilIndex + 1];
+        return `${name} - ${sicilNo}`;
+      }
+    } else if (personValue.includes('personName:')) {
+      const parts = personValue.split(':');
+      const nameIndex = parts.indexOf('personName');
+      if (nameIndex !== -1) {
+        return parts[nameIndex + 1];
+      }
+    }
+    return personValue;
   };
 
   const handlePersonSelect = (personValue: string) => {
@@ -2159,7 +2198,7 @@ const Grouping: React.FC = () => {
                             gap: '6px'
                           }}
                         >
-                          {person.split(':')[1]}
+                          {getPersonLabel(person)}
                           {autoPersons.includes(person) && (
                             <i className="fas fa-magic" style={{ fontSize: '8px' }}></i>
                           )}
@@ -2814,7 +2853,7 @@ const Grouping: React.FC = () => {
                             gap: '6px'
                           }}
                         >
-                          {person.split(':')[1]}
+                          {getPersonLabel(person)}
                           {autoPersons.includes(person) && (
                             <i className="fas fa-magic" style={{ fontSize: '8px' }}></i>
                           )}
@@ -3235,7 +3274,7 @@ const Grouping: React.FC = () => {
                     gap: '8px'
                   }}>
                     {selectedGroup.persons.map((person, index) => {
-                      const displayValue = person.includes(':') ? person.split(':')[1] : person;
+                      const displayValue = getPersonLabel(person);
                       return (
                         <span key={index} style={{
                           background: '#E9ECEF',

@@ -5,7 +5,6 @@ const authorizationSchema = new mongoose.Schema({
         type: String,
         required: [true, 'Sicil numarası gereklidir'],
         trim: true,
-        unique: true,
         maxlength: [20, 'Sicil numarası 20 karakterden fazla olamaz']
     },
     personName: {
@@ -53,6 +52,14 @@ const authorizationSchema = new mongoose.Schema({
 authorizationSchema.index({ personName: 1 });
 authorizationSchema.index({ email: 1 });
 authorizationSchema.index({ title: 1 });
+
+// Multi-tenant: companyId + sicilNo composite unique index
+// Böylece aynı company içinde sicilNo unique olur, farklı company'lerde aynı sicilNo kullanılabilir
+authorizationSchema.index({ companyId: 1, sicilNo: 1 }, { unique: true, sparse: true });
+
+// Multi-tenant: companyId + email composite unique index
+// Böylece aynı company içinde email unique olur, farklı company'lerde aynı email kullanılabilir
+authorizationSchema.index({ companyId: 1, email: 1 }, { unique: true, sparse: true });
 
 // Virtual field for formatted dates
 authorizationSchema.virtual('formattedCreatedAt').get(function() {

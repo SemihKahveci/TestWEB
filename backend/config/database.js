@@ -70,8 +70,25 @@ const setupConnectionListeners = () => {
         safeLog('debug', '🔒 MongoDB bağlantısı kapatıldı');
     });
 
-    mongoose.connection.on('open', () => {
+    mongoose.connection.on('open', async () => {
         safeLog('debug', '🚀 MongoDB bağlantısı açık ve hazır');
+        
+        // Eski Authorization index'lerini kaldır (migration)
+        try {
+            const Authorization = require('../models/Authorization');
+            const indexes = await Authorization.collection.getIndexes();
+            
+            // Eski sicilNo_1 unique index'ini kaldır (eğer varsa)
+            if (indexes.sicilNo_1) {
+                await Authorization.collection.dropIndex('sicilNo_1');
+                safeLog('debug', '✅ Eski sicilNo_1 unique index kaldırıldı');
+            }
+        } catch (err) {
+            // Index zaten yoksa veya başka bir hata varsa sessizce devam et
+            if (err.code !== 27 && err.code !== 'IndexNotFound') { // 27 = IndexNotFound
+                safeLog('warn', '⚠️ Index kaldırma hatası:', err.message);
+            }
+        }
     });
 };
 

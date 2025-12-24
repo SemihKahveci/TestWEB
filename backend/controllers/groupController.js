@@ -433,18 +433,24 @@ const getMatchingPersonsByOrganizations = async (req, res) => {
             });
         }
 
-        // Bu pozisyonlardaki kişileri bul
+        // Bu pozisyonlardaki kişileri bul (tüm kişileri göster, tekrarları kaldırma)
         const matchingPersons = await Authorization.find({
             title: { $in: positions }
-        }).select('personName email title');
+        }).select('personName email title sicilNo');
 
-        // Kişileri formatla
-        const formattedPersons = matchingPersons.map(person => ({
-            value: `personName:${person.personName}`,
-            label: person.personName,
-            email: person.email,
-            title: person.title
-        }));
+        // Kişileri formatla (isim - sicil no formatında)
+        const formattedPersons = matchingPersons.map(person => {
+            const sicilNo = person.sicilNo || '';
+            const label = sicilNo ? `${person.personName} - ${sicilNo}` : person.personName;
+            const value = sicilNo ? `personName:${person.personName}:sicilNo:${sicilNo}` : `personName:${person.personName}`;
+            
+            return {
+                value: value,
+                label: label,
+                email: person.email,
+                title: person.title
+            };
+        });
 
         res.json({
             success: true,
