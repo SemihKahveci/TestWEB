@@ -45,6 +45,7 @@ const Grouping: React.FC = () => {
   const [showAddPopup, setShowAddPopup] = useState(false);
   const [showEditPopup, setShowEditPopup] = useState(false);
   const [showDeletePopup, setShowDeletePopup] = useState(false);
+  const [showBulkDeletePopup, setShowBulkDeletePopup] = useState(false);
   const [showDetailsPopup, setShowDetailsPopup] = useState(false);
   const [showSuccessPopup, setShowSuccessPopup] = useState(false);
   const [showErrorPopup, setShowErrorPopup] = useState(false);
@@ -53,6 +54,7 @@ const Grouping: React.FC = () => {
   
   // Form states
   const [selectedGroup, setSelectedGroup] = useState<Group | null>(null);
+  const [selectedItems, setSelectedItems] = useState<string[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   const [formData, setFormData] = useState({
@@ -134,6 +136,11 @@ const Grouping: React.FC = () => {
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
+
+  // Sayfa değiştiğinde seçimleri temizle
+  useEffect(() => {
+    setSelectedItems([]);
+  }, [currentPage]);
 
   // Sayfa yüklendiğinde scroll pozisyonunu geri yükle
   useEffect(() => {
@@ -951,6 +958,72 @@ const Grouping: React.FC = () => {
     setShowDeletePopup(true);
   };
 
+  // Checkbox seçim fonksiyonları
+  const handleSelectItem = (id: string) => {
+    setSelectedItems(prev => 
+      prev.includes(id) 
+        ? prev.filter(item => item !== id)
+        : [...prev, id]
+    );
+  };
+
+  const handleSelectAll = () => {
+    const visibleGroups = filteredGroups;
+    if (selectedItems.length === visibleGroups.length) {
+      setSelectedItems([]);
+    } else {
+      setSelectedItems(visibleGroups.map(group => group._id));
+    }
+  };
+
+  const handleBulkDelete = () => {
+    if (selectedItems.length === 0) {
+      setErrorMessage('Lütfen silmek istediğiniz kayıtları seçiniz!');
+      setShowErrorPopup(true);
+      return;
+    }
+    setShowBulkDeletePopup(true);
+  };
+
+  const confirmBulkDelete = async () => {
+    if (selectedItems.length === 0) return;
+    
+    try {
+      setIsSubmitting(true);
+      // Her bir grubu tek tek sil
+      const deletePromises = selectedItems.map(id => {
+        return fetch(`/api/group/${id}`, {
+          method: 'DELETE',
+          credentials: 'include'
+        });
+      });
+      
+      const responses = await Promise.all(deletePromises);
+      
+      // Tüm silme işlemlerinin başarılı olduğunu kontrol et
+      const failedDeletes = responses.filter(response => !response.ok);
+      if (failedDeletes.length > 0) {
+        throw new Error(`${failedDeletes.length} grup silinemedi`);
+      }
+
+      // Başarılı silme sonrası
+      setShowBulkDeletePopup(false);
+      setSelectedItems([]);
+      
+      // Veriyi yeniden yükle
+      await loadGroups();
+      
+      setSuccessMessage(`${selectedItems.length} grup başarıyla silindi.`);
+      setShowSuccessPopup(true);
+    } catch (error: any) {
+      console.error('Toplu silme hatası:', error);
+      setErrorMessage(error.message || 'Toplu silme işlemi sırasında bir hata oluştu');
+      setShowErrorPopup(true);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   const handleViewDetails = (group: Group) => {
     setSelectedGroup(group);
     setShowDetailsPopup(true);
@@ -1572,6 +1645,27 @@ const Grouping: React.FC = () => {
           )}
         </div>
         <div style={{ display: 'flex', gap: '12px' }}>
+          {selectedItems.length > 0 && (
+            <button
+              onClick={handleBulkDelete}
+              style={{
+                backgroundColor: '#DC3545',
+                color: 'white',
+                border: 'none',
+                borderRadius: '6px',
+                padding: '10px 20px',
+                fontSize: '14px',
+                fontWeight: 600,
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px'
+              }}
+            >
+              <i className="fas fa-trash"></i>
+              Toplu Sil ({selectedItems.length})
+            </button>
+          )}
           <button
             onClick={handleAddGroup}
             style={{
@@ -1635,6 +1729,60 @@ const Grouping: React.FC = () => {
                   <tr style={{ backgroundColor: '#F8F9FA' }}>
                     <th style={{
                       padding: '16px',
+                      textAlign: 'center',
+                      color: '#232D42',
+                      fontSize: '14px',
+                      fontFamily: 'Montserrat',
+                      fontWeight: 700,
+                      width: '50px'
+                    }}>
+                      <label style={{
+                        position: 'relative',
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        cursor: 'pointer'
+                      }}>
+                        <input
+                          type="checkbox"
+                          checked={selectedItems.length > 0 && selectedItems.length === filteredGroups.length}
+                          onChange={handleSelectAll}
+                          style={{
+                            opacity: 0,
+                            position: 'absolute',
+                            cursor: 'pointer',
+                            height: 0,
+                            width: 0
+                          }}
+                        />
+                        <span style={{
+                          position: 'relative',
+                          display: 'inline-block',
+                          width: '18px',
+                          height: '18px',
+                          backgroundColor: selectedItems.length > 0 && selectedItems.length === filteredGroups.length ? '#0286F7' : 'white',
+                          border: `2px solid ${selectedItems.length > 0 && selectedItems.length === filteredGroups.length ? '#0286F7' : '#E9ECEF'}`,
+                          borderRadius: '4px',
+                          transition: 'all 0.3s ease',
+                          transform: selectedItems.length > 0 && selectedItems.length === filteredGroups.length ? 'scale(1.1)' : 'scale(1)'
+                        }}>
+                          {selectedItems.length > 0 && selectedItems.length === filteredGroups.length && (
+                            <span style={{
+                              position: 'absolute',
+                              display: 'block',
+                              left: '4px',
+                              top: '1px',
+                              width: '6px',
+                              height: '10px',
+                              border: 'solid white',
+                              borderWidth: '0 2px 2px 0',
+                              transform: 'rotate(40deg)'
+                            }} />
+                          )}
+                        </span>
+                      </label>
+                    </th>
+                    <th style={{
+                      padding: '16px',
                       textAlign: 'left',
                       color: '#232D42',
                       fontSize: '14px',
@@ -1678,7 +1826,7 @@ const Grouping: React.FC = () => {
                 <tbody>
                   {searchTerm && (
                     <tr>
-                      <td colSpan={4} style={{
+                      <td colSpan={5} style={{
                         padding: '12px 16px',
                         backgroundColor: '#F8FAFC',
                         borderBottom: '1px solid #E2E8F0',
@@ -1702,6 +1850,55 @@ const Grouping: React.FC = () => {
                     onMouseLeave={(e) => {
                       (e.currentTarget as HTMLTableRowElement).style.backgroundColor = 'white';
                     }}>
+                      <td style={{
+                        padding: '16px',
+                        textAlign: 'center'
+                      }}>
+                        <label style={{
+                          position: 'relative',
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          cursor: 'pointer'
+                        }}>
+                          <input
+                            type="checkbox"
+                            checked={selectedItems.includes(group._id)}
+                            onChange={() => handleSelectItem(group._id)}
+                            style={{
+                              opacity: 0,
+                              position: 'absolute',
+                              cursor: 'pointer',
+                              height: 0,
+                              width: 0
+                            }}
+                          />
+                          <span style={{
+                            position: 'relative',
+                            display: 'inline-block',
+                            width: '18px',
+                            height: '18px',
+                            backgroundColor: selectedItems.includes(group._id) ? '#0286F7' : 'white',
+                            border: `2px solid ${selectedItems.includes(group._id) ? '#0286F7' : '#E9ECEF'}`,
+                            borderRadius: '4px',
+                            transition: 'all 0.3s ease',
+                            transform: selectedItems.includes(group._id) ? 'scale(1.1)' : 'scale(1)'
+                          }}>
+                            {selectedItems.includes(group._id) && (
+                              <span style={{
+                                position: 'absolute',
+                                display: 'block',
+                                left: '4px',
+                                top: '1px',
+                                width: '6px',
+                                height: '10px',
+                                border: 'solid white',
+                                borderWidth: '0 2px 2px 0',
+                                transform: 'rotate(40deg)'
+                              }} />
+                            )}
+                          </span>
+                        </label>
+                      </td>
                       <td style={{
                         padding: '16px',
                         color: '#232D42',
@@ -3357,6 +3554,101 @@ const Grouping: React.FC = () => {
                 }}
               >
                 Kapat
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Bulk Delete Popup */}
+      {showBulkDeletePopup && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          backgroundColor: 'rgba(0, 0, 0, 0.5)',
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+          zIndex: 1000
+        }}>
+          <div style={{
+            backgroundColor: 'white',
+            borderRadius: '12px',
+            padding: '24px',
+            width: '90%',
+            maxWidth: '400px',
+            boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1)'
+          }}>
+            <div style={{ textAlign: 'center', marginBottom: '24px' }}>
+              <div style={{
+                width: '48px',
+                height: '48px',
+                backgroundColor: '#FEE2E2',
+                borderRadius: '50%',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                margin: '0 auto 16px auto'
+              }}>
+                <i className="fas fa-exclamation-triangle" style={{ color: '#DC2626', fontSize: '24px' }}></i>
+              </div>
+              <h3 style={{
+                fontSize: '18px',
+                fontWeight: '700',
+                color: '#1F2937',
+                marginBottom: '12px'
+              }}>
+                Toplu Silme
+              </h3>
+              <p style={{
+                fontSize: '14px',
+                color: '#6B7280',
+                marginBottom: '24px'
+              }}>
+                {selectedItems.length} adet grubu silmek istediğinizden emin misiniz? Bu işlem geri alınamaz.
+              </p>
+            </div>
+            <div style={{
+              display: 'flex',
+              gap: '12px',
+              justifyContent: 'center'
+            }}>
+              <button
+                onClick={() => setShowBulkDeletePopup(false)}
+                disabled={isSubmitting}
+                style={{
+                  padding: '10px 20px',
+                  border: '2px solid #E5E7EB',
+                  borderRadius: '8px',
+                  backgroundColor: 'white',
+                  color: '#6B7280',
+                  fontSize: '14px',
+                  fontWeight: 600,
+                  cursor: isSubmitting ? 'not-allowed' : 'pointer',
+                  fontFamily: 'Inter'
+                }}
+              >
+                Hayır
+              </button>
+              <button
+                onClick={confirmBulkDelete}
+                disabled={isSubmitting}
+                style={{
+                  padding: '10px 20px',
+                  border: 'none',
+                  borderRadius: '8px',
+                  backgroundColor: '#DC2626',
+                  color: 'white',
+                  fontSize: '14px',
+                  fontWeight: 600,
+                  cursor: isSubmitting ? 'not-allowed' : 'pointer',
+                  fontFamily: 'Inter'
+                }}
+              >
+                {isSubmitting ? 'Siliniyor...' : 'Evet, Sil'}
               </button>
             </div>
           </div>

@@ -71,6 +71,8 @@ const AdminPanel: React.FC = () => {
     type: 'info' as 'success' | 'error' | 'warning' | 'info'
   });
   const [selectedUser, setSelectedUser] = useState<UserResult | null>(null);
+  const [selectedItems, setSelectedItems] = useState<string[]>([]);
+  const [showBulkDeletePopup, setShowBulkDeletePopup] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   const [pdfOptions, setPdfOptions] = useState<PDFOptions>({
     generalEvaluation: true,
@@ -200,6 +202,11 @@ const AdminPanel: React.FC = () => {
     // Search/filter değiştiğinde sayfayı 1'e resetle
     setCurrentPage(1);
   }, [debouncedSearchTerm, statusFilter, showExpiredWarning]);
+
+  // Sayfa değiştiğinde seçimleri temizle
+  useEffect(() => {
+    setSelectedItems([]);
+  }, [currentPage]);
 
   const getStatusBadge = (status: string) => {
     const statusClasses = {
@@ -518,6 +525,73 @@ const AdminPanel: React.FC = () => {
     // Cevaplar popup'ını aç
   };
 
+  // Checkbox seçim fonksiyonları
+  const handleSelectItem = (code: string) => {
+    setSelectedItems(prev => 
+      prev.includes(code) 
+        ? prev.filter(item => item !== code)
+        : [...prev, code]
+    );
+  };
+
+  const handleSelectAll = () => {
+    const visibleResults = paginatedResults.filter(result => {
+      return showExpiredWarning || result.status !== 'Süresi Doldu';
+    });
+    
+    if (selectedItems.length === visibleResults.length) {
+      setSelectedItems([]);
+    } else {
+      setSelectedItems(visibleResults.map(r => r.code));
+    }
+  };
+
+  const handleBulkDelete = () => {
+    if (selectedItems.length === 0) {
+      showMessage('Uyarı', 'Lütfen silmek istediğiniz kayıtları seçiniz!', 'warning');
+      return;
+    }
+    setShowBulkDeletePopup(true);
+  };
+
+  const confirmBulkDelete = async () => {
+    if (selectedItems.length === 0) return;
+    
+    try {
+      // Her bir kaydı tek tek sil
+      const deletePromises = selectedItems.map(code => 
+        fetch(`${API_BASE_URL}/api/delete-result`, {
+          method: 'DELETE',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          credentials: 'include',
+          body: JSON.stringify({ code })
+        })
+      );
+      
+      const responses = await Promise.all(deletePromises);
+      
+      // Tüm silme işlemlerinin başarılı olduğunu kontrol et
+      const failedDeletes = responses.filter(response => !response.ok);
+      if (failedDeletes.length > 0) {
+        throw new Error(`${failedDeletes.length} kayıt silinemedi`);
+      }
+
+      // Başarılı silme sonrası
+      setShowBulkDeletePopup(false);
+      setSelectedItems([]);
+      
+      // Veriyi yeniden yükle
+      await loadData();
+      
+      showMessage('Başarılı', `${selectedItems.length} değerlendirme başarıyla silindi.`, 'success');
+    } catch (error) {
+      console.error('Toplu silme hatası:', error);
+      showMessage('Hata', 'Toplu silme işlemi sırasında bir hata oluştu: ' + (error as Error).message, 'error');
+    }
+  };
+
   // Modal functions
   const showMessage = (title: string, message: string, type: 'success' | 'error' | 'warning' | 'info') => {
     setMessageModal({ title, message, type });
@@ -710,6 +784,36 @@ const AdminPanel: React.FC = () => {
           alignItems: 'center',
           gap: '16px'
         }}>
+          {/* Toplu Silme Button */}
+          {selectedItems.length > 0 && (
+            <button
+              onClick={handleBulkDelete}
+              style={{
+                background: '#DC3545',
+                color: 'white',
+                border: 'none',
+                padding: '8px 16px',
+                borderRadius: '8px',
+                cursor: 'pointer',
+                fontWeight: 500,
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+                transition: 'background-color 0.3s',
+                fontFamily: 'Inter'
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.backgroundColor = '#C82333';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.backgroundColor = '#DC3545';
+              }}
+            >
+              <i className="fas fa-trash"></i>
+              Toplu Sil ({selectedItems.length})
+            </button>
+          )}
+
           {/* Refresh Button */}
           <button
             onClick={() => loadData(true)}
@@ -833,6 +937,71 @@ const AdminPanel: React.FC = () => {
                   fontWeight: 600,
                   color: '#232D42',
                   fontFamily: 'Inter',
+                  borderRight: '1px solid #E9ECEF',
+                  width: '50px'
+                }}>
+                  <label style={{
+                    position: 'relative',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    cursor: 'pointer'
+                  }}>
+                    <input
+                      type="checkbox"
+                      checked={selectedItems.length > 0 && selectedItems.length === paginatedResults.filter(result => {
+                        return showExpiredWarning || result.status !== 'Süresi Doldu';
+                      }).length}
+                      onChange={handleSelectAll}
+                      style={{
+                        opacity: 0,
+                        position: 'absolute',
+                        cursor: 'pointer',
+                        height: 0,
+                        width: 0
+                      }}
+                    />
+                    <span style={{
+                      position: 'relative',
+                      display: 'inline-block',
+                      width: '18px',
+                      height: '18px',
+                      backgroundColor: selectedItems.length > 0 && selectedItems.length === paginatedResults.filter(result => {
+                        return showExpiredWarning || result.status !== 'Süresi Doldu';
+                      }).length ? '#0286F7' : 'white',
+                      border: `2px solid ${selectedItems.length > 0 && selectedItems.length === paginatedResults.filter(result => {
+                        return showExpiredWarning || result.status !== 'Süresi Doldu';
+                      }).length ? '#0286F7' : '#E9ECEF'}`,
+                      borderRadius: '4px',
+                      transition: 'all 0.3s ease',
+                      transform: selectedItems.length > 0 && selectedItems.length === paginatedResults.filter(result => {
+                        return showExpiredWarning || result.status !== 'Süresi Doldu';
+                      }).length ? 'scale(1.1)' : 'scale(1)'
+                    }}>
+                      {selectedItems.length > 0 && selectedItems.length === paginatedResults.filter(result => {
+                        return showExpiredWarning || result.status !== 'Süresi Doldu';
+                      }).length && (
+                        <span style={{
+                          position: 'absolute',
+                          display: 'block',
+                          left: '4px',
+                          top: '1px',
+                          width: '6px',
+                          height: '10px',
+                          border: 'solid white',
+                          borderWidth: '0 2px 2px 0',
+                          transform: 'rotate(40deg)'
+                        }} />
+                      )}
+                    </span>
+                  </label>
+                </th>
+                <th style={{
+                  padding: '16px',
+                  textAlign: 'center',
+                  fontSize: '14px',
+                  fontWeight: 600,
+                  color: '#232D42',
+                  fontFamily: 'Inter',
                   borderRight: '1px solid #E9ECEF'
                 }}>Ad Soyad</th>
                 <th style={{
@@ -909,6 +1078,60 @@ const AdminPanel: React.FC = () => {
                     borderBottom: '1px solid #F1F3F4',
                     background: index % 2 === 0 ? '#E3F2FD' : 'white'
                   }}>
+                  <td style={{
+                    padding: '16px',
+                    fontSize: '14px',
+                    color: '#232D42',
+                    fontFamily: 'Inter',
+                    fontWeight: 500,
+                    borderRight: '1px solid #E9ECEF',
+                    textAlign: 'center'
+                  }}>
+                    <label style={{
+                      position: 'relative',
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      cursor: 'pointer'
+                    }}>
+                      <input
+                        type="checkbox"
+                        checked={selectedItems.includes(result.code)}
+                        onChange={() => handleSelectItem(result.code)}
+                        style={{
+                          opacity: 0,
+                          position: 'absolute',
+                          cursor: 'pointer',
+                          height: 0,
+                          width: 0
+                        }}
+                      />
+                      <span style={{
+                        position: 'relative',
+                        display: 'inline-block',
+                        width: '18px',
+                        height: '18px',
+                        backgroundColor: selectedItems.includes(result.code) ? '#0286F7' : 'white',
+                        border: `2px solid ${selectedItems.includes(result.code) ? '#0286F7' : '#E9ECEF'}`,
+                        borderRadius: '4px',
+                        transition: 'all 0.3s ease',
+                        transform: selectedItems.includes(result.code) ? 'scale(1.1)' : 'scale(1)'
+                      }}>
+                        {selectedItems.includes(result.code) && (
+                          <span style={{
+                            position: 'absolute',
+                            display: 'block',
+                            left: '4px',
+                            top: '1px',
+                            width: '6px',
+                            height: '10px',
+                            border: 'solid white',
+                            borderWidth: '0 2px 2px 0',
+                            transform: 'rotate(40deg)'
+                          }} />
+                        )}
+                      </span>
+                    </label>
+                  </td>
                   <td style={{
                     padding: '16px',
                     fontSize: '14px',
@@ -1918,6 +2141,110 @@ const AdminPanel: React.FC = () => {
               </button>
               <button
                 onClick={confirmDelete}
+                style={{
+                  padding: '8px 16px',
+                  background: '#DC2626',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '4px',
+                  cursor: 'pointer',
+                  fontSize: '14px',
+                  fontFamily: 'Inter',
+                  fontWeight: 500
+                }}
+              >
+                Evet, Sil
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Bulk Delete Popup */}
+      {showBulkDeletePopup && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          width: '100%',
+          height: '100%',
+          background: 'rgba(0, 0, 0, 0.5)',
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+          zIndex: 1000
+        }}>
+          <div style={{
+            width: '400px',
+            background: 'white',
+            borderRadius: '10px',
+            display: 'flex',
+            flexDirection: 'column',
+            overflow: 'hidden'
+          }}>
+            <div style={{
+              padding: '20px',
+              borderBottom: '1px solid #E9ECEF',
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              background: '#F8F9FA'
+            }}>
+              <div style={{
+                fontSize: '18px',
+                fontWeight: 600,
+                color: '#232D42'
+              }}>
+                Toplu Silme
+              </div>
+              <div
+                onClick={() => setShowBulkDeletePopup(false)}
+                style={{
+                  cursor: 'pointer',
+                  fontSize: '24px',
+                  color: '#666'
+                }}
+              >
+                ×
+              </div>
+            </div>
+            <div style={{
+              flex: 1,
+              padding: '20px',
+              overflowY: 'auto'
+            }}>
+              <p style={{ fontSize: '14px', color: '#232D42', marginBottom: '8px' }}>
+                {selectedItems.length} adet sonucu silmek istediğinizden emin misiniz?
+              </p>
+              <p style={{ fontSize: '12px', color: '#DC2626', fontWeight: 500 }}>
+                Bu işlem geri alınamaz ve seçili sonuçlar kalıcı olarak silinecektir.
+              </p>
+            </div>
+            <div style={{
+              padding: '20px',
+              borderTop: '1px solid #E9ECEF',
+              display: 'flex',
+              gap: '12px',
+              justifyContent: 'flex-end'
+            }}>
+              <button
+                onClick={() => setShowBulkDeletePopup(false)}
+                style={{
+                  padding: '8px 16px',
+                  background: '#6C757D',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '4px',
+                  cursor: 'pointer',
+                  fontSize: '14px',
+                  fontFamily: 'Inter',
+                  fontWeight: 500
+                }}
+              >
+                Hayır
+              </button>
+              <button
+                onClick={confirmBulkDelete}
                 style={{
                   padding: '8px 16px',
                   background: '#DC2626',

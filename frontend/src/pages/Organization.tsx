@@ -38,12 +38,14 @@ const Organization: React.FC = () => {
   const [showAddPopup, setShowAddPopup] = useState(false);
   const [showEditPopup, setShowEditPopup] = useState(false);
   const [showDeletePopup, setShowDeletePopup] = useState(false);
+  const [showBulkDeletePopup, setShowBulkDeletePopup] = useState(false);
   const [showImportPopup, setShowImportPopup] = useState(false);
   const [showSuccessPopup, setShowSuccessPopup] = useState(false);
   const [showErrorPopup, setShowErrorPopup] = useState(false);
   const [successMessage, setSuccessMessage] = useState('');
   const [errorMessage, setErrorMessage] = useState('');
   const [selectedOrganization, setSelectedOrganization] = useState<Organization | null>(null);
+  const [selectedItems, setSelectedItems] = useState<string[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [isMobile, setIsMobile] = useState(false);
@@ -95,6 +97,11 @@ const Organization: React.FC = () => {
     return () => clearTimeout(timer);
   }, [searchTerm]);
 
+  // Sayfa değiştiğinde seçimleri temizle
+  useEffect(() => {
+    setSelectedItems([]);
+  }, [currentPage]);
+
   const loadOrganizations = async () => {
     try {
       setIsLoading(true);
@@ -143,6 +150,63 @@ const Organization: React.FC = () => {
   const handleDeleteOrganization = (organization: Organization) => {
     setSelectedOrganization(organization);
     setShowDeletePopup(true);
+  };
+
+  // Checkbox seçim fonksiyonları
+  const handleSelectItem = (id: string) => {
+    setSelectedItems(prev => 
+      prev.includes(id) 
+        ? prev.filter(item => item !== id)
+        : [...prev, id]
+    );
+  };
+
+  const handleSelectAll = () => {
+    const visibleOrganizations = filteredOrganizations;
+    if (selectedItems.length === visibleOrganizations.length) {
+      setSelectedItems([]);
+    } else {
+      setSelectedItems(visibleOrganizations.map(org => org._id));
+    }
+  };
+
+  const handleBulkDelete = () => {
+    if (selectedItems.length === 0) {
+      setErrorMessage('Lütfen silmek istediğiniz kayıtları seçiniz!');
+      setShowErrorPopup(true);
+      return;
+    }
+    setShowBulkDeletePopup(true);
+  };
+
+  const confirmBulkDelete = async () => {
+    if (selectedItems.length === 0) return;
+    
+    try {
+      setIsSubmitting(true);
+      // Her bir organizasyonu tek tek sil
+      const deletePromises = selectedItems.map(id => 
+        organizationAPI.delete(id)
+      );
+      
+      await Promise.all(deletePromises);
+
+      // Başarılı silme sonrası
+      setShowBulkDeletePopup(false);
+      setSelectedItems([]);
+      
+      // Veriyi yeniden yükle
+      await loadOrganizations();
+      
+      setSuccessMessage(`${selectedItems.length} organizasyon başarıyla silindi.`);
+      setShowSuccessPopup(true);
+    } catch (error: any) {
+      console.error('Toplu silme hatası:', error);
+      setErrorMessage(error.response?.data?.message || 'Toplu silme işlemi sırasında bir hata oluştu');
+      setShowErrorPopup(true);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const handleSubmitAdd = async () => {
@@ -865,6 +929,27 @@ const Organization: React.FC = () => {
             )}
           </div>
           <div style={{ display: 'flex', gap: '12px' }}>
+            {selectedItems.length > 0 && (
+              <button
+                onClick={handleBulkDelete}
+                style={{
+                  backgroundColor: '#DC3545',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '6px',
+                  padding: '10px 20px',
+                  fontSize: '14px',
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px'
+                }}
+              >
+                <i className="fas fa-trash"></i>
+                Toplu Sil ({selectedItems.length})
+              </button>
+            )}
             <button
               onClick={handleOpenImportPopup}
               style={{
@@ -920,6 +1005,60 @@ const Organization: React.FC = () => {
             }}>
             <thead>
               <tr style={{ backgroundColor: '#F8F9FA' }}>
+                <th style={{
+                  padding: '16px',
+                  textAlign: 'center',
+                  color: '#232D42',
+                  fontSize: '14px',
+                  fontWeight: 700,
+                  fontFamily: 'Montserrat',
+                  width: '50px'
+                }}>
+                  <label style={{
+                    position: 'relative',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    cursor: 'pointer'
+                  }}>
+                    <input
+                      type="checkbox"
+                      checked={selectedItems.length > 0 && selectedItems.length === filteredOrganizations.length}
+                      onChange={handleSelectAll}
+                      style={{
+                        opacity: 0,
+                        position: 'absolute',
+                        cursor: 'pointer',
+                        height: 0,
+                        width: 0
+                      }}
+                    />
+                    <span style={{
+                      position: 'relative',
+                      display: 'inline-block',
+                      width: '18px',
+                      height: '18px',
+                      backgroundColor: selectedItems.length > 0 && selectedItems.length === filteredOrganizations.length ? '#0286F7' : 'white',
+                      border: `2px solid ${selectedItems.length > 0 && selectedItems.length === filteredOrganizations.length ? '#0286F7' : '#E9ECEF'}`,
+                      borderRadius: '4px',
+                      transition: 'all 0.3s ease',
+                      transform: selectedItems.length > 0 && selectedItems.length === filteredOrganizations.length ? 'scale(1.1)' : 'scale(1)'
+                    }}>
+                      {selectedItems.length > 0 && selectedItems.length === filteredOrganizations.length && (
+                        <span style={{
+                          position: 'absolute',
+                          display: 'block',
+                          left: '4px',
+                          top: '1px',
+                          width: '6px',
+                          height: '10px',
+                          border: 'solid white',
+                          borderWidth: '0 2px 2px 0',
+                          transform: 'rotate(40deg)'
+                        }} />
+                      )}
+                    </span>
+                  </label>
+                </th>
                 <th style={{
                   padding: '16px',
                   textAlign: 'left',
@@ -995,7 +1134,7 @@ const Organization: React.FC = () => {
             <tbody>
               {searchTerm && (
                 <tr>
-                  <td colSpan={7} style={{
+                  <td colSpan={8} style={{
                     padding: '12px 16px',
                     backgroundColor: '#F8FAFC',
                     borderBottom: '1px solid #E2E8F0',
@@ -1010,7 +1149,7 @@ const Organization: React.FC = () => {
               )}
               {currentOrganizations.length === 0 ? (
                 <tr>
-                  <td colSpan={7} style={{
+                  <td colSpan={8} style={{
                     padding: '40px',
                     textAlign: 'center',
                     color: '#8A92A6',
@@ -1024,6 +1163,55 @@ const Organization: React.FC = () => {
                   <tr key={organization._id} style={{
                     borderBottom: '1px solid #E9ECEF'
                   }}>
+                    <td style={{
+                      padding: '16px',
+                      textAlign: 'center'
+                    }}>
+                      <label style={{
+                        position: 'relative',
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        cursor: 'pointer'
+                      }}>
+                        <input
+                          type="checkbox"
+                          checked={selectedItems.includes(organization._id)}
+                          onChange={() => handleSelectItem(organization._id)}
+                          style={{
+                            opacity: 0,
+                            position: 'absolute',
+                            cursor: 'pointer',
+                            height: 0,
+                            width: 0
+                          }}
+                        />
+                        <span style={{
+                          position: 'relative',
+                          display: 'inline-block',
+                          width: '18px',
+                          height: '18px',
+                          backgroundColor: selectedItems.includes(organization._id) ? '#0286F7' : 'white',
+                          border: `2px solid ${selectedItems.includes(organization._id) ? '#0286F7' : '#E9ECEF'}`,
+                          borderRadius: '4px',
+                          transition: 'all 0.3s ease',
+                          transform: selectedItems.includes(organization._id) ? 'scale(1.1)' : 'scale(1)'
+                        }}>
+                          {selectedItems.includes(organization._id) && (
+                            <span style={{
+                              position: 'absolute',
+                              display: 'block',
+                              left: '4px',
+                              top: '1px',
+                              width: '6px',
+                              height: '10px',
+                              border: 'solid white',
+                              borderWidth: '0 2px 2px 0',
+                              transform: 'rotate(40deg)'
+                            }} />
+                          )}
+                        </span>
+                      </label>
+                    </td>
                     <td style={{
                       padding: '16px',
                       color: '#232D42',
@@ -1759,6 +1947,87 @@ const Organization: React.FC = () => {
                   }}
                 >
                   {isSubmitting ? 'Güncelleniyor...' : 'Güncelle'}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Bulk Delete Popup */}
+        {showBulkDeletePopup && (
+          <div style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: 'rgba(0, 0, 0, 0.5)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 1000
+          }}>
+            <div style={{
+              backgroundColor: 'white',
+              borderRadius: '12px',
+              padding: '24px',
+              maxWidth: '400px',
+              width: '90%',
+              textAlign: 'center'
+            }}>
+              <div style={{
+                fontSize: '18px',
+                fontWeight: 600,
+                color: '#232D42',
+                marginBottom: '16px'
+              }}>
+                Toplu Silme
+              </div>
+              <div style={{
+                fontSize: '14px',
+                color: '#6B7280',
+                marginBottom: '24px'
+              }}>
+                {selectedItems.length} adet organizasyonu silmek istediğinizden emin misiniz? Bu işlem geri alınamaz.
+              </div>
+              <div style={{
+                display: 'flex',
+                gap: '12px',
+                justifyContent: 'center'
+              }}>
+                <button
+                  onClick={() => setShowBulkDeletePopup(false)}
+                  disabled={isSubmitting}
+                  style={{
+                    padding: '10px 20px',
+                    border: '2px solid #E5E7EB',
+                    borderRadius: '8px',
+                    backgroundColor: 'white',
+                    color: '#6B7280',
+                    fontSize: '14px',
+                    fontWeight: 600,
+                    cursor: isSubmitting ? 'not-allowed' : 'pointer',
+                    fontFamily: 'Inter'
+                  }}
+                >
+                  Hayır
+                </button>
+                <button
+                  onClick={confirmBulkDelete}
+                  disabled={isSubmitting}
+                  style={{
+                    padding: '10px 20px',
+                    border: 'none',
+                    borderRadius: '8px',
+                    backgroundColor: '#DC2626',
+                    color: 'white',
+                    fontSize: '14px',
+                    fontWeight: 600,
+                    cursor: isSubmitting ? 'not-allowed' : 'pointer',
+                    fontFamily: 'Inter'
+                  }}
+                >
+                  {isSubmitting ? 'Siliniyor...' : 'Evet, Sil'}
                 </button>
               </div>
             </div>
