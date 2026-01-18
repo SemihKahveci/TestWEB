@@ -1,16 +1,33 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { evaluationAPI } from '../services/api';
 
 declare global {
   interface Window {
     Plotly?: {
       newPlot: (id: string, data: any, layout: any, config?: any) => void;
+      react: (id: string, data: any, layout: any, config?: any) => void;
       purge: (id: string) => void;
     };
   }
 }
 
 const plotlyScriptId = 'plotly-cdn-script';
+const statsCache = {
+  totalSentGames: 0,
+  uniquePeopleCount: 0,
+  statusCounts: { completed: 0, inProgress: 0, expired: 0, pending: 0 },
+  fetchedAt: 0,
+  initialized: false
+};
+
+const statusCountsEqual = (
+  a: { completed: number; inProgress: number; expired: number; pending: number },
+  b: { completed: number; inProgress: number; expired: number; pending: number }
+) =>
+  a.completed === b.completed &&
+  a.inProgress === b.inProgress &&
+  a.expired === b.expired &&
+  a.pending === b.pending;
 
 interface UserResult {
   code: string;
@@ -41,12 +58,21 @@ const DashboardPage: React.FC = () => {
   const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('');
   const [results, setResults] = useState<UserResult[]>([]);
   const [isLoadingResults, setIsLoadingResults] = useState(false);
+  const [totalSentGames, setTotalSentGames] = useState(0);
+  const [uniquePeopleCount, setUniquePeopleCount] = useState(0);
+  const [statusCounts, setStatusCounts] = useState({
+    completed: 0,
+    inProgress: 0,
+    expired: 0,
+    pending: 0
+  });
   const [currentPage, setCurrentPage] = useState(1);
   const [totalCount, setTotalCount] = useState(0);
   const [totalPages, setTotalPages] = useState(0);
   const [isCompact, setIsCompact] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   const [forceCompact, setForceCompact] = useState(false);
+  const plotlyLoadedRef = useRef(false);
   const shouldCompact = isCompact || forceCompact;
   const [selectedCompetencies, setSelectedCompetencies] = useState<string[]>([
     'Liderlik',
@@ -126,6 +152,77 @@ const DashboardPage: React.FC = () => {
   }, [loadResults]);
 
   useEffect(() => {
+    if (statsCache.initialized) {
+      setTotalSentGames(statsCache.totalSentGames);
+      setUniquePeopleCount(statsCache.uniquePeopleCount);
+      setStatusCounts(statsCache.statusCounts);
+    }
+
+    const loadStats = async () => {
+      try {
+        const now = Date.now();
+        if (statsCache.initialized && now - statsCache.fetchedAt < 60000) {
+          return;
+        }
+        const response = await evaluationAPI.getAll(undefined, undefined, '', undefined, true);
+        if (response.data?.success && response.data.results) {
+          const allResults: UserResult[] = response.data.results;
+          const totalSent = allResults.length;
+          const uniqueKeys = new Set(
+            allResults.map((item) => (item.email || item.name || '').trim().toLowerCase())
+          );
+          uniqueKeys.delete('');
+          const uniqueCount = uniqueKeys.size;
+
+          const normalizeStatus = (status: string) => status.toLowerCase().replace(/\s+/g, ' ').trim();
+          const counts = { completed: 0, inProgress: 0, expired: 0, pending: 0 };
+          allResults.forEach((item) => {
+            const normalized = normalizeStatus(item.status || '');
+            if (normalized === 'tamamlandı' || normalized === 'tamamlandi') {
+              counts.completed += 1;
+            } else if (normalized.includes('devam') || (normalized.includes('oyun') && normalized.includes('ediyor'))) {
+              counts.inProgress += 1;
+            } else if (normalized.includes('süresi doldu') || normalized.includes('suresi doldu')) {
+              counts.expired += 1;
+            } else if (normalized === 'beklemede') {
+              counts.pending += 1;
+            }
+          });
+
+          const shouldUpdate =
+            !statsCache.initialized ||
+            statsCache.totalSentGames !== totalSent ||
+            statsCache.uniquePeopleCount !== uniqueCount ||
+            !statusCountsEqual(statsCache.statusCounts, counts);
+
+          statsCache.totalSentGames = totalSent;
+          statsCache.uniquePeopleCount = uniqueCount;
+          statsCache.statusCounts = counts;
+          statsCache.fetchedAt = now;
+          statsCache.initialized = true;
+
+          if (shouldUpdate) {
+            setTotalSentGames(totalSent);
+            setUniquePeopleCount(uniqueCount);
+            setStatusCounts(counts);
+          }
+        } else {
+          setTotalSentGames(0);
+          setUniquePeopleCount(0);
+          setStatusCounts({ completed: 0, inProgress: 0, expired: 0, pending: 0 });
+        }
+      } catch (error) {
+        console.error('Dashboard istatistik yükleme hatası:', error);
+        setTotalSentGames(0);
+        setUniquePeopleCount(0);
+        setStatusCounts({ completed: 0, inProgress: 0, expired: 0, pending: 0 });
+      }
+    };
+
+    loadStats();
+  }, []);
+
+  useEffect(() => {
     if (results.length === 0) {
       setForceCompact(false);
       return;
@@ -167,35 +264,9 @@ const DashboardPage: React.FC = () => {
       });
     };
 
-    const renderCharts = () => {
+    const renderStaticCharts = () => {
       const plotly = window.Plotly;
       if (!plotly) return;
-
-      const gameStatusData = [{
-        type: 'pie',
-        labels: ['Tamamlandı', 'Oyun Devam Ediyor', 'Süresi Doldu', 'Gönderildi'],
-        values: [120, 55, 15, 250],
-        marker: {
-          colors: ['#28a745', '#ffc107', '#dc3545', '#0d6efd'],
-          line: { color: '#ffffff', width: 2 }
-        },
-        hole: 0.4,
-        textinfo: 'none',
-        hoverinfo: 'label+percent',
-        pull: [0.05, 0.05, 0.05, 0.05],
-        rotation: 90
-      }];
-
-      const gameStatusLayout = {
-        title: { text: 'Genel Durum', font: { size: 16 } },
-        showlegend: true,
-        legend: { orientation: 'v', x: 1.02, y: 0.5, xanchor: 'left', yanchor: 'middle', font: { size: 11 } },
-        paper_bgcolor: '#FFFFFF',
-        plot_bgcolor: '#FFFFFF',
-        margin: { t: 40, r: 140, b: 20, l: 20 }
-      };
-
-      plotly.newPlot('game-status-chart', gameStatusData, gameStatusLayout, { responsive: true, displayModeBar: false, displaylogo: false });
 
       const competencyData = [{
         type: 'bar',
@@ -206,7 +277,9 @@ const DashboardPage: React.FC = () => {
           line: { color: '#084298', width: 2 }
         },
         text: [85, 110, 95, 120, 75],
-        textposition: 'outside'
+        textposition: 'outside',
+        cliponaxis: false,
+        textfont: { size: 11 }
       }];
 
       const competencyLayout = {
@@ -215,18 +288,17 @@ const DashboardPage: React.FC = () => {
         yaxis: { title: 'Oyun Sayısı' },
         paper_bgcolor: '#FFFFFF',
         plot_bgcolor: '#f8f9fa',
-        margin: { t: 40, r: 20, b: 80, l: 60 }
+        margin: { t: 60, r: 20, b: 80, l: 60 },
+        uniformtext: { mode: 'hide', minsize: 8 }
       };
 
       plotly.newPlot('competency-chart', competencyData, competencyLayout, { responsive: true, displayModeBar: false, displaylogo: false });
 
       const competencies = [
-        { name: 'Liderlik', data: [5, 12, 25, 45, 60, 75, 50, 30, 15, 8], color: '#0d6efd' },
-        { name: 'İletişim', data: [8, 15, 30, 50, 65, 70, 45, 25, 12, 5], color: '#6610f2' },
-        { name: 'Problem Çözme', data: [3, 10, 20, 40, 55, 80, 60, 35, 18, 10], color: '#d63384' },
-        { name: 'Takım Çalışması', data: [10, 18, 35, 55, 70, 65, 40, 20, 10, 7], color: '#fd7e14' },
-        { name: 'Stratejik Düşünme', data: [7, 14, 28, 48, 62, 72, 48, 28, 14, 9], color: '#20c997' },
-        { name: 'Analitik Düşünme', data: [6, 13, 26, 46, 58, 78, 52, 32, 16, 11], color: '#0dcaf0' }
+        { name: 'Müşteri Odaklılık', data: [5, 12, 25, 45, 60, 75, 50, 30, 15, 8], color: '#0d6efd' },
+        { name: 'Belirsizlik Yönetimi', data: [8, 15, 30, 50, 65, 70, 45, 25, 12, 5], color: '#6610f2' },
+        { name: 'İnsanları Etkileme', data: [3, 10, 20, 40, 55, 80, 60, 35, 18, 10], color: '#d63384' },
+        { name: 'Güven Veren İşbirliği ve Sinerji', data: [10, 18, 35, 55, 70, 65, 40, 20, 10, 7], color: '#fd7e14' }
       ];
 
       const scoreRanges = ['0-10', '11-20', '21-30', '31-40', '41-50', '51-60', '61-70', '71-80', '81-90', '91-100'];
@@ -243,7 +315,9 @@ const DashboardPage: React.FC = () => {
             opacity: 0.8
           },
           text: comp.data,
-          textposition: 'outside'
+          textposition: 'outside',
+          cliponaxis: false,
+          textfont: { size: 10 }
         }];
 
         const chartLayout = {
@@ -252,7 +326,8 @@ const DashboardPage: React.FC = () => {
           yaxis: { title: 'Kişi Sayısı', titlefont: { size: 11 }, tickfont: { size: 10 } },
           paper_bgcolor: '#FFFFFF',
           plot_bgcolor: '#f8f9fa',
-          margin: { t: 40, r: 20, b: 60, l: 50 }
+          margin: { t: 60, r: 20, b: 60, l: 50 },
+          uniformtext: { mode: 'hide', minsize: 8 }
         };
 
         plotly.newPlot(`score-distribution-chart-${index + 1}`, chartData, chartLayout, { responsive: true, displayModeBar: false, displaylogo: false });
@@ -262,21 +337,60 @@ const DashboardPage: React.FC = () => {
     let isCancelled = false;
     loadPlotly().then(() => {
       if (!isCancelled) {
-        renderCharts();
+        plotlyLoadedRef.current = true;
+        renderStaticCharts();
       }
     });
 
     return () => {
       isCancelled = true;
       if (window.Plotly) {
-        window.Plotly.purge('game-status-chart');
-        window.Plotly.purge('competency-chart');
+        if (document.getElementById('game-status-chart')) {
+          window.Plotly.purge('game-status-chart');
+        }
+        if (document.getElementById('competency-chart')) {
+          window.Plotly.purge('competency-chart');
+        }
         for (let i = 1; i <= 6; i += 1) {
-          window.Plotly.purge(`score-distribution-chart-${i}`);
+          const chartId = `score-distribution-chart-${i}`;
+          if (document.getElementById(chartId)) {
+            window.Plotly.purge(chartId);
+          }
         }
       }
     };
   }, []);
+
+  useEffect(() => {
+    const plotly = window.Plotly;
+    if (!plotlyLoadedRef.current || !plotly) return;
+
+    const gameStatusData = [{
+      type: 'pie',
+      labels: ['Tamamlandı', 'Oyun Devam Ediyor', 'Süresi Doldu', 'Gönderildi'],
+      values: [statusCounts.completed, statusCounts.inProgress, statusCounts.expired, statusCounts.pending],
+      marker: {
+        colors: ['#28a745', '#ffc107', '#dc3545', '#0d6efd'],
+        line: { color: '#ffffff', width: 2 }
+      },
+      hole: 0.4,
+      textinfo: 'none',
+      hoverinfo: 'label+percent',
+      pull: [0.05, 0.05, 0.05, 0.05],
+      rotation: 90
+    }];
+
+    const gameStatusLayout = {
+      title: { text: 'Genel Durum', font: { size: 16 } },
+      showlegend: true,
+      legend: { orientation: 'v', x: 1.02, y: 0.5, xanchor: 'left', yanchor: 'middle', font: { size: 11 } },
+      paper_bgcolor: '#FFFFFF',
+      plot_bgcolor: '#FFFFFF',
+      margin: { t: 40, r: 140, b: 20, l: 20 }
+    };
+
+    plotly.react('game-status-chart', gameStatusData, gameStatusLayout, { responsive: true, displayModeBar: false, displaylogo: false });
+  }, [statusCounts]);
 
   const toggleCompetency = (competency: string) => {
     setSelectedCompetencies((prev) => {
@@ -360,7 +474,7 @@ const DashboardPage: React.FC = () => {
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <div>
               <div style={{ fontSize: '13px', color: '#6B7280', marginBottom: '6px', fontWeight: 600 }}>Değerlendirme Gönderilen Kişi Sayısı</div>
-              <div style={{ fontSize: '30px', fontWeight: 700, color: '#111827' }}>250</div>
+              <div style={{ fontSize: '30px', fontWeight: 700, color: '#111827' }}>{uniquePeopleCount}</div>
             </div>
             <div style={{ width: '52px', height: '52px', background: '#DBEAFE', borderRadius: '999px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '22px' }}>👥</div>
           </div>
@@ -368,8 +482,8 @@ const DashboardPage: React.FC = () => {
         <div style={{ background: 'white', padding: '20px', borderRadius: '12px', borderLeft: '4px solid #16A34A', boxShadow: '0 2px 8px rgba(0,0,0,0.05)' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <div>
-              <div style={{ fontSize: '13px', color: '#6B7280', marginBottom: '6px', fontWeight: 600 }}>Toplam Gönderilen Değerlendirme</div>
-              <div style={{ fontSize: '30px', fontWeight: 700, color: '#111827' }}>485</div>
+              <div style={{ fontSize: '13px', color: '#6B7280', marginBottom: '6px', fontWeight: 600 }}>Toplam Gönderilen Oyun Sayısı</div>
+              <div style={{ fontSize: '30px', fontWeight: 700, color: '#111827' }}>{totalSentGames}</div>
             </div>
             <div style={{ width: '52px', height: '52px', background: '#DCFCE7', borderRadius: '999px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '22px' }}>📤</div>
           </div>
@@ -459,7 +573,7 @@ const DashboardPage: React.FC = () => {
         </div>
         <div style={{ overflowX: 'hidden' }}>
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: '16px' }}>
-            {[1, 2, 3, 4, 5, 6].map((chart) => (
+            {[1, 2, 3, 4].map((chart) => (
               <div
                 key={chart}
                 id={`score-distribution-chart-${chart}`}
@@ -560,10 +674,10 @@ const DashboardPage: React.FC = () => {
                 <tr>
                   <th style={{ padding: '12px 16px', textAlign: 'center', fontWeight: 600, wordBreak: 'break-word' }}>Ad Soyad</th>
                   <th style={{ padding: '12px 16px', textAlign: 'center', fontWeight: 600, wordBreak: 'break-word' }}>Tamamlanma Tarihi</th>
-                  <th style={{ padding: '12px 16px', textAlign: 'center', fontWeight: 600, wordBreak: 'break-word' }}>Müşteri Odaklılık Skoru</th>
-                  <th style={{ padding: '12px 16px', textAlign: 'center', fontWeight: 600, wordBreak: 'break-word' }}>Belirsizlik Yönetimi Skoru</th>
-                  <th style={{ padding: '12px 16px', textAlign: 'center', fontWeight: 600, wordBreak: 'break-word' }}>İnsanları Etkileme Skoru</th>
-                  <th style={{ padding: '12px 16px', textAlign: 'center', fontWeight: 600, wordBreak: 'break-word' }}>Güven Veren İşbirliği ve Sinerji Skoru</th>
+                  <th style={{ padding: '12px 16px', textAlign: 'center', fontWeight: 600, wordBreak: 'break-word' }}>Müşteri Odaklılık</th>
+                  <th style={{ padding: '12px 16px', textAlign: 'center', fontWeight: 600, wordBreak: 'break-word' }}>Belirsizlik Yönetimi</th>
+                  <th style={{ padding: '12px 16px', textAlign: 'center', fontWeight: 600, wordBreak: 'break-word' }}>İnsanları Etkileme</th>
+                  <th style={{ padding: '12px 16px', textAlign: 'center', fontWeight: 600, wordBreak: 'break-word' }}>Güven Veren İşbirliği ve Sinerji</th>
                 </tr>
               </thead>
               <tbody>
