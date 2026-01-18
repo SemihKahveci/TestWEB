@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { evaluationAPI, adminAPI } from '../services/api';
+import { evaluationAPI, adminAPI, organizationAPI } from '../services/api';
 
 declare global {
   interface Window {
@@ -70,16 +70,16 @@ interface UserResult {
 }
 
 const allCompetencies = [
-  'Liderlik',
-  'İletişim',
-  'Problem Çözme',
-  'Takım Çalışması',
-  'Stratejik Düşünme',
-  'Analitik Düşünme'
+  'Müşteri Odaklılık',
+  'Belirsizlik Yönetimi',
+  'İnsanları Etkileme',
+  'Güven Veren İşbirliği ve Sinerji'
 ];
 
 const DashboardPage: React.FC = () => {
   const [filterOpen, setFilterOpen] = useState(false);
+  const [isFilterModalOpen, setIsFilterModalOpen] = useState(false);
+  const [tempSelectedCompetencies, setTempSelectedCompetencies] = useState<string[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('');
   const [results, setResults] = useState<UserResult[]>([]);
@@ -99,6 +99,12 @@ const DashboardPage: React.FC = () => {
     idik: 0
   });
   const [scoreDistributions, setScoreDistributions] = useState<Array<{ name: string; data: number[]; color: string }>>([]);
+  const [titleOptions, setTitleOptions] = useState<string[]>([]);
+  const [positionOptions, setPositionOptions] = useState<string[]>([]);
+  const [selectedTitles, setSelectedTitles] = useState<string[]>([]);
+  const [selectedPositions, setSelectedPositions] = useState<string[]>([]);
+  const [tempSelectedTitles, setTempSelectedTitles] = useState<string[]>([]);
+  const [tempSelectedPositions, setTempSelectedPositions] = useState<string[]>([]);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalCount, setTotalCount] = useState(0);
   const [totalPages, setTotalPages] = useState(0);
@@ -108,12 +114,10 @@ const DashboardPage: React.FC = () => {
   const plotlyLoadedRef = useRef(false);
   const shouldCompact = isCompact || forceCompact;
   const [selectedCompetencies, setSelectedCompetencies] = useState<string[]>([
-    'Liderlik',
-    'İletişim',
-    'Problem Çözme',
-    'Takım Çalışması',
-    'Stratejik Düşünme',
-    'Analitik Düşünme'
+    'Müşteri Odaklılık',
+    'Belirsizlik Yönetimi',
+    'İnsanları Etkileme',
+    'Güven Veren İşbirliği ve Sinerji'
   ]);
   
   useEffect(() => {
@@ -137,6 +141,27 @@ const DashboardPage: React.FC = () => {
   }, []);
 
   useEffect(() => {
+    const loadOrganizationOptions = async () => {
+      try {
+        const response = await organizationAPI.getAll();
+        if (response.data?.success && response.data.organizations) {
+          const organizations: any[] = response.data.organizations || [];
+          const isValidOption = (value: unknown): value is string =>
+            typeof value === 'string' && value.trim().length > 0;
+          const titles = Array.from(new Set(organizations.map((item: any) => item.unvan).filter(isValidOption))).sort();
+          const positions = Array.from(new Set(organizations.map((item: any) => item.pozisyon).filter(isValidOption))).sort();
+          setTitleOptions(titles);
+          setPositionOptions(positions);
+        }
+      } catch (error) {
+        console.error('Unvan/pozisyon yükleme hatası:', error);
+      }
+    };
+
+    loadOrganizationOptions();
+  }, []);
+
+  useEffect(() => {
     const timer = setTimeout(() => {
       setDebouncedSearchTerm(searchTerm);
       setCurrentPage(1);
@@ -145,11 +170,9 @@ const DashboardPage: React.FC = () => {
   }, [searchTerm]);
 
   useEffect(() => {
-    const handleClick = () => setFilterOpen(false);
     if (filterOpen) {
-      document.addEventListener('click', handleClick);
+      setFilterOpen(false);
     }
-    return () => document.removeEventListener('click', handleClick);
   }, [filterOpen]);
 
   const loadResults = useCallback(async () => {
@@ -467,6 +490,54 @@ const DashboardPage: React.FC = () => {
     setSelectedCompetencies([]);
   };
 
+  const openFilterModal = () => {
+    setTempSelectedCompetencies(selectedCompetencies);
+    setTempSelectedTitles(selectedTitles);
+    setTempSelectedPositions(selectedPositions);
+    setIsFilterModalOpen(true);
+  };
+
+  const closeFilterModal = () => {
+    setIsFilterModalOpen(false);
+  };
+
+  const saveFilterModal = () => {
+    if (tempSelectedCompetencies.length === 0) {
+      return;
+    }
+    setSelectedCompetencies(tempSelectedCompetencies);
+    setSelectedTitles(tempSelectedTitles);
+    setSelectedPositions(tempSelectedPositions);
+    setIsFilterModalOpen(false);
+  };
+
+  const toggleTempCompetency = (competency: string) => {
+    setTempSelectedCompetencies((prev) => {
+      if (prev.includes(competency)) {
+        return prev.filter((item) => item !== competency);
+      }
+      return [...prev, competency];
+    });
+  };
+
+  const toggleTempTitle = (title: string) => {
+    setTempSelectedTitles((prev) => {
+      if (prev.includes(title)) {
+        return prev.filter((item) => item !== title);
+      }
+      return [...prev, title];
+    });
+  };
+
+  const toggleTempPosition = (position: string) => {
+    setTempSelectedPositions((prev) => {
+      if (prev.includes(position)) {
+        return prev.filter((item) => item !== position);
+      }
+      return [...prev, position];
+    });
+  };
+
   const formatDate = (dateString: string) => {
     if (!dateString) return '-';
     return new Date(dateString).toLocaleDateString('tr-TR', {
@@ -585,69 +656,24 @@ const DashboardPage: React.FC = () => {
             <div style={{ fontSize: '13px', color: '#6B7280' }}>Her bir yetkinliğin hangi skor aralığında yığıldığını gösteren grafik.</div>
           </div>
           <div style={{ display: 'flex', gap: '10px', alignItems: 'center', position: 'relative' }}>
-            <div style={{ position: 'relative' }}>
-              <button
-                onClick={(event) => {
-                  event.stopPropagation();
-                  setFilterOpen((prev) => !prev);
-                }}
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '8px',
-                  padding: '10px 16px',
-                  background: '#2563EB',
-                  color: 'white',
-                  borderRadius: '8px',
-                  border: 'none',
-                  cursor: 'pointer',
-                  fontWeight: 600,
-                  fontSize: '13px'
-                }}
-              >
-                🔍 Filtrele
-              </button>
-              {filterOpen && (
-                <div
-                  onClick={(event) => event.stopPropagation()}
-                  style={{
-                    position: 'absolute',
-                    right: 0,
-                    top: '44px',
-                    width: '260px',
-                    background: 'white',
-                    borderRadius: '10px',
-                    border: '1px solid #E5E7EB',
-                    boxShadow: '0 10px 30px rgba(0,0,0,0.08)',
-                    zIndex: 10
-                  }}
-                >
-                  <div style={{ padding: '16px' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '12px' }}>
-                      <div style={{ fontSize: '13px', fontWeight: 600 }}>Yetkinlikleri Seç</div>
-                      <button
-                        onClick={clearFilters}
-                        style={{ fontSize: '12px', color: '#2563EB', border: 'none', background: 'none', cursor: 'pointer' }}
-                      >
-                        Temizle
-                      </button>
-                    </div>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                      {allCompetencies.map((competency) => (
-                        <label key={competency} style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
-                          <input
-                            type="checkbox"
-                            checked={selectedCompetencies.includes(competency)}
-                            onChange={() => toggleCompetency(competency)}
-                          />
-                          <span style={{ fontSize: '13px', color: '#111827' }}>{competency}</span>
-                        </label>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-              )}
-            </div>
+            <button
+              onClick={openFilterModal}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+                padding: '10px 16px',
+                background: '#2563EB',
+                color: 'white',
+                borderRadius: '8px',
+                border: 'none',
+                cursor: 'pointer',
+                fontWeight: 600,
+                fontSize: '13px'
+              }}
+            >
+              🔍 Filtrele
+            </button>
             <button
               onClick={loadResults}
               style={{ padding: '10px 16px', borderRadius: '8px', border: '1px solid #D1D5DB', background: '#F3F4F6', cursor: 'pointer', fontWeight: 600, fontSize: '13px', display: 'flex', alignItems: 'center', gap: '8px' }}
@@ -666,10 +692,15 @@ const DashboardPage: React.FC = () => {
         </div>
         <div style={{ overflowX: 'hidden' }}>
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: '16px' }}>
-            {[1, 2, 3, 4].map((chart) => (
+            {[
+              'Müşteri Odaklılık',
+              'Belirsizlik Yönetimi',
+              'İnsanları Etkileme',
+              'Güven Veren İşbirliği ve Sinerji'
+            ].map((label, index) => (
               <div
-                key={chart}
-                id={`score-distribution-chart-${chart}`}
+                key={label}
+                id={`score-distribution-chart-${index + 1}`}
                 style={{
                   height: '320px',
                   width: '100%',
@@ -678,7 +709,8 @@ const DashboardPage: React.FC = () => {
                   border: '1px solid #E5E7EB',
                   borderRadius: '10px',
                   padding: '12px',
-                  boxSizing: 'border-box'
+                  boxSizing: 'border-box',
+                  display: selectedCompetencies.includes(label) ? 'block' : 'none'
                 }}
               />
             ))}
@@ -956,6 +988,213 @@ const DashboardPage: React.FC = () => {
             </div>
           </div>
         )}
+
+      {isFilterModalOpen && (
+        <div
+          onClick={closeFilterModal}
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            width: '100%',
+            height: '100%',
+            background: 'rgba(0, 0, 0, 0.5)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: '16px',
+            zIndex: 1000
+          }}
+        >
+          <div
+            onClick={(event) => event.stopPropagation()}
+            style={{
+              background: 'white',
+              borderRadius: '12px',
+              width: '100%',
+              maxWidth: '560px',
+              boxShadow: '0 20px 25px -5px rgba(0,0,0,0.1), 0 10px 10px -5px rgba(0,0,0,0.04)',
+              overflow: 'hidden'
+            }}
+          >
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              padding: '20px 24px',
+              borderBottom: '1px solid #E5E7EB'
+            }}>
+              <h3 style={{ margin: 0, fontSize: '20px', fontWeight: 700, color: '#111827' }}>Filtreleme</h3>
+              <button
+                onClick={closeFilterModal}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  fontSize: '22px',
+                  color: '#6B7280',
+                  cursor: 'pointer'
+                }}
+              >
+                ✕
+              </button>
+            </div>
+            <div style={{ padding: '20px 24px', maxHeight: '60vh', overflowY: 'auto' }}>
+              <div style={{ marginBottom: '16px', fontSize: '14px', fontWeight: 600, color: '#374151' }}>
+                Yetkinlik Seçimi
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', background: '#F9FAFB', borderRadius: '10px', padding: '16px' }}>
+                {allCompetencies.map((competency) => (
+                  <label key={competency} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px' }}>
+                    <span style={{ fontSize: '13px', color: '#111827' }}>{competency}</span>
+                    <label style={{ position: 'relative', display: 'inline-flex', alignItems: 'center', cursor: 'pointer' }}>
+                      <input
+                        type="checkbox"
+                        checked={tempSelectedCompetencies.includes(competency)}
+                        onChange={() => toggleTempCompetency(competency)}
+                        style={{ position: 'absolute', opacity: 0, width: 0, height: 0 }}
+                      />
+                      <span style={{
+                        width: '42px',
+                        height: '24px',
+                        background: tempSelectedCompetencies.includes(competency) ? '#2563EB' : '#D1D5DB',
+                        borderRadius: '999px',
+                        position: 'relative',
+                        transition: 'all 0.2s'
+                      }}>
+                        <span style={{
+                          position: 'absolute',
+                          top: '2px',
+                          left: tempSelectedCompetencies.includes(competency) ? '20px' : '2px',
+                          width: '20px',
+                          height: '20px',
+                          borderRadius: '50%',
+                          background: 'white',
+                          transition: 'all 0.2s'
+                        }} />
+                      </span>
+                    </label>
+                  </label>
+                ))}
+              </div>
+
+              <div style={{ marginTop: '20px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                <div>
+                  <div style={{ marginBottom: '8px', fontSize: '14px', fontWeight: 600, color: '#374151' }}>Unvan</div>
+                  <div style={{ border: '1px solid #E5E7EB', borderRadius: '8px', padding: '10px', maxHeight: '160px', overflowY: 'auto' }}>
+                    {titleOptions.length === 0 ? (
+                      <div style={{ fontSize: '12px', color: '#9CA3AF' }}>Kayıt bulunamadı</div>
+                    ) : (
+                      titleOptions.map((title) => (
+                        <label key={title} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '10px', gap: '12px' }}>
+                          <span style={{ fontSize: '13px', color: '#111827' }}>{title}</span>
+                          <label style={{ position: 'relative', display: 'inline-flex', alignItems: 'center', cursor: 'pointer' }}>
+                            <input
+                              type="checkbox"
+                              checked={tempSelectedTitles.includes(title)}
+                              onChange={() => toggleTempTitle(title)}
+                              style={{ position: 'absolute', opacity: 0, width: 0, height: 0 }}
+                            />
+                            <span style={{
+                              width: '42px',
+                              height: '24px',
+                              background: tempSelectedTitles.includes(title) ? '#2563EB' : '#D1D5DB',
+                              borderRadius: '999px',
+                              position: 'relative',
+                              transition: 'all 0.2s'
+                            }}>
+                              <span style={{
+                                position: 'absolute',
+                                top: '2px',
+                                left: tempSelectedTitles.includes(title) ? '20px' : '2px',
+                                width: '20px',
+                                height: '20px',
+                                borderRadius: '50%',
+                                background: 'white',
+                                transition: 'all 0.2s'
+                              }} />
+                            </span>
+                          </label>
+                        </label>
+                      ))
+                    )}
+                  </div>
+                </div>
+                <div>
+                  <div style={{ marginBottom: '8px', fontSize: '14px', fontWeight: 600, color: '#374151' }}>Pozisyon</div>
+                  <div style={{ border: '1px solid #E5E7EB', borderRadius: '8px', padding: '10px', maxHeight: '160px', overflowY: 'auto' }}>
+                    {positionOptions.length === 0 ? (
+                      <div style={{ fontSize: '12px', color: '#9CA3AF' }}>Kayıt bulunamadı</div>
+                    ) : (
+                      positionOptions.map((position) => (
+                        <label key={position} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '10px', gap: '12px' }}>
+                          <span style={{ fontSize: '13px', color: '#111827' }}>{position}</span>
+                          <label style={{ position: 'relative', display: 'inline-flex', alignItems: 'center', cursor: 'pointer' }}>
+                            <input
+                              type="checkbox"
+                              checked={tempSelectedPositions.includes(position)}
+                              onChange={() => toggleTempPosition(position)}
+                              style={{ position: 'absolute', opacity: 0, width: 0, height: 0 }}
+                            />
+                            <span style={{
+                              width: '42px',
+                              height: '24px',
+                              background: tempSelectedPositions.includes(position) ? '#2563EB' : '#D1D5DB',
+                              borderRadius: '999px',
+                              position: 'relative',
+                              transition: 'all 0.2s'
+                            }}>
+                              <span style={{
+                                position: 'absolute',
+                                top: '2px',
+                                left: tempSelectedPositions.includes(position) ? '20px' : '2px',
+                                width: '20px',
+                                height: '20px',
+                                borderRadius: '50%',
+                                background: 'white',
+                                transition: 'all 0.2s'
+                              }} />
+                            </span>
+                          </label>
+                        </label>
+                      ))
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px', padding: '16px 24px', borderTop: '1px solid #E5E7EB' }}>
+              <button
+                onClick={closeFilterModal}
+                style={{
+                  padding: '10px 16px',
+                  borderRadius: '8px',
+                  border: '1px solid #D1D5DB',
+                  background: 'white',
+                  color: '#374151',
+                  fontWeight: 600,
+                  cursor: 'pointer'
+                }}
+              >
+                İptal
+              </button>
+              <button
+                onClick={saveFilterModal}
+                style={{
+                  padding: '10px 16px',
+                  borderRadius: '8px',
+                  border: 'none',
+                  background: '#2563EB',
+                  color: 'white',
+                  fontWeight: 600,
+                  cursor: 'pointer'
+                }}
+              >
+                Kaydet
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
       </section>
     </div>
   );
