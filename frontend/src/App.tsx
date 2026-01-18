@@ -19,6 +19,7 @@ import CompanyIdentification from './pages/CompanyIdentification';
 import DefineCompanyAdmin from './pages/DefineCompanyAdmin';
 import SubscriptionSettings from './pages/SubscriptionSettings';
 import ScriptFiles from './pages/ScriptFiles';
+import DashboardPage from './pages/DashboardPage';
 
 const AppContent: React.FC = () => {
   const location = useLocation();
@@ -49,6 +50,14 @@ const AppContent: React.FC = () => {
             <Route path="/login" element={<LoginPage />} />
             
             {/* Protected routes */}
+            <Route path="/dashboard" element={
+              <ProtectedRoute>
+                <Layout>
+                  <DashboardPage />
+                </Layout>
+              </ProtectedRoute>
+            } />
+
             <Route path="/admin" element={
               <ProtectedRoute>
                 <Layout>

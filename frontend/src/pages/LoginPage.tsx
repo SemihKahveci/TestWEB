@@ -65,7 +65,7 @@ const LoginPage: React.FC = () => {
     try {
       const success = await login(email, password);
       if (success) {
-        navigate('/admin');
+        navigate('/dashboard');
       }
     } catch (error: any) {
       // Rate limit hatası (429) veya diğer hatalar için backend'den gelen mesajı göster
