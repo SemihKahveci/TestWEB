@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { evaluationAPI } from '../services/api';
+import { evaluationAPI, adminAPI } from '../services/api';
 
 declare global {
   interface Window {
@@ -16,6 +16,7 @@ const statsCache = {
   totalSentGames: 0,
   uniquePeopleCount: 0,
   statusCounts: { completed: 0, inProgress: 0, expired: 0, pending: 0 },
+  competencyCounts: { customerFocus: 0, uncertainty: 0, ie: 0, idik: 0 },
   fetchedAt: 0,
   initialized: false
 };
@@ -28,6 +29,15 @@ const statusCountsEqual = (
   a.inProgress === b.inProgress &&
   a.expired === b.expired &&
   a.pending === b.pending;
+
+const competencyCountsEqual = (
+  a: { customerFocus: number; uncertainty: number; ie: number; idik: number },
+  b: { customerFocus: number; uncertainty: number; ie: number; idik: number }
+) =>
+  a.customerFocus === b.customerFocus &&
+  a.uncertainty === b.uncertainty &&
+  a.ie === b.ie &&
+  a.idik === b.idik;
 
 interface UserResult {
   code: string;
@@ -65,6 +75,12 @@ const DashboardPage: React.FC = () => {
     inProgress: 0,
     expired: 0,
     pending: 0
+  });
+  const [competencyCounts, setCompetencyCounts] = useState({
+    customerFocus: 0,
+    uncertainty: 0,
+    ie: 0,
+    idik: 0
   });
   const [currentPage, setCurrentPage] = useState(1);
   const [totalCount, setTotalCount] = useState(0);
@@ -156,6 +172,7 @@ const DashboardPage: React.FC = () => {
       setTotalSentGames(statsCache.totalSentGames);
       setUniquePeopleCount(statsCache.uniquePeopleCount);
       setStatusCounts(statsCache.statusCounts);
+      setCompetencyCounts(statsCache.competencyCounts);
     }
 
     const loadStats = async () => {
@@ -164,58 +181,42 @@ const DashboardPage: React.FC = () => {
         if (statsCache.initialized && now - statsCache.fetchedAt < 60000) {
           return;
         }
-        const response = await evaluationAPI.getAll(undefined, undefined, '', undefined, true);
-        if (response.data?.success && response.data.results) {
-          const allResults: UserResult[] = response.data.results;
-          const totalSent = allResults.length;
-          const uniqueKeys = new Set(
-            allResults.map((item) => (item.email || item.name || '').trim().toLowerCase())
-          );
-          uniqueKeys.delete('');
-          const uniqueCount = uniqueKeys.size;
-
-          const normalizeStatus = (status: string) => status.toLowerCase().replace(/\s+/g, ' ').trim();
-          const counts = { completed: 0, inProgress: 0, expired: 0, pending: 0 };
-          allResults.forEach((item) => {
-            const normalized = normalizeStatus(item.status || '');
-            if (normalized === 'tamamlandı' || normalized === 'tamamlandi') {
-              counts.completed += 1;
-            } else if (normalized.includes('devam') || (normalized.includes('oyun') && normalized.includes('ediyor'))) {
-              counts.inProgress += 1;
-            } else if (normalized.includes('süresi doldu') || normalized.includes('suresi doldu')) {
-              counts.expired += 1;
-            } else if (normalized === 'beklemede') {
-              counts.pending += 1;
-            }
-          });
+        const response = await adminAPI.getDashboardStats();
+        if (response.data?.success && response.data.stats) {
+          const stats = response.data.stats;
 
           const shouldUpdate =
             !statsCache.initialized ||
-            statsCache.totalSentGames !== totalSent ||
-            statsCache.uniquePeopleCount !== uniqueCount ||
-            !statusCountsEqual(statsCache.statusCounts, counts);
+            statsCache.totalSentGames !== stats.totalSentGames ||
+            statsCache.uniquePeopleCount !== stats.uniquePeopleCount ||
+            !statusCountsEqual(statsCache.statusCounts, stats.statusCounts) ||
+            !competencyCountsEqual(statsCache.competencyCounts, stats.competencyCounts);
 
-          statsCache.totalSentGames = totalSent;
-          statsCache.uniquePeopleCount = uniqueCount;
-          statsCache.statusCounts = counts;
+          statsCache.totalSentGames = stats.totalSentGames;
+          statsCache.uniquePeopleCount = stats.uniquePeopleCount;
+          statsCache.statusCounts = stats.statusCounts;
+          statsCache.competencyCounts = stats.competencyCounts;
           statsCache.fetchedAt = now;
           statsCache.initialized = true;
 
           if (shouldUpdate) {
-            setTotalSentGames(totalSent);
-            setUniquePeopleCount(uniqueCount);
-            setStatusCounts(counts);
+            setTotalSentGames(stats.totalSentGames);
+            setUniquePeopleCount(stats.uniquePeopleCount);
+            setStatusCounts(stats.statusCounts);
+            setCompetencyCounts(stats.competencyCounts);
           }
         } else {
           setTotalSentGames(0);
           setUniquePeopleCount(0);
           setStatusCounts({ completed: 0, inProgress: 0, expired: 0, pending: 0 });
+          setCompetencyCounts({ customerFocus: 0, uncertainty: 0, ie: 0, idik: 0 });
         }
       } catch (error) {
         console.error('Dashboard istatistik yükleme hatası:', error);
         setTotalSentGames(0);
         setUniquePeopleCount(0);
         setStatusCounts({ completed: 0, inProgress: 0, expired: 0, pending: 0 });
+        setCompetencyCounts({ customerFocus: 0, uncertainty: 0, ie: 0, idik: 0 });
       }
     };
 
@@ -267,32 +268,6 @@ const DashboardPage: React.FC = () => {
     const renderStaticCharts = () => {
       const plotly = window.Plotly;
       if (!plotly) return;
-
-      const competencyData = [{
-        type: 'bar',
-        x: ['Liderlik', 'İletişim', 'Problem Çözme', 'Takım Çalışması', 'Stratejik Düşünme'],
-        y: [85, 110, 95, 120, 75],
-        marker: {
-          color: ['#0d6efd', '#0a58ca', '#0d6efd', '#0a58ca', '#0d6efd'],
-          line: { color: '#084298', width: 2 }
-        },
-        text: [85, 110, 95, 120, 75],
-        textposition: 'outside',
-        cliponaxis: false,
-        textfont: { size: 11 }
-      }];
-
-      const competencyLayout = {
-        title: { text: 'Gönderilen Oyun Sayısı', font: { size: 16 } },
-        xaxis: { title: 'Yetkinlik' },
-        yaxis: { title: 'Oyun Sayısı' },
-        paper_bgcolor: '#FFFFFF',
-        plot_bgcolor: '#f8f9fa',
-        margin: { t: 60, r: 20, b: 80, l: 60 },
-        uniformtext: { mode: 'hide', minsize: 8 }
-      };
-
-      plotly.newPlot('competency-chart', competencyData, competencyLayout, { responsive: true, displayModeBar: false, displaylogo: false });
 
       const competencies = [
         { name: 'Müşteri Odaklılık', data: [5, 12, 25, 45, 60, 75, 50, 30, 15, 8], color: '#0d6efd' },
@@ -391,6 +366,65 @@ const DashboardPage: React.FC = () => {
 
     plotly.react('game-status-chart', gameStatusData, gameStatusLayout, { responsive: true, displayModeBar: false, displaylogo: false });
   }, [statusCounts]);
+
+  useEffect(() => {
+    const plotly = window.Plotly;
+    if (!plotlyLoadedRef.current || !plotly) return;
+
+    const xLabels = [
+      'Müşteri Odaklılık',
+      'Belirsizlik Yönetimi',
+      'İnsanları Etkileme',
+      'Güven Veren İşbirliği ve Sinerji'
+    ];
+
+    const venusTrace = {
+      type: 'bar',
+      name: 'Venüs',
+      x: xLabels,
+      y: [competencyCounts.customerFocus, competencyCounts.uncertainty, 0, 0],
+      marker: { color: '#0d6efd' },
+      text: [
+        competencyCounts.customerFocus,
+        competencyCounts.uncertainty,
+        '',
+        ''
+      ],
+      textposition: 'outside',
+      cliponaxis: false,
+      textfont: { size: 11 }
+    };
+
+    const titanTrace = {
+      type: 'bar',
+      name: 'Titan',
+      x: xLabels,
+      y: [0, 0, competencyCounts.ie, competencyCounts.idik],
+      marker: { color: '#fd7e14' },
+      text: [
+        '',
+        '',
+        competencyCounts.ie,
+        competencyCounts.idik
+      ],
+      textposition: 'outside',
+      cliponaxis: false,
+      textfont: { size: 11 }
+    };
+
+    const competencyLayout = {
+      title: { text: 'Gönderilen Oyun Sayısı', font: { size: 16 } },
+      barmode: 'group',
+      xaxis: { title: 'Yetkinlik' },
+      yaxis: { title: 'Oyun Sayısı' },
+      paper_bgcolor: '#FFFFFF',
+      plot_bgcolor: '#f8f9fa',
+      margin: { t: 60, r: 20, b: 80, l: 60 },
+      uniformtext: { mode: 'hide', minsize: 8 }
+    };
+
+    plotly.react('competency-chart', [venusTrace, titanTrace], competencyLayout, { responsive: true, displayModeBar: false, displaylogo: false });
+  }, [competencyCounts]);
 
   const toggleCompetency = (competency: string) => {
     setSelectedCompetencies((prev) => {

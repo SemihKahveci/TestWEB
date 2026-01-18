@@ -13,6 +13,9 @@ const fs = require('fs');
 const path = require('path');
 const { adminLoginLimiter } = require('../middleware/rateLimiters');
 
+const dashboardStatsCache = new Map();
+const DASHBOARD_STATS_TTL_MS = 60 * 1000;
+
 // Şifre validasyon fonksiyonu
 const validatePassword = (password) => {
     const minLength = 8;
@@ -691,6 +694,8 @@ const adminController = {
                     name: result.name,
                     email: result.email,
                     status: result.status,
+                    planet: result.planet,
+                    allPlanets: result.allPlanets,
                     sentDate: result.sentDate,
                     completionDate: result.completionDate,
                     expiryDate: result.expiryDate,
@@ -728,6 +733,85 @@ const adminController = {
             res.status(500).json({
                 success: false,
                 message: getSafeErrorMessage(error, 'Sonuçlar alınırken bir hata oluştu')
+            });
+        }
+    },
+
+    getDashboardStats: async (req, res) => {
+        try {
+            const { getCompanyFilter } = require('../middleware/auth');
+            const companyFilter = getCompanyFilter(req);
+            const cacheKey = req.admin?.companyId?.toString() || 'all';
+            const cached = dashboardStatsCache.get(cacheKey);
+            const now = Date.now();
+
+            if (cached && now - cached.fetchedAt < DASHBOARD_STATS_TTL_MS) {
+                return res.json({ success: true, stats: cached.data, cached: true });
+            }
+
+            const userCodes = await UserCode.find(companyFilter)
+                .select('email name status planet allPlanets')
+                .lean();
+
+            const normalizeStatus = (status) => status.toLowerCase().replace(/\s+/g, ' ').trim();
+            const statusCounts = { completed: 0, inProgress: 0, expired: 0, pending: 0 };
+            let totalSentGames = 0;
+            let uniquePeopleCount = 0;
+            const competencyCounts = { customerFocus: 0, uncertainty: 0, ie: 0, idik: 0 };
+            const uniqueKeys = new Set();
+
+            userCodes.forEach((item) => {
+                const normalized = normalizeStatus(item.status || '');
+                if (normalized === 'tamamlandı' || normalized === 'tamamlandi') {
+                    statusCounts.completed += 1;
+                } else if (normalized.includes('devam') || (normalized.includes('oyun') && normalized.includes('ediyor'))) {
+                    statusCounts.inProgress += 1;
+                } else if (normalized.includes('süresi doldu') || normalized.includes('suresi doldu')) {
+                    statusCounts.expired += 1;
+                } else if (normalized === 'beklemede') {
+                    statusCounts.pending += 1;
+                }
+
+                const uniqueKey = (item.email || item.name || '').trim().toLowerCase();
+                if (uniqueKey) {
+                    uniqueKeys.add(uniqueKey);
+                }
+
+                const rawPlanets = Array.isArray(item.allPlanets) && item.allPlanets.length > 0
+                    ? item.allPlanets
+                    : (item.planet ? [item.planet] : []);
+                const normalizedPlanets = rawPlanets
+                    .filter(Boolean)
+                    .map((planet) => planet.toString().toLowerCase());
+
+                totalSentGames += normalizedPlanets.length;
+
+                if (normalizedPlanets.includes('venus')) {
+                    competencyCounts.customerFocus += 1;
+                    competencyCounts.uncertainty += 1;
+                }
+                if (normalizedPlanets.includes('titan')) {
+                    competencyCounts.ie += 1;
+                    competencyCounts.idik += 1;
+                }
+            });
+
+            uniquePeopleCount = uniqueKeys.size;
+
+            const stats = {
+                totalSentGames,
+                uniquePeopleCount,
+                statusCounts,
+                competencyCounts
+            };
+
+            dashboardStatsCache.set(cacheKey, { fetchedAt: now, data: stats });
+            return res.json({ success: true, stats });
+        } catch (error) {
+            safeLog('error', 'Dashboard istatistik hatası', error);
+            res.status(500).json({
+                success: false,
+                message: getSafeErrorMessage(error, 'Dashboard istatistikleri alınırken bir hata oluştu')
             });
         }
     },

@@ -30,6 +30,9 @@ router.get('/check-superadmin', (req, res) => {
     res.json({ isSuperAdmin: req.admin.role === 'superadmin' });
 });
 
+// Dashboard istatistikleri
+router.get('/dashboard-stats', adminController.getDashboardStats);
+
 // Yeni admin oluşturma (sadece superadmin)
 router.post('/create', isSuperAdmin, adminController.createAdmin);
 
