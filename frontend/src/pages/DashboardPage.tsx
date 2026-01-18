@@ -17,6 +17,7 @@ const statsCache = {
   uniquePeopleCount: 0,
   statusCounts: { completed: 0, inProgress: 0, expired: 0, pending: 0 },
   competencyCounts: { customerFocus: 0, uncertainty: 0, ie: 0, idik: 0 },
+  scoreDistributions: [] as Array<{ name: string; data: number[]; color: string }>,
   fetchedAt: 0,
   initialized: false
 };
@@ -38,6 +39,21 @@ const competencyCountsEqual = (
   a.uncertainty === b.uncertainty &&
   a.ie === b.ie &&
   a.idik === b.idik;
+
+const scoreDistributionsEqual = (
+  a: Array<{ name: string; data: number[]; color: string }>,
+  b: Array<{ name: string; data: number[]; color: string }>
+) => {
+  if (a.length !== b.length) return false;
+  for (let i = 0; i < a.length; i += 1) {
+    if (a[i].name !== b[i].name || a[i].color !== b[i].color) return false;
+    if (a[i].data.length !== b[i].data.length) return false;
+    for (let j = 0; j < a[i].data.length; j += 1) {
+      if (a[i].data[j] !== b[i].data[j]) return false;
+    }
+  }
+  return true;
+};
 
 interface UserResult {
   code: string;
@@ -82,6 +98,7 @@ const DashboardPage: React.FC = () => {
     ie: 0,
     idik: 0
   });
+  const [scoreDistributions, setScoreDistributions] = useState<Array<{ name: string; data: number[]; color: string }>>([]);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalCount, setTotalCount] = useState(0);
   const [totalPages, setTotalPages] = useState(0);
@@ -173,6 +190,7 @@ const DashboardPage: React.FC = () => {
       setUniquePeopleCount(statsCache.uniquePeopleCount);
       setStatusCounts(statsCache.statusCounts);
       setCompetencyCounts(statsCache.competencyCounts);
+      setScoreDistributions(statsCache.scoreDistributions || []);
     }
 
     const loadStats = async () => {
@@ -185,17 +203,42 @@ const DashboardPage: React.FC = () => {
         if (response.data?.success && response.data.stats) {
           const stats = response.data.stats;
 
+          const scoreDistributions = [
+            {
+              name: 'Müşteri Odaklılık',
+              data: stats.scoreDistributions?.customerFocus || new Array(10).fill(0),
+              color: '#0d6efd'
+            },
+            {
+              name: 'Belirsizlik Yönetimi',
+              data: stats.scoreDistributions?.uncertainty || new Array(10).fill(0),
+              color: '#6610f2'
+            },
+            {
+              name: 'İnsanları Etkileme',
+              data: stats.scoreDistributions?.ie || new Array(10).fill(0),
+              color: '#d63384'
+            },
+            {
+              name: 'Güven Veren İşbirliği ve Sinerji',
+              data: stats.scoreDistributions?.idik || new Array(10).fill(0),
+              color: '#fd7e14'
+            }
+          ];
+
           const shouldUpdate =
             !statsCache.initialized ||
             statsCache.totalSentGames !== stats.totalSentGames ||
             statsCache.uniquePeopleCount !== stats.uniquePeopleCount ||
             !statusCountsEqual(statsCache.statusCounts, stats.statusCounts) ||
-            !competencyCountsEqual(statsCache.competencyCounts, stats.competencyCounts);
+            !competencyCountsEqual(statsCache.competencyCounts, stats.competencyCounts) ||
+            !scoreDistributionsEqual(statsCache.scoreDistributions, scoreDistributions);
 
           statsCache.totalSentGames = stats.totalSentGames;
           statsCache.uniquePeopleCount = stats.uniquePeopleCount;
           statsCache.statusCounts = stats.statusCounts;
           statsCache.competencyCounts = stats.competencyCounts;
+          statsCache.scoreDistributions = scoreDistributions;
           statsCache.fetchedAt = now;
           statsCache.initialized = true;
 
@@ -204,12 +247,14 @@ const DashboardPage: React.FC = () => {
             setUniquePeopleCount(stats.uniquePeopleCount);
             setStatusCounts(stats.statusCounts);
             setCompetencyCounts(stats.competencyCounts);
+            setScoreDistributions(scoreDistributions);
           }
         } else {
           setTotalSentGames(0);
           setUniquePeopleCount(0);
           setStatusCounts({ completed: 0, inProgress: 0, expired: 0, pending: 0 });
           setCompetencyCounts({ customerFocus: 0, uncertainty: 0, ie: 0, idik: 0 });
+          setScoreDistributions([]);
         }
       } catch (error) {
         console.error('Dashboard istatistik yükleme hatası:', error);
@@ -268,45 +313,6 @@ const DashboardPage: React.FC = () => {
     const renderStaticCharts = () => {
       const plotly = window.Plotly;
       if (!plotly) return;
-
-      const competencies = [
-        { name: 'Müşteri Odaklılık', data: [5, 12, 25, 45, 60, 75, 50, 30, 15, 8], color: '#0d6efd' },
-        { name: 'Belirsizlik Yönetimi', data: [8, 15, 30, 50, 65, 70, 45, 25, 12, 5], color: '#6610f2' },
-        { name: 'İnsanları Etkileme', data: [3, 10, 20, 40, 55, 80, 60, 35, 18, 10], color: '#d63384' },
-        { name: 'Güven Veren İşbirliği ve Sinerji', data: [10, 18, 35, 55, 70, 65, 40, 20, 10, 7], color: '#fd7e14' }
-      ];
-
-      const scoreRanges = ['0-10', '11-20', '21-30', '31-40', '41-50', '51-60', '61-70', '71-80', '81-90', '91-100'];
-
-      competencies.forEach((comp, index) => {
-        const chartData = [{
-          x: scoreRanges,
-          y: comp.data,
-          type: 'bar',
-          name: comp.name,
-          marker: {
-            color: comp.color,
-            line: { color: comp.color, width: 2 },
-            opacity: 0.8
-          },
-          text: comp.data,
-          textposition: 'outside',
-          cliponaxis: false,
-          textfont: { size: 10 }
-        }];
-
-        const chartLayout = {
-          title: { text: comp.name, font: { size: 14, weight: 600 } },
-          xaxis: { title: 'Skor Aralığı', titlefont: { size: 11 }, tickfont: { size: 10 } },
-          yaxis: { title: 'Kişi Sayısı', titlefont: { size: 11 }, tickfont: { size: 10 } },
-          paper_bgcolor: '#FFFFFF',
-          plot_bgcolor: '#f8f9fa',
-          margin: { t: 60, r: 20, b: 60, l: 50 },
-          uniformtext: { mode: 'hide', minsize: 8 }
-        };
-
-        plotly.newPlot(`score-distribution-chart-${index + 1}`, chartData, chartLayout, { responsive: true, displayModeBar: false, displaylogo: false });
-      });
     };
 
     let isCancelled = false;
@@ -426,6 +432,44 @@ const DashboardPage: React.FC = () => {
     plotly.react('competency-chart', [venusTrace, titanTrace], competencyLayout, { responsive: true, displayModeBar: false, displaylogo: false });
   }, [competencyCounts]);
 
+  useEffect(() => {
+    const plotly = window.Plotly;
+    if (!plotlyLoadedRef.current || !plotly) return;
+
+    const scoreRanges = ['0-10', '11-20', '21-30', '31-40', '41-50', '51-60', '61-70', '71-80', '81-90', '91-100'];
+    const datasets = scoreDistributions;
+
+    datasets.forEach((comp, index) => {
+      const chartData = [{
+        x: scoreRanges,
+        y: comp.data,
+        type: 'bar',
+        name: comp.name,
+        marker: {
+          color: comp.color,
+          line: { color: comp.color, width: 2 },
+          opacity: 0.8
+        },
+        text: comp.data,
+        textposition: 'outside',
+        cliponaxis: false,
+        textfont: { size: 10 }
+      }];
+
+      const chartLayout = {
+        title: { text: comp.name, font: { size: 14, weight: 600 } },
+        xaxis: { title: 'Skor Aralığı', titlefont: { size: 11 }, tickfont: { size: 10 } },
+        yaxis: { title: 'Kişi Sayısı', titlefont: { size: 11 }, tickfont: { size: 10 } },
+        paper_bgcolor: '#FFFFFF',
+        plot_bgcolor: '#f8f9fa',
+        margin: { t: 60, r: 20, b: 60, l: 50 },
+        uniformtext: { mode: 'hide', minsize: 8 }
+      };
+
+      plotly.react(`score-distribution-chart-${index + 1}`, chartData, chartLayout, { responsive: true, displayModeBar: false, displaylogo: false });
+    });
+  }, [scoreDistributions]);
+
   const toggleCompetency = (competency: string) => {
     setSelectedCompetencies((prev) => {
       if (prev.includes(competency)) {
@@ -479,6 +523,21 @@ const DashboardPage: React.FC = () => {
         {formatScore(score)}
       </span>
     );
+  };
+
+  const getScoreBuckets = (values: Array<number | string>) => {
+    const buckets = new Array(10).fill(0);
+    values.forEach((value) => {
+      if (value === null || value === undefined || value === '-' || value === '0' || value === 0) {
+        return;
+      }
+      const parsed = Number(value);
+      if (Number.isNaN(parsed)) return;
+      const clamped = Math.max(0, Math.min(100, parsed));
+      const index = Math.min(9, Math.floor(clamped / 10));
+      buckets[index] += 1;
+    });
+    return buckets;
   };
 
   return (

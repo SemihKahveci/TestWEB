@@ -749,8 +749,20 @@ const adminController = {
                 return res.json({ success: true, stats: cached.data, cached: true });
             }
 
+            const initBuckets = () => new Array(10).fill(0);
+            const addScoreToBuckets = (buckets, score) => {
+                if (score === null || score === undefined || score === '-' || score === 0 || score === '0') {
+                    return;
+                }
+                const parsed = Number(score);
+                if (Number.isNaN(parsed)) return;
+                const clamped = Math.max(0, Math.min(100, parsed));
+                const index = Math.min(9, Math.floor(clamped / 10));
+                buckets[index] += 1;
+            };
+
             const userCodes = await UserCode.find(companyFilter)
-                .select('email name status planet allPlanets')
+                .select('email name status planet allPlanets customerFocusScore uncertaintyScore ieScore idikScore')
                 .lean();
 
             const normalizeStatus = (status) => status.toLowerCase().replace(/\s+/g, ' ').trim();
@@ -758,6 +770,12 @@ const adminController = {
             let totalSentGames = 0;
             let uniquePeopleCount = 0;
             const competencyCounts = { customerFocus: 0, uncertainty: 0, ie: 0, idik: 0 };
+            const scoreDistributions = {
+                customerFocus: initBuckets(),
+                uncertainty: initBuckets(),
+                ie: initBuckets(),
+                idik: initBuckets()
+            };
             const uniqueKeys = new Set();
 
             userCodes.forEach((item) => {
@@ -794,6 +812,11 @@ const adminController = {
                     competencyCounts.ie += 1;
                     competencyCounts.idik += 1;
                 }
+
+                addScoreToBuckets(scoreDistributions.customerFocus, item.customerFocusScore);
+                addScoreToBuckets(scoreDistributions.uncertainty, item.uncertaintyScore);
+                addScoreToBuckets(scoreDistributions.ie, item.ieScore);
+                addScoreToBuckets(scoreDistributions.idik, item.idikScore);
             });
 
             uniquePeopleCount = uniqueKeys.size;
@@ -802,7 +825,8 @@ const adminController = {
                 totalSentGames,
                 uniquePeopleCount,
                 statusCounts,
-                competencyCounts
+                competencyCounts,
+                scoreDistributions
             };
 
             dashboardStatsCache.set(cacheKey, { fetchedAt: now, data: stats });
