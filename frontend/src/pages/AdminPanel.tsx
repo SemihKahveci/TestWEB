@@ -1575,66 +1575,56 @@ const AdminPanel: React.FC = () => {
               padding: '20px',
               overflowY: 'auto'
             }}>
-              <div style={{ marginBottom: '12px' }}>
+              <label style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '10px 12px', borderRadius: '8px', border: '1px solid #E5E7EB', background: '#F9FAFB', marginBottom: '12px' }}>
                 <input
                   type="checkbox"
                   id="generalEvaluation"
                   checked={pdfOptions.generalEvaluation}
                   onChange={(e) => setPdfOptions(prev => ({ ...prev, generalEvaluation: e.target.checked }))}
-                  style={{ marginRight: '8px' }}
+                  style={{ width: '16px', height: '16px', accentColor: '#0286F7' }}
                 />
-                <label htmlFor="generalEvaluation" style={{ fontSize: '14px', color: '#232D42' }}>
-                  Tanım ve Genel Değerlendirme
-                </label>
-              </div>
-              <div style={{ marginBottom: '12px' }}>
+                <span style={{ fontSize: '14px', color: '#232D42' }}>Tanım ve Genel Değerlendirme</span>
+              </label>
+              <label style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '10px 12px', borderRadius: '8px', border: '1px solid #E5E7EB', background: '#F9FAFB', marginBottom: '12px' }}>
                 <input
                   type="checkbox"
                   id="strengths"
                   checked={pdfOptions.strengths}
                   onChange={(e) => setPdfOptions(prev => ({ ...prev, strengths: e.target.checked }))}
-                  style={{ marginRight: '8px' }}
+                  style={{ width: '16px', height: '16px', accentColor: '#0286F7' }}
                 />
-                <label htmlFor="strengths" style={{ fontSize: '14px', color: '#232D42' }}>
-                  Güçlü Yönler ve Gelişim Alanları
-                </label>
-              </div>
-              <div style={{ marginBottom: '12px' }}>
+                <span style={{ fontSize: '14px', color: '#232D42' }}>Güçlü Yönler ve Gelişim Alanları</span>
+              </label>
+              <label style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '10px 12px', borderRadius: '8px', border: '1px solid #E5E7EB', background: '#F9FAFB', marginBottom: '12px' }}>
                 <input
                   type="checkbox"
                   id="interviewQuestions"
                   checked={pdfOptions.interviewQuestions}
                   onChange={(e) => setPdfOptions(prev => ({ ...prev, interviewQuestions: e.target.checked }))}
-                  style={{ marginRight: '8px' }}
+                  style={{ width: '16px', height: '16px', accentColor: '#0286F7' }}
                 />
-                <label htmlFor="interviewQuestions" style={{ fontSize: '14px', color: '#232D42' }}>
-                  Mülakat Soruları
-                </label>
-              </div>
-              <div style={{ marginBottom: '12px' }}>
+                <span style={{ fontSize: '14px', color: '#232D42' }}>Mülakat Soruları</span>
+              </label>
+              <label style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '10px 12px', borderRadius: '8px', border: '1px solid #E5E7EB', background: '#F9FAFB', marginBottom: '12px' }}>
                 <input
                   type="checkbox"
                   id="whyTheseQuestions"
                   checked={pdfOptions.whyTheseQuestions}
                   onChange={(e) => setPdfOptions(prev => ({ ...prev, whyTheseQuestions: e.target.checked }))}
-                  style={{ marginRight: '8px' }}
+                  style={{ width: '16px', height: '16px', accentColor: '#0286F7' }}
                 />
-                <label htmlFor="whyTheseQuestions" style={{ fontSize: '14px', color: '#232D42' }}>
-                  Neden Bu Sorular?
-                </label>
-              </div>
-              <div style={{ marginBottom: '12px' }}>
+                <span style={{ fontSize: '14px', color: '#232D42' }}>Neden Bu Sorular?</span>
+              </label>
+              <label style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '10px 12px', borderRadius: '8px', border: '1px solid #E5E7EB', background: '#F9FAFB' }}>
                 <input
                   type="checkbox"
                   id="developmentSuggestions"
                   checked={pdfOptions.developmentSuggestions}
                   onChange={(e) => setPdfOptions(prev => ({ ...prev, developmentSuggestions: e.target.checked }))}
-                  style={{ marginRight: '8px' }}
+                  style={{ width: '16px', height: '16px', accentColor: '#0286F7' }}
                 />
-                <label htmlFor="developmentSuggestions" style={{ fontSize: '14px', color: '#232D42' }}>
-                  Gelişim Planı
-                </label>
-              </div>
+                <span style={{ fontSize: '14px', color: '#232D42' }}>Gelişim Planı</span>
+              </label>
             </div>
             <div style={{
               padding: '20px',

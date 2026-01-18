@@ -115,6 +115,7 @@ const DashboardPage: React.FC = () => {
   const [tempSelectedPositions, setTempSelectedPositions] = useState<string[]>([]);
   const [fullResults, setFullResults] = useState<UserResult[]>([]);
   const [isFullResultsLoading, setIsFullResultsLoading] = useState(false);
+  const [showDownloadPopup, setShowDownloadPopup] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalCount, setTotalCount] = useState(0);
   const [totalPages, setTotalPages] = useState(0);
@@ -762,7 +763,7 @@ const DashboardPage: React.FC = () => {
               Yenile
             </button>
             <button
-              onClick={() => {}}
+              onClick={() => setShowDownloadPopup(true)}
               style={{ padding: '10px 16px', borderRadius: '8px', border: 'none', background: '#16A34A', color: 'white', cursor: 'pointer', fontWeight: 600, fontSize: '13px', display: 'flex', alignItems: 'center', gap: '8px' }}
             >
               <i className="fas fa-file-excel" />
@@ -1275,6 +1276,140 @@ const DashboardPage: React.FC = () => {
                 }}
               >
                 Filtreleri Uygula
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+      {showDownloadPopup && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          width: '100%',
+          height: '100%',
+          background: 'rgba(0, 0, 0, 0.5)',
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+          zIndex: 1000
+        }}>
+          <div style={{
+            width: isMobile ? '90%' : '400px',
+            background: 'white',
+            borderRadius: '10px',
+            display: 'flex',
+            flexDirection: 'column',
+            overflow: 'hidden'
+          }}>
+            <div style={{
+              padding: '20px',
+              borderBottom: '1px solid #E9ECEF',
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              background: '#F8F9FA'
+            }}>
+              <div style={{
+                fontSize: '18px',
+                fontWeight: 600,
+                color: '#232D42'
+              }}>
+                PDF İndir
+              </div>
+              <div
+                onClick={() => setShowDownloadPopup(false)}
+                style={{
+                  cursor: 'pointer',
+                  fontSize: '24px',
+                  color: '#666'
+                }}
+              >
+                ×
+              </div>
+            </div>
+            <div style={{
+              flex: 1,
+              padding: '20px',
+              overflowY: 'auto'
+            }}>
+              <label style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '10px 12px', borderRadius: '8px', border: '1px solid #E5E7EB', background: '#F9FAFB', marginBottom: '12px' }}>
+                <input
+                  type="checkbox"
+                  id="dashboard-generalEvaluation"
+                  defaultChecked
+                  style={{ width: '16px', height: '16px', accentColor: '#0286F7' }}
+                />
+                <span style={{ fontSize: '14px', color: '#232D42' }}>Tanım ve Genel Değerlendirme</span>
+              </label>
+              <label style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '10px 12px', borderRadius: '8px', border: '1px solid #E5E7EB', background: '#F9FAFB', marginBottom: '12px' }}>
+                <input
+                  type="checkbox"
+                  id="dashboard-strengths"
+                  defaultChecked
+                  style={{ width: '16px', height: '16px', accentColor: '#0286F7' }}
+                />
+                <span style={{ fontSize: '14px', color: '#232D42' }}>Güçlü Yönler ve Gelişim Alanları</span>
+              </label>
+              <label style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '10px 12px', borderRadius: '8px', border: '1px solid #E5E7EB', background: '#F9FAFB', marginBottom: '12px' }}>
+                <input
+                  type="checkbox"
+                  id="dashboard-interviewQuestions"
+                  defaultChecked
+                  style={{ width: '16px', height: '16px', accentColor: '#0286F7' }}
+                />
+                <span style={{ fontSize: '14px', color: '#232D42' }}>Mülakat Soruları</span>
+              </label>
+              <label style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '10px 12px', borderRadius: '8px', border: '1px solid #E5E7EB', background: '#F9FAFB', marginBottom: '12px' }}>
+                <input
+                  type="checkbox"
+                  id="dashboard-whyTheseQuestions"
+                  defaultChecked
+                  style={{ width: '16px', height: '16px', accentColor: '#0286F7' }}
+                />
+                <span style={{ fontSize: '14px', color: '#232D42' }}>Neden Bu Sorular?</span>
+              </label>
+              <label style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '10px 12px', borderRadius: '8px', border: '1px solid #E5E7EB', background: '#F9FAFB', marginBottom: '12px' }}>
+                <input
+                  type="checkbox"
+                  id="dashboard-developmentSuggestions"
+                  defaultChecked
+                  style={{ width: '16px', height: '16px', accentColor: '#0286F7' }}
+                />
+                <span style={{ fontSize: '14px', color: '#232D42' }}>Gelişim Planı</span>
+              </label>
+              <label style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '10px 12px', borderRadius: '8px', border: '1px solid #E5E7EB', background: '#F9FAFB' }}>
+                <input
+                  type="checkbox"
+                  id="dashboard-competencyScore"
+                  defaultChecked
+                  style={{ width: '16px', height: '16px', accentColor: '#0286F7' }}
+                />
+                <span style={{ fontSize: '14px', color: '#232D42' }}>Yetkinlik Puanı</span>
+              </label>
+            </div>
+            <div style={{
+              padding: '20px',
+              borderTop: '1px solid #E9ECEF',
+              display: 'flex',
+              gap: '12px',
+              justifyContent: 'flex-end'
+            }}>
+              <button
+                onClick={() => setShowDownloadPopup(false)}
+                style={{
+                  padding: '8px 16px',
+                  background: '#3B82F6',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '4px',
+                  cursor: 'pointer',
+                  fontSize: '14px',
+                  fontFamily: 'Inter',
+                  fontWeight: 500
+                }}
+              >
+                PDF İndir
               </button>
             </div>
           </div>
