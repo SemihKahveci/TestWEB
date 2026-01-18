@@ -390,15 +390,8 @@ const DashboardPage: React.FC = () => {
       x: xLabels,
       y: [competencyCounts.customerFocus, competencyCounts.uncertainty, 0, 0],
       marker: { color: '#0d6efd' },
-      text: [
-        competencyCounts.customerFocus,
-        competencyCounts.uncertainty,
-        '',
-        ''
-      ],
-      textposition: 'outside',
-      cliponaxis: false,
-      textfont: { size: 11 }
+      text: ['','','',''],
+      textposition: 'none'
     };
 
     const titanTrace = {
@@ -407,21 +400,12 @@ const DashboardPage: React.FC = () => {
       x: xLabels,
       y: [0, 0, competencyCounts.ie, competencyCounts.idik],
       marker: { color: '#fd7e14' },
-      text: [
-        '',
-        '',
-        competencyCounts.ie,
-        competencyCounts.idik
-      ],
-      textposition: 'outside',
-      cliponaxis: false,
-      textfont: { size: 11 }
+      text: ['','','',''],
+      textposition: 'none'
     };
 
     const competencyLayout = {
-      title: { text: 'Gönderilen Oyun Sayısı', font: { size: 16 } },
       barmode: 'group',
-      xaxis: { title: 'Yetkinlik' },
       yaxis: { title: 'Oyun Sayısı' },
       paper_bgcolor: '#FFFFFF',
       plot_bgcolor: '#f8f9fa',
@@ -600,68 +584,84 @@ const DashboardPage: React.FC = () => {
             <div style={{ fontSize: '16px', fontWeight: 600, color: '#111827', marginBottom: '4px' }}>Yetkinlik Skor Dağılımları</div>
             <div style={{ fontSize: '13px', color: '#6B7280' }}>Her bir yetkinliğin hangi skor aralığında yığıldığını gösteren grafik.</div>
           </div>
-          <div style={{ position: 'relative' }}>
-            <button
-              onClick={(event) => {
-                event.stopPropagation();
-                setFilterOpen((prev) => !prev);
-              }}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '8px',
-                padding: '10px 16px',
-                background: '#2563EB',
-                color: 'white',
-                borderRadius: '8px',
-                border: 'none',
-                cursor: 'pointer',
-                fontWeight: 600,
-                fontSize: '13px'
-              }}
-            >
-              🔍 Filtrele
-            </button>
-            {filterOpen && (
-              <div
-                onClick={(event) => event.stopPropagation()}
+          <div style={{ display: 'flex', gap: '10px', alignItems: 'center', position: 'relative' }}>
+            <div style={{ position: 'relative' }}>
+              <button
+                onClick={(event) => {
+                  event.stopPropagation();
+                  setFilterOpen((prev) => !prev);
+                }}
                 style={{
-                  position: 'absolute',
-                  right: 0,
-                  top: '44px',
-                  width: '260px',
-                  background: 'white',
-                  borderRadius: '10px',
-                  border: '1px solid #E5E7EB',
-                  boxShadow: '0 10px 30px rgba(0,0,0,0.08)',
-                  zIndex: 10
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                  padding: '10px 16px',
+                  background: '#2563EB',
+                  color: 'white',
+                  borderRadius: '8px',
+                  border: 'none',
+                  cursor: 'pointer',
+                  fontWeight: 600,
+                  fontSize: '13px'
                 }}
               >
-                <div style={{ padding: '16px' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '12px' }}>
-                    <div style={{ fontSize: '13px', fontWeight: 600 }}>Yetkinlikleri Seç</div>
-                    <button
-                      onClick={clearFilters}
-                      style={{ fontSize: '12px', color: '#2563EB', border: 'none', background: 'none', cursor: 'pointer' }}
-                    >
-                      Temizle
-                    </button>
-                  </div>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                    {allCompetencies.map((competency) => (
-                      <label key={competency} style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
-                        <input
-                          type="checkbox"
-                          checked={selectedCompetencies.includes(competency)}
-                          onChange={() => toggleCompetency(competency)}
-                        />
-                        <span style={{ fontSize: '13px', color: '#111827' }}>{competency}</span>
-                      </label>
-                    ))}
+                🔍 Filtrele
+              </button>
+              {filterOpen && (
+                <div
+                  onClick={(event) => event.stopPropagation()}
+                  style={{
+                    position: 'absolute',
+                    right: 0,
+                    top: '44px',
+                    width: '260px',
+                    background: 'white',
+                    borderRadius: '10px',
+                    border: '1px solid #E5E7EB',
+                    boxShadow: '0 10px 30px rgba(0,0,0,0.08)',
+                    zIndex: 10
+                  }}
+                >
+                  <div style={{ padding: '16px' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '12px' }}>
+                      <div style={{ fontSize: '13px', fontWeight: 600 }}>Yetkinlikleri Seç</div>
+                      <button
+                        onClick={clearFilters}
+                        style={{ fontSize: '12px', color: '#2563EB', border: 'none', background: 'none', cursor: 'pointer' }}
+                      >
+                        Temizle
+                      </button>
+                    </div>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                      {allCompetencies.map((competency) => (
+                        <label key={competency} style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
+                          <input
+                            type="checkbox"
+                            checked={selectedCompetencies.includes(competency)}
+                            onChange={() => toggleCompetency(competency)}
+                          />
+                          <span style={{ fontSize: '13px', color: '#111827' }}>{competency}</span>
+                        </label>
+                      ))}
+                    </div>
                   </div>
                 </div>
-              </div>
-            )}
+              )}
+            </div>
+            <button
+              onClick={loadResults}
+              style={{ padding: '10px 16px', borderRadius: '8px', border: '1px solid #D1D5DB', background: '#F3F4F6', cursor: 'pointer', fontWeight: 600, fontSize: '13px', display: 'flex', alignItems: 'center', gap: '8px' }}
+            >
+              <i className="fas fa-sync-alt" />
+              Yenile
+            </button>
+            <button
+              onClick={() => {}}
+              style={{ padding: '10px 16px', borderRadius: '8px', border: 'none', background: '#16A34A', color: 'white', cursor: 'pointer', fontWeight: 600, fontSize: '13px', display: 'flex', alignItems: 'center', gap: '8px' }}
+            >
+              <i className="fas fa-file-excel" />
+              Sonuçları İndir
+            </button>
           </div>
         </div>
         <div style={{ overflowX: 'hidden' }}>
@@ -692,22 +692,7 @@ const DashboardPage: React.FC = () => {
             <div style={{ fontSize: '16px', fontWeight: 600, color: '#111827', marginBottom: '4px' }}>Kişi Sonuçları</div>
             <div style={{ fontSize: '13px', color: '#6B7280' }}>Kişi Skorları sayfası ile aynı sonuçlar.</div>
           </div>
-          <div style={{ display: 'flex', gap: '10px' }}>
-            <button
-              onClick={loadResults}
-              style={{ padding: '8px 14px', borderRadius: '8px', border: '1px solid #D1D5DB', background: '#F3F4F6', cursor: 'pointer', fontWeight: 600, fontSize: '13px', display: 'flex', alignItems: 'center', gap: '8px' }}
-            >
-              <i className="fas fa-sync-alt" />
-              Yenile
-            </button>
-            <button
-              onClick={() => {}}
-              style={{ padding: '8px 14px', borderRadius: '8px', border: 'none', background: '#16A34A', color: 'white', cursor: 'pointer', fontWeight: 600, fontSize: '13px', display: 'flex', alignItems: 'center', gap: '8px' }}
-            >
-              <i className="fas fa-file-excel" />
-              Sonuçları İndir
-            </button>
-          </div>
+          <div />
         </div>
 
         <div style={{ position: 'relative', marginBottom: '16px' }}>
