@@ -22,6 +22,12 @@ const statsCache = {
   initialized: false
 };
 
+const fullResultsCache = {
+  results: [] as UserResult[],
+  fetchedAt: 0,
+  initialized: false
+};
+
 const statusCountsEqual = (
   a: { completed: number; inProgress: number; expired: number; pending: number },
   b: { completed: number; inProgress: number; expired: number; pending: number }
@@ -60,6 +66,8 @@ interface UserResult {
   name: string;
   email: string;
   status: string;
+  unvan?: string;
+  pozisyon?: string;
   sentDate: string;
   completionDate: string;
   expiryDate: string;
@@ -105,6 +113,8 @@ const DashboardPage: React.FC = () => {
   const [selectedPositions, setSelectedPositions] = useState<string[]>([]);
   const [tempSelectedTitles, setTempSelectedTitles] = useState<string[]>([]);
   const [tempSelectedPositions, setTempSelectedPositions] = useState<string[]>([]);
+  const [fullResults, setFullResults] = useState<UserResult[]>([]);
+  const [isFullResultsLoading, setIsFullResultsLoading] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalCount, setTotalCount] = useState(0);
   const [totalPages, setTotalPages] = useState(0);
@@ -206,6 +216,7 @@ const DashboardPage: React.FC = () => {
   useEffect(() => {
     loadResults();
   }, [loadResults]);
+
 
   useEffect(() => {
     if (statsCache.initialized) {
@@ -456,11 +467,7 @@ const DashboardPage: React.FC = () => {
           color: comp.color,
           line: { color: comp.color, width: 2 },
           opacity: 0.8
-        },
-        text: comp.data,
-        textposition: 'outside',
-        cliponaxis: false,
-        textfont: { size: 10 }
+        }
       }];
 
       const chartLayout = {
@@ -537,6 +544,79 @@ const DashboardPage: React.FC = () => {
       return [...prev, position];
     });
   };
+
+  const hasScoreValue = (score: number | string) =>
+    score !== null && score !== undefined && score !== '-' && score !== 0 && score !== '0';
+
+  const getScoreByCompetency = (item: UserResult, competency: string) => {
+    switch (competency) {
+      case 'Müşteri Odaklılık':
+        return item.customerFocusScore;
+      case 'Belirsizlik Yönetimi':
+        return item.uncertaintyScore;
+      case 'İnsanları Etkileme':
+        return item.ieScore;
+      case 'Güven Veren İşbirliği ve Sinerji':
+        return item.idikScore;
+      default:
+        return null;
+    }
+  };
+
+  const isFilterActive =
+    selectedTitles.length > 0 ||
+    selectedPositions.length > 0 ||
+    (selectedCompetencies.length > 0 && selectedCompetencies.length < allCompetencies.length);
+
+  const applyResultFilters = (items: UserResult[]) =>
+    items.filter((item) => {
+      const matchesTitle =
+        selectedTitles.length === 0 ||
+        selectedTitles.includes((item.unvan || '').trim());
+      const matchesPosition =
+        selectedPositions.length === 0 ||
+        selectedPositions.includes((item.pozisyon || '').trim());
+      const matchesCompetency =
+        selectedCompetencies.length === 0 ||
+        selectedCompetencies.some((comp) => hasScoreValue(getScoreByCompetency(item, comp) as number | string));
+      return matchesTitle && matchesPosition && matchesCompetency;
+    });
+
+  const filteredResults = applyResultFilters(isFilterActive ? fullResults : results);
+
+  useEffect(() => {
+    if (!isFilterActive) {
+      return;
+    }
+
+    const loadFullResults = async () => {
+      try {
+        setIsFullResultsLoading(true);
+        const now = Date.now();
+        if (fullResultsCache.initialized && now - fullResultsCache.fetchedAt < 60000) {
+          setFullResults(fullResultsCache.results);
+          return;
+        }
+
+        const response = await evaluationAPI.getAll(undefined, undefined, debouncedSearchTerm || '', 'Tamamlandı', true);
+        if (response.data?.success && response.data.results) {
+          fullResultsCache.results = response.data.results;
+          fullResultsCache.fetchedAt = now;
+          fullResultsCache.initialized = true;
+          setFullResults(response.data.results);
+        } else {
+          setFullResults([]);
+        }
+      } catch (error) {
+        console.error('Tüm sonuçları yükleme hatası:', error);
+        setFullResults([]);
+      } finally {
+        setIsFullResultsLoading(false);
+      }
+    };
+
+    loadFullResults();
+  }, [isFilterActive, debouncedSearchTerm]);
 
   const formatDate = (dateString: string) => {
     if (!dateString) return '-';
@@ -745,13 +825,15 @@ const DashboardPage: React.FC = () => {
         </div>
 
         <div style={{ overflowX: 'auto', width: '100%', maxWidth: '100%' }}>
-          {isLoadingResults ? (
+          {isLoadingResults || (isFilterActive && isFullResultsLoading) ? (
             <div style={{ textAlign: 'center', padding: '24px', color: '#6B7280' }}>Sonuçlar yükleniyor...</div>
-          ) : results.length === 0 ? (
+          ) : filteredResults.length === 0 ? (
             <div style={{ textAlign: 'center', padding: '24px', color: '#6B7280' }}>Gösterilecek sonuç bulunamadı.</div>
           ) : shouldCompact ? (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-              {results.map((result, index) => (
+              {filteredResults
+                .slice((currentPage - 1) * 10, currentPage * 10)
+                .map((result, index) => (
                 <div key={`${result.code}-${index}`} style={{ border: '1px solid #E5E7EB', borderRadius: '10px', padding: '12px', background: index % 2 === 1 ? '#F8FAFF' : 'white' }}>
                   <div style={{ fontWeight: 600, color: '#111827', marginBottom: '6px' }}>{result.name}</div>
                   <div style={{ fontSize: '12px', color: '#6B7280', marginBottom: '10px' }}>
@@ -791,7 +873,9 @@ const DashboardPage: React.FC = () => {
                 </tr>
               </thead>
               <tbody>
-                {results.map((result, index) => (
+                {filteredResults
+                  .slice((currentPage - 1) * 10, currentPage * 10)
+                  .map((result, index) => (
                   <tr key={`${result.code}-${index}`} style={{ background: index % 2 === 1 ? '#EFF6FF' : 'white', borderBottom: '1px solid #E5E7EB' }}>
                     <td style={{ padding: '12px 16px', textAlign: 'left', fontWeight: 600, color: '#111827', wordBreak: 'break-word' }}>{result.name}</td>
                     <td style={{ padding: '12px 16px', textAlign: 'center', color: '#6B7280', wordBreak: 'break-word' }}>{formatDate(result.completionDate)}</td>
@@ -806,10 +890,10 @@ const DashboardPage: React.FC = () => {
           )}
         </div>
 
-        {totalPages > 1 && (
+        {(isFilterActive ? Math.ceil(filteredResults.length / 10) : totalPages) > 1 && (
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '12px', marginTop: '16px' }}>
             <div style={{ fontSize: '13px', color: '#6B7280' }}>
-              {((currentPage - 1) * 10) + 1}-{Math.min(currentPage * 10, totalCount)} arası, toplam {totalCount} kayıt
+              {((currentPage - 1) * 10) + 1}-{Math.min(currentPage * 10, isFilterActive ? filteredResults.length : totalCount)} arası, toplam {isFilterActive ? filteredResults.length : totalCount} kayıt
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
               <button
@@ -852,8 +936,9 @@ const DashboardPage: React.FC = () => {
               </button>
               {(() => {
                 const maxVisiblePages = 5;
+                const totalPageCount = isFilterActive ? Math.ceil(filteredResults.length / 10) : totalPages;
                 let startPage = Math.max(1, currentPage - Math.floor(maxVisiblePages / 2));
-                let endPage = Math.min(totalPages, startPage + maxVisiblePages - 1);
+                let endPage = Math.min(totalPageCount, startPage + maxVisiblePages - 1);
                 if (endPage - startPage + 1 < maxVisiblePages) {
                   startPage = Math.max(1, endPage - maxVisiblePages + 1);
                 }
@@ -915,16 +1000,16 @@ const DashboardPage: React.FC = () => {
                   );
                 }
 
-                if (endPage < totalPages) {
-                  if (endPage < totalPages - 1) {
+                if (endPage < totalPageCount) {
+                  if (endPage < totalPageCount - 1) {
                     pages.push(
                       <span key="ellipsis-end" style={{ padding: '0 6px', color: '#9CA3AF', fontSize: '12px' }}>...</span>
                     );
                   }
                   pages.push(
                     <button
-                      key={totalPages}
-                      onClick={() => setCurrentPage(totalPages)}
+                      key={totalPageCount}
+                      onClick={() => setCurrentPage(totalPageCount)}
                       style={{
                         width: '30px',
                         height: '30px',
@@ -940,7 +1025,7 @@ const DashboardPage: React.FC = () => {
                         fontWeight: 600
                       }}
                     >
-                      {totalPages}
+                      {totalPageCount}
                     </button>
                   );
                 }
@@ -948,8 +1033,8 @@ const DashboardPage: React.FC = () => {
                 return pages;
               })()}
               <button
-                onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
-                disabled={currentPage === totalPages}
+              onClick={() => setCurrentPage((prev) => Math.min(prev + 1, isFilterActive ? Math.ceil(filteredResults.length / 10) : totalPages))}
+              disabled={currentPage === (isFilterActive ? Math.ceil(filteredResults.length / 10) : totalPages)}
                 style={{
                   width: '30px',
                   height: '30px',
@@ -967,8 +1052,8 @@ const DashboardPage: React.FC = () => {
                 ›
               </button>
               <button
-                onClick={() => setCurrentPage(totalPages)}
-                disabled={currentPage === totalPages}
+              onClick={() => setCurrentPage(isFilterActive ? Math.ceil(filteredResults.length / 10) : totalPages)}
+              disabled={currentPage === (isFilterActive ? Math.ceil(filteredResults.length / 10) : totalPages)}
                 style={{
                   width: '30px',
                   height: '30px',
@@ -1189,7 +1274,7 @@ const DashboardPage: React.FC = () => {
                   cursor: 'pointer'
                 }}
               >
-                Kaydet
+                Filtreleri Uygula
               </button>
             </div>
           </div>

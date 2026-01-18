@@ -7,6 +7,7 @@ const Admin = require('../models/Admin');
 const bcrypt = require('bcryptjs');
 const UserCode = require('../models/userCode');
 const Game = require('../models/game');
+const Authorization = require('../models/Authorization');
 const { capitalizeName, escapeHtml, safeLog, getSafeErrorMessage } = require('../utils/helpers');
 const XLSX = require('xlsx');
 const fs = require('fs');
@@ -640,6 +641,19 @@ const adminController = {
             
             // UserCode güncellemelerini topla (non-blocking için)
             const updatePromises = [];
+
+            const emails = results
+                .map(r => r.email)
+                .filter(Boolean)
+                .map(email => email.toLowerCase());
+            const authorizations = await Authorization.find({
+                email: { $in: emails },
+                ...companyFilter
+            }).populate('organizationId').lean();
+            const authByEmail = {};
+            authorizations.forEach(auth => {
+                authByEmail[(auth.email || '').toLowerCase()] = auth;
+            });
             
             // Her sonuç için Game modelinden de veri al
             const mappedResults = results.map((result) => {
@@ -689,6 +703,11 @@ const adminController = {
                 // Titan oyununu bul
                 const titanGame = games.find(g => g.section === '1' || g.section === 1);
                 
+                const auth = authByEmail[(result.email || '').toLowerCase()];
+                const organization = auth?.organizationId || {};
+                const unvan = organization.unvan || auth?.unvan || auth?.title || '-';
+                const pozisyon = organization.pozisyon || auth?.pozisyon || auth?.title || '-';
+
                 return {
                     code: result.code,
                     name: result.name,
@@ -696,6 +715,8 @@ const adminController = {
                     status: result.status,
                     planet: result.planet,
                     allPlanets: result.allPlanets,
+                    unvan,
+                    pozisyon,
                     sentDate: result.sentDate,
                     completionDate: result.completionDate,
                     expiryDate: result.expiryDate,
