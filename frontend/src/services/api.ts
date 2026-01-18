@@ -54,6 +54,9 @@ export const authAPI = {
 export const adminAPI = {
   getDashboardStats: () =>
     api.get('/admin/dashboard-stats'),
+
+  exportExcelBulk: (data: any) =>
+    api.post('/admin/export-excel-bulk', data, { responseType: 'blob' }),
   
   getAllAdmins: () =>
     api.get('/admin'),

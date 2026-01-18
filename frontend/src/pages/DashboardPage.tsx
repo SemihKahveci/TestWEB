@@ -116,6 +116,14 @@ const DashboardPage: React.FC = () => {
   const [fullResults, setFullResults] = useState<UserResult[]>([]);
   const [isFullResultsLoading, setIsFullResultsLoading] = useState(false);
   const [showDownloadPopup, setShowDownloadPopup] = useState(false);
+  const [downloadOptions, setDownloadOptions] = useState({
+    generalEvaluation: true,
+    strengths: true,
+    interviewQuestions: true,
+    whyTheseQuestions: true,
+    developmentSuggestions: true,
+    competencyScore: true
+  });
   const [currentPage, setCurrentPage] = useState(1);
   const [totalCount, setTotalCount] = useState(0);
   const [totalPages, setTotalPages] = useState(0);
@@ -584,6 +592,41 @@ const DashboardPage: React.FC = () => {
     });
 
   const filteredResults = applyResultFilters(isFilterActive ? fullResults : results);
+
+  const handleExcelDownload = async () => {
+    if (filteredResults.length === 0) {
+      return;
+    }
+
+    try {
+      const response = await adminAPI.exportExcelBulk({
+        codes: filteredResults.map((item) => item.code),
+        selectedOptions: downloadOptions
+      });
+
+      const blob = new Blob([response.data], {
+        type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+      });
+      const url = window.URL.createObjectURL(blob);
+      const date = new Date();
+      const formattedDate = `${date.getDate().toString().padStart(2, '0')}${(date.getMonth() + 1)
+        .toString()
+        .padStart(2, '0')}${date.getFullYear()}`;
+      const fileName = `ANDRON_Kisi_Sonuclari_${formattedDate}.xlsx`;
+
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = fileName;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+
+      setShowDownloadPopup(false);
+    } catch (error) {
+      console.error('Excel indirme hatası:', error);
+    }
+  };
 
   useEffect(() => {
     if (!isFilterActive) {
@@ -1315,7 +1358,7 @@ const DashboardPage: React.FC = () => {
                 fontWeight: 600,
                 color: '#232D42'
               }}>
-                PDF İndir
+                Excel İndir
               </div>
               <div
                 onClick={() => setShowDownloadPopup(false)}
@@ -1337,7 +1380,8 @@ const DashboardPage: React.FC = () => {
                 <input
                   type="checkbox"
                   id="dashboard-generalEvaluation"
-                  defaultChecked
+                  checked={downloadOptions.generalEvaluation}
+                  onChange={(event) => setDownloadOptions((prev) => ({ ...prev, generalEvaluation: event.target.checked }))}
                   style={{ width: '16px', height: '16px', accentColor: '#0286F7' }}
                 />
                 <span style={{ fontSize: '14px', color: '#232D42' }}>Tanım ve Genel Değerlendirme</span>
@@ -1346,7 +1390,8 @@ const DashboardPage: React.FC = () => {
                 <input
                   type="checkbox"
                   id="dashboard-strengths"
-                  defaultChecked
+                  checked={downloadOptions.strengths}
+                  onChange={(event) => setDownloadOptions((prev) => ({ ...prev, strengths: event.target.checked }))}
                   style={{ width: '16px', height: '16px', accentColor: '#0286F7' }}
                 />
                 <span style={{ fontSize: '14px', color: '#232D42' }}>Güçlü Yönler ve Gelişim Alanları</span>
@@ -1355,7 +1400,8 @@ const DashboardPage: React.FC = () => {
                 <input
                   type="checkbox"
                   id="dashboard-interviewQuestions"
-                  defaultChecked
+                  checked={downloadOptions.interviewQuestions}
+                  onChange={(event) => setDownloadOptions((prev) => ({ ...prev, interviewQuestions: event.target.checked }))}
                   style={{ width: '16px', height: '16px', accentColor: '#0286F7' }}
                 />
                 <span style={{ fontSize: '14px', color: '#232D42' }}>Mülakat Soruları</span>
@@ -1364,7 +1410,8 @@ const DashboardPage: React.FC = () => {
                 <input
                   type="checkbox"
                   id="dashboard-whyTheseQuestions"
-                  defaultChecked
+                  checked={downloadOptions.whyTheseQuestions}
+                  onChange={(event) => setDownloadOptions((prev) => ({ ...prev, whyTheseQuestions: event.target.checked }))}
                   style={{ width: '16px', height: '16px', accentColor: '#0286F7' }}
                 />
                 <span style={{ fontSize: '14px', color: '#232D42' }}>Neden Bu Sorular?</span>
@@ -1373,7 +1420,8 @@ const DashboardPage: React.FC = () => {
                 <input
                   type="checkbox"
                   id="dashboard-developmentSuggestions"
-                  defaultChecked
+                  checked={downloadOptions.developmentSuggestions}
+                  onChange={(event) => setDownloadOptions((prev) => ({ ...prev, developmentSuggestions: event.target.checked }))}
                   style={{ width: '16px', height: '16px', accentColor: '#0286F7' }}
                 />
                 <span style={{ fontSize: '14px', color: '#232D42' }}>Gelişim Planı</span>
@@ -1382,7 +1430,8 @@ const DashboardPage: React.FC = () => {
                 <input
                   type="checkbox"
                   id="dashboard-competencyScore"
-                  defaultChecked
+                  checked={downloadOptions.competencyScore}
+                  onChange={(event) => setDownloadOptions((prev) => ({ ...prev, competencyScore: event.target.checked }))}
                   style={{ width: '16px', height: '16px', accentColor: '#0286F7' }}
                 />
                 <span style={{ fontSize: '14px', color: '#232D42' }}>Yetkinlik Puanı</span>
@@ -1396,7 +1445,7 @@ const DashboardPage: React.FC = () => {
               justifyContent: 'flex-end'
             }}>
               <button
-                onClick={() => setShowDownloadPopup(false)}
+                onClick={handleExcelDownload}
                 style={{
                   padding: '8px 16px',
                   background: '#3B82F6',
@@ -1409,7 +1458,7 @@ const DashboardPage: React.FC = () => {
                   fontWeight: 500
                 }}
               >
-                PDF İndir
+                Excel İndir
               </button>
             </div>
           </div>

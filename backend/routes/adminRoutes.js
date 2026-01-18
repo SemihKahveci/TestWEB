@@ -33,6 +33,9 @@ router.get('/check-superadmin', (req, res) => {
 // Dashboard istatistikleri
 router.get('/dashboard-stats', adminController.getDashboardStats);
 
+// Dashboard toplu Excel indirme
+router.post('/export-excel-bulk', adminController.exportExcelBulk);
+
 // Yeni admin oluşturma (sadece superadmin)
 router.post('/create', isSuperAdmin, adminController.createAdmin);
 

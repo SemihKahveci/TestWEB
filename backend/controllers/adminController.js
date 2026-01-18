@@ -1360,6 +1360,184 @@ const adminController = {
         }
     },
 
+    // Çoklu Excel export (Dashboard filtreleri için)
+    exportExcelBulk: async (req, res) => {
+        try {
+            const { codes, selectedOptions } = req.body;
+
+            if (!Array.isArray(codes) || codes.length === 0) {
+                return res.status(400).json({ message: 'Kod listesi gereklidir' });
+            }
+
+            // Multi-tenant: companyId kontrolü yap
+            const { getCompanyFilter } = require('../middleware/auth');
+            const companyFilter = getCompanyFilter(req);
+
+            const options = {
+                generalEvaluation: selectedOptions?.generalEvaluation !== false,
+                strengths: selectedOptions?.strengths !== false,
+                interviewQuestions: selectedOptions?.interviewQuestions !== false,
+                whyTheseQuestions: selectedOptions?.whyTheseQuestions !== false,
+                developmentSuggestions: selectedOptions?.developmentSuggestions !== false,
+                competencyScore: selectedOptions?.competencyScore !== false
+            };
+
+            const userCodes = await UserCode.find({ code: { $in: codes }, ...companyFilter }).lean();
+            const games = await Game.find({ playerCode: { $in: codes }, ...companyFilter }).lean();
+
+            const userMap = new Map(userCodes.map((user) => [user.code, user]));
+            const gamesByCode = new Map();
+            games.forEach((game) => {
+                if (!gamesByCode.has(game.playerCode)) {
+                    gamesByCode.set(game.playerCode, []);
+                }
+                gamesByCode.get(game.playerCode).push(game);
+            });
+
+            const getCompetencyName = (type) => {
+                if (type === 'MO') return 'Müşteri Odaklılık';
+                if (type === 'BY') return 'Belirsizlik Yönetimi';
+                if (type === 'IE') return 'İnsanları Etkileme';
+                if (type === 'IDIK') return 'Güven Veren İşbirliği ve Sinerji';
+                return 'Bilinmeyen Yetkinlik';
+            };
+
+            const getDevelopmentSuggestion = (data) =>
+                data['Gelişim Önerileri -1'] ||
+                data['Gelişim Önerileri -2'] ||
+                data['Gelişim Önerileri - 3'] ||
+                '-';
+
+            const appendSection = (current, competencyName, value) => {
+                if (!value || value === '-') return current;
+                const line = `${competencyName}: ${value}`;
+                return current ? `${current}\n\n${line}` : line;
+            };
+
+            const excelData = [];
+
+            codes.forEach((code) => {
+                const user = userMap.get(code);
+                if (!user) return;
+
+                const userGames = gamesByCode.get(code) || [];
+                const venusGame = userGames.find((g) => g.section === '0' || g.section === 0);
+                const titanGame = userGames.find((g) => g.section === '1' || g.section === 1);
+
+                const customerFocusScore = (venusGame ? venusGame.customerFocusScore : null) || user.customerFocusScore || '-';
+                const uncertaintyScore = (venusGame ? venusGame.uncertaintyScore : null) || user.uncertaintyScore || '-';
+                const ieScore = (titanGame ? titanGame.ieScore : null) || user.ieScore || '-';
+                const idikScore = (titanGame ? titanGame.idikScore : null) || user.idikScore || '-';
+
+                let generalEvaluationText = '';
+                let strengthsText = '';
+                let developmentAreasText = '';
+                let interviewQuestionsText = '';
+                let whyTheseQuestionsText = '';
+                let developmentPlanText = '';
+
+                userGames.forEach((game) => {
+                    if (game.evaluationResult && game.evaluationResult.length > 0) {
+                        game.evaluationResult.forEach((evalResult) => {
+                            if (!evalResult.data || !evalResult.type) return;
+                            const competencyName = getCompetencyName(evalResult.type);
+
+                            if (options.generalEvaluation) {
+                                generalEvaluationText = appendSection(
+                                    generalEvaluationText,
+                                    competencyName,
+                                    evalResult.data['Genel Değerlendirme'] || '-'
+                                );
+                            }
+                            if (options.strengths) {
+                                strengthsText = appendSection(
+                                    strengthsText,
+                                    competencyName,
+                                    evalResult.data['Güçlü Yönler'] || '-'
+                                );
+                                developmentAreasText = appendSection(
+                                    developmentAreasText,
+                                    competencyName,
+                                    evalResult.data['Gelişim Alanları'] || '-'
+                                );
+                            }
+                            if (options.interviewQuestions) {
+                                interviewQuestionsText = appendSection(
+                                    interviewQuestionsText,
+                                    competencyName,
+                                    evalResult.data['Mülakat Soruları'] || '-'
+                                );
+                            }
+                            if (options.whyTheseQuestions) {
+                                whyTheseQuestionsText = appendSection(
+                                    whyTheseQuestionsText,
+                                    competencyName,
+                                    evalResult.data['Neden Bu Sorular?'] || '-'
+                                );
+                            }
+                            if (options.developmentSuggestions) {
+                                developmentPlanText = appendSection(
+                                    developmentPlanText,
+                                    competencyName,
+                                    getDevelopmentSuggestion(evalResult.data)
+                                );
+                            }
+                        });
+                    }
+                });
+
+                const row = {
+                    'Ad Soyad': user.name || '-'
+                };
+
+                if (options.generalEvaluation) {
+                    row['Tanım ve Genel Değerlendirme'] = generalEvaluationText || '-';
+                }
+                if (options.strengths) {
+                    row['Güçlü Yönler'] = strengthsText || '-';
+                    row['Gelişim Alanları'] = developmentAreasText || '-';
+                }
+                if (options.interviewQuestions) {
+                    row['Mülakat Soruları'] = interviewQuestionsText || '-';
+                }
+                if (options.whyTheseQuestions) {
+                    row['Neden Bu Sorular?'] = whyTheseQuestionsText || '-';
+                }
+                if (options.developmentSuggestions) {
+                    row['Gelişim Planı'] = developmentPlanText || '-';
+                }
+                if (options.competencyScore) {
+                    row['Müşteri Odaklılık Puanı'] = customerFocusScore || '-';
+                    row['Belirsizlik Yönetimi Puanı'] = uncertaintyScore || '-';
+                    row['İnsanları Etkileme Puanı'] = ieScore || '-';
+                    row['Güven Veren İşbirliği ve Sinerji Puanı'] = idikScore || '-';
+                }
+
+                excelData.push(row);
+            });
+
+            if (excelData.length === 0) {
+                return res.status(404).json({ message: 'Excel için veri bulunamadı' });
+            }
+
+            const worksheet = XLSX.utils.json_to_sheet(excelData);
+            const workbook = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(workbook, worksheet, 'Kişi Sonuçları');
+
+            const excelBuffer = XLSX.write(workbook, { type: 'buffer', bookType: 'xlsx' });
+
+            res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+            res.setHeader('Content-Disposition', 'attachment; filename=kisi_sonuclari.xlsx');
+            res.send(excelBuffer);
+        } catch (error) {
+            safeLog('error', 'Toplu Excel export hatası', error);
+            res.status(500).json({
+                message: getSafeErrorMessage(error, 'Excel oluşturulurken bir hata oluştu'),
+                ...(process.env.NODE_ENV !== 'production' && { error: error.message })
+            });
+        }
+    },
+
     // Şifremi Unuttum - E-posta gönderme
     forgotPassword: async (req, res) => {
         try {
