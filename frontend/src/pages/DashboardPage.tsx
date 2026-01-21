@@ -821,8 +821,8 @@ const DashboardPage: React.FC = () => {
             </button>
           </div>
         </div>
-        <div style={{ overflowX: 'auto' }}>
-          <div style={{ display: 'flex', flexWrap: 'nowrap', gap: '16px' }}>
+        <div style={{ overflowX: 'auto', width: '100%', maxWidth: '100%' }}>
+          <div style={{ display: 'flex', flexWrap: 'nowrap', gap: '16px', width: '100%' }}>
             {[
               'Müşteri Odaklılık',
               'Belirsizlik Yönetimi',
@@ -834,10 +834,10 @@ const DashboardPage: React.FC = () => {
                 id={`score-distribution-chart-${index + 1}`}
                 style={{
                   height: '320px',
-                  width: '50%',
-                  minWidth: '320px',
-                  maxWidth: '520px',
-                  flex: '0 0 50%',
+                  width: isMobile ? '100%' : '50%',
+                  minWidth: isMobile ? '280px' : '340px',
+                  maxWidth: isMobile ? '100%' : '560px',
+                  flex: isMobile ? '0 0 100%' : '0 0 50%',
                   border: '1px solid #E5E7EB',
                   borderRadius: '10px',
                   padding: '12px',

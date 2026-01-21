@@ -567,7 +567,7 @@ const AuthorizationPage: React.FC = () => {
     }
   };
 
-  // Filter authorizations based on search term (sadece kişi adına göre)
+  // Filter authorizations based on search term (tüm sütunlar)
   const filteredAuthorizations = authorizations.filter(auth => {
     // Türkçe karakterleri normalize et
     const normalizeText = (text: string) => {
@@ -592,8 +592,24 @@ const AuthorizationPage: React.FC = () => {
     
     const searchNormalized = normalizeText(debouncedSearchTerm);
     
-    return (
-      auth.personName && normalizeText(auth.personName).includes(searchNormalized)
+    if (!searchNormalized) {
+      return true;
+    }
+
+    const fieldsToSearch = [
+      auth.personName,
+      auth.email,
+      auth.sicilNo,
+      auth.title,
+      auth.organizationId?.pozisyon,
+      auth.organizationId?.genelMudurYardimciligi,
+      auth.organizationId?.direktörlük,
+      auth.organizationId?.müdürlük,
+      auth.organizationId?.grupLiderligi
+    ];
+
+    return fieldsToSearch.some((field) =>
+      field ? normalizeText(field).includes(searchNormalized) : false
     );
   }).sort((a, b) => {
     // Filtrelenmiş sonuçları da tarihe göre sırala
@@ -932,7 +948,7 @@ const AuthorizationPage: React.FC = () => {
             )}
             <input
               type="text"
-              placeholder="Kişi adına göre akıllı arama yapın..."
+              placeholder="Tüm sütunlarda akıllı arama yapın..."
               value={searchTerm}
               onChange={(e) => {
                 const value = e.target.value;
