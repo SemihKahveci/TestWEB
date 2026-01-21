@@ -651,9 +651,18 @@ const adminController = {
                 email: { $in: emails },
                 ...companyFilter
             }).populate('organizationId').lean();
-            const authByEmail = {};
+            const normalizeText = (value = '') =>
+                value
+                    .toString()
+                    .trim()
+                    .toLowerCase();
+            const authByEmailAndName = {};
             authorizations.forEach(auth => {
-                authByEmail[(auth.email || '').toLowerCase()] = auth;
+                const emailKey = normalizeText(auth.email || '');
+                const nameKey = normalizeText(auth.personName || '');
+                if (emailKey && nameKey) {
+                    authByEmailAndName[`${emailKey}|${nameKey}`] = auth;
+                }
             });
             
             // Her sonuç için Game modelinden de veri al
@@ -704,10 +713,12 @@ const adminController = {
                 // Titan oyununu bul
                 const titanGame = games.find(g => g.section === '1' || g.section === 1);
                 
-                const auth = authByEmail[(result.email || '').toLowerCase()];
+                const emailKey = normalizeText(result.email || '');
+                const nameKey = normalizeText(result.name || '');
+                const auth = authByEmailAndName[`${emailKey}|${nameKey}`];
                 const organization = auth?.organizationId || {};
-                const unvan = organization.unvan || auth?.unvan || auth?.title || '-';
-                const pozisyon = organization.pozisyon || auth?.pozisyon || auth?.title || '-';
+                const unvan = auth ? (organization.unvan || auth?.unvan || auth?.title || '-') : '-';
+                const pozisyon = auth ? (organization.pozisyon || auth?.pozisyon || auth?.title || '-') : '-';
 
                 return {
                     code: result.code,
