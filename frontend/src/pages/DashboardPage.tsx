@@ -525,6 +525,16 @@ const DashboardPage: React.FC = () => {
     setIsFilterModalOpen(false);
   };
 
+  const resetFilterModal = () => {
+    setTempSelectedCompetencies(allCompetencies);
+    setTempSelectedTitles([]);
+    setTempSelectedPositions([]);
+    setSelectedCompetencies(allCompetencies);
+    setSelectedTitles([]);
+    setSelectedPositions([]);
+    setIsFilterModalOpen(false);
+  };
+
   const toggleTempCompetency = (competency: string) => {
     setTempSelectedCompetencies((prev) => {
       if (prev.includes(competency)) {
@@ -1271,7 +1281,22 @@ const DashboardPage: React.FC = () => {
                 </div>
               </div>
             </div>
-            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px', padding: '16px 24px', borderTop: '1px solid #E5E7EB' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', gap: '12px', padding: '16px 24px', borderTop: '1px solid #E5E7EB' }}>
+              <button
+                onClick={resetFilterModal}
+                style={{
+                  padding: '10px 16px',
+                  borderRadius: '8px',
+                  border: '1px solid #D1D5DB',
+                  background: '#F9FAFB',
+                  color: '#374151',
+                  fontWeight: 600,
+                  cursor: 'pointer'
+                }}
+              >
+                Filtreleri Temizle
+              </button>
+              <div style={{ display: 'flex', gap: '12px' }}>
               <button
                 onClick={closeFilterModal}
                 style={{
@@ -1300,6 +1325,7 @@ const DashboardPage: React.FC = () => {
               >
                 Filtreleri Uygula
               </button>
+              </div>
             </div>
           </div>
         </div>

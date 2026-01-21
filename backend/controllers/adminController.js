@@ -1491,6 +1491,12 @@ const adminController = {
                     'Ad Soyad': user.name || '-'
                 };
 
+                if (options.competencyScore) {
+                    row['Müşteri Odaklılık Puanı'] = customerFocusScore || '-';
+                    row['Belirsizlik Yönetimi Puanı'] = uncertaintyScore || '-';
+                    row['İnsanları Etkileme Puanı'] = ieScore || '-';
+                    row['Güven Veren İşbirliği ve Sinerji Puanı'] = idikScore || '-';
+                }
                 if (options.generalEvaluation) {
                     row['Tanım ve Genel Değerlendirme'] = generalEvaluationText || '-';
                 }
@@ -1506,12 +1512,6 @@ const adminController = {
                 }
                 if (options.developmentSuggestions) {
                     row['Gelişim Planı'] = developmentPlanText || '-';
-                }
-                if (options.competencyScore) {
-                    row['Müşteri Odaklılık Puanı'] = customerFocusScore || '-';
-                    row['Belirsizlik Yönetimi Puanı'] = uncertaintyScore || '-';
-                    row['İnsanları Etkileme Puanı'] = ieScore || '-';
-                    row['Güven Veren İşbirliği ve Sinerji Puanı'] = idikScore || '-';
                 }
 
                 excelData.push(row);
