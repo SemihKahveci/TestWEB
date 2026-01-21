@@ -148,8 +148,7 @@ const createAuthorization = async (req, res) => {
         }
 
         // Aynı sicil numarasında kişi var mı kontrol et
-        // Multi-tenant: companyId filtresi ekle
-        const companyFilter = getCompanyFilter(req);
+                // Multi-tenant: companyId filtresi ekle
         const existingAuthorization = await Authorization.findOne({ 
             ...companyFilter,
             sicilNo: sicilNo.trim()
@@ -398,6 +397,22 @@ const bulkCreateAuthorizations = async (req, res) => {
 
         const authorizations = [];
         const errors = [];
+        const invalidPositionErrors = [];
+
+        const Organization = require('../models/Organization');
+        const companyFilter = getCompanyFilter(req);
+        const organizations = await Organization.find(companyFilter).select('pozisyon').lean();
+        const normalizePosition = (value) =>
+            value
+                .toString()
+                .trim()
+                .toLowerCase();
+        const validPositions = new Set(
+            organizations
+                .map((org) => org.pozisyon)
+                .filter((pos) => pos && pos.toString().trim() !== '')
+                .map(normalizePosition)
+        );
 
         // Sütun sırası: Sicil No, Ad Soyad, Email, Pozisyon
         for (let i = 0; i < data.length; i++) {
@@ -438,6 +453,14 @@ const bulkCreateAuthorizations = async (req, res) => {
                     continue;
                 }
 
+                const normalizedTitle = normalizePosition(title);
+                if (!validPositions.has(normalizedTitle)) {
+                    const message = `Pozisyon organizasyon kayıtlarında bulunamadı: ${title.toString().trim()}`;
+                    errors.push({ row: rowNumber, message });
+                    invalidPositionErrors.push({ row: rowNumber, message });
+                    continue;
+                }
+
                 authorizations.push({
                     sicilNo: sicilNo.toString().trim(),
                     personName: personName.toString().trim(),
@@ -453,6 +476,14 @@ const bulkCreateAuthorizations = async (req, res) => {
             }
         }
 
+        if (invalidPositionErrors.length > 0) {
+            return res.status(400).json({
+                success: false,
+                message: 'Excel içindeki pozisyonlar organizasyon sayfasında bulunamadı. Lütfen pozisyon/pozisyonların Organizasyon sayfasında var olduğundan emin olun ve tekrar yükleyin.',
+                errors: invalidPositionErrors
+            });
+        }
+
         const results = {
             success: [],
             errors: errors // Excel parsing hatalarını ekle
@@ -464,7 +495,6 @@ const bulkCreateAuthorizations = async (req, res) => {
             
             try {
                 // Multi-tenant: companyId filtresi ekle
-                const companyFilter = getCompanyFilter(req);
                 
                 // Sicil No duplicate kontrolü
                 const existingSicilNo = await Authorization.findOne({
