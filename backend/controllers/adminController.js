@@ -377,6 +377,7 @@ const adminController = {
 
                     <p>Keyifli keşifler, Kaptan!<br>
                     <strong>ANDRON Game Ekibi</strong></p>
+                    <strong>Bu mail otomatik olarak gönderilmiştir, lütfen yanıtlamayınız.</strong></p>
                 </div>
             `;
 

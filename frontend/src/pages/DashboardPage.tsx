@@ -88,8 +88,6 @@ const DashboardPage: React.FC = () => {
   const [filterOpen, setFilterOpen] = useState(false);
   const [isFilterModalOpen, setIsFilterModalOpen] = useState(false);
   const [tempSelectedCompetencies, setTempSelectedCompetencies] = useState<string[]>([]);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('');
   const [results, setResults] = useState<UserResult[]>([]);
   const [isLoadingResults, setIsLoadingResults] = useState(false);
   const [totalSentGames, setTotalSentGames] = useState(0);
@@ -181,14 +179,6 @@ const DashboardPage: React.FC = () => {
   }, []);
 
   useEffect(() => {
-    const timer = setTimeout(() => {
-      setDebouncedSearchTerm(searchTerm);
-      setCurrentPage(1);
-    }, 500);
-    return () => clearTimeout(timer);
-  }, [searchTerm]);
-
-  useEffect(() => {
     if (filterOpen) {
       setFilterOpen(false);
     }
@@ -197,7 +187,7 @@ const DashboardPage: React.FC = () => {
   const loadResults = useCallback(async () => {
     try {
       setIsLoadingResults(true);
-      const response = await evaluationAPI.getAll(currentPage, 10, debouncedSearchTerm, 'Tamamlandı', true);
+      const response = await evaluationAPI.getAll(currentPage, 10, '', 'Tamamlandı', true);
       if (response.data?.success) {
         setResults(response.data.results || []);
         if (response.data.pagination) {
@@ -220,7 +210,7 @@ const DashboardPage: React.FC = () => {
     } finally {
       setIsLoadingResults(false);
     }
-  }, [currentPage, debouncedSearchTerm]);
+  }, [currentPage]);
 
   useEffect(() => {
     loadResults();
@@ -405,12 +395,11 @@ const DashboardPage: React.FC = () => {
     }];
 
     const gameStatusLayout = {
-      title: { text: 'Genel Durum', font: { size: 16 } },
       showlegend: true,
-      legend: { orientation: 'v', x: 1.02, y: 0.5, xanchor: 'left', yanchor: 'middle', font: { size: 11 } },
+      legend: { orientation: 'h', x: 0.5, y: -0.15, xanchor: 'center', yanchor: 'top', font: { size: 11 } },
       paper_bgcolor: '#FFFFFF',
       plot_bgcolor: '#FFFFFF',
-      margin: { t: 40, r: 140, b: 20, l: 20 }
+      margin: { t: 40, r: 20, b: 70, l: 20 }
     };
 
     plotly.react('game-status-chart', gameStatusData, gameStatusLayout, { responsive: true, displayModeBar: false, displaylogo: false });
@@ -433,8 +422,11 @@ const DashboardPage: React.FC = () => {
       x: xLabels,
       y: [competencyCounts.customerFocus, competencyCounts.uncertainty, 0, 0],
       marker: { color: '#0d6efd' },
-      text: ['','','',''],
-      textposition: 'none'
+      text: [competencyCounts.customerFocus, competencyCounts.uncertainty, '', ''],
+      textposition: 'inside',
+      textfont: { color: '#FFFFFF', size: 12 },
+      insidetextanchor: 'middle',
+      hoverinfo: 'skip'
     };
 
     const titanTrace = {
@@ -443,16 +435,22 @@ const DashboardPage: React.FC = () => {
       x: xLabels,
       y: [0, 0, competencyCounts.ie, competencyCounts.idik],
       marker: { color: '#fd7e14' },
-      text: ['','','',''],
-      textposition: 'none'
+      text: ['', '', competencyCounts.ie, competencyCounts.idik],
+      textposition: 'inside',
+      textfont: { color: '#FFFFFF', size: 12 },
+      insidetextanchor: 'middle',
+      hoverinfo: 'skip'
     };
 
     const competencyLayout = {
       barmode: 'group',
-      yaxis: { title: 'Oyun Sayısı' },
+      showlegend: false,
+      bargap: 0.01,
+      bargroupgap: 0.01,
+      xaxis: { tickangle: -20, tickfont: { size: 10 }, automargin: true },
       paper_bgcolor: '#FFFFFF',
       plot_bgcolor: '#f8f9fa',
-      margin: { t: 60, r: 20, b: 80, l: 60 },
+      margin: { t: 60, r: 20, b: 110, l: 60 },
       uniformtext: { mode: 'hide', minsize: 8 }
     };
 
@@ -642,7 +640,7 @@ const DashboardPage: React.FC = () => {
           return;
         }
 
-        const response = await evaluationAPI.getAll(undefined, undefined, debouncedSearchTerm || '', 'Tamamlandı', true);
+        const response = await evaluationAPI.getAll(undefined, undefined, '', 'Tamamlandı', true);
         if (response.data?.success && response.data.results) {
           fullResultsCache.results = response.data.results;
           fullResultsCache.fetchedAt = now;
@@ -660,7 +658,7 @@ const DashboardPage: React.FC = () => {
     };
 
     loadFullResults();
-  }, [isFilterActive, debouncedSearchTerm]);
+  }, [isFilterActive]);
 
   const formatDate = (dateString: string) => {
     if (!dateString) return '-';
@@ -769,7 +767,7 @@ const DashboardPage: React.FC = () => {
         </div>
         <div style={{ background: 'white', padding: '20px', borderRadius: '12px', boxShadow: '0 2px 8px rgba(0,0,0,0.05)' }}>
           <div style={{ fontSize: '16px', fontWeight: 600, color: '#111827', marginBottom: '12px' }}>Yetkinliğe Göre Oyun Dağılımı</div>
-          <div id="competency-chart" style={{ height: '300px' }} />
+          <div id="competency-chart" style={{ height: '360px' }} />
         </div>
       </section>
 
@@ -777,8 +775,7 @@ const DashboardPage: React.FC = () => {
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: '16px', alignItems: 'center', justifyContent: 'space-between', marginBottom: '20px' }}>
           <div>
             <div style={{ fontSize: '16px', fontWeight: 600, color: '#111827', marginBottom: '4px' }}>Yetkinlik Skor Dağılımları</div>
-            <div style={{ fontSize: '13px', color: '#6B7280' }}>Her bir yetkinliğin hangi skor aralığında yığıldığını gösteren grafik.</div>
-          </div>
+            </div>
           <div style={{ display: 'flex', gap: '10px', alignItems: 'center', position: 'relative' }}>
             <button
               onClick={openFilterModal}
@@ -814,8 +811,8 @@ const DashboardPage: React.FC = () => {
             </button>
           </div>
         </div>
-        <div style={{ overflowX: 'hidden' }}>
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '16px' }}>
+        <div style={{ overflowX: 'auto' }}>
+          <div style={{ display: 'flex', flexWrap: 'nowrap', gap: '16px' }}>
             {[
               'Müşteri Odaklılık',
               'Belirsizlik Yönetimi',
@@ -827,9 +824,10 @@ const DashboardPage: React.FC = () => {
                 id={`score-distribution-chart-${index + 1}`}
                 style={{
                   height: '320px',
-                  width: '100%',
-                  maxWidth: '420px',
-                  flex: '1 1 320px',
+                  width: '50%',
+                  minWidth: '320px',
+                  maxWidth: '520px',
+                  flex: '0 0 50%',
                   border: '1px solid #E5E7EB',
                   borderRadius: '10px',
                   padding: '12px',
@@ -846,26 +844,8 @@ const DashboardPage: React.FC = () => {
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: '16px', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
           <div>
             <div style={{ fontSize: '16px', fontWeight: 600, color: '#111827', marginBottom: '4px' }}>Kişi Sonuçları</div>
-            <div style={{ fontSize: '13px', color: '#6B7280' }}>Kişi Skorları sayfası ile aynı sonuçlar.</div>
           </div>
           <div />
-        </div>
-
-        <div style={{ position: 'relative', marginBottom: '16px' }}>
-          <input
-            type="text"
-            placeholder="Kişi adına göre akıllı arama yapın..."
-            value={searchTerm}
-            onChange={(event) => setSearchTerm(event.target.value)}
-            style={{
-              width: '100%',
-              padding: '10px 14px',
-              borderRadius: '8px',
-              border: '1px solid #D1D5DB',
-              outline: 'none',
-              fontSize: '14px'
-            }}
-          />
         </div>
 
         <div style={{ overflowX: 'auto', width: '100%', maxWidth: '100%' }}>
