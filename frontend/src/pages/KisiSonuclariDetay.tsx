@@ -91,6 +91,15 @@ const KisiSonuclariDetay: React.FC = () => {
     return date.toLocaleDateString('tr-TR', { day: '2-digit', month: 'long', year: 'numeric' });
   };
 
+  const formatQuarterLabel = (value?: string) => {
+    if (!value) return '-';
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return '-';
+    const month = date.getMonth() + 1;
+    const quarter = Math.ceil(month / 3);
+    return `Q${quarter} ${date.getFullYear()}`;
+  };
+
   const competencyOptions = useMemo(() => ([
     { value: 'uyumluluk', label: `Uyumluluk ve Dayanıklılık (${formatScoreRaw(latestUser?.uncertaintyScore)})` },
     { value: 'musteri', label: `Müşteri Odaklılık (${formatScoreRaw(latestUser?.customerFocusScore)})` },
@@ -308,7 +317,7 @@ const KisiSonuclariDetay: React.FC = () => {
             </div>
             <div className="text-right">
               <div className="text-sm text-gray-500 mb-1">Son Değerlendirme</div>
-              <div className="text-lg font-semibold text-gray-900">Son Tamamlama</div>
+              <div className="text-lg font-semibold text-gray-900">{formatQuarterLabel(latestUser?.completionDate)}</div>
               <div className="text-sm text-gray-600">Tamamlandı: {formatDateLong(latestUser?.completionDate)}</div>
             </div>
           </div>
