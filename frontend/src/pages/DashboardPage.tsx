@@ -876,7 +876,7 @@ const DashboardPage: React.FC = () => {
                     <div style={{ fontWeight: 600, color: '#111827' }}>{result.name}</div>
                     <button
                       type="button"
-                      onClick={() => navigate('/kisi-sonuclari', { state: { selectedUser: result } })}
+                      onClick={() => navigate('/person-results', { state: { selectedUser: result } })}
                       style={{
                         border: '1px solid #E5E7EB',
                         background: 'white',
@@ -943,7 +943,7 @@ const DashboardPage: React.FC = () => {
                     <td style={{ padding: '12px 16px', textAlign: 'center' }}>
                       <button
                         type="button"
-                        onClick={() => navigate('/kisi-sonuclari', { state: { selectedUser: result } })}
+                        onClick={() => navigate('/person-results', { state: { selectedUser: result } })}
                         style={{
                           border: '1px solid #E5E7EB',
                           background: 'white',

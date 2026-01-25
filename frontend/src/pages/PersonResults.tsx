@@ -335,13 +335,13 @@ const PersonResults: React.FC = () => {
               </button>
               <div>
                 <div className="flex items-center space-x-2 text-sm text-gray-500 mb-1">
-                  <span className="hover:text-gray-700">Değerlendirmeler</span>
+                  <span className="hover:text-gray-700">Evaluations</span>
                   <span>/</span>
-                  <span className="hover:text-gray-700">Kişi Sonuçları</span>
+                  <span className="hover:text-gray-700">Person Results</span>
                   <span>/</span>
                   <span className="text-gray-900 font-medium">Sarah Johnson</span>
                 </div>
-                <h1 className="text-2xl font-bold text-gray-900">Kişi Değerlendirme Sonuçları</h1>
+                <h1 className="text-2xl font-bold text-gray-900">Person Evaluation Results</h1>
               </div>
             </div>
             <div className="flex items-center space-x-4">
@@ -411,7 +411,7 @@ const PersonResults: React.FC = () => {
               tabIndex={isClickable ? 0 : undefined}
               onClick={() => {
                 if (isClickable) {
-                  navigate('/kisi-sonuclari/detay', {
+                  navigate('/person-results/detail', {
                     state: {
                       competency: card.competency,
                       latestUser,
@@ -424,7 +424,7 @@ const PersonResults: React.FC = () => {
                 if (!isClickable) return;
                 if (event.key === 'Enter' || event.key === ' ') {
                   event.preventDefault();
-                  navigate('/kisi-sonuclari/detay', {
+                  navigate('/person-results/detail', {
                     state: {
                       competency: card.competency,
                       latestUser,

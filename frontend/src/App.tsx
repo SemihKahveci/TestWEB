@@ -133,7 +133,7 @@ const AppContent: React.FC = () => {
               </ProtectedRoute>
             } />
 
-            <Route path="/kisi-sonuclari" element={
+            <Route path="/person-results" element={
               <ProtectedRoute>
                 <Layout>
                   <PersonResults />
@@ -141,13 +141,16 @@ const AppContent: React.FC = () => {
               </ProtectedRoute>
             } />
 
-            <Route path="/kisi-sonuclari/detay" element={
+            <Route path="/person-results/detail" element={
               <ProtectedRoute>
                 <Layout>
                   <PersonResultsDetail />
                 </Layout>
               </ProtectedRoute>
             } />
+            
+            <Route path="/kisi-sonuclari" element={<Navigate to="/person-results" replace />} />
+            <Route path="/kisi-sonuclari/detay" element={<Navigate to="/person-results/detail" replace />} />
             
             <Route path="/define-company-admin" element={
               <ProtectedRoute>

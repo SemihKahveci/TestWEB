@@ -307,7 +307,7 @@ const PersonResultsDetail: React.FC = () => {
             <div className="flex items-center space-x-4">
               <button
                 className="text-gray-500 hover:text-gray-700"
-                onClick={() => navigate('/kisi-sonuclari', { state: { selectedUser: latestUser } })}
+                onClick={() => navigate('/person-results', { state: { selectedUser: latestUser } })}
               >
                 <i className="fa-solid fa-arrow-left" />
               </button>
