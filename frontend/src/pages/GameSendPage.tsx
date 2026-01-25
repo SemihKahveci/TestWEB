@@ -28,7 +28,7 @@ interface Person {
 }
 
 const GameSendPage: React.FC = () => {
-  const { t } = useLanguage();
+  const { language, t } = useLanguage();
   // State management
   const [activeTab, setActiveTab] = useState<'person' | 'group' | 'title'>('person');
   const [isLoading, setIsLoading] = useState(false);
@@ -83,8 +83,8 @@ const GameSendPage: React.FC = () => {
 
   // Available planets
   const availablePlanets: Planet[] = [
-    { value: 'venus', label: 'Venüs (Belirsizlik Yönetimi - Müşteri Odaklılık)' },
-    { value: 'titan', label: 'Titan (İnsanları Etkileme - Güven Veren İşbirlikçi ve Sinerji)' }
+    { value: 'venus', label: `${t('labels.planetVenus')} (${t('competency.uncertainty')} - ${t('competency.customerFocus')})` },
+    { value: 'titan', label: `${t('labels.planetTitan')} (${t('competency.ie')} - ${t('competency.idik')})` }
   ];
 
   // Helper function to capitalize first letter
@@ -1380,7 +1380,7 @@ const GameSendPage: React.FC = () => {
             fontWeight: 500,
             fontFamily: 'Inter'
           }}>
-            Kalan Oyun Sayısı
+            {t('labels.remainingGameCount')}
           </div>
           <div style={{
             color: '#3B8AFF',
@@ -1438,8 +1438,7 @@ const GameSendPage: React.FC = () => {
             fontWeight: 500,
             lineHeight: '1.4'
           }}>
-            <strong>Kredi Bilgisi:</strong> Kişi ve gezegen başına 1 kredi düşülür. 
-            Örnek: 2 kişiye 2 gezegen gönderilirse 4 kredi düşer.
+            <strong>{t('labels.creditInfoTitle')}</strong> {t('labels.creditInfoText')}
           </div>
         </div>
 
@@ -1473,7 +1472,7 @@ const GameSendPage: React.FC = () => {
             fontWeight: 500,
             lineHeight: '1.4'
           }}>
-            <strong>Otomatik İade:</strong> Hiç başlanmayıp süresi dolan oyunların kredisi otomatik olarak iade edilir.
+            <strong>{t('labels.autoRefundTitle')}</strong> {t('labels.autoRefundText')}
           </div>
         </div>
 
@@ -1503,7 +1502,7 @@ const GameSendPage: React.FC = () => {
               boxShadow: activeTab === 'person' ? '0 2px 4px rgba(0,0,0,0.1)' : 'none'
             }}
           >
-            Kişi
+            {t('labels.person')}
           </button>
           <button
             onClick={() => switchTab('group')}
@@ -1522,7 +1521,7 @@ const GameSendPage: React.FC = () => {
               boxShadow: activeTab === 'group' ? '0 2px 4px rgba(0,0,0,0.1)' : 'none'
             }}
           >
-            Grup
+            {t('labels.group')}
           </button>
           <button
             onClick={() => switchTab('title')}
@@ -1541,7 +1540,7 @@ const GameSendPage: React.FC = () => {
               boxShadow: activeTab === 'title' ? '0 2px 4px rgba(0,0,0,0.1)' : 'none'
             }}
           >
-            Unvan
+            {t('labels.title')}
           </button>
         </div>
 
@@ -1556,13 +1555,13 @@ const GameSendPage: React.FC = () => {
                 fontWeight: 700,
                 marginBottom: '12px'
               }}>
-                Ad Soyad
+                {t('labels.nameSurname')}
               </label>
               <input
                 type="text"
                 value={personName}
                 onChange={(e) => setPersonName(e.target.value)}
-                placeholder="Lütfen Ad Soyad Giriniz"
+                placeholder={t('placeholders.nameSurname')}
                 style={{
                   width: '100%',
                   padding: '16px',
@@ -1589,7 +1588,7 @@ const GameSendPage: React.FC = () => {
                 type="email"
                 value={personEmail}
                 onChange={(e) => setPersonEmail(e.target.value)}
-                placeholder="Lütfen Mail Adresi Giriniz"
+                placeholder={t('placeholders.email')}
                 style={{
                   width: '100%',
                   padding: '16px',
@@ -1610,7 +1609,7 @@ const GameSendPage: React.FC = () => {
                 fontWeight: 700,
                 marginBottom: '12px'
               }}>
-                Gezegen Seçimi
+                {t('labels.planetSelection')}
               </label>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                 <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
@@ -1633,7 +1632,7 @@ const GameSendPage: React.FC = () => {
                       }}
                     >
                       <span style={{ color: planetSearchTerm ? '#232D42' : '#8A92A6' }}>
-                        {planetSearchTerm || 'Lütfen Gezegen Seçiniz'}
+                        {planetSearchTerm || t('placeholders.selectPlanet')}
                       </span>
                       <i 
                         className={`fas fa-chevron-${showPlanetDropdown ? 'up' : 'down'}`}
@@ -1664,7 +1663,7 @@ const GameSendPage: React.FC = () => {
                         <div style={{ padding: '8px', borderBottom: '1px solid #E9ECEF', position: 'relative' }}>
                           <input
                             type="text"
-                            placeholder="Gezegen ara..."
+                            placeholder={t('placeholders.searchPlanet')}
                             value={planetSearchTerm}
                             onChange={(e) => setPlanetSearchTerm(e.target.value)}
                             style={{
@@ -1831,7 +1830,7 @@ const GameSendPage: React.FC = () => {
               }}
             >
               <i className="fas fa-paper-plane"></i>
-              {isSubmitting ? 'Gönderiliyor...' : 'Gönder'}
+              {isSubmitting ? t('statuses.sending') : t('buttons.send')}
             </button>
           </div>
         )}
@@ -1847,7 +1846,7 @@ const GameSendPage: React.FC = () => {
                 fontWeight: 700,
                 marginBottom: '12px'
               }}>
-                Grup Seçimi
+                {t('labels.groupSelection')}
               </label>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                 <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
@@ -1870,7 +1869,7 @@ const GameSendPage: React.FC = () => {
                       }}
                     >
                       <span style={{ color: groupSearchTerm ? '#232D42' : '#8A92A6' }}>
-                        {groupSearchTerm || 'Lütfen Grup Seçiniz'}
+                        {groupSearchTerm || t('placeholders.selectGroup')}
                       </span>
                       <i 
                         className={`fas fa-chevron-${showGroupDropdown ? 'up' : 'down'}`}
@@ -1901,7 +1900,7 @@ const GameSendPage: React.FC = () => {
                         <div style={{ padding: '8px', borderBottom: '1px solid #E9ECEF', position: 'relative' }}>
                           <input
                             type="text"
-                            placeholder="Grup ara..."
+                            placeholder={t('placeholders.searchGroup')}
                             value={groupSearchTerm}
                             onChange={(e) => setGroupSearchTerm(e.target.value)}
                             style={{
@@ -2084,7 +2083,7 @@ const GameSendPage: React.FC = () => {
               }}
             >
               <i className="fas fa-paper-plane"></i>
-              {isSubmitting ? 'Gönderiliyor...' : 'Grup Üyelerine Gönder'}
+              {isSubmitting ? t('statuses.sending') : t('buttons.sendGroupMembers')}
             </button>
           </div>
         )}
@@ -2100,7 +2099,7 @@ const GameSendPage: React.FC = () => {
                 fontWeight: 700,
                 marginBottom: '12px'
               }}>
-                Unvan Seçimi
+                {t('labels.titleSelection')}
               </label>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                 <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
@@ -2123,7 +2122,7 @@ const GameSendPage: React.FC = () => {
                       }}
                     >
                       <span style={{ color: titleSearchTerm ? '#232D42' : '#8A92A6' }}>
-                        {titleSearchTerm || 'Lütfen Unvan Seçiniz'}
+                        {titleSearchTerm || t('placeholders.selectTitle')}
                       </span>
                       <i 
                         className={`fas fa-chevron-${showTitleDropdown ? 'up' : 'down'}`}
@@ -2154,7 +2153,7 @@ const GameSendPage: React.FC = () => {
                         <div style={{ padding: '8px', borderBottom: '1px solid #E9ECEF', position: 'relative' }}>
                           <input
                             type="text"
-                            placeholder="Unvan ara..."
+                            placeholder={t('placeholders.searchTitle')}
                             value={titleSearchTerm}
                             onChange={(e) => setTitleSearchTerm(e.target.value)}
                             style={{
@@ -2324,7 +2323,7 @@ const GameSendPage: React.FC = () => {
                 fontWeight: 700,
                 marginBottom: '12px'
               }}>
-                Gezegen Seçimi
+                {t('labels.planetSelection')}
               </label>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                 <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
@@ -2347,7 +2346,7 @@ const GameSendPage: React.FC = () => {
                       }}
                     >
                       <span style={{ color: titlePlanetSearchTerm ? '#232D42' : '#8A92A6' }}>
-                        {titlePlanetSearchTerm || 'Lütfen Gezegen Seçiniz'}
+                        {titlePlanetSearchTerm || t('placeholders.selectPlanet')}
                       </span>
                       <i 
                         className={`fas fa-chevron-${showTitlePlanetDropdown ? 'up' : 'down'}`}
@@ -2378,7 +2377,7 @@ const GameSendPage: React.FC = () => {
                         <div style={{ padding: '8px', borderBottom: '1px solid #E9ECEF', position: 'relative' }}>
                           <input
                             type="text"
-                            placeholder="Gezegen ara..."
+                            placeholder={t('placeholders.searchPlanet')}
                             value={titlePlanetSearchTerm}
                             onChange={(e) => setTitlePlanetSearchTerm(e.target.value)}
                             style={{
@@ -2570,7 +2569,7 @@ const GameSendPage: React.FC = () => {
               }}
             >
               <i className="fas fa-paper-plane"></i>
-              {isSubmitting ? 'Gönderiliyor...' : 'Bu Unvandaki Kişilere Gönder'}
+              {isSubmitting ? t('statuses.sending') : t('buttons.sendTitleMembers')}
             </button>
           </div>
         )}
@@ -2614,7 +2613,7 @@ const GameSendPage: React.FC = () => {
                 color: '#232D42',
                 margin: 0
               }}>
-                {selectedGroupDetails.name} - Detayları
+                {selectedGroupDetails.name} - {t('labels.details')}
               </h3>
               <button
                 onClick={closeGroupDetailsModal}
@@ -2640,7 +2639,7 @@ const GameSendPage: React.FC = () => {
                 fontWeight: 600,
                 marginBottom: '10px'
               }}>
-                Grup Bilgileri
+                {t('labels.groupInfo')}
               </h4>
               <div style={{
                 display: 'flex',
@@ -2745,7 +2744,7 @@ const GameSendPage: React.FC = () => {
                   fontWeight: 600,
                   marginBottom: '10px'
                 }}>
-                  Grup Üyeleri ({selectedGroupDetails.persons.length})
+                  {t('labels.groupMembers')} ({selectedGroupDetails.persons.length})
                 </h4>
                 <div style={{
                   display: 'flex',
@@ -2806,7 +2805,7 @@ const GameSendPage: React.FC = () => {
                   fontWeight: 600,
                   marginBottom: '10px'
                 }}>
-                  Gezegenler ({selectedGroupDetails.planets.length})
+                  {t('labels.planets')} ({selectedGroupDetails.planets.length})
                 </h4>
                 <div style={{
                   display: 'flex',
@@ -2887,7 +2886,7 @@ const GameSendPage: React.FC = () => {
                 color: '#232D42',
                 margin: 0
               }}>
-                {selectedTitleDetails.name} - Detayları
+                {selectedTitleDetails.name} - {t('labels.details')}
               </h3>
               <button
                 onClick={closeTitleDetailsModal}
@@ -2913,7 +2912,7 @@ const GameSendPage: React.FC = () => {
                 fontWeight: 600,
                 marginBottom: '10px'
               }}>
-                Unvan Bilgileri
+                {t('labels.titleInfo')}
               </h4>
               <div style={{
                 display: 'flex',
@@ -2929,7 +2928,7 @@ const GameSendPage: React.FC = () => {
                   fontSize: '12px',
                   fontWeight: 500
                 }}>
-                  Unvan: {selectedTitleDetails.name}
+                  {t('labels.title')}: {selectedTitleDetails.name}
                 </span>
                 <span style={{
                   background: '#F8F9FA',
@@ -2954,7 +2953,7 @@ const GameSendPage: React.FC = () => {
                   fontWeight: 600,
                   marginBottom: '10px'
                 }}>
-                  Unvan Bilgileri ({selectedTitleDetails.organizations.length})
+                  {t('labels.titleInfo')} ({selectedTitleDetails.organizations.length})
                 </h4>
                 <div style={{
                   display: 'flex',
@@ -2990,7 +2989,7 @@ const GameSendPage: React.FC = () => {
                   fontWeight: 600,
                   marginBottom: '10px'
                 }}>
-                  Bu Unvanda Çalışan Kişiler ({selectedTitleDetails.persons.length})
+                  {t('labels.titleMembers')} ({selectedTitleDetails.persons.length})
                 </h4>
                 <div style={{
                   display: 'flex',
@@ -3129,7 +3128,7 @@ const GameSendPage: React.FC = () => {
                     color: '#6C757D',
                     marginBottom: '8px'
                   }}>
-                    Gönderilemeyen Kişiler:
+                    {t('labels.failedRecipients')}
                   </div>
                   <div style={{
                     maxHeight: '150px',
@@ -3259,7 +3258,7 @@ const GameSendPage: React.FC = () => {
                   color: 'white'
                 }}
               >
-                İptal
+                {t('buttons.cancel')}
               </button>
               <button
                 onClick={() => closeConfirmModal(true)}

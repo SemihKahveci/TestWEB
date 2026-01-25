@@ -456,25 +456,27 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
           <button
             onClick={logout}
             style={{
-              width: '100%',
+              width: 'auto',
               textAlign: 'left',
               padding: '8px 12px',
               fontSize: '14px',
-              color: '#6B7280',
-              background: 'none',
-              border: 'none',
+              color: '#B91C1C',
+              background: '#FEE2E2',
+              border: '1px solid #FECACA',
               borderRadius: '6px',
               cursor: 'pointer',
               fontFamily: 'Inter',
               transition: 'all 0.2s'
             }}
             onMouseEnter={(e) => {
-              e.currentTarget.style.backgroundColor = '#F9FAFB';
-              e.currentTarget.style.color = '#374151';
+              e.currentTarget.style.backgroundColor = '#FEE2E2';
+              e.currentTarget.style.borderColor = '#FCA5A5';
+              e.currentTarget.style.color = '#991B1B';
             }}
             onMouseLeave={(e) => {
-              e.currentTarget.style.backgroundColor = 'transparent';
-              e.currentTarget.style.color = '#6B7280';
+              e.currentTarget.style.backgroundColor = '#FFF5F5';
+              e.currentTarget.style.borderColor = '#FECACA';
+              e.currentTarget.style.color = '#B91C1C';
             }}
           >
             {t('nav.logout')}
