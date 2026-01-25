@@ -5,16 +5,14 @@ type TabKey = 'trend' | 'summary' | 'full';
 
 const KisiSonuclari: React.FC = () => {
   const [activeTab, setActiveTab] = useState<TabKey>('trend');
-  const [selectedCompetency, setSelectedCompetency] = useState('strategic');
+  const [selectedCompetency, setSelectedCompetency] = useState('uyumluluk');
   const navigate = useNavigate();
 
   const competencyData = useMemo(() => ({
-    strategic: { name: 'Strategic Thinking', values: [8.1, 8.7, 9.2] },
-    leadership: { name: 'Leadership & Influence', values: [8.0, 8.4, 8.8] },
-    communication: { name: 'Communication Skills', values: [8.2, 8.3, 8.6] },
-    problem: { name: 'Problem Solving', values: [8.3, 8.6, 8.9] },
-    adaptability: { name: 'Adaptability', values: [7.9, 7.7, 7.8] },
-    collaboration: { name: 'Team Collaboration', values: [8.1, 8.3, 8.5] }
+    uyumluluk: { name: 'Uyumluluk ve Dayanıklılık', values: [8.1, 8.7, 9.2] },
+    musteri: { name: 'Müşteri Odaklılık', values: [8.0, 8.4, 8.8] },
+    etkileme: { name: 'İnsanları Etkileme', values: [8.2, 8.5, 8.9] },
+    sinerji: { name: 'Güven Veren İşbirlikçi ve Sinerji', values: [7.8, 8.1, 8.4] }
   }), []);
 
   const selected = competencyData[selectedCompetency as keyof typeof competencyData];
@@ -283,17 +281,55 @@ const KisiSonuclari: React.FC = () => {
                 <div className="mb-8">
                   <div className="h-72 bg-gray-50 border border-gray-200 rounded-lg p-6">
                     <div className="text-sm text-gray-500 mb-4">{selected.name} - Trend</div>
-                    <div className="flex items-end gap-6 h-48">
-                      {selected.values.map((value, index) => (
-                        <div key={trendLabels[index]} className="flex flex-col items-center flex-1">
-                          <div
-                            className="w-10 bg-blue-500 rounded-t"
-                            style={{ height: `${(value / maxScore) * 100}%` }}
-                          />
-                          <div className="text-xs text-gray-600 mt-2">{trendLabels[index]}</div>
-                          <div className="text-sm font-semibold text-gray-900">{value}</div>
-                        </div>
-                      ))}
+                    <div className="h-48">
+                      <svg viewBox="0 0 520 200" className="w-full h-full">
+                        <defs>
+                          <linearGradient id="trend-line" x1="0" y1="0" x2="1" y2="0">
+                            <stop offset="0%" stopColor="#3B82F6" />
+                            <stop offset="100%" stopColor="#2563EB" />
+                          </linearGradient>
+                        </defs>
+                        <rect x="0" y="0" width="520" height="200" fill="white" />
+                        <g stroke="#E5E7EB" strokeWidth="1">
+                          {[0, 1, 2, 3, 4].map((i) => {
+                            const y = 20 + i * 40;
+                            return <line key={i} x1="40" y1={y} x2="500" y2={y} />;
+                          })}
+                        </g>
+                        <g stroke="#9CA3AF" strokeWidth="1">
+                          <line x1="40" y1="180" x2="500" y2="180" />
+                          <line x1="40" y1="20" x2="40" y2="180" />
+                        </g>
+                        <g fill="#6B7280" fontSize="10">
+                          {[10, 8, 6, 4, 2].map((tick, i) => (
+                            <text key={tick} x="8" y={24 + i * 40}>{tick}</text>
+                          ))}
+                        </g>
+                        {(() => {
+                          const points = selected.values.map((value, index) => {
+                            const x = 40 + index * 230;
+                            const y = 180 - (value / maxScore) * 160;
+                            return { x, y, value };
+                          });
+                          const path = points.map((p, i) => `${i === 0 ? 'M' : 'L'} ${p.x} ${p.y}`).join(' ');
+                          return (
+                            <>
+                              <path d={path} fill="none" stroke="url(#trend-line)" strokeWidth="3" />
+                              {points.map((p, i) => (
+                                <g key={trendLabels[i]}>
+                                  <circle cx={p.x} cy={p.y} r="6" fill="#2563EB" />
+                                  <circle cx={p.x} cy={p.y} r="3" fill="#93C5FD" />
+                                </g>
+                              ))}
+                            </>
+                          );
+                        })()}
+                        <g fill="#6B7280" fontSize="11">
+                          {trendLabels.map((label, i) => (
+                            <text key={label} x={40 + i * 230} y="195" textAnchor="middle">{label}</text>
+                          ))}
+                        </g>
+                      </svg>
                     </div>
                   </div>
                 </div>
