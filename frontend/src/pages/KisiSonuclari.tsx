@@ -27,6 +27,9 @@ const KisiSonuclari: React.FC = () => {
   const [latestUser, setLatestUser] = useState<UserResult | null>(null);
   const [latestHistory, setLatestHistory] = useState<UserResult[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [showPDFPreview, setShowPDFPreview] = useState(false);
+  const [pdfPreviewUrl, setPdfPreviewUrl] = useState<string | null>(null);
+  const [isPdfLoading, setIsPdfLoading] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
 
@@ -98,6 +101,15 @@ const KisiSonuclari: React.FC = () => {
     return `Q${quarter} ${date.getFullYear()}`;
   };
 
+  const defaultPdfOptions = useMemo(() => ({
+    generalEvaluation: true,
+    strengths: true,
+    interviewQuestions: true,
+    whyTheseQuestions: true,
+    developmentSuggestions: true,
+    competencyScore: true
+  }), []);
+
   const historySorted = useMemo(() => {
     return [...latestHistory].sort((a, b) => {
       const aDate = new Date(a.completionDate || a.sentDate || 0).getTime();
@@ -161,6 +173,70 @@ const KisiSonuclari: React.FC = () => {
     if (first === null || last === null) return null;
     return Math.round((last - first) * 10) / 10;
   }, [selectedTrend]);
+
+  const handlePreviewPdf = async () => {
+    if (!latestUser?.code) return;
+    try {
+      setIsPdfLoading(true);
+      const pdfParams = new URLSearchParams();
+      Object.entries(defaultPdfOptions).forEach(([key, value]) => {
+        pdfParams.append(key, value.toString());
+      });
+      const response = await fetch(`/api/preview-pdf?code=${encodeURIComponent(latestUser.code)}&${pdfParams.toString()}`, {
+        credentials: 'include'
+      });
+      if (!response.ok) {
+        throw new Error('PDF oluşturulurken bir hata oluştu');
+      }
+      const blob = await response.blob();
+      const url = URL.createObjectURL(blob);
+      setPdfPreviewUrl(url);
+      setShowPDFPreview(true);
+    } catch (error) {
+      console.error('PDF önizleme hatası:', error);
+    } finally {
+      setIsPdfLoading(false);
+    }
+  };
+
+  const handleDownloadPdf = async () => {
+    if (!latestUser?.code) return;
+    try {
+      setIsPdfLoading(true);
+      const response = await fetch('/api/evaluation/generatePDF', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        credentials: 'include',
+        body: JSON.stringify({
+          userCode: latestUser.code,
+          selectedOptions: defaultPdfOptions
+        })
+      });
+      if (!response.ok) {
+        throw new Error('PDF oluşturulurken bir hata oluştu');
+      }
+      const blob = await response.blob();
+      const url = URL.createObjectURL(blob);
+      const date = latestUser.completionDate ? new Date(latestUser.completionDate) : new Date();
+      const formattedDate = `${date.getDate().toString().padStart(2, '0')}${(date.getMonth() + 1)
+        .toString()
+        .padStart(2, '0')}${date.getFullYear()}`;
+      const safeName = (latestUser.name || 'Kullanici').replace(/\s+/g, '_');
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `ANDRON_DeğerlendirmeRaporu_${safeName}_${formattedDate}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+    } catch (error) {
+      console.error('PDF indirme hatası:', error);
+    } finally {
+      setIsPdfLoading(false);
+    }
+  };
 
   const scoreCards = [
     { title: 'Uyumluluk ve Dayanıklılık', icon: 'fa-chart-line', badge: '+12%', color: 'from-blue-500 to-blue-600', competency: 'uyumluluk' },
@@ -655,10 +731,18 @@ const KisiSonuclari: React.FC = () => {
                     Tüm yetkinlikler, 360° geri bildirimler ve gelişim önerileri.
                   </p>
                   <div className="flex items-center justify-center space-x-4">
-                    <button className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center font-medium">
+                    <button
+                      className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center font-medium disabled:opacity-60"
+                      onClick={handlePreviewPdf}
+                      disabled={isPdfLoading || !latestUser}
+                    >
                       <i className="fa-solid fa-eye mr-2" /> Raporu Görüntüle
                     </button>
-                    <button className="px-6 py-3 bg-white border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors flex items-center font-medium">
+                    <button
+                      className="px-6 py-3 bg-white border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors flex items-center font-medium disabled:opacity-60"
+                      onClick={handleDownloadPdf}
+                      disabled={isPdfLoading || !latestUser}
+                    >
                       <i className="fa-solid fa-download mr-2" /> PDF İndir
                     </button>
                     <button className="px-6 py-3 bg-white border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors flex items-center font-medium">
@@ -671,6 +755,40 @@ const KisiSonuclari: React.FC = () => {
           </div>
         </div>
       </div>
+      {showPDFPreview && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30">
+          <div className="bg-white rounded-lg shadow-xl w-[90%] h-[90%] flex flex-col overflow-hidden">
+            <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 bg-gray-50">
+              <h3 className="text-lg font-semibold text-gray-900">PDF Önizleme</h3>
+              <button
+                className="text-gray-500 hover:text-gray-700"
+                onClick={() => {
+                  setShowPDFPreview(false);
+                  if (pdfPreviewUrl) {
+                    URL.revokeObjectURL(pdfPreviewUrl);
+                    setPdfPreviewUrl(null);
+                  }
+                }}
+              >
+                <i className="fa-solid fa-xmark text-lg" />
+              </button>
+            </div>
+            <div className="flex-1 bg-white p-5">
+              {pdfPreviewUrl ? (
+                <iframe
+                  src={pdfPreviewUrl}
+                  title="PDF Önizleme"
+                  className="w-full h-full"
+                />
+              ) : (
+                <div className="w-full h-full flex items-center justify-center text-gray-500">
+                  PDF yükleniyor...
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
