@@ -184,6 +184,7 @@ apiRouter.post('/update-code-status', authenticateAdmin, adminController.updateC
 apiRouter.get('/user-results', authenticateAdmin, adminController.getUserResults.bind(adminController));
 apiRouter.get('/user-results/latest-summary', authenticateAdmin, adminController.getLatestUserSummary.bind(adminController));
 apiRouter.get('/user-results/summary', authenticateAdmin, adminController.getUserSummaryByCode.bind(adminController));
+apiRouter.get('/user-results/report-details', authenticateAdmin, adminController.getUserReportDetails.bind(adminController));
 apiRouter.post('/update-result-status', authenticateAdmin, adminController.updateResultStatus.bind(adminController));
 apiRouter.delete('/delete-result', authenticateAdmin, adminController.deleteResult.bind(adminController));
 

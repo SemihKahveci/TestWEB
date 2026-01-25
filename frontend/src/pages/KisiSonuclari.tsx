@@ -465,7 +465,7 @@ const KisiSonuclari: React.FC = () => {
               <div className="flex items-start">
                 <i className="fa-solid fa-info-circle text-blue-600 mt-0.5 mr-3" />
                 <div className="text-sm text-blue-900">
-                  <div className="font-medium mb-1">Değerlendirme Tarihi: 15 Aralık 2024</div>
+                  <div className="font-medium mb-1">Değerlendirme Tarihi: {formatDateLong(latestUser?.completionDate)}</div>
                   <div className="text-blue-700">Sağ panelde trend görmek için bir yetkinlik seçin</div>
                 </div>
               </div>

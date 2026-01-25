@@ -944,6 +944,87 @@ const adminController = {
         }
     },
 
+    // Rapor detaylarını getir (yetkinlik bazlı)
+    getUserReportDetails: async (req, res) => {
+        try {
+            const { code } = req.query;
+            if (!code) {
+                return res.status(400).json({ success: false, message: 'Kod gereklidir' });
+            }
+
+            const { getCompanyFilter } = require('../middleware/auth');
+            const companyFilter = getCompanyFilter(req);
+
+            const games = await Game.find({ playerCode: code, ...companyFilter }).select('evaluationResult').lean();
+            let allEvaluationResults = [];
+
+            if (games && games.length > 0) {
+                for (const game of games) {
+                    if (game.evaluationResult) {
+                        if (Array.isArray(game.evaluationResult)) {
+                            allEvaluationResults = allEvaluationResults.concat(game.evaluationResult);
+                        } else {
+                            allEvaluationResults.push(game.evaluationResult);
+                        }
+                    }
+                }
+            }
+
+            if (allEvaluationResults.length === 0) {
+                const evaluation = await EvaluationResult.findOne({ ID: code, ...companyFilter }).lean();
+                if (evaluation) {
+                    allEvaluationResults = Array.isArray(evaluation) ? evaluation : [evaluation];
+                }
+            }
+
+            if (allEvaluationResults.length === 0) {
+                return res.status(404).json({ success: false, message: 'Rapor verisi bulunamadı' });
+            }
+
+            const getValue = (data, keys = []) => {
+                for (const key of keys) {
+                    const value = data?.[key];
+                    if (value && value !== '-') return value;
+                }
+                return '';
+            };
+
+            const reports = {};
+            const seen = new Set();
+            allEvaluationResults.forEach((result) => {
+                const type = result?.type || result?.data?.type;
+                const data = result?.data || result || {};
+                if (!type) return;
+                const idKey = `${type}:${data?.ID || result?._id || Math.random()}`;
+                if (seen.has(idKey)) return;
+                seen.add(idKey);
+
+                reports[type] = {
+                    generalEvaluation: getValue(data, ['Genel Değerlendirme', 'Genel Değerlendirme ']),
+                    strengths: getValue(data, ['Güçlü Yönler', 'Guclu Yonler', 'Güçlü yönler']),
+                    developmentAreas: getValue(data, ['Gelişim Alanları', 'Gelisim Alanlari', 'Gelişim alanları']),
+                    interviewQuestions: getValue(data, ['Mülakat Soruları', 'Mulakat Sorulari']),
+                    whyTheseQuestions: getValue(data, ['Neden Bu Sorular?', 'Neden Bu Sorular', 'Neden bu sorular?']),
+                    developmentPlan: getValue(data, [
+                        'Gelişim Önerileri -1',
+                        'Gelişim Önerileri -2',
+                        'Gelişim Önerileri - 3',
+                        'Gelişim Önerileri',
+                        'Gelisim Onerileri'
+                    ])
+                };
+            });
+
+            res.json({ success: true, reports });
+        } catch (error) {
+            safeLog('error', 'Rapor detayları hatası', error);
+            res.status(500).json({
+                success: false,
+                message: getSafeErrorMessage(error, 'Rapor detayları alınırken bir hata oluştu')
+            });
+        }
+    },
+
     getDashboardStats: async (req, res) => {
         try {
             const { getCompanyFilter } = require('../middleware/auth');

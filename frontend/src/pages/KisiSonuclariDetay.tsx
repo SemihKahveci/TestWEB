@@ -23,6 +23,15 @@ type CachedUserResults = {
   latestHistory: UserResult[];
 };
 
+type ReportDetail = {
+  generalEvaluation?: string;
+  strengths?: string;
+  developmentAreas?: string;
+  interviewQuestions?: string;
+  whyTheseQuestions?: string;
+  developmentPlan?: string;
+};
+
 const KisiSonuclariDetay: React.FC = () => {
   const location = useLocation();
   const [activeTab, setActiveTab] = useState<DetailTab>('executive-summary');
@@ -31,6 +40,7 @@ const KisiSonuclariDetay: React.FC = () => {
   const [latestUser, setLatestUser] = useState<UserResult | null>(null);
   const [latestHistory, setLatestHistory] = useState<UserResult[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [reportDetails, setReportDetails] = useState<Record<string, ReportDetail>>({});
   const [openDevPlans, setOpenDevPlans] = useState<Record<string, boolean>>({
     'dev-plan-1': false,
     'dev-plan-2': false,
@@ -107,6 +117,13 @@ const KisiSonuclariDetay: React.FC = () => {
     { value: 'sinerji', label: `Güven Veren İşbirlikçi ve Sinerji (${formatScoreRaw(latestUser?.idikScore)})` }
   ]), [latestUser]);
 
+  const competencyTypeMap = useMemo(() => ({
+    uyumluluk: 'BY',
+    musteri: 'MO',
+    etkileme: 'IE',
+    sinerji: 'IDIK'
+  }), []);
+
   useEffect(() => {
     setCompetencySubTab('general-evaluation');
     setOpenDevPlans({
@@ -179,6 +196,25 @@ const KisiSonuclariDetay: React.FC = () => {
     }
   }, [latestHistory.length, latestUser]);
 
+  useEffect(() => {
+    const fetchReportDetails = async () => {
+      if (!latestUser?.code) return;
+      try {
+        const response = await fetch(`/api/user-results/report-details?code=${encodeURIComponent(latestUser.code)}`, {
+          credentials: 'include'
+        });
+        const data = await response.json();
+        if (data?.success && data?.reports) {
+          setReportDetails(data.reports);
+        }
+      } catch (error) {
+        // Sessiz geç
+      }
+    };
+
+    fetchReportDetails();
+  }, [latestUser?.code]);
+
   const competencyCopy = useMemo(() => ({
     uyumluluk: {
       title: 'Uyumluluk ve Dayanıklılık',
@@ -243,8 +279,23 @@ const KisiSonuclariDetay: React.FC = () => {
   }), []);
 
   const activeContent = competencyCopy[activeCompetency];
+  const activeReportType = competencyTypeMap[activeCompetency];
+  const activeReport = activeReportType ? reportDetails[activeReportType] : undefined;
   const toggleDevPlan = (key: string) => {
     setOpenDevPlans((prev) => ({ ...prev, [key]: !prev[key] }));
+  };
+
+  const renderLines = (text?: string) => {
+    if (!text) return null;
+    return text
+      .split(/\n+/)
+      .map((line) => line.trim())
+      .filter(Boolean)
+      .map((line, index) => (
+        <p key={`${line}-${index}`} className="text-sm text-gray-700 leading-relaxed">
+          {line}
+        </p>
+      ));
   };
 
   return (
@@ -368,10 +419,10 @@ const KisiSonuclariDetay: React.FC = () => {
           <div className="border-b border-gray-200">
             <nav className="flex px-6" role="tablist">
               {[
-                { key: 'executive-summary', label: 'Executive Summary', icon: 'fa-file-lines' },
-                { key: 'competency-details', label: 'Competency Details', icon: 'fa-list-check' },
-                { key: 'report-access', label: 'Report Access', icon: 'fa-file-pdf' },
-                { key: 'ai-assistant', label: 'AI Assistant', icon: 'fa-robot' }
+                { key: 'executive-summary', label: 'Yönetici Özeti', icon: 'fa-file-lines' },
+                { key: 'competency-details', label: 'Yetkinlik Detayları', icon: 'fa-list-check' },
+                { key: 'report-access', label: 'Rapor Erişimi', icon: 'fa-file-pdf' },
+                { key: 'ai-assistant', label: 'AI Asistan', icon: 'fa-robot' }
               ].map((tab) => (
                 <button
                   key={tab.key}
@@ -393,7 +444,7 @@ const KisiSonuclariDetay: React.FC = () => {
           {activeTab === 'executive-summary' && (
             <div className="p-8">
               <div className="mb-8">
-                <h2 className="text-2xl font-bold text-gray-900 mb-2">Executive Summary</h2>
+                <h2 className="text-2xl font-bold text-gray-900 mb-2">Yönetici Özeti</h2>
                 <p className="text-gray-600">Q4 2024 değerlendirme sonuçlarının üst düzey özeti</p>
               </div>
 
@@ -493,7 +544,7 @@ const KisiSonuclariDetay: React.FC = () => {
           {activeTab === 'competency-details' && (
             <div className="p-8">
               <div className="mb-6">
-                <h2 className="text-2xl font-bold text-gray-900 mb-4">Competency Details</h2>
+                <h2 className="text-2xl font-bold text-gray-900 mb-4">Yetkinlik Detayları</h2>
                 <div className="flex items-center space-x-3">
                   <label className="text-sm font-medium text-gray-700">Yetkinlik Seç:</label>
                   <select
@@ -537,7 +588,11 @@ const KisiSonuclariDetay: React.FC = () => {
                   {competencySubTab === 'general-evaluation' && (
                     <div className="bg-blue-50 border-l-4 border-blue-600 p-6 rounded-r-lg">
                       <h3 className="text-lg font-semibold text-gray-900 mb-2">{activeContent.overviewTitle}</h3>
-                      <p className="text-gray-800 leading-relaxed">{activeContent.overviewText}</p>
+                      <div className="space-y-3 text-gray-800">
+                        {activeReport?.generalEvaluation
+                          ? renderLines(activeReport.generalEvaluation)
+                          : <p className="leading-relaxed">{activeContent.overviewText}</p>}
+                      </div>
                     </div>
                   )}
 
@@ -546,150 +601,153 @@ const KisiSonuclariDetay: React.FC = () => {
                       <div>
                         <div className="flex items-center space-x-2 mb-6">
                           <i className="fa-solid fa-circle-check text-green-600 text-lg" />
-                          <h3 className="text-lg font-bold text-gray-900">Key Strengths</h3>
+                          <h3 className="text-lg font-bold text-gray-900">Güçlü Yönler</h3>
                         </div>
                         <div className="space-y-4">
-                          {[
-                            {
-                              title: 'Strategic Vision & Long-term Planning',
-                              text: 'Demonstrates exceptional ability to connect day-to-day decisions with organizational objectives. Shows clear understanding of market dynamics and competitive positioning.'
-                            },
-                            {
-                              title: 'Complex Problem Resolution',
-                              text: 'Excels at breaking down multifaceted challenges into manageable components. Consistently delivers innovative solutions that address root causes rather than symptoms.'
-                            },
-                            {
-                              title: 'Leadership Presence & Influence',
-                              text: 'Naturally inspires confidence and motivates team members. Effectively navigates organizational dynamics and builds consensus across stakeholder groups.'
-                            }
-                          ].map((item, index) => (
-                            <div
-                              key={item.title}
-                              className="bg-green-50 border border-green-100 rounded-xl p-5 flex items-start gap-4 hover:shadow-md transition-shadow"
-                            >
-                              <div className="flex-shrink-0 w-8 h-8 rounded-full bg-green-500 flex items-center justify-center text-white font-bold text-sm shadow-sm">
-                                {index + 1}
-                              </div>
-                              <div>
-                                <h4 className="font-bold text-gray-900 text-sm mb-2">{item.title}</h4>
-                                <p className="text-sm text-gray-600 leading-relaxed">{item.text}</p>
-                              </div>
+                          {activeReport?.strengths ? (
+                            <div className="bg-green-50 border border-green-100 rounded-xl p-5 space-y-3">
+                              {renderLines(activeReport.strengths)}
                             </div>
-                          ))}
+                          ) : (
+                            activeContent.strengths.map((item, index) => (
+                              <div
+                                key={item}
+                                className="bg-green-50 border border-green-100 rounded-xl p-5 flex items-start gap-4 hover:shadow-md transition-shadow"
+                              >
+                                <div className="flex-shrink-0 w-8 h-8 rounded-full bg-green-500 flex items-center justify-center text-white font-bold text-sm shadow-sm">
+                                  {index + 1}
+                                </div>
+                                <div>
+                                  <h4 className="font-bold text-gray-900 text-sm mb-2">{item}</h4>
+                                  <p className="text-sm text-gray-600 leading-relaxed">{activeContent.overviewText}</p>
+                                </div>
+                              </div>
+                            ))
+                          )}
                         </div>
                       </div>
 
                       <div>
                         <div className="flex items-center space-x-2 mb-6">
                           <i className="fa-solid fa-arrow-trend-up text-orange-500 text-lg" />
-                          <h3 className="text-lg font-bold text-gray-900">Development Opportunities</h3>
+                          <h3 className="text-lg font-bold text-gray-900">Gelişim Alanları</h3>
                         </div>
                         <div className="space-y-4">
-                          {[
-                            {
-                              title: 'Adaptability Under Pressure',
-                              text: 'While generally flexible, there are opportunities to enhance responsiveness when priorities shift rapidly. Consider developing frameworks for managing ambiguity.'
-                            },
-                            {
-                              title: 'Delegation & Team Empowerment',
-                              text: 'Strong execution skills sometimes lead to taking on tasks that could develop team members. Focus on building team capability through strategic delegation.'
-                            },
-                            {
-                              title: 'Technical Depth in Emerging Areas',
-                              text: 'Maintain technical credibility by investing time in emerging technologies and industry-specific tools relevant to product management.'
-                            }
-                          ].map((item, index) => (
-                            <div
-                              key={item.title}
-                              className="bg-orange-50 border border-orange-100 rounded-xl p-5 flex items-start gap-4 hover:shadow-md transition-shadow"
-                            >
-                              <div className="flex-shrink-0 w-8 h-8 rounded-full bg-orange-500 flex items-center justify-center text-white font-bold text-sm shadow-sm">
-                                {index + 1}
-                              </div>
-                              <div>
-                                <h4 className="font-bold text-gray-900 text-sm mb-2">{item.title}</h4>
-                                <p className="text-sm text-gray-600 leading-relaxed">{item.text}</p>
-                              </div>
+                          {activeReport?.developmentAreas ? (
+                            <div className="bg-orange-50 border border-orange-100 rounded-xl p-5 space-y-3">
+                              {renderLines(activeReport.developmentAreas)}
                             </div>
-                          ))}
+                          ) : (
+                            activeContent.development.map((item, index) => (
+                              <div
+                                key={item}
+                                className="bg-orange-50 border border-orange-100 rounded-xl p-5 flex items-start gap-4 hover:shadow-md transition-shadow"
+                              >
+                                <div className="flex-shrink-0 w-8 h-8 rounded-full bg-orange-500 flex items-center justify-center text-white font-bold text-sm shadow-sm">
+                                  {index + 1}
+                                </div>
+                                <div>
+                                  <h4 className="font-bold text-gray-900 text-sm mb-2">{item}</h4>
+                                  <p className="text-sm text-gray-600 leading-relaxed">{activeContent.overviewText}</p>
+                                </div>
+                              </div>
+                            ))
+                          )}
                         </div>
                       </div>
                     </div>
                   )}
 
                   {competencySubTab === 'interview-questions' && (
-                    <div>
-                      <div className="overflow-hidden border border-gray-200 rounded-xl shadow-sm mb-8">
-                        <table className="min-w-full divide-y divide-gray-200">
-                          <thead className="bg-gray-100">
-                            <tr>
-                              <th
-                                scope="col"
-                                className="px-6 py-4 text-left text-sm font-bold text-gray-900 w-1/4 uppercase tracking-wider"
-                              >
-                                Gelişim Alanı
-                              </th>
-                              <th
-                                scope="col"
-                                className="px-6 py-4 text-left text-sm font-bold text-gray-900 w-1/3 uppercase tracking-wider"
-                              >
-                                Mülakat Sorusu
-                              </th>
-                              <th
-                                scope="col"
-                                className="px-6 py-4 text-left text-sm font-bold text-gray-900 w-1/3 uppercase tracking-wider"
-                              >
-                                Devam Sorusu
-                              </th>
-                            </tr>
-                          </thead>
-                          <tbody className="bg-white divide-y divide-gray-200">
-                            <tr>
-                              <td className="px-6 py-5 text-sm text-gray-900 font-medium align-top">
-                                İlişkide Tutarlılık
-                              </td>
-                              <td className="px-6 py-5 text-sm text-gray-700 align-top leading-relaxed">
-                                Sosyal ilişkilerde, kendinizi yanlış anlaşıldığınız veya gerçek niyetinizin
-                                sorgulandığı bir durumu paylaşır mısınız? Bu durum nasıl gelişti ve siz nasıl
-                                bir tutum sergilediniz?
-                              </td>
-                              <td className="px-6 py-5 text-sm text-gray-600 align-top italic leading-relaxed">
-                                “Bu deneyimden ne öğrendiniz ve sonraki ilişkilerinizde bu öğrendiklerinizi
-                                nasıl uyguladınız?”
-                              </td>
-                            </tr>
-                            <tr>
-                              <td className="px-6 py-5 text-sm text-gray-900 font-medium align-top">
-                                Kriz Anında Proaktif Aksiyon Alma ve Güven Verme
-                              </td>
-                              <td className="px-6 py-5 text-sm text-gray-700 align-top leading-relaxed">
-                                “Olayın içinde bulunduğun sırada daha çok inisiyatif alabileceğini fark
-                                ettiğin bir örnek var mı?”
-                              </td>
-                              <td className="px-6 py-5 text-sm text-gray-600 align-top italic leading-relaxed space-y-2">
-                                <p>“İlk anda neden beklemeyi tercih ettin?”</p>
-                                <p>“Sonradan durumu nasıl yönlendirdin?”</p>
-                                <p>“Bu davranışının ekibe nasıl yansıdığını düşünüyorsun?”</p>
-                                <p>“Şimdi aynı duruma düşsen neyi farklı yapardın?”</p>
-                              </td>
-                            </tr>
-                          </tbody>
-                        </table>
-                      </div>
+                    <div className="space-y-6">
+                      {activeReport?.interviewQuestions ? (
+                        <div className="bg-white border border-gray-200 rounded-xl shadow-sm p-6 space-y-3">
+                          <h3 className="text-lg font-bold text-gray-900">Mülakat Soruları</h3>
+                          {renderLines(activeReport.interviewQuestions)}
+                        </div>
+                      ) : (
+                        <div className="overflow-hidden border border-gray-200 rounded-xl shadow-sm">
+                          <table className="min-w-full divide-y divide-gray-200">
+                            <thead className="bg-gray-100">
+                              <tr>
+                                <th
+                                  scope="col"
+                                  className="px-6 py-4 text-left text-sm font-bold text-gray-900 w-1/4 uppercase tracking-wider"
+                                >
+                                  Gelişim Alanı
+                                </th>
+                                <th
+                                  scope="col"
+                                  className="px-6 py-4 text-left text-sm font-bold text-gray-900 w-1/3 uppercase tracking-wider"
+                                >
+                                  Mülakat Sorusu
+                                </th>
+                                <th
+                                  scope="col"
+                                  className="px-6 py-4 text-left text-sm font-bold text-gray-900 w-1/3 uppercase tracking-wider"
+                                >
+                                  Devam Sorusu
+                                </th>
+                              </tr>
+                            </thead>
+                            <tbody className="bg-white divide-y divide-gray-200">
+                              <tr>
+                                <td className="px-6 py-5 text-sm text-gray-900 font-medium align-top">
+                                  İlişkide Tutarlılık
+                                </td>
+                                <td className="px-6 py-5 text-sm text-gray-700 align-top leading-relaxed">
+                                  Sosyal ilişkilerde, kendinizi yanlış anlaşıldığınız veya gerçek niyetinizin
+                                  sorgulandığı bir durumu paylaşır mısınız? Bu durum nasıl gelişti ve siz nasıl
+                                  bir tutum sergilediniz?
+                                </td>
+                                <td className="px-6 py-5 text-sm text-gray-600 align-top italic leading-relaxed">
+                                  “Bu deneyimden ne öğrendiniz ve sonraki ilişkilerinizde bu öğrendiklerinizi
+                                  nasıl uyguladınız?”
+                                </td>
+                              </tr>
+                              <tr>
+                                <td className="px-6 py-5 text-sm text-gray-900 font-medium align-top">
+                                  Kriz Anında Proaktif Aksiyon Alma ve Güven Verme
+                                </td>
+                                <td className="px-6 py-5 text-sm text-gray-700 align-top leading-relaxed">
+                                  “Olayın içinde bulunduğun sırada daha çok inisiyatif alabileceğini fark
+                                  ettiğin bir örnek var mı?”
+                                </td>
+                                <td className="px-6 py-5 text-sm text-gray-600 align-top italic leading-relaxed space-y-2">
+                                  <p>“İlk anda neden beklemeyi tercih ettin?”</p>
+                                  <p>“Sonradan durumu nasıl yönlendirdin?”</p>
+                                  <p>“Bu davranışının ekibe nasıl yansıdığını düşünüyorsun?”</p>
+                                  <p>“Şimdi aynı duruma düşsen neyi farklı yapardın?”</p>
+                                </td>
+                              </tr>
+                            </tbody>
+                          </table>
+                        </div>
+                      )}
 
-                      <div className="bg-gray-50 rounded-xl p-8 border border-gray-100">
-                        <h3 className="text-xl font-bold text-gray-900 mb-4">Neden Bu Sorular?</h3>
-                        <p className="text-gray-700 leading-relaxed text-base">
-                          Değerlendirme sürecinde kişinin ilişki dinamiklerinde aşırı temkinli davrandığı,
-                          bu nedenle kararsızlık ve güven sorunu algısı yaratabildiği gözlemlenmiştir. Bu
-                          soru seti, kişinin bu alanlardaki içgörüsünü ve gelişim pratiğini değerlendirmek
-                          amacıyla seçilmiştir.
-                        </p>
+                      <div className="bg-gray-50 rounded-xl p-8 border border-gray-100 space-y-3">
+                        <h3 className="text-xl font-bold text-gray-900">Neden Bu Sorular?</h3>
+                        {activeReport?.whyTheseQuestions
+                          ? renderLines(activeReport.whyTheseQuestions)
+                          : (
+                            <p className="text-gray-700 leading-relaxed text-base">
+                              Değerlendirme sürecinde kişinin ilişki dinamiklerinde aşırı temkinli davrandığı,
+                              bu nedenle kararsızlık ve güven sorunu algısı yaratabildiği gözlemlenmiştir. Bu
+                              soru seti, kişinin bu alanlardaki içgörüsünü ve gelişim pratiğini değerlendirmek
+                              amacıyla seçilmiştir.
+                            </p>
+                          )}
                       </div>
                     </div>
                   )}
 
                   {competencySubTab === 'development-plan' && (
+                    activeReport?.developmentPlan ? (
+                      <div className="bg-blue-50 border border-blue-100 rounded-xl p-6 space-y-3">
+                        <h3 className="text-lg font-bold text-gray-900">Gelişim Planı</h3>
+                        {renderLines(activeReport.developmentPlan)}
+                      </div>
+                    ) : (
                     <div className="space-y-4">
                       {[
                         {
@@ -848,6 +906,7 @@ const KisiSonuclariDetay: React.FC = () => {
                         </div>
                       ))}
                     </div>
+                    )
                   )}
                 </div>
               </div>
@@ -857,7 +916,7 @@ const KisiSonuclariDetay: React.FC = () => {
           {activeTab === 'report-access' && (
             <div className="p-8">
               <div className="mb-8">
-                <h2 className="text-2xl font-bold text-gray-900 mb-2">Full Report Access</h2>
+                <h2 className="text-2xl font-bold text-gray-900 mb-2">Rapor Erişimi</h2>
                 <p className="text-gray-600">Tam raporu görüntüleyin, indirin veya paylaşın</p>
               </div>
 
@@ -935,7 +994,7 @@ const KisiSonuclariDetay: React.FC = () => {
                 <div className="w-20 h-20 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-2xl flex items-center justify-center mx-auto mb-6">
                   <i className="fa-solid fa-robot text-white text-4xl" />
                 </div>
-                <h2 className="text-3xl font-bold text-gray-900 mb-3">AI Assistant Coming Soon</h2>
+                <h2 className="text-3xl font-bold text-gray-900 mb-3">AI Asistan Yakında</h2>
                 <p className="text-gray-600 text-lg mb-8 max-w-2xl mx-auto">
                   Assessment sonuçlarına özel içgörüler ve öneriler yakında eklenecek.
                 </p>
