@@ -48,7 +48,7 @@ const AppContent: React.FC = () => {
     <div className="App" style={appStyle}>
       <Routes>
             {/* Public routes */}
-            <Route path="/" element={<Navigate to="/login" replace />} />
+            <Route path="/" element={<Navigate to="/dashboard" replace />} />
             <Route path="/login" element={<LoginPage />} />
             
             {/* Protected routes */}
