@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useLanguage } from '../contexts/LanguageContext';
 import { creditAPI } from '../services/api';
 import { safeLog } from '../utils/logger';
 
@@ -27,6 +28,7 @@ interface Person {
 }
 
 const GameSendPage: React.FC = () => {
+  const { t } = useLanguage();
   // State management
   const [activeTab, setActiveTab] = useState<'person' | 'group' | 'title'>('person');
   const [isLoading, setIsLoading] = useState(false);
@@ -1348,7 +1350,7 @@ const GameSendPage: React.FC = () => {
             fontSize: '30px',
             fontWeight: 700
           }}>
-            Oyun Gönderme
+            {t('titles.gameSend')}
           </div>
         </div>
       </div>

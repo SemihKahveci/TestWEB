@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useLanguage } from '../contexts/LanguageContext';
 import { creditAPI } from '../services/api';
 import { safeLog } from '../utils/logger';
 
@@ -16,6 +17,7 @@ interface Game {
 }
 
 const SubscriptionSettings: React.FC = () => {
+  const { t } = useLanguage();
   const [games, setGames] = useState<Game[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isSuperAdmin, setIsSuperAdmin] = useState(false);
@@ -320,7 +322,7 @@ const SubscriptionSettings: React.FC = () => {
             fontFamily: 'Inter',
             fontWeight: 700
           }}>
-            Abonelik Ayarları
+            {t('titles.subscriptionSettings')}
           </div>
         </div>
       </div>

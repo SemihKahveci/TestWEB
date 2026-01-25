@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useLanguage } from '../contexts/LanguageContext';
 import { useNavigate } from 'react-router-dom';
 import { organizationAPI } from '../services/api';
 import * as XLSX from 'xlsx';
@@ -14,6 +15,7 @@ interface Organization {
 }
 
 const Organization: React.FC = () => {
+  const { language, t } = useLanguage();
   // CSS animasyonu için style tag'i ekle
   React.useEffect(() => {
     const style = document.createElement('style');
@@ -49,6 +51,32 @@ const Organization: React.FC = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [isMobile, setIsMobile] = useState(false);
+  const formatNoResultsText = (term: string) => {
+    if (term) {
+      return language === 'en'
+        ? `No results found for "${term}"`
+        : `"${term}" için arama sonucu bulunamadı`;
+    }
+    return language === 'en' ? 'No organization yet' : 'Henüz organizasyon bulunmuyor';
+  };
+
+  const formatSearchResultsCount = (term: string, count: number) =>
+    language === 'en'
+      ? `${count} results found for "${term}"`
+      : `"${term}" için ${count} sonuç bulundu`;
+
+  const formatBulkDeleteConfirm = (count: number) =>
+    language === 'en'
+      ? `Are you sure you want to delete ${count} organizations? This action cannot be undone.`
+      : `${count} adet organizasyonu silmek istediğinizden emin misiniz? Bu işlem geri alınamaz.`;
+
+  const formatSingleDeleteConfirm = () =>
+    language === 'en'
+      ? 'Are you sure you want to delete this organization? This action cannot be undone.'
+      : 'Bu organizasyonu silmek istediğinizden emin misiniz? Bu işlem geri alınamaz.';
+
+  const getTemplateFileName = () =>
+    language === 'en' ? 'organization_template.xlsx' : 'organizasyon_template.xlsx';
   
   // Form states
   const [formData, setFormData] = useState({
@@ -500,7 +528,7 @@ const Organization: React.FC = () => {
       if (file.name.endsWith('.xlsx') || file.name.endsWith('.xls')) {
         setSelectedFile(file);
       } else {
-        setErrorMessage('Lütfen sadece Excel dosyası (.xlsx, .xls) seçin!');
+        setErrorMessage(t('errors.onlyExcelAllowed'));
         setShowErrorPopup(true);
       }
     }
@@ -510,22 +538,22 @@ const Organization: React.FC = () => {
     try {
       // Excel template verilerini oluştur
       const headers = [
-        'Genel Müdür Yardımcılığı',
-        'Direktörlük',
-        'Müdürlük',
-        'Departman/Şeflik',
-        'Unvan',
-        'Pozisyon'
+        t('labels.generalManagerAssistant'),
+        t('labels.directorate'),
+        t('labels.management'),
+        t('labels.departmentLeadership'),
+        t('labels.title'),
+        t('labels.position')
       ];
 
       // Örnek veri satırı
       const exampleRow = [
-        'Örnek Genel Müdür Yardımcılığı',
-        'Örnek Direktörlük',
-        'Örnek Müdürlük',
-        'Örnek Departman/Şeflik',
-        'Örnek Unvan',
-        'Örnek Pozisyon'
+        t('labels.sampleGeneralManagerAssistant'),
+        t('labels.sampleDirectorate'),
+        t('labels.sampleManagement'),
+        t('labels.sampleDepartmentLeadership'),
+        t('labels.sampleTitle'),
+        t('labels.samplePosition')
       ];
 
       // Boş satırlar için veri
@@ -554,24 +582,24 @@ const Organization: React.FC = () => {
       ];
 
       // Worksheet'i workbook'a ekle
-      XLSX.utils.book_append_sheet(wb, ws, "Organizasyon Template");
+      XLSX.utils.book_append_sheet(wb, ws, t('labels.organizationTemplate'));
 
       // Excel dosyasını indir
-      XLSX.writeFile(wb, 'organizasyon_template.xlsx');
+      XLSX.writeFile(wb, getTemplateFileName());
       
-      setSuccessMessage('Excel template başarıyla indirildi!');
+      setSuccessMessage(t('messages.templateDownloadSuccess'));
       setShowSuccessPopup(true);
       
     } catch (error) {
       console.error('Template indirme hatası:', error);
-      setErrorMessage('Template indirilirken bir hata oluştu!');
+      setErrorMessage(t('errors.templateDownloadError'));
       setShowErrorPopup(true);
     }
   };
 
   const handleImportExcel = async () => {
     if (!selectedFile) {
-      setErrorMessage('Lütfen önce bir Excel dosyası seçin!');
+      setErrorMessage(t('errors.selectExcelFirst'));
       setShowErrorPopup(true);
       return;
     }
@@ -698,7 +726,7 @@ const Organization: React.FC = () => {
             borderRadius: '50%',
             animation: 'spin 1s linear infinite'
           }} />
-          <div>Organizasyonlar yükleniyor...</div>
+          <div>{t('labels.organizationsLoading')}</div>
         </div>
       </div>
     );
@@ -736,7 +764,7 @@ const Organization: React.FC = () => {
               fontFamily: 'Inter',
               fontWeight: 700
             }}>
-              Organizasyon
+              {t('titles.organization')}
             </div>
           </div>
         </div>
@@ -759,7 +787,7 @@ const Organization: React.FC = () => {
             fontWeight: 700,
             lineHeight: '20px'
           }}>
-            Organizasyon
+            {t('titles.organization')}
           </div>
           <div 
             style={{
@@ -776,7 +804,7 @@ const Organization: React.FC = () => {
             }}
             onClick={() => navigate('/grouping')}
           >
-            Gruplama
+            {t('titles.grouping')}
           </div>
           <div 
             style={{
@@ -793,7 +821,7 @@ const Organization: React.FC = () => {
             }}
             onClick={() => navigate('/authorization')}
           >
-            Kişiler
+            {t('titles.authorization')}
           </div>
         </div>
 
@@ -843,7 +871,7 @@ const Organization: React.FC = () => {
             )}
             <input
               type="text"
-              placeholder="Tüm sütunlarda akıllı arama yapın..."
+              placeholder={t('placeholders.searchAllColumns')}
               value={searchTerm}
               onChange={(e) => {
                 const value = e.target.value;
@@ -967,7 +995,7 @@ const Organization: React.FC = () => {
               }}
             >
               <i className="fas fa-file-excel"></i>
-              Excel Yükle
+              {t('buttons.uploadExcel')}
             </button>
             <button
               onClick={handleAddOrganization}
@@ -982,7 +1010,7 @@ const Organization: React.FC = () => {
                 cursor: 'pointer'
               }}
             >
-              EKLE
+              {t('buttons.add')}
             </button>
           </div>
         </div>
@@ -1067,7 +1095,7 @@ const Organization: React.FC = () => {
                   fontWeight: 700,
                   fontFamily: 'Montserrat'
                 }}>
-                  Genel Müdür Yardımcılığı
+                  {t('labels.generalManagerAssistant')}
                 </th>
                 <th style={{
                   padding: '16px',
@@ -1077,7 +1105,7 @@ const Organization: React.FC = () => {
                   fontWeight: 700,
                   fontFamily: 'Montserrat'
                 }}>
-                  Direktörlük
+                  {t('labels.directorate')}
                 </th>
                 <th style={{
                   padding: '16px',
@@ -1087,7 +1115,7 @@ const Organization: React.FC = () => {
                   fontWeight: 700,
                   fontFamily: 'Montserrat'
                 }}>
-                  Müdürlük
+                  {t('labels.management')}
                 </th>
                 <th style={{
                   padding: '16px',
@@ -1097,7 +1125,7 @@ const Organization: React.FC = () => {
                   fontWeight: 700,
                   fontFamily: 'Montserrat'
                 }}>
-                  Departman/Şeflik
+                  {t('labels.departmentLeadership')}
                 </th>
                 <th style={{
                   padding: '16px',
@@ -1107,7 +1135,7 @@ const Organization: React.FC = () => {
                   fontWeight: 700,
                   fontFamily: 'Montserrat'
                 }}>
-                  Unvan
+                  {t('labels.title')}
                 </th>
                 <th style={{
                   padding: '16px',
@@ -1117,7 +1145,7 @@ const Organization: React.FC = () => {
                   fontWeight: 700,
                   fontFamily: 'Montserrat'
                 }}>
-                  Pozisyon
+                  {t('labels.position')}
                 </th>
                 <th style={{
                   padding: '16px',
@@ -1127,7 +1155,7 @@ const Organization: React.FC = () => {
                   fontWeight: 700,
                   fontFamily: 'Montserrat'
                 }}>
-                  İşlemler
+                  {t('labels.actions')}
                 </th>
               </tr>
             </thead>
@@ -1143,7 +1171,7 @@ const Organization: React.FC = () => {
                     fontFamily: 'Inter',
                     fontWeight: '500'
                   }}>
-                    🔍 "{debouncedSearchTerm}" için {filteredOrganizations.length} sonuç bulundu
+                    🔍 {formatSearchResultsCount(debouncedSearchTerm, filteredOrganizations.length)}
                   </td>
                 </tr>
               )}
@@ -1155,7 +1183,7 @@ const Organization: React.FC = () => {
                     color: '#8A92A6',
                     fontSize: '14px'
                   }}>
-                    {searchTerm ? `"${searchTerm}" için arama sonucu bulunamadı` : 'Henüz organizasyon bulunmuyor'}
+                    {formatNoResultsText(searchTerm)}
                   </td>
                 </tr>
               ) : (
@@ -1320,7 +1348,7 @@ const Organization: React.FC = () => {
                 fontSize: '14px'
               }}
             >
-              Önceki
+              {t('buttons.previous')}
             </button>
             
             {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
@@ -1354,7 +1382,7 @@ const Organization: React.FC = () => {
                 fontSize: '14px'
               }}
             >
-              Sonraki
+              {t('buttons.next')}
             </button>
           </div>
         )}
@@ -1410,14 +1438,14 @@ const Organization: React.FC = () => {
                     fontFamily: 'Inter',
                     marginBottom: '4px'
                   }}>
-                    Yeni Organizasyon Ekle
+                    {t('titles.addOrganization')}
                   </div>
                   <div style={{
                     fontSize: '14px',
                     color: '#64748B',
                     fontFamily: 'Inter'
                   }}>
-                    Organizasyon bilgilerini girin
+                    {t('labels.addOrganizationDesc')}
                   </div>
                 </div>
               </div>
@@ -1432,13 +1460,13 @@ const Organization: React.FC = () => {
                     marginBottom: '8px',
                     fontFamily: 'Inter'
                   }}>
-                    Genel Müdür Yardımcılığı
+                    {t('labels.generalManagerAssistant')}
                   </label>
                   <input
                     type="text"
                     value={formData.genelMudurYardimciligi}
                     onChange={(e) => setFormData({ ...formData, genelMudurYardimciligi: e.target.value })}
-                    placeholder="Genel Müdür Yardımcılığı girin"
+                    placeholder={t('placeholders.generalManagerAssistant')}
                     style={{
                       width: '100%',
                       padding: '14px 16px',
@@ -1472,13 +1500,13 @@ const Organization: React.FC = () => {
                     marginBottom: '8px',
                     fontFamily: 'Inter'
                   }}>
-                    Direktörlük
+                    {t('labels.directorate')}
                   </label>
                   <input
                     type="text"
                     value={formData.direktörlük}
                     onChange={(e) => setFormData({ ...formData, direktörlük: e.target.value })}
-                    placeholder="Direktörlük girin"
+                    placeholder={t('placeholders.directorate')}
                     style={{
                       width: '100%',
                       padding: '14px 16px',
@@ -1500,13 +1528,13 @@ const Organization: React.FC = () => {
                     marginBottom: '8px',
                     fontFamily: 'Inter'
                   }}>
-                    Müdürlük
+                    {t('labels.management')}
                   </label>
                   <input
                     type="text"
                     value={formData.müdürlük}
                     onChange={(e) => setFormData({ ...formData, müdürlük: e.target.value })}
-                    placeholder="Müdürlük girin"
+                    placeholder={t('placeholders.management')}
                     style={{
                       width: '100%',
                       padding: '14px 16px',
@@ -1528,13 +1556,13 @@ const Organization: React.FC = () => {
                     marginBottom: '8px',
                     fontFamily: 'Inter'
                   }}>
-                    Departman/Şeflik
+                    {t('labels.departmentLeadership')}
                   </label>
                   <input
                     type="text"
                     value={formData.grupLiderligi}
                     onChange={(e) => setFormData({ ...formData, grupLiderligi: e.target.value })}
-                    placeholder="Departman/Şeflik girin"
+                    placeholder={t('placeholders.departmentLeadership')}
                     style={{
                       width: '100%',
                       padding: '14px 16px',
@@ -1556,13 +1584,13 @@ const Organization: React.FC = () => {
                     marginBottom: '8px',
                     fontFamily: 'Inter'
                   }}>
-                    Unvan <span style={{ color: '#E53E3E' }}>*</span>
+                    {t('labels.title')} <span style={{ color: '#E53E3E' }}>*</span>
                   </label>
                   <input
                     type="text"
                     value={formData.unvan}
                     onChange={(e) => setFormData({ ...formData, unvan: e.target.value })}
-                    placeholder="Unvan girin"
+                    placeholder={t('placeholders.title')}
                     style={{
                       width: '100%',
                       padding: '14px 16px',
@@ -1584,13 +1612,13 @@ const Organization: React.FC = () => {
                     marginBottom: '8px',
                     fontFamily: 'Inter'
                   }}>
-                    Pozisyon <span style={{ color: '#DC2626' }}>*</span>
+                    {t('labels.position')} <span style={{ color: '#DC2626' }}>*</span>
                   </label>
                   <input
                     type="text"
                     value={formData.pozisyon}
                     onChange={(e) => setFormData({ ...formData, pozisyon: e.target.value })}
-                    placeholder="Pozisyon girin"
+                    placeholder={t('placeholders.position')}
                     style={{
                       width: '100%',
                       padding: '14px 16px',
@@ -1635,7 +1663,7 @@ const Organization: React.FC = () => {
                     (e.target as HTMLButtonElement).style.backgroundColor = 'white';
                   }}
                 >
-                  İptal
+                  {t('buttons.cancel')}
                 </button>
                 <button
                   onClick={handleSubmitAdd}
@@ -1652,7 +1680,7 @@ const Organization: React.FC = () => {
                     opacity: isSubmitting ? 0.7 : 1
                   }}
                 >
-                  {isSubmitting ? 'Ekleniyor...' : 'Ekle'}
+                  {isSubmitting ? t('statuses.adding') : t('buttons.add')}
                 </button>
               </div>
             </div>
@@ -1710,14 +1738,14 @@ const Organization: React.FC = () => {
                     fontFamily: 'Inter',
                     marginBottom: '4px'
                   }}>
-                    Organizasyon Düzenle
+                    {t('titles.editOrganization')}
                   </div>
                   <div style={{
                     fontSize: '14px',
                     color: '#64748B',
                     fontFamily: 'Inter'
                   }}>
-                    Organizasyon bilgilerini güncelleyin
+                    {t('labels.editOrganizationDesc')}
                   </div>
                 </div>
               </div>
@@ -1732,7 +1760,7 @@ const Organization: React.FC = () => {
                     marginBottom: '8px',
                     fontFamily: 'Inter'
                   }}>
-                    Genel Müdür Yardımcılığı
+                    {t('labels.generalManagerAssistant')}
                   </label>
                   <input
                     type="text"
@@ -1759,7 +1787,7 @@ const Organization: React.FC = () => {
                     marginBottom: '8px',
                     fontFamily: 'Inter'
                   }}>
-                    Direktörlük
+                    {t('labels.directorate')}
                   </label>
                   <input
                     type="text"
@@ -1786,7 +1814,7 @@ const Organization: React.FC = () => {
                     marginBottom: '8px',
                     fontFamily: 'Inter'
                   }}>
-                    Müdürlük
+                    {t('labels.management')}
                   </label>
                   <input
                     type="text"
@@ -1813,7 +1841,7 @@ const Organization: React.FC = () => {
                     marginBottom: '8px',
                     fontFamily: 'Inter'
                   }}>
-                    Departman/Şeflik
+                    {t('labels.departmentLeadership')}
                   </label>
                   <input
                     type="text"
@@ -1840,7 +1868,7 @@ const Organization: React.FC = () => {
                     marginBottom: '8px',
                     fontFamily: 'Inter'
                   }}>
-                    Unvan <span style={{ color: '#E53E3E' }}>*</span>
+                    {t('labels.title')} <span style={{ color: '#E53E3E' }}>*</span>
                   </label>
                   <input
                     type="text"
@@ -1867,7 +1895,7 @@ const Organization: React.FC = () => {
                     marginBottom: '8px',
                     fontFamily: 'Inter'
                   }}>
-                    Pozisyon <span style={{ color: '#DC2626' }}>*</span>
+                    {t('labels.position')} <span style={{ color: '#DC2626' }}>*</span>
                   </label>
                   <input
                     type="text"
@@ -1917,7 +1945,7 @@ const Organization: React.FC = () => {
                     (e.target as HTMLButtonElement).style.backgroundColor = 'white';
                   }}
                 >
-                  İptal
+                  {t('buttons.cancel')}
                 </button>
                 <button
                   onClick={handleSubmitEdit}
@@ -1946,7 +1974,7 @@ const Organization: React.FC = () => {
                     }
                   }}
                 >
-                  {isSubmitting ? 'Güncelleniyor...' : 'Güncelle'}
+                  {isSubmitting ? t('statuses.updating') : t('buttons.update')}
                 </button>
               </div>
             </div>
@@ -1988,7 +2016,7 @@ const Organization: React.FC = () => {
                 color: '#6B7280',
                 marginBottom: '24px'
               }}>
-                {selectedItems.length} adet organizasyonu silmek istediğinizden emin misiniz? Bu işlem geri alınamaz.
+                {formatBulkDeleteConfirm(selectedItems.length)}
               </div>
               <div style={{
                 display: 'flex',
@@ -2010,7 +2038,7 @@ const Organization: React.FC = () => {
                     fontFamily: 'Inter'
                   }}
                 >
-                  Hayır
+                  {t('buttons.no')}
                 </button>
                 <button
                   onClick={confirmBulkDelete}
@@ -2063,7 +2091,7 @@ const Organization: React.FC = () => {
                 marginBottom: '16px',
                 fontFamily: 'Inter'
               }}>
-                Organizasyonu Sil
+                {t('titles.deleteOrganization')}
               </div>
               <div style={{
                 fontSize: '14px',
@@ -2072,7 +2100,7 @@ const Organization: React.FC = () => {
                 lineHeight: '1.5',
                 fontFamily: 'Inter'
               }}>
-                Bu organizasyonu silmek istediğinizden emin misiniz? Bu işlem geri alınamaz.
+                {formatSingleDeleteConfirm()}
               </div>
               <div style={{
                 display: 'flex',
@@ -2092,7 +2120,7 @@ const Organization: React.FC = () => {
                     cursor: 'pointer'
                   }}
                 >
-                  İptal
+                  {t('buttons.cancel')}
                 </button>
                 <button
                   onClick={handleConfirmDelete}
@@ -2146,7 +2174,7 @@ const Organization: React.FC = () => {
                 marginBottom: '16px',
                 fontFamily: 'Inter'
               }}>
-                Başarılı!
+                {t('labels.success')}
               </div>
               <div style={{
                 fontSize: '14px',
@@ -2206,7 +2234,7 @@ const Organization: React.FC = () => {
                 marginBottom: '16px',
                 fontFamily: 'Inter'
               }}>
-                Hata!
+                {t('labels.error')}
               </div>
               <div style={{
                 fontSize: '14px',
@@ -2272,7 +2300,7 @@ const Organization: React.FC = () => {
                   color: '#232D42',
                   fontFamily: 'Inter'
                 }}>
-                  Excel Import
+                  {t('labels.excelImport')}
                 </div>
                 <button
                   onClick={handleCloseImportPopup}
@@ -2307,7 +2335,7 @@ const Organization: React.FC = () => {
                     color: '#1976D2',
                     fontSize: '14px'
                   }}>
-                    Excel Dosyası Yükle
+                    {t('labels.uploadExcelFile')}
                   </strong>
                 </div>
                 <button
@@ -2326,7 +2354,7 @@ const Organization: React.FC = () => {
                   }}
                 >
                   <i className="fas fa-download"></i>
-                  Template İndir
+                  {t('buttons.downloadTemplate')}
                 </button>
               </div>
 
@@ -2358,13 +2386,13 @@ const Organization: React.FC = () => {
                   color: '#374151',
                   marginBottom: '8px'
                 }}>
-                  Excel dosyasını seçin veya sürükleyin
+                  {t('labels.selectOrDropExcel')}
                 </div>
                 <div style={{
                   fontSize: '14px',
                   color: '#6B7280'
                 }}>
-                  .xlsx, .xls formatları desteklenir
+                  {t('labels.supportedFormats')}
                 </div>
               </div>
 
@@ -2386,7 +2414,7 @@ const Organization: React.FC = () => {
                   borderRadius: '6px',
                   fontSize: '14px'
                 }}>
-                  Dosya seçildi: {selectedFile.name}
+                  {t('labels.selectedFile')}: {selectedFile.name}
                 </div>
               )}
 
@@ -2411,7 +2439,7 @@ const Organization: React.FC = () => {
                     cursor: 'pointer'
                   }}
                 >
-                  İptal
+                  {t('buttons.cancel')}
                 </button>
                 <button
                   onClick={handleImportExcel}
@@ -2427,7 +2455,7 @@ const Organization: React.FC = () => {
                     cursor: selectedFile && !isSubmitting ? 'pointer' : 'not-allowed'
                   }}
                 >
-                  {isSubmitting ? 'Yükleniyor...' : 'Yükle'}
+                  {isSubmitting ? t('labels.uploading') : t('buttons.upload')}
                 </button>
               </div>
             </div>

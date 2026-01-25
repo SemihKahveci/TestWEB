@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
+import { useLanguage } from '../contexts/LanguageContext';
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -10,6 +11,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   const { user, logout } = useAuth();
+  const { language, toggleLanguage, t } = useLanguage();
   const location = useLocation();
   const [isSuperAdmin, setIsSuperAdmin] = useState(false);
 
@@ -68,27 +70,27 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
   }, [location.pathname]);
 
   const mainMenuItems = [
-    { path: '/dashboard', label: 'Kontrol Paneli', icon: '📊' },
-    { path: '/admin', label: 'Genel Takip Sistemi', icon: '🏠' },
-    { path: '/person-results', label: 'Kişi Sonuçları', icon: '👤' },
-    { path: '/results', label: 'Kişi Skorları Sayfası', icon: '📈' },
-    { path: '/game-send', label: 'Oyun Gönder', icon: '📤' },
-    { path: '/subscription-settings', label: 'Oyun Kullanım Özeti', icon: '💳' },
+    { path: '/dashboard', label: t('menu.dashboard'), icon: '📊' },
+    { path: '/admin', label: t('menu.admin'), icon: '🏠' },
+    { path: '/person-results', label: t('menu.personResults'), icon: '👤' },
+    { path: '/results', label: t('menu.personScores'), icon: '📈' },
+    { path: '/game-send', label: t('menu.gameSend'), icon: '📤' },
+    { path: '/subscription-settings', label: t('menu.usageSummary'), icon: '💳' },
   ];
 
   const companySettingsItems = [
-    { path: '/company-identification', label: 'Firma Tanımlama', icon: '🏭', superAdminOnly: true },
-    { path: '/define-company-admin', label: 'Firma Admini Tanımlama', icon: '👤', superAdminOnly: true },
-    { path: '/game-management', label: 'Oyun Tanımlama', icon: '🎮', superAdminOnly: true },
+    { path: '/company-identification', label: t('menu.companySetup'), icon: '🏭', superAdminOnly: true },
+    { path: '/define-company-admin', label: t('menu.companyAdminSetup'), icon: '👤', superAdminOnly: true },
+    { path: '/game-management', label: t('menu.gameSetup'), icon: '🎮', superAdminOnly: true },
   ].filter(item => isSuperAdmin || !item.superAdminOnly);
 
   const otherSettingsItems = [
-    { path: '/organization', label: 'Organizasyon', icon: '🏢' },
-    { path: '/competency-settings', label: 'Yetkinlik Ayarları', icon: '⚙️' },
+    { path: '/organization', label: t('menu.organization'), icon: '🏢' },
+    { path: '/competency-settings', label: t('menu.competencySettings'), icon: '⚙️' },
   ];
 
   const superAdminSettingsItems = [
-    { path: '/script-files', label: 'Komut Dosyaları', icon: '📄', superAdminOnly: true },
+    { path: '/script-files', label: t('menu.scriptFiles'), icon: '📄', superAdminOnly: true },
   ];
 
   const isActive = (path: string) => {
@@ -140,7 +142,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
         <div style={{
           display: 'flex',
           alignItems: 'center',
-          justifyContent: 'center',
+          justifyContent: 'space-between',
           height: '64px',
           padding: '0 24px',
           borderBottom: '1px solid #E9ECEF'
@@ -157,6 +159,25 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
               }} 
             />
           </div>
+          <button
+            type="button"
+            onClick={toggleLanguage}
+            title={language === 'tr' ? t('buttons.switchToEnglish') : t('buttons.switchToTurkish')}
+            style={{
+              border: '1px solid #E5E7EB',
+              backgroundColor: '#F9FAFB',
+              color: '#374151',
+              width: '36px',
+              height: '36px',
+              borderRadius: '8px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              cursor: 'pointer'
+            }}
+          >
+            <i className="fa-solid fa-globe" />
+          </button>
         </div>
 
         {/* Navigation */}
@@ -168,11 +189,11 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
               color: '#8A92A6',
               fontSize: '12px',
               fontWeight: 600,
-              textTransform: 'uppercase',
+              textTransform: language === 'en' ? 'none' : 'uppercase',
               marginBottom: '8px',
               fontFamily: 'Inter'
             }}>
-              Ana Menü
+              {t('nav.main')}
             </div>
             {mainMenuItems.map((item) => (
               <Link
@@ -218,11 +239,11 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
               color: '#8A92A6',
               fontSize: '12px',
               fontWeight: 600,
-              textTransform: 'uppercase',
+              textTransform: language === 'en' ? 'none' : 'uppercase',
               marginBottom: '8px',
               fontFamily: 'Inter'
             }}>
-              Ayarlar
+              {t('nav.settings')}
             </div>
             
             {/* Firma Ayarları - Expandable (Sadece super admin için) */}
@@ -252,7 +273,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
               }}
             >
               <span style={{ marginRight: '12px', fontSize: '16px' }}>🏢</span>
-              <span style={{ flex: 1 }}>Firma Ayarları</span>
+              <span style={{ flex: 1 }}>{t('nav.companySettings')}</span>
               <span style={{ 
                 fontSize: '12px', 
                 transform: companySettingsExpanded ? 'rotate(45deg)' : 'rotate(0deg)',
@@ -455,7 +476,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
               e.currentTarget.style.color = '#6B7280';
             }}
           >
-            Çıkış Yap
+            {t('nav.logout')}
           </button>
         </div>
       </div>

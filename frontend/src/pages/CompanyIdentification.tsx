@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useLanguage } from '../contexts/LanguageContext';
 import { companyAPI } from '../services/api';
 
 interface Company {
@@ -9,6 +10,7 @@ interface Company {
 }
 
 const CompanyIdentification: React.FC = () => {
+  const { t } = useLanguage();
   const [companies, setCompanies] = useState<Company[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [showAddPopup, setShowAddPopup] = useState(false);
@@ -295,7 +297,7 @@ const CompanyIdentification: React.FC = () => {
             fontFamily: 'Inter',
             fontWeight: 700
           }}>
-            Firma Tanımlama
+            {t('titles.companyIdentification')}
           </div>
         </div>
       </div>

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useLanguage } from '../contexts/LanguageContext';
 import { useNavigate } from 'react-router-dom';
 import * as XLSX from 'xlsx';
 import { organizationAPI } from '../services/api';
@@ -22,6 +23,7 @@ interface Organization {
 }
 
 const AuthorizationPage: React.FC = () => {
+  const { language, t } = useLanguage();
   // CSS animasyonu için style tag'i ekle
   React.useEffect(() => {
     const style = document.createElement('style');
@@ -65,6 +67,47 @@ const AuthorizationPage: React.FC = () => {
   const [organizations, setOrganizations] = useState<Organization[]>([]);
   const [positions, setPositions] = useState<string[]>([]);
   const [filteredPositions, setFilteredPositions] = useState<string[]>([]);
+  const formatNoResultsText = (term: string) => {
+    if (term) {
+      return language === 'en'
+        ? `No results found for "${term}"`
+        : `"${term}" için arama sonucu bulunamadı`;
+    }
+    return language === 'en' ? 'No people yet' : 'Henüz kişi bulunmuyor';
+  };
+
+  const formatPositionPlaceholder = (count: number) =>
+    language === 'en'
+      ? `Select position (${count} available)`
+      : `Pozisyon seçin (${count} pozisyon mevcut)`;
+
+  const formatBulkDeleteSuccess = (count: number) =>
+    language === 'en'
+      ? `${count} authorizations deleted successfully.`
+      : `${count} yetkilendirme başarıyla silindi.`;
+
+  const formatImportSuccess = (count: number) =>
+    language === 'en'
+      ? `${count} people imported successfully!`
+      : `Başarıyla ${count} kişi eklendi!`;
+
+  const formatSearchResultsCount = (term: string, count: number) =>
+    language === 'en'
+      ? `${count} results found for "${term}"`
+      : `"${term}" için ${count} sonuç bulundu`;
+
+  const formatBulkDeleteConfirm = (count: number) =>
+    language === 'en'
+      ? `Are you sure you want to delete ${count} authorizations? This action cannot be undone.`
+      : `${count} adet yetkilendirmeyi silmek istediğinizden emin misiniz? Bu işlem geri alınamaz.`;
+
+  const formatSingleDeleteConfirm = () =>
+    language === 'en'
+      ? 'Are you sure you want to delete this person? This action cannot be undone.'
+      : 'Bu kişiyi silmek istediğinizden emin misiniz? Bu işlem geri alınamaz.';
+
+  const getTemplateFileName = () =>
+    language === 'en' ? 'people_template.xlsx' : 'kisiler_template.xlsx';
   const [positionSearchTerm, setPositionSearchTerm] = useState('');
   const [showPositionDropdown, setShowPositionDropdown] = useState(false);
   
@@ -149,7 +192,7 @@ const AuthorizationPage: React.FC = () => {
       });
 
       if (!response.ok) {
-        throw new Error('Yetkilendirme listesi yüklenemedi');
+        throw new Error(t('errors.authorizationListLoad'));
       }
 
       const result = await response.json();
@@ -165,11 +208,11 @@ const AuthorizationPage: React.FC = () => {
         });
         setAuthorizations(sortedAuthorizations);
       } else {
-        throw new Error(result.message || 'Yetkilendirme listesi alınamadı');
+        throw new Error(result.message || t('errors.authorizationListFetch'));
       }
     } catch (error: any) {
       console.error('💥 Yetkilendirme yükleme hatası:', error);
-      setErrorMessage('Yetkilendirmeler yüklenirken bir hata oluştu');
+      setErrorMessage(t('errors.authorizationLoad'));
       setShowErrorPopup(true);
     } finally {
       setIsLoading(false);
@@ -198,7 +241,7 @@ const AuthorizationPage: React.FC = () => {
         setPositions(allPositions);
         setFilteredPositions(allPositions); // İlk yüklemede tüm pozisyonları göster
       } else {
-        throw new Error(result.data.message || 'Organizasyon listesi alınamadı');
+        throw new Error(result.data.message || t('errors.organizationListFetch'));
       }
     } catch (error) {
       console.error('❌ Organizasyon yükleme hatası:', error);
@@ -364,7 +407,7 @@ const AuthorizationPage: React.FC = () => {
 
   const handleBulkDelete = () => {
     if (selectedItems.length === 0) {
-      setErrorMessage('Lütfen silmek istediğiniz kayıtları seçiniz!');
+      setErrorMessage(t('errors.selectRecordsToDelete'));
       setShowErrorPopup(true);
       return;
     }
@@ -399,11 +442,11 @@ const AuthorizationPage: React.FC = () => {
       // Veriyi yeniden yükle
       await loadAuthorizations();
       
-      setSuccessMessage(`${selectedItems.length} yetkilendirme başarıyla silindi.`);
+      setSuccessMessage(formatBulkDeleteSuccess(selectedItems.length));
       setShowSuccessPopup(true);
     } catch (error: any) {
       console.error('Toplu silme hatası:', error);
-      setErrorMessage(error.message || 'Toplu silme işlemi sırasında bir hata oluştu');
+      setErrorMessage(error.message || t('errors.bulkDeleteFailed'));
       setShowErrorPopup(true);
     } finally {
       setIsSubmitting(false);
@@ -413,25 +456,25 @@ const AuthorizationPage: React.FC = () => {
   const handleSubmitAdd = async () => {
     // Validasyon kontrolleri
     if (!formData.sicilNo || !formData.sicilNo.trim()) {
-      setErrorMessage('Lütfen sicil numarasını giriniz!');
+      setErrorMessage(t('errors.enterRegistrationNumber'));
       setShowErrorPopup(true);
       return;
     }
 
     if (!formData.personName || !formData.personName.trim()) {
-      setErrorMessage('Lütfen kişi adını giriniz!');
+      setErrorMessage(t('errors.enterPersonName'));
       setShowErrorPopup(true);
       return;
     }
 
     if (!formData.email || !formData.email.trim()) {
-      setErrorMessage('Lütfen email adresini giriniz!');
+      setErrorMessage(t('errors.enterEmail'));
       setShowErrorPopup(true);
       return;
     }
 
     if (!formData.title || !formData.title.trim()) {
-      setErrorMessage('Lütfen pozisyon seçiniz!');
+      setErrorMessage(t('errors.selectPosition'));
       setShowErrorPopup(true);
       return;
     }
@@ -450,7 +493,7 @@ const AuthorizationPage: React.FC = () => {
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.message || 'Yetkilendirme eklenemedi');
+        throw new Error(errorData.message || t('errors.authorizationAddFailed'));
       }
 
       const responseData = await response.json();
@@ -461,10 +504,10 @@ const AuthorizationPage: React.FC = () => {
       // Başarı mesajı göster
       setShowAddPopup(false);
       setShowSuccessPopup(true);
-      setSuccessMessage('Yetkilendirme başarıyla eklendi!');
+      setSuccessMessage(t('messages.authorizationAdded'));
     } catch (error: any) {
       console.error('💥 Yetkilendirme ekleme hatası:', error);
-      setErrorMessage(error.message || 'Yetkilendirme eklenirken bir hata oluştu');
+      setErrorMessage(error.message || t('errors.authorizationAddError'));
       setShowErrorPopup(true);
     } finally {
       setIsSubmitting(false);
@@ -476,25 +519,25 @@ const AuthorizationPage: React.FC = () => {
 
     // Validasyon kontrolleri
     if (!formData.sicilNo || !formData.sicilNo.trim()) {
-      setErrorMessage('Lütfen sicil numarasını giriniz!');
+      setErrorMessage(t('errors.enterRegistrationNumber'));
       setShowErrorPopup(true);
       return;
     }
 
     if (!formData.personName || !formData.personName.trim()) {
-      setErrorMessage('Lütfen kişi adını giriniz!');
+      setErrorMessage(t('errors.enterPersonName'));
       setShowErrorPopup(true);
       return;
     }
 
     if (!formData.email || !formData.email.trim()) {
-      setErrorMessage('Lütfen email adresini giriniz!');
+      setErrorMessage(t('errors.enterEmail'));
       setShowErrorPopup(true);
       return;
     }
 
     if (!formData.title || !formData.title.trim()) {
-      setErrorMessage('Lütfen pozisyon seçiniz!');
+      setErrorMessage(t('errors.selectPosition'));
       setShowErrorPopup(true);
       return;
     }
@@ -513,7 +556,7 @@ const AuthorizationPage: React.FC = () => {
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.message || 'Yetkilendirme güncellenemedi');
+        throw new Error(errorData.message || t('errors.authorizationUpdateFailed'));
       }
 
       const responseData = await response.json();
@@ -526,10 +569,10 @@ const AuthorizationPage: React.FC = () => {
       // Başarı mesajı göster
       setShowEditPopup(false);
       setShowSuccessPopup(true);
-      setSuccessMessage('Yetkilendirme başarıyla güncellendi!');
+      setSuccessMessage(t('messages.authorizationUpdated'));
     } catch (error: any) {
       console.error('💥 Yetkilendirme güncelleme hatası:', error);
-      setErrorMessage(error.message || 'Yetkilendirme güncellenirken bir hata oluştu');
+      setErrorMessage(error.message || t('errors.authorizationUpdateError'));
       setShowErrorPopup(true);
     } finally {
       setIsSubmitting(false);
@@ -547,7 +590,7 @@ const AuthorizationPage: React.FC = () => {
       });
 
       if (!response.ok) {
-        throw new Error('Silme işlemi başarısız');
+        throw new Error(t('errors.deleteFailed'));
       }
 
       
@@ -557,10 +600,10 @@ const AuthorizationPage: React.FC = () => {
       // Başarı mesajı göster
       setShowDeletePopup(false);
       setShowSuccessPopup(true);
-      setSuccessMessage('Yetkilendirme başarıyla silindi!');
+      setSuccessMessage(t('messages.authorizationDeleted'));
     } catch (error: any) {
       console.error('💥 Yetkilendirme silme hatası:', error);
-      setErrorMessage(error.message || 'Yetkilendirme silinirken bir hata oluştu');
+      setErrorMessage(error.message || t('errors.authorizationDeleteError'));
       setShowErrorPopup(true);
     } finally {
       setIsSubmitting(false);
@@ -662,10 +705,10 @@ const AuthorizationPage: React.FC = () => {
     try {
       // Excel template verilerini oluştur - kişi sütunları
       const headers = [
-        'Sicil No',
-        'Ad Soyad',
-        'Email',
-        'Pozisyon'
+        t('labels.registrationNumber'),
+        t('labels.nameSurname'),
+        t('labels.email'),
+        t('labels.position')
       ];
 
       // Örnek veri satırı
@@ -673,7 +716,7 @@ const AuthorizationPage: React.FC = () => {
         '12345',
         'Serdar Kahveci',
         'serdar.kahveci@example.com',
-        'Yazılım Geliştirici'
+        language === 'en' ? 'Software Developer' : 'Yazılım Geliştirici'
       ];
 
       // Boş satırlar için veri
@@ -700,30 +743,30 @@ const AuthorizationPage: React.FC = () => {
       ];
 
       // Worksheet'i workbook'a ekle
-      XLSX.utils.book_append_sheet(wb, ws, "Kişiler Template");
+      XLSX.utils.book_append_sheet(wb, ws, t('labels.peopleTemplate'));
 
       // Excel dosyasını indir
-      XLSX.writeFile(wb, 'kişiler_template.xlsx');
+      XLSX.writeFile(wb, getTemplateFileName());
       
-      setSuccessMessage('Excel template başarıyla indirildi!');
+      setSuccessMessage(t('messages.templateDownloadSuccess'));
       setShowSuccessPopup(true);
       
     } catch (error) {
       console.error('Template indirme hatası:', error);
-      setErrorMessage('Template indirilirken bir hata oluştu!');
+      setErrorMessage(t('errors.templateDownloadError'));
       setShowErrorPopup(true);
     }
   };
 
   const importExcelData = async () => {
     if (!selectedFile) {
-      setImportMessage('Lütfen önce bir Excel dosyası seçin!');
+      setImportMessage(t('errors.selectExcelFirst'));
       setImportMessageType('error');
       return;
     }
 
     try {
-      setImportMessage('Excel dosyası yükleniyor...');
+      setImportMessage(t('labels.excelUploading'));
       setImportMessageType('success');
       setIsSubmitting(true);
 
@@ -738,12 +781,12 @@ const AuthorizationPage: React.FC = () => {
 
       if (!response.ok) {
         if (response.status === 401) {
-          setImportMessage('Yetkiniz bulunmuyor. Lütfen tekrar giriş yapın.');
+          setImportMessage(t('errors.noPermissionRelogin'));
         } else if (response.status === 413) {
-          setImportMessage('Dosya çok büyük. Lütfen daha küçük bir dosya seçin.');
+          setImportMessage(t('errors.fileTooLarge'));
         } else if (response.status === 400) {
           const errorResult = await response.json();
-          let errorMessage = errorResult.message || 'Dosya formatı hatalı. Lütfen geçerli bir Excel dosyası seçin.';
+          let errorMessage = errorResult.message || t('errors.invalidFileFormat');
           if (errorResult.errors && errorResult.errors.length > 0) {
             errorMessage += '\n\nDetaylar:\n';
             errorResult.errors.forEach((error: any) => {
@@ -752,7 +795,7 @@ const AuthorizationPage: React.FC = () => {
           }
           setImportMessage(errorMessage);
         } else {
-          setImportMessage('Dosya yüklenirken bir hata oluştu.');
+          setImportMessage(t('errors.fileUploadError'));
         }
         setImportMessageType('error');
         setIsSubmitting(false);
@@ -761,18 +804,18 @@ const AuthorizationPage: React.FC = () => {
 
       const result = await response.json();
       if (result.success) {
-        setImportMessage(`Başarıyla ${result.importedCount} kişi eklendi!`);
+        setImportMessage(formatImportSuccess(result.importedCount));
         setImportMessageType('success');
         setShowImportPopup(false);
         setSelectedFile(null);
         loadAuthorizations(); // Verileri yenile
       } else {
-        setImportMessage(result.message || 'Dosya yüklenirken bir hata oluştu.');
+        setImportMessage(result.message || t('errors.fileUploadError'));
         setImportMessageType('error');
       }
     } catch (error) {
       console.error('Excel import hatası:', error);
-      setImportMessage('Dosya yüklenirken bir hata oluştu.');
+      setImportMessage(t('errors.fileUploadError'));
       setImportMessageType('error');
     } finally {
       setIsSubmitting(false);
@@ -803,7 +846,7 @@ const AuthorizationPage: React.FC = () => {
             borderRadius: '50%',
             animation: 'spin 1s linear infinite'
           }} />
-          <div>Yetkilendirmeler yükleniyor...</div>
+          <div>{t('labels.authorizationsLoading')}</div>
         </div>
       </div>
     );
@@ -841,7 +884,7 @@ const AuthorizationPage: React.FC = () => {
               fontFamily: 'Inter',
               fontWeight: 700
             }}>
-              Kişiler
+              {t('titles.authorization')}
             </div>
           </div>
         </div>
@@ -867,7 +910,7 @@ const AuthorizationPage: React.FC = () => {
             }}
             onClick={() => navigate('/organization')}
           >
-            Organizasyon
+            {t('titles.organization')}
           </div>
           <div 
             style={{
@@ -884,7 +927,7 @@ const AuthorizationPage: React.FC = () => {
             }}
             onClick={() => navigate('/grouping')}
           >
-            Gruplama
+            {t('titles.grouping')}
           </div>
           <div style={{
             flex: 1,
@@ -898,7 +941,7 @@ const AuthorizationPage: React.FC = () => {
             fontWeight: 700,
             lineHeight: '20px'
           }}>
-            Kişiler
+            {t('titles.authorization')}
           </div>
         </div>
 
@@ -948,7 +991,7 @@ const AuthorizationPage: React.FC = () => {
             )}
             <input
               type="text"
-              placeholder="Tüm sütunlarda akıllı arama yapın..."
+              placeholder={t('placeholders.searchAllColumns')}
               value={searchTerm}
               onChange={(e) => {
                 const value = e.target.value;
@@ -1052,7 +1095,7 @@ const AuthorizationPage: React.FC = () => {
                 }}
               >
                 <i className="fas fa-trash"></i>
-                Toplu Sil ({selectedItems.length})
+                {t('buttons.bulkDelete')} ({selectedItems.length})
               </button>
             )}
             <button
@@ -1072,7 +1115,7 @@ const AuthorizationPage: React.FC = () => {
               }}
             >
               <i className="fas fa-file-excel" />
-              Excel Yükle
+              {t('buttons.uploadExcel')}
             </button>
             <button
               onClick={handleAddAuthorization}
@@ -1087,7 +1130,7 @@ const AuthorizationPage: React.FC = () => {
                 cursor: 'pointer'
               }}
             >
-              EKLE
+              {t('buttons.add')}
             </button>
           </div>
         </div>
@@ -1172,7 +1215,7 @@ const AuthorizationPage: React.FC = () => {
                   fontWeight: 700,
                   fontFamily: 'Montserrat'
                 }}>
-                  Sicil No
+                  {t('labels.registrationNumber')}
                 </th>
                 <th style={{
                   padding: '16px',
@@ -1182,7 +1225,7 @@ const AuthorizationPage: React.FC = () => {
                   fontWeight: 700,
                   fontFamily: 'Montserrat'
                 }}>
-                  Ad Soyad
+                  {t('labels.nameSurname')}
                 </th>
                 <th style={{
                   padding: '16px',
@@ -1192,7 +1235,7 @@ const AuthorizationPage: React.FC = () => {
                   fontWeight: 700,
                   fontFamily: 'Montserrat'
                 }}>
-                  Email
+                  {t('labels.email')}
                 </th>
                 <th style={{
                   padding: '16px',
@@ -1202,7 +1245,7 @@ const AuthorizationPage: React.FC = () => {
                   fontWeight: 700,
                   fontFamily: 'Montserrat'
                 }}>
-                  Pozisyon
+                  {t('labels.position')}
                 </th>
                 <th style={{
                   padding: '16px',
@@ -1212,7 +1255,7 @@ const AuthorizationPage: React.FC = () => {
                   fontWeight: 700,
                   fontFamily: 'Montserrat'
                 }}>
-                  İşlemler
+                  {t('labels.actions')}
                 </th>
               </tr>
             </thead>
@@ -1228,7 +1271,7 @@ const AuthorizationPage: React.FC = () => {
                     fontFamily: 'Inter',
                     fontWeight: '500'
                   }}>
-                    🔍 "{debouncedSearchTerm}" için {filteredAuthorizations.length} sonuç bulundu
+                    🔍 {formatSearchResultsCount(debouncedSearchTerm, filteredAuthorizations.length)}
                   </td>
                 </tr>
               )}
@@ -1240,7 +1283,7 @@ const AuthorizationPage: React.FC = () => {
                     color: '#8A92A6',
                     fontSize: '14px'
                   }}>
-                    {searchTerm ? `"${searchTerm}" için arama sonucu bulunamadı` : 'Henüz kişi bulunmuyor'}
+                    {formatNoResultsText(searchTerm)}
                   </td>
                 </tr>
               ) : (
@@ -1385,7 +1428,7 @@ const AuthorizationPage: React.FC = () => {
                 fontSize: '14px'
               }}
             >
-              Önceki
+              {t('buttons.previous')}
             </button>
             
             {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
@@ -1419,7 +1462,7 @@ const AuthorizationPage: React.FC = () => {
                 fontSize: '14px'
               }}
             >
-              Sonraki
+              {t('buttons.next')}
             </button>
           </div>
         )}
@@ -1456,7 +1499,7 @@ const AuthorizationPage: React.FC = () => {
                 marginBottom: '24px',
                 fontFamily: 'Inter'
               }}>
-                Kişi Ekle
+                {t('titles.addPerson')}
               </div>
               
               <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
@@ -1469,13 +1512,13 @@ const AuthorizationPage: React.FC = () => {
                     marginBottom: '8px',
                     fontFamily: 'Inter'
                   }}>
-                    Sicil No <span style={{ color: '#EF4444' }}>*</span>
+                    {t('labels.registrationNumber')} <span style={{ color: '#EF4444' }}>*</span>
                   </label>
                   <input
                     type="text"
                     value={formData.sicilNo}
                     onChange={(e) => setFormData({ ...formData, sicilNo: e.target.value })}
-                    placeholder="Lütfen Sicil No Giriniz"
+                    placeholder={t('placeholders.registrationNumber')}
                     style={{
                       width: '100%',
                       padding: '12px 16px',
@@ -1497,13 +1540,13 @@ const AuthorizationPage: React.FC = () => {
                     marginBottom: '8px',
                     fontFamily: 'Inter'
                   }}>
-                    Kişi Adı <span style={{ color: '#EF4444' }}>*</span>
+                    {t('labels.personName')} <span style={{ color: '#EF4444' }}>*</span>
                   </label>
                   <input
                     type="text"
                     value={formData.personName}
                     onChange={(e) => setFormData({ ...formData, personName: e.target.value })}
-                    placeholder="Lütfen Kişi Adını Giriniz"
+                    placeholder={t('placeholders.personName')}
                     style={{
                       width: '100%',
                       padding: '12px 16px',
@@ -1525,13 +1568,13 @@ const AuthorizationPage: React.FC = () => {
                     marginBottom: '8px',
                     fontFamily: 'Inter'
                   }}>
-                    Email <span style={{ color: '#EF4444' }}>*</span>
+                    {t('labels.email')} <span style={{ color: '#EF4444' }}>*</span>
                   </label>
                   <input
                     type="email"
                     value={formData.email}
                     onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                    placeholder="Lütfen Email Giriniz"
+                    placeholder={t('placeholders.email')}
                     style={{
                       width: '100%',
                       padding: '12px 16px',
@@ -1553,7 +1596,7 @@ const AuthorizationPage: React.FC = () => {
                     marginBottom: '8px',
                     fontFamily: 'Inter'
                   }}>
-                    Pozisyon <span style={{ color: '#EF4444' }}>*</span>
+                    {t('labels.position')} <span style={{ color: '#EF4444' }}>*</span>
                   </label>
                   {/* Custom Dropdown */}
                   <div
@@ -1574,7 +1617,7 @@ const AuthorizationPage: React.FC = () => {
                     }}
                   >
                     <span style={{ color: positionSearchTerm ? '#232D42' : '#8A92A6' }}>
-                      {positionSearchTerm || `Pozisyon seçin (${positions.length} pozisyon mevcut)`}
+                      {positionSearchTerm || formatPositionPlaceholder(positions.length)}
                     </span>
                     <i 
                       className={`fas fa-chevron-${showPositionDropdown ? 'up' : 'down'}`}
@@ -1603,7 +1646,7 @@ const AuthorizationPage: React.FC = () => {
                       <div style={{ padding: '8px', borderBottom: '1px solid #E9ECEF', position: 'relative' }}>
                         <input
                           type="text"
-                          placeholder="Pozisyon ara..."
+                          placeholder={t('placeholders.positionSearch')}
                           value={positionSearchTerm}
                           onChange={(e) => {
                             handlePositionSearch(e.target.value);
@@ -1686,7 +1729,7 @@ const AuthorizationPage: React.FC = () => {
                             color: '#8A92A6',
                             textAlign: 'center'
                           }}>
-                            {positionSearchTerm ? `"${positionSearchTerm}" için arama sonucu bulunamadı` : 'Pozisyon bulunamadı'}
+                            {positionSearchTerm ? formatNoResultsText(positionSearchTerm) : t('labels.positionNotFound')}
                           </div>
                         )}
                       </div>
@@ -1717,7 +1760,7 @@ const AuthorizationPage: React.FC = () => {
                     cursor: 'pointer'
                   }}
                 >
-                  İptal
+                  {t('buttons.cancel')}
                 </button>
                 <button
                   onClick={handleSubmitAdd}
@@ -1734,7 +1777,7 @@ const AuthorizationPage: React.FC = () => {
                     opacity: isSubmitting ? 0.7 : 1
                   }}
                 >
-                  {isSubmitting ? 'Ekleniyor...' : 'Ekle'}
+                  {isSubmitting ? t('statuses.adding') : t('buttons.add')}
                 </button>
               </div>
             </div>
@@ -1771,7 +1814,7 @@ const AuthorizationPage: React.FC = () => {
                 marginBottom: '24px',
                 fontFamily: 'Inter'
               }}>
-                Kişi Düzenle
+                {t('titles.editPerson')}
               </div>
               
               <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
@@ -1784,13 +1827,13 @@ const AuthorizationPage: React.FC = () => {
                     marginBottom: '8px',
                     fontFamily: 'Inter'
                   }}>
-                    Sicil No <span style={{ color: '#EF4444' }}>*</span>
+                    {t('labels.registrationNumber')} <span style={{ color: '#EF4444' }}>*</span>
                   </label>
                   <input
                     type="text"
                     value={formData.sicilNo}
                     onChange={(e) => setFormData({ ...formData, sicilNo: e.target.value })}
-                    placeholder="Lütfen Sicil No Giriniz"
+                    placeholder={t('placeholders.registrationNumber')}
                     style={{
                       width: '100%',
                       padding: '12px 16px',
@@ -1812,13 +1855,13 @@ const AuthorizationPage: React.FC = () => {
                     marginBottom: '8px',
                     fontFamily: 'Inter'
                   }}>
-                    Kişi Adı <span style={{ color: '#EF4444' }}>*</span>
+                    {t('labels.personName')} <span style={{ color: '#EF4444' }}>*</span>
                   </label>
                   <input
                     type="text"
                     value={formData.personName}
                     onChange={(e) => setFormData({ ...formData, personName: e.target.value })}
-                    placeholder="Lütfen Kişi Adını Giriniz"
+                    placeholder={t('placeholders.personName')}
                     style={{
                       width: '100%',
                       padding: '12px 16px',
@@ -1840,13 +1883,13 @@ const AuthorizationPage: React.FC = () => {
                     marginBottom: '8px',
                     fontFamily: 'Inter'
                   }}>
-                    Email <span style={{ color: '#EF4444' }}>*</span>
+                    {t('labels.email')} <span style={{ color: '#EF4444' }}>*</span>
                   </label>
                   <input
                     type="email"
                     value={formData.email}
                     onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                    placeholder="Lütfen Email Giriniz"
+                    placeholder={t('placeholders.email')}
                     style={{
                       width: '100%',
                       padding: '12px 16px',
@@ -1868,7 +1911,7 @@ const AuthorizationPage: React.FC = () => {
                     marginBottom: '8px',
                     fontFamily: 'Inter'
                   }}>
-                    Pozisyon <span style={{ color: '#EF4444' }}>*</span>
+                    {t('labels.position')} <span style={{ color: '#EF4444' }}>*</span>
                   </label>
                   {/* Custom Dropdown */}
                   <div
@@ -1889,7 +1932,7 @@ const AuthorizationPage: React.FC = () => {
                     }}
                   >
                     <span style={{ color: positionSearchTerm ? '#232D42' : '#8A92A6' }}>
-                      {positionSearchTerm || `Pozisyon seçin (${positions.length} pozisyon mevcut)`}
+                      {positionSearchTerm || formatPositionPlaceholder(positions.length)}
                     </span>
                     <i 
                       className={`fas fa-chevron-${showPositionDropdown ? 'up' : 'down'}`}
@@ -1918,7 +1961,7 @@ const AuthorizationPage: React.FC = () => {
                       <div style={{ padding: '8px', borderBottom: '1px solid #E9ECEF', position: 'relative' }}>
                         <input
                           type="text"
-                          placeholder="Pozisyon ara..."
+                          placeholder={t('placeholders.positionSearch')}
                           value={positionSearchTerm}
                           onChange={(e) => {
                             handlePositionSearch(e.target.value);
@@ -2001,7 +2044,7 @@ const AuthorizationPage: React.FC = () => {
                             color: '#8A92A6',
                             textAlign: 'center'
                           }}>
-                            {positionSearchTerm ? `"${positionSearchTerm}" için arama sonucu bulunamadı` : 'Pozisyon bulunamadı'}
+                            {positionSearchTerm ? formatNoResultsText(positionSearchTerm) : t('labels.positionNotFound')}
                           </div>
                         )}
                       </div>
@@ -2032,7 +2075,7 @@ const AuthorizationPage: React.FC = () => {
                     cursor: 'pointer'
                   }}
                 >
-                  İptal
+                  {t('buttons.cancel')}
                 </button>
                 <button
                   onClick={handleSubmitEdit}
@@ -2049,7 +2092,7 @@ const AuthorizationPage: React.FC = () => {
                     opacity: isSubmitting ? 0.7 : 1
                   }}
                 >
-                  {isSubmitting ? 'Güncelleniyor...' : 'Güncelle'}
+                  {isSubmitting ? t('statuses.updating') : t('buttons.update')}
                 </button>
               </div>
             </div>
@@ -2084,14 +2127,14 @@ const AuthorizationPage: React.FC = () => {
                 color: '#232D42',
                 marginBottom: '16px'
               }}>
-                Toplu Silme
+                {t('titles.bulkDelete')}
               </div>
               <div style={{
                 fontSize: '14px',
                 color: '#6B7280',
                 marginBottom: '24px'
               }}>
-                {selectedItems.length} adet yetkilendirmeyi silmek istediğinizden emin misiniz? Bu işlem geri alınamaz.
+                {formatBulkDeleteConfirm(selectedItems.length)}
               </div>
               <div style={{
                 display: 'flex',
@@ -2113,7 +2156,7 @@ const AuthorizationPage: React.FC = () => {
                     fontFamily: 'Inter'
                   }}
                 >
-                  Hayır
+                  {t('buttons.no')}
                 </button>
                 <button
                   onClick={confirmBulkDelete}
@@ -2130,7 +2173,7 @@ const AuthorizationPage: React.FC = () => {
                     fontFamily: 'Inter'
                   }}
                 >
-                  {isSubmitting ? 'Siliniyor...' : 'Evet, Sil'}
+                  {isSubmitting ? t('statuses.deleting') : t('buttons.confirmDelete')}
                 </button>
               </div>
             </div>
@@ -2166,7 +2209,7 @@ const AuthorizationPage: React.FC = () => {
                 marginBottom: '16px',
                 fontFamily: 'Inter'
               }}>
-                Kişiyi Sil
+                {t('titles.deletePerson')}
               </div>
               <div style={{
                 fontSize: '14px',
@@ -2175,7 +2218,7 @@ const AuthorizationPage: React.FC = () => {
                 lineHeight: '1.5',
                 fontFamily: 'Inter'
               }}>
-                Bu kişiyi silmek istediğinizden emin misiniz? Bu işlem geri alınamaz.
+                {formatSingleDeleteConfirm()}
               </div>
               <div style={{
                 display: 'flex',
@@ -2195,7 +2238,7 @@ const AuthorizationPage: React.FC = () => {
                     cursor: 'pointer'
                   }}
                 >
-                  İptal
+                  {t('buttons.cancel')}
                 </button>
                 <button
                   onClick={handleConfirmDelete}
@@ -2212,7 +2255,7 @@ const AuthorizationPage: React.FC = () => {
                     opacity: isSubmitting ? 0.7 : 1
                   }}
                 >
-                  {isSubmitting ? 'Siliniyor...' : 'Sil'}
+                  {isSubmitting ? t('statuses.deleting') : t('buttons.delete')}
                 </button>
               </div>
             </div>
@@ -2249,7 +2292,7 @@ const AuthorizationPage: React.FC = () => {
                 marginBottom: '16px',
                 fontFamily: 'Inter'
               }}>
-                Başarılı!
+                {t('labels.success')}
               </div>
               <div style={{
                 fontSize: '14px',
@@ -2309,7 +2352,7 @@ const AuthorizationPage: React.FC = () => {
                 marginBottom: '16px',
                 fontFamily: 'Inter'
               }}>
-                Hata!
+                {t('labels.error')}
               </div>
               <div style={{
                 fontSize: '14px',
@@ -2375,7 +2418,7 @@ const AuthorizationPage: React.FC = () => {
                   color: '#232D42',
                   fontFamily: 'Inter'
                 }}>
-                  Excel Import
+                  {t('labels.excelImport')}
                 </div>
                 <button
                   onClick={() => setShowImportPopup(false)}
@@ -2403,7 +2446,7 @@ const AuthorizationPage: React.FC = () => {
                   gap: '12px'
                 }}>
                   <i className="fas fa-info-circle" style={{ color: '#1976D2', fontSize: '18px' }} />
-                  <strong style={{ color: '#1976D2', fontSize: '14px' }}>Excel Dosyası Yükle</strong>
+                  <strong style={{ color: '#1976D2', fontSize: '14px' }}>{t('labels.uploadExcelFile')}</strong>
                 </div>
                 <button
                   onClick={downloadTemplate}
@@ -2421,7 +2464,7 @@ const AuthorizationPage: React.FC = () => {
                   }}
                 >
                   <i className="fas fa-download" />
-                  Template İndir
+                  {t('buttons.downloadTemplate')}
                 </button>
               </div>
               
@@ -2453,14 +2496,14 @@ const AuthorizationPage: React.FC = () => {
                   marginBottom: '8px',
                   fontFamily: 'Inter'
                 }}>
-                  Excel dosyasını seçin veya sürükleyin
+                  {t('labels.selectOrDropExcel')}
                 </div>
                 <div style={{
                   fontSize: '14px',
                   color: '#6B7280',
                   fontFamily: 'Inter'
                 }}>
-                  .xlsx, .xls formatları desteklenir
+                  {t('labels.supportedFormats')}
                 </div>
               </div>
               
@@ -2482,7 +2525,7 @@ const AuthorizationPage: React.FC = () => {
                   color: '#1976D2',
                   fontFamily: 'Inter'
                 }}>
-                  Seçilen dosya: {selectedFile.name}
+                  {t('labels.selectedFile')}: {selectedFile.name}
                 </div>
               )}
               
@@ -2523,7 +2566,7 @@ const AuthorizationPage: React.FC = () => {
                     cursor: 'pointer'
                   }}
                 >
-                  İptal
+                  {t('buttons.cancel')}
                 </button>
                 <button
                   onClick={importExcelData}
@@ -2540,7 +2583,7 @@ const AuthorizationPage: React.FC = () => {
                     opacity: isSubmitting || !selectedFile ? 0.7 : 1
                   }}
                 >
-                  {isSubmitting ? 'Yükleniyor...' : 'Yükle'}
+                  {isSubmitting ? t('labels.uploading') : t('buttons.upload')}
                 </button>
               </div>
             </div>

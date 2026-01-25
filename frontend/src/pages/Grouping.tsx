@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useLanguage } from '../contexts/LanguageContext';
 import { useNavigate } from 'react-router-dom';
 
 interface Group {
@@ -32,6 +33,7 @@ interface Planet {
 }
 
 const Grouping: React.FC = () => {
+  const { language, t } = useLanguage();
   const navigate = useNavigate();
   
   // State management
@@ -57,6 +59,44 @@ const Grouping: React.FC = () => {
   const [selectedItems, setSelectedItems] = useState<string[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
+  const formatNoResultsText = (term: string, emptyKey: string) => {
+    if (term) {
+      return language === 'en'
+        ? `No results found for "${term}"`
+        : `"${term}" için arama sonucu bulunamadı`;
+    }
+    return t(emptyKey);
+  };
+
+  const formatSearchResultsCount = (term: string, count: number) =>
+    language === 'en'
+      ? `${count} results found for "${term}"`
+      : `"${term}" için ${count} sonuç bulundu`;
+
+  const formatBulkDeleteConfirm = (count: number) =>
+    language === 'en'
+      ? `Are you sure you want to delete ${count} groups? This action cannot be undone.`
+      : `${count} adet grubu silmek istediğinizden emin misiniz? Bu işlem geri alınamaz.`;
+
+  const formatSingleDeleteConfirm = () =>
+    language === 'en'
+      ? 'Are you sure you want to delete this group? This action cannot be undone.'
+      : 'Bu grubu silmek istediğinizden emin misiniz? Bu işlem geri alınamaz.';
+
+  const formatBulkDeleteSuccess = (count: number) =>
+    language === 'en'
+      ? `${count} groups deleted successfully.`
+      : `${count} grup başarıyla silindi.`;
+
+  const formatDeleteGroupConfirm = (name: string) =>
+    language === 'en'
+      ? `Are you sure you want to delete "${name}"? This action cannot be undone.`
+      : `"${name}" grubunu silmek istediğinizden emin misiniz? Bu işlem geri alınamaz.`;
+
+  const formatAutoPersonsAdded = (count: number, positionCount: number) =>
+    language === 'en'
+      ? `${count} people were added automatically. (${positionCount} positions)`
+      : `${count} kişi otomatik olarak eklendi! (${positionCount} farklı pozisyondan)`;
   const [formData, setFormData] = useState({
     groupName: '',
     isActive: true
@@ -190,7 +230,7 @@ const Grouping: React.FC = () => {
       });
 
       if (!response.ok) {
-        throw new Error('Grup listesi yüklenemedi');
+        throw new Error(t('errors.groupListLoad'));
       }
 
       const result = await response.json();
@@ -209,11 +249,11 @@ const Grouping: React.FC = () => {
         
         setGroups(sortedGroups);
       } else {
-        throw new Error(result.message || 'Grup listesi alınamadı');
+        throw new Error(result.message || t('errors.groupListFetch'));
       }
     } catch (error) {
       console.error('❌ Grup yükleme hatası:', error);
-      setErrorMessage('Gruplar yüklenirken bir hata oluştu');
+      setErrorMessage(t('errors.groupsLoad'));
       setShowErrorPopup(true);
     } finally {
       setIsLoading(false);
@@ -369,13 +409,13 @@ const Grouping: React.FC = () => {
       });
       
       if (!orgResponse.ok) {
-        throw new Error('Organizasyon verileri alınamadı');
+        throw new Error(t('errors.organizationListFetch'));
       }
       
       const orgResult = await orgResponse.json();
       
       if (!orgResult.success) {
-        throw new Error(orgResult.message || 'Organizasyon verileri alınamadı');
+        throw new Error(orgResult.message || t('errors.organizationListFetch'));
       }
       
       const organizations = orgResult.organizations || [];
@@ -405,13 +445,13 @@ const Grouping: React.FC = () => {
       });
       
       if (!authResponse.ok) {
-        throw new Error('Yetkilendirme verileri alınamadı');
+        throw new Error(t('errors.authorizationListFetch'));
       }
       
       const authResult = await authResponse.json();
       
       if (!authResult.success) {
-        throw new Error(authResult.message || 'Yetkilendirme verileri alınamadı');
+        throw new Error(authResult.message || t('errors.authorizationListFetch'));
       }
       
       const authorizations = authResult.authorizations || [];
@@ -450,13 +490,13 @@ const Grouping: React.FC = () => {
       });
       
       if (!orgResponse.ok) {
-        throw new Error('Organizasyon verileri alınamadı');
+        throw new Error(t('errors.organizationListFetch'));
       }
       
       const orgResult = await orgResponse.json();
       
       if (!orgResult.success) {
-        throw new Error(orgResult.message || 'Organizasyon verileri alınamadı');
+        throw new Error(orgResult.message || t('errors.organizationListFetch'));
       }
       
       const organizations = orgResult.organizations || [];
@@ -486,13 +526,13 @@ const Grouping: React.FC = () => {
       });
       
       if (!authResponse.ok) {
-        throw new Error('Yetkilendirme verileri alınamadı');
+        throw new Error(t('errors.authorizationListFetch'));
       }
       
       const authResult = await authResponse.json();
       
       if (!authResult.success) {
-        throw new Error(authResult.message || 'Yetkilendirme verileri alınamadı');
+        throw new Error(authResult.message || t('errors.authorizationListFetch'));
       }
       
       const authorizations = authResult.authorizations || [];
@@ -527,8 +567,8 @@ const Grouping: React.FC = () => {
     try {
       // HTML'deki gibi sabit gezegen listesi
       const planets: Planet[] = [
-        { value: 'venus', label: 'Venüs (Belirsizlik Yönetimi - Müşteri Odaklılık)' },
-        { value: 'titan', label: 'Titan (İnsanları Etkileme - Güven Veren İşbirlikçi ve Sinerji)' }
+        { value: 'venus', label: `${t('labels.planetVenus')} (${t('competency.uncertainty')} - ${t('competency.customerFocus')})` },
+        { value: 'titan', label: `${t('labels.planetTitan')} (${t('competency.ie')} - ${t('competency.idik')})` }
       ];
       setPlanets(planets);
       setFilteredPlanets(planets); // İlk yüklemede tüm gezegenleri göster
@@ -807,7 +847,7 @@ const Grouping: React.FC = () => {
             fontSize: '14px'
           }}
         >
-          Önceki
+          {t('buttons.previous')}
         </button>
         {pages}
         <button
@@ -823,7 +863,7 @@ const Grouping: React.FC = () => {
             fontSize: '14px'
           }}
         >
-          Sonraki
+          {t('buttons.next')}
         </button>
       </div>
     );
@@ -864,7 +904,7 @@ const Grouping: React.FC = () => {
       });
 
       if (!response.ok) {
-        throw new Error('Grup verileri alınamadı');
+        throw new Error(t('errors.groupDataFetch'));
       }
 
       const result = await response.json();
@@ -944,11 +984,11 @@ const Grouping: React.FC = () => {
         // Modal başlığını değiştir (edit mode)
         setShowEditPopup(true);
       } else {
-        throw new Error(result.message || 'Grup verileri alınamadı');
+        throw new Error(result.message || t('errors.groupDataFetch'));
       }
     } catch (error) {
       console.error('Grup verileri alma hatası:', error);
-      setErrorMessage('Grup verileri alınırken bir hata oluştu: ' + (error as Error).message);
+      setErrorMessage(`${t('errors.groupDataFetch')}: ${(error as Error).message}`);
       setShowErrorPopup(true);
     }
   };
@@ -978,7 +1018,7 @@ const Grouping: React.FC = () => {
 
   const handleBulkDelete = () => {
     if (selectedItems.length === 0) {
-      setErrorMessage('Lütfen silmek istediğiniz kayıtları seçiniz!');
+      setErrorMessage(t('errors.selectGroupToDelete'));
       setShowErrorPopup(true);
       return;
     }
@@ -1013,11 +1053,11 @@ const Grouping: React.FC = () => {
       // Veriyi yeniden yükle
       await loadGroups();
       
-      setSuccessMessage(`${selectedItems.length} grup başarıyla silindi.`);
+      setSuccessMessage(formatBulkDeleteSuccess(selectedItems.length));
       setShowSuccessPopup(true);
     } catch (error: any) {
       console.error('Toplu silme hatası:', error);
-      setErrorMessage(error.message || 'Toplu silme işlemi sırasında bir hata oluştu');
+      setErrorMessage(error.message || t('errors.bulkDeleteFailed'));
       setShowErrorPopup(true);
     } finally {
       setIsSubmitting(false);
@@ -1035,21 +1075,21 @@ const Grouping: React.FC = () => {
     // Grup adı kontrolü
     const groupName = formData.groupName.trim();
     if (!groupName) {
-      setErrorMessage('Lütfen grup adını giriniz!');
+      setErrorMessage(t('errors.enterGroupName'));
       setShowErrorPopup(true);
       return;
     }
 
     // Organizasyon veya Kişi kontrolü - En az biri dolu olmalı
     if (selectedOrganizations.length === 0 && selectedPersons.length === 0) {
-      setErrorMessage('Lütfen en az bir organizasyon veya kişi seçiniz!');
+      setErrorMessage(t('errors.selectOrgOrPerson'));
       setShowErrorPopup(true);
       return;
     }
 
     // Gezegen kontrolü - ZORUNLU
     if (selectedPlanets.length === 0) {
-      setErrorMessage('Lütfen en az bir gezegen seçiniz!');
+      setErrorMessage(t('errors.selectPlanet'));
       setShowErrorPopup(true);
       return;
     }
@@ -1081,19 +1121,19 @@ const Grouping: React.FC = () => {
       const result = await response.json();
 
       if (result.success) {
-        setSuccessMessage(selectedGroup ? 'Grup başarıyla güncellendi!' : 'Grup başarıyla oluşturuldu!');
+        setSuccessMessage(selectedGroup ? t('messages.groupUpdated') : t('messages.groupCreated'));
         setShowSuccessPopup(true);
         setShowAddPopup(false);
         setShowEditPopup(false);
         clearForm(); // Formu temizle
         loadGroups();
       } else {
-        throw new Error(result.message || 'Grup kaydedilemedi');
+        throw new Error(result.message || t('errors.groupSaveFailed'));
       }
     } catch (error: any) {
       console.error('❌ Grup kaydetme hatası:', error);
       // Backend'den gelen hata mesajını göster
-      const errorMessage = error.message || 'Grup kaydedilirken bir hata oluştu';
+      const errorMessage = error.message || t('errors.groupSaveError');
       setErrorMessage(errorMessage);
       setShowErrorPopup(true);
     } finally {
@@ -1113,16 +1153,16 @@ const Grouping: React.FC = () => {
       const result = await response.json();
 
       if (result.success) {
-        setSuccessMessage('Grup başarıyla silindi!');
+        setSuccessMessage(t('messages.groupDeleted'));
         setShowSuccessPopup(true);
         setShowDeletePopup(false);
         loadGroups();
       } else {
-        throw new Error(result.message || 'Grup silinemedi');
+        throw new Error(result.message || t('errors.groupDeleteFailed'));
       }
     } catch (error) {
       console.error('❌ Grup silme hatası:', error);
-      setErrorMessage('Grup silinirken bir hata oluştu');
+      setErrorMessage(t('errors.groupDeleteError'));
       setShowErrorPopup(true);
     }
   };
@@ -1144,13 +1184,13 @@ const Grouping: React.FC = () => {
     const selectedValue = select.value;
 
     if (!selectedValue) {
-      setErrorMessage('Lütfen bir organizasyon seçin!');
+      setErrorMessage(t('errors.selectOrganization'));
       setShowErrorPopup(true);
       return;
     }
 
     if (selectedOrganizations.includes(selectedValue)) {
-      setErrorMessage('Bu organizasyon zaten seçilmiş!');
+      setErrorMessage(t('errors.organizationAlreadySelected'));
       setShowErrorPopup(true);
       return;
     }
@@ -1201,7 +1241,7 @@ const Grouping: React.FC = () => {
       });
 
       if (!response.ok) {
-        throw new Error('Eşleşen kişiler alınamadı');
+        throw new Error(t('errors.matchingPersonsFetch'));
       }
 
       const result = await response.json();
@@ -1226,12 +1266,12 @@ const Grouping: React.FC = () => {
           
           // Detaylı bilgi göster
           const positionCount = result.positions ? result.positions.length : 0;
-          setSuccessMessage(`${addedCount} kişi otomatik olarak eklendi! (${positionCount} farklı pozisyondan)`);
+          setSuccessMessage(formatAutoPersonsAdded(addedCount, positionCount));
           setShowSuccessPopup(true);
         }
       } else if (result.success && result.persons.length === 0) {
         // Pozisyon bulunamadı mesajı
-        setSuccessMessage(result.message || 'Seçilen organizasyonlarda eşleşen pozisyon bulunamadı.');
+        setSuccessMessage(result.message || t('messages.noMatchingPositions'));
         setShowSuccessPopup(true);
       }
     } catch (error) {
@@ -1263,7 +1303,7 @@ const Grouping: React.FC = () => {
       });
 
       if (!response.ok) {
-        throw new Error('Eşleşen kişiler alınamadı');
+        throw new Error(t('errors.matchingPersonsFetch'));
       }
 
       const result = await response.json();
@@ -1413,7 +1453,7 @@ const Grouping: React.FC = () => {
           borderRadius: '50%',
           animation: 'spin 1s linear infinite'
         }} />
-        <p style={{ color: '#6B7280', fontSize: '16px' }}>Gruplar yükleniyor...</p>
+        <p style={{ color: '#6B7280', fontSize: '16px' }}>{t('labels.groupsLoading')}</p>
         <style>{`
           @keyframes spin {
             0% { transform: rotate(0deg); }
@@ -1456,7 +1496,7 @@ const Grouping: React.FC = () => {
             fontFamily: 'Inter',
             fontWeight: 700
           }}>
-            Gruplama
+            {t('titles.grouping')}
           </div>
         </div>
       </div>
@@ -1480,7 +1520,7 @@ const Grouping: React.FC = () => {
           lineHeight: '20px'
         }}
         onClick={() => navigate('/organization')}>
-          Organizasyon
+          {t('titles.organization')}
         </div>
         <div style={{
           flex: 1,
@@ -1494,7 +1534,7 @@ const Grouping: React.FC = () => {
           fontWeight: 700,
           lineHeight: '20px'
         }}>
-          Gruplama
+          {t('titles.grouping')}
         </div>
         <div style={{
           flex: 1,
@@ -1509,7 +1549,7 @@ const Grouping: React.FC = () => {
           lineHeight: '20px'
         }}
         onClick={() => navigate('/authorization')}>
-          Kişiler
+          {t('titles.authorization')}
         </div>
       </div>
 
@@ -1559,7 +1599,7 @@ const Grouping: React.FC = () => {
           )}
           <input
             type="text"
-            placeholder="Grup adında akıllı arama yapın..."
+            placeholder={t('placeholders.groupSearch')}
             value={searchTerm}
             onChange={(e) => {
               const value = e.target.value;
@@ -1663,7 +1703,7 @@ const Grouping: React.FC = () => {
               }}
             >
               <i className="fas fa-trash"></i>
-              Toplu Sil ({selectedItems.length})
+              {t('labels.bulkDelete')} ({selectedItems.length})
             </button>
           )}
           <button
@@ -1679,7 +1719,7 @@ const Grouping: React.FC = () => {
               cursor: 'pointer'
             }}
           >
-            GRUP EKLE
+            {t('buttons.addGroup')}
           </button>
         </div>
       </div>
@@ -1703,7 +1743,7 @@ const Grouping: React.FC = () => {
             color: '#1F2937',
             margin: '0'
           }}>
-            Gruplar ({filteredGroups.length})
+            {t('labels.groups')} ({filteredGroups.length})
           </h3>
         </div>
 
@@ -1715,7 +1755,7 @@ const Grouping: React.FC = () => {
           }}>
             <i className="fas fa-users" style={{ fontSize: '48px', marginBottom: '16px', opacity: 0.5 }}></i>
             <p style={{ fontSize: '16px', margin: '0' }}>
-              {searchTerm ? 'Arama kriterlerinize uygun grup bulunamadı' : 'Henüz grup bulunmuyor'}
+              {searchTerm ? t('labels.groupsNotFound') : t('labels.groupsEmpty')}
             </p>
           </div>
         ) : (
@@ -1789,7 +1829,7 @@ const Grouping: React.FC = () => {
                       fontFamily: 'Montserrat',
                       fontWeight: 700
                     }}>
-                      Grup Adı
+                      {t('labels.groupName')}
                     </th>
                     <th style={{
                       padding: '16px',
@@ -1799,7 +1839,7 @@ const Grouping: React.FC = () => {
                       fontFamily: 'Montserrat',
                       fontWeight: 700
                     }}>
-                      Aktiflik Durumu
+                      {t('labels.status')}
                     </th>
                     <th style={{
                       padding: '16px',
@@ -1809,7 +1849,7 @@ const Grouping: React.FC = () => {
                       fontFamily: 'Montserrat',
                       fontWeight: 700
                     }}>
-                      Detaylar
+                      {t('labels.details')}
                     </th>
                     <th style={{
                       padding: '16px',
@@ -1835,7 +1875,7 @@ const Grouping: React.FC = () => {
                         fontFamily: 'Inter',
                         fontWeight: '500'
                       }}>
-                        🔍 "{debouncedSearchTerm}" için {filteredGroups.length} sonuç bulundu
+                        🔍 {formatSearchResultsCount(debouncedSearchTerm, filteredGroups.length)}
                       </td>
                     </tr>
                   )}
@@ -1915,7 +1955,7 @@ const Grouping: React.FC = () => {
                         fontFamily: 'Montserrat',
                         fontWeight: 500
                       }}>
-                        {group.isActive ? 'Aktif' : 'Pasif'}
+                        {group.isActive ? t('status.active') : t('status.passive')}
                       </td>
                       <td style={{
                         padding: '16px',
@@ -1948,7 +1988,7 @@ const Grouping: React.FC = () => {
                           }}
                         >
                           <i className="fas fa-eye"></i>
-                          Detayı Gör
+                          {t('buttons.viewGroupDetails')}
                         </button>
                       </td>
                       <td style={{
@@ -2035,14 +2075,14 @@ const Grouping: React.FC = () => {
                     color: '#1F2937',
                     margin: '0'
                   }}>
-                    Yeni Grup Ekle
+                    {t('buttons.addGroup')}
                   </h2>
                   <p style={{
                     fontSize: '14px',
                     color: '#6B7280',
                     margin: '4px 0 0 0'
                   }}>
-                    Yeni bir grup oluşturun ve organizasyonları, kişileri ve gezegenleri atayın
+                    {t('labels.createGroupDesc')}
                   </p>
                 </div>
               </div>
@@ -2059,13 +2099,13 @@ const Grouping: React.FC = () => {
                   color: '#374151',
                   marginBottom: '8px'
                 }}>
-                  Grup Adı *
+                  {t('labels.groupName')} *
                 </label>
                 <input
                   type="text"
                   value={formData.groupName}
                   onChange={(e) => setFormData({ ...formData, groupName: e.target.value })}
-                  placeholder="Grup adını giriniz"
+                  placeholder={t('placeholders.groupName')}
                   style={{
                     width: '100%',
                     padding: '12px 16px',
@@ -2096,10 +2136,10 @@ const Grouping: React.FC = () => {
                   color: '#374151',
                   marginBottom: '8px'
                 }}>
-                  Durum
+                  {t('labels.status')}
                 </label>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                  <span style={{ color: '#8A92A6', fontSize: '16px' }}>Pasif</span>
+                  <span style={{ color: '#8A92A6', fontSize: '16px' }}>{t('status.passive')}</span>
                   <div 
                     onClick={() => setFormData({ ...formData, isActive: !formData.isActive })}
                     style={{
@@ -2123,7 +2163,7 @@ const Grouping: React.FC = () => {
                       transition: 'left 0.3s'
                     }} />
                   </div>
-                  <span style={{ color: '#8A92A6', fontSize: '16px' }}>Aktif</span>
+                  <span style={{ color: '#8A92A6', fontSize: '16px' }}>{t('status.active')}</span>
                 </div>
               </div>
 
@@ -2136,7 +2176,7 @@ const Grouping: React.FC = () => {
                   color: '#374151',
                   marginBottom: '8px'
                 }}>
-                  Organizasyonlar *
+                  {t('titles.organization')} *
                 </label>
                 <div style={{ display: 'flex', gap: '8px', marginBottom: '12px' }}>
                   <div style={{ position: 'relative', flex: 1 }} data-organization-dropdown>
@@ -2148,7 +2188,11 @@ const Grouping: React.FC = () => {
                         setShowOrganizationDropdown(true);
                       }}
                       onFocus={() => setShowOrganizationDropdown(true)}
-                      placeholder={`Organizasyon arayın (${organizations.length - selectedOrganizations.length} organizasyon mevcut)`}
+                      placeholder={
+                        language === 'en'
+                          ? `${t('labels.organizationSearchPlaceholder')} (${organizations.length - selectedOrganizations.length} available)`
+                          : `${t('labels.organizationSearchPlaceholder')} (${organizations.length - selectedOrganizations.length} organizasyon mevcut)`
+                      }
                       style={{
                         width: '100%',
                         padding: '12px 16px',
@@ -2227,7 +2271,7 @@ const Grouping: React.FC = () => {
                             color: '#9CA3AF',
                             fontSize: '14px'
                           }}>
-                            Organizasyon bulunamadı
+                            {t('labels.organizationNotFound')}
                           </div>
                         )}
                       </div>
@@ -2243,7 +2287,7 @@ const Grouping: React.FC = () => {
                 }}>
                   {selectedOrganizations.length === 0 ? (
                     <p style={{ color: '#9CA3AF', fontSize: '14px', margin: '0', fontStyle: 'italic' }}>
-                      Henüz organizasyon seçilmedi
+                      {t('labels.noOrganizationSelected')}
                     </p>
                   ) : (
                     <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
@@ -2292,7 +2336,7 @@ const Grouping: React.FC = () => {
                   color: '#374151',
                   marginBottom: '8px'
                 }}>
-                  Kişiler *
+                  {t('titles.authorization')} *
                 </label>
                 <div style={{ display: 'flex', gap: '8px', marginBottom: '12px' }}>
                   <div style={{ position: 'relative', flex: 1 }} data-person-dropdown>
@@ -2304,7 +2348,11 @@ const Grouping: React.FC = () => {
                         setShowPersonDropdown(true);
                       }}
                       onFocus={() => setShowPersonDropdown(true)}
-                      placeholder={`Kişi arayın (${persons.length - selectedPersons.length} kişi mevcut)`}
+                      placeholder={
+                        language === 'en'
+                          ? `${t('labels.personSearchPlaceholder')} (${persons.length - selectedPersons.length} available)`
+                          : `${t('labels.personSearchPlaceholder')} (${persons.length - selectedPersons.length} kişi mevcut)`
+                      }
                       style={{
                         width: '100%',
                         padding: '12px 16px',
@@ -2360,7 +2408,7 @@ const Grouping: React.FC = () => {
                             color: '#9CA3AF',
                             fontSize: '14px'
                           }}>
-                            Kişi bulunamadı
+                            {t('labels.personNotFound')}
                           </div>
                         )}
                       </div>
@@ -2376,7 +2424,7 @@ const Grouping: React.FC = () => {
                 }}>
                   {selectedPersons.length === 0 ? (
                     <p style={{ color: '#9CA3AF', fontSize: '14px', margin: '0', fontStyle: 'italic' }}>
-                      Henüz kişi seçilmedi
+                      {t('labels.noPersonSelected')}
                     </p>
                   ) : (
                     <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
@@ -2428,7 +2476,7 @@ const Grouping: React.FC = () => {
                   color: '#374151',
                   marginBottom: '8px'
                 }}>
-                  Gezegenler *
+                  {t('labels.planets')}
                 </label>
                 <div style={{ display: 'flex', gap: '8px', marginBottom: '12px' }}>
                   <div style={{ position: 'relative', flex: 1 }} data-planet-dropdown>
@@ -2440,7 +2488,11 @@ const Grouping: React.FC = () => {
                         setShowPlanetDropdown(true);
                       }}
                       onFocus={() => setShowPlanetDropdown(true)}
-                      placeholder={`Gezegen arayın (${planets.length - selectedPlanets.length} gezegen mevcut)`}
+                      placeholder={
+                        language === 'en'
+                          ? `${t('labels.planetSearchPlaceholder')} (${planets.length - selectedPlanets.length} available)`
+                          : `${t('labels.planetSearchPlaceholder')} (${planets.length - selectedPlanets.length} gezegen mevcut)`
+                      }
                       style={{
                         width: '100%',
                         padding: '12px 16px',
@@ -2496,7 +2548,7 @@ const Grouping: React.FC = () => {
                             color: '#9CA3AF',
                             fontSize: '14px'
                           }}>
-                            Gezegen bulunamadı
+                            {t('labels.planetNotFound')}
                           </div>
                         )}
                       </div>
@@ -2512,7 +2564,7 @@ const Grouping: React.FC = () => {
                 }}>
                   {selectedPlanets.length === 0 ? (
                     <p style={{ color: '#9CA3AF', fontSize: '14px', margin: '0', fontStyle: 'italic' }}>
-                      Henüz gezegen seçilmedi
+                      {t('labels.noPlanetSelected')}
                     </p>
                   ) : (
                     <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
@@ -2594,7 +2646,7 @@ const Grouping: React.FC = () => {
                   }
                 }}
               >
-                İptal
+                {t('buttons.cancel')}
               </button>
               <button
                 onClick={handleSaveGroup}
@@ -2634,7 +2686,7 @@ const Grouping: React.FC = () => {
                     animation: 'spin 1s linear infinite'
                   }} />
                 )}
-                {isSubmitting ? 'Kaydediliyor...' : 'Kaydet'}
+                {isSubmitting ? t('statuses.saving') : t('buttons.save')}
               </button>
             </div>
           </div>
@@ -2690,14 +2742,14 @@ const Grouping: React.FC = () => {
                     color: '#1F2937',
                     margin: '0'
                   }}>
-                    Grup Düzenle
+                    {t('titles.editGroup')}
                   </h2>
                   <p style={{
                     fontSize: '14px',
                     color: '#6B7280',
                     margin: '4px 0 0 0'
                   }}>
-                    Grup bilgilerini güncelleyin ve organizasyonları, kişileri ve gezegenleri düzenleyin
+                    {t('labels.groupDetailsSubtitle')}
                   </p>
                 </div>
               </div>
@@ -2714,13 +2766,13 @@ const Grouping: React.FC = () => {
                   color: '#374151',
                   marginBottom: '8px'
                 }}>
-                  Grup Adı *
+                  {t('labels.groupName')} *
                 </label>
                 <input
                   type="text"
                   value={formData.groupName}
                   onChange={(e) => setFormData({ ...formData, groupName: e.target.value })}
-                  placeholder="Grup adını giriniz"
+                  placeholder={t('placeholders.groupName')}
                   style={{
                     width: '100%',
                     padding: '12px 16px',
@@ -2751,10 +2803,10 @@ const Grouping: React.FC = () => {
                   color: '#374151',
                   marginBottom: '8px'
                 }}>
-                  Durum
+                  {t('labels.status')}
                 </label>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                  <span style={{ color: '#8A92A6', fontSize: '16px' }}>Pasif</span>
+                  <span style={{ color: '#8A92A6', fontSize: '16px' }}>{t('status.passive')}</span>
                   <div 
                     onClick={() => setFormData({ ...formData, isActive: !formData.isActive })}
                     style={{
@@ -2778,7 +2830,7 @@ const Grouping: React.FC = () => {
                       transition: 'left 0.3s'
                     }} />
                   </div>
-                  <span style={{ color: '#8A92A6', fontSize: '16px' }}>Aktif</span>
+                  <span style={{ color: '#8A92A6', fontSize: '16px' }}>{t('status.active')}</span>
                 </div>
               </div>
 
@@ -2791,7 +2843,7 @@ const Grouping: React.FC = () => {
                   color: '#374151',
                   marginBottom: '8px'
                 }}>
-                  Organizasyonlar *
+                  {t('titles.organization')} *
                 </label>
                 <div style={{ display: 'flex', gap: '8px', marginBottom: '12px' }}>
                   <div style={{ position: 'relative', flex: 1 }} data-organization-dropdown>
@@ -2803,7 +2855,11 @@ const Grouping: React.FC = () => {
                         setShowOrganizationDropdown(true);
                       }}
                       onFocus={() => setShowOrganizationDropdown(true)}
-                      placeholder={`Organizasyon arayın (${organizations.length - selectedOrganizations.length} organizasyon mevcut)`}
+                      placeholder={
+                        language === 'en'
+                          ? `${t('labels.organizationSearchPlaceholder')} (${organizations.length - selectedOrganizations.length} available)`
+                          : `${t('labels.organizationSearchPlaceholder')} (${organizations.length - selectedOrganizations.length} organizasyon mevcut)`
+                      }
                       style={{
                         width: '100%',
                         padding: '12px 16px',
@@ -2882,7 +2938,7 @@ const Grouping: React.FC = () => {
                             color: '#9CA3AF',
                             fontSize: '14px'
                           }}>
-                            Organizasyon bulunamadı
+                            {t('labels.organizationNotFound')}
                           </div>
                         )}
                       </div>
@@ -2898,7 +2954,7 @@ const Grouping: React.FC = () => {
                 }}>
                   {selectedOrganizations.length === 0 ? (
                     <p style={{ color: '#9CA3AF', fontSize: '14px', margin: '0', fontStyle: 'italic' }}>
-                      Henüz organizasyon seçilmedi
+                      {t('labels.noOrganizationSelected')}
                     </p>
                   ) : (
                     <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
@@ -2947,7 +3003,7 @@ const Grouping: React.FC = () => {
                   color: '#374151',
                   marginBottom: '8px'
                 }}>
-                  Kişiler *
+                  {t('titles.authorization')} *
                 </label>
                 <div style={{ display: 'flex', gap: '8px', marginBottom: '12px' }}>
                   <div style={{ position: 'relative', flex: 1 }} data-person-dropdown>
@@ -2959,7 +3015,11 @@ const Grouping: React.FC = () => {
                         setShowPersonDropdown(true);
                       }}
                       onFocus={() => setShowPersonDropdown(true)}
-                      placeholder={`Kişi arayın (${persons.length - selectedPersons.length} kişi mevcut)`}
+                      placeholder={
+                        language === 'en'
+                          ? `${t('labels.personSearchPlaceholder')} (${persons.length - selectedPersons.length} available)`
+                          : `${t('labels.personSearchPlaceholder')} (${persons.length - selectedPersons.length} kişi mevcut)`
+                      }
                       style={{
                         width: '100%',
                         padding: '12px 16px',
@@ -3015,7 +3075,7 @@ const Grouping: React.FC = () => {
                             color: '#9CA3AF',
                             fontSize: '14px'
                           }}>
-                            Kişi bulunamadı
+                            {t('labels.personNotFound')}
                           </div>
                         )}
                       </div>
@@ -3031,7 +3091,7 @@ const Grouping: React.FC = () => {
                 }}>
                   {selectedPersons.length === 0 ? (
                     <p style={{ color: '#9CA3AF', fontSize: '14px', margin: '0', fontStyle: 'italic' }}>
-                      Henüz kişi seçilmedi
+                      {t('labels.noPersonSelected')}
                     </p>
                   ) : (
                     <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
@@ -3083,7 +3143,7 @@ const Grouping: React.FC = () => {
                   color: '#374151',
                   marginBottom: '8px'
                 }}>
-                  Gezegenler *
+                  {t('labels.planets')}
                 </label>
                 <div style={{ display: 'flex', gap: '8px', marginBottom: '12px' }}>
                   <div style={{ position: 'relative', flex: 1 }} data-planet-dropdown>
@@ -3095,7 +3155,11 @@ const Grouping: React.FC = () => {
                         setShowPlanetDropdown(true);
                       }}
                       onFocus={() => setShowPlanetDropdown(true)}
-                      placeholder={`Gezegen arayın (${planets.length - selectedPlanets.length} gezegen mevcut)`}
+                      placeholder={
+                        language === 'en'
+                          ? `${t('labels.planetSearchPlaceholder')} (${planets.length - selectedPlanets.length} available)`
+                          : `${t('labels.planetSearchPlaceholder')} (${planets.length - selectedPlanets.length} gezegen mevcut)`
+                      }
                       style={{
                         width: '100%',
                         padding: '12px 16px',
@@ -3151,7 +3215,7 @@ const Grouping: React.FC = () => {
                             color: '#9CA3AF',
                             fontSize: '14px'
                           }}>
-                            Gezegen bulunamadı
+                            {t('labels.planetNotFound')}
                           </div>
                         )}
                       </div>
@@ -3167,7 +3231,7 @@ const Grouping: React.FC = () => {
                 }}>
                   {selectedPlanets.length === 0 ? (
                     <p style={{ color: '#9CA3AF', fontSize: '14px', margin: '0', fontStyle: 'italic' }}>
-                      Henüz gezegen seçilmedi
+                      {t('labels.noPlanetSelected')}
                     </p>
                   ) : (
                     <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
@@ -3249,7 +3313,7 @@ const Grouping: React.FC = () => {
                   }
                 }}
               >
-                İptal
+                {t('buttons.cancel')}
               </button>
               <button
                 onClick={handleSaveGroup}
@@ -3289,7 +3353,7 @@ const Grouping: React.FC = () => {
                     animation: 'spin 1s linear infinite'
                   }} />
                 )}
-                {isSubmitting ? 'Güncelleniyor...' : 'Güncelle'}
+                {isSubmitting ? t('statuses.updating') : t('buttons.updateGroup')}
               </button>
             </div>
           </div>
@@ -3346,7 +3410,7 @@ const Grouping: React.FC = () => {
                 color: '#232D42',
                 margin: 0
               }}>
-                {selectedGroup.groupName || selectedGroup.name} - Detayları
+                {selectedGroup.groupName || selectedGroup.name} - {t('labels.details')}
               </h3>
             </div>
             
@@ -3362,7 +3426,7 @@ const Grouping: React.FC = () => {
                   borderBottom: '2px solid #3A57E8',
                   paddingBottom: '5px'
                 }}>
-                  Grup Bilgileri
+                  {t('labels.groupInfo')}
                 </h4>
                 <div style={{
                   display: 'flex',
@@ -3377,7 +3441,7 @@ const Grouping: React.FC = () => {
                     fontSize: '12px',
                     fontWeight: 500
                   }}>
-                    Durum: {selectedGroup.isActive ? 'Aktif' : 'Pasif'}
+                    {t('labels.status')}: {selectedGroup.isActive ? t('status.active') : t('status.passive')}
                   </span>
                   <span style={{
                     background: '#E9ECEF',
@@ -3387,7 +3451,7 @@ const Grouping: React.FC = () => {
                     fontSize: '12px',
                     fontWeight: 500
                   }}>
-                    Oluşturulma: {new Date(selectedGroup.createdAt || Date.now()).toLocaleDateString('tr-TR')}
+                    {t('labels.createdAt')}: {new Date(selectedGroup.createdAt || Date.now()).toLocaleDateString(language === 'en' ? 'en-US' : 'tr-TR')}
                   </span>
                 </div>
               </div>
@@ -3403,7 +3467,7 @@ const Grouping: React.FC = () => {
                     borderBottom: '2px solid #3A57E8',
                     paddingBottom: '5px'
                   }}>
-                    Organizasyonlar ({selectedGroup.organizations.length})
+                    {t('titles.organization')} ({selectedGroup.organizations.length})
                   </h4>
                   <div style={{
                     display: 'flex',
@@ -3427,7 +3491,7 @@ const Grouping: React.FC = () => {
                         } else if (org.pozisyon) {
                           displayValue = org.pozisyon;
                         } else {
-                          displayValue = 'Bilinmeyen';
+                          displayValue = t('labels.unknown');
                         }
                       } else {
                         // String format (eski format veya populate edilmemiş)
@@ -3463,7 +3527,7 @@ const Grouping: React.FC = () => {
                     borderBottom: '2px solid #3A57E8',
                     paddingBottom: '5px'
                   }}>
-                    Kişiler ({selectedGroup.persons.length})
+                    {t('titles.authorization')} ({selectedGroup.persons.length})
                   </h4>
                   <div style={{
                     display: 'flex',
@@ -3500,7 +3564,7 @@ const Grouping: React.FC = () => {
                     borderBottom: '2px solid #3A57E8',
                     paddingBottom: '5px'
                   }}>
-                    Gezegenler ({selectedGroup.planets.length})
+                    {t('labels.planets')} ({selectedGroup.planets.length})
                   </h4>
                   <div style={{
                     display: 'flex',
@@ -3553,7 +3617,7 @@ const Grouping: React.FC = () => {
                   (e.target as HTMLButtonElement).style.opacity = '1';
                 }}
               >
-                Kapat
+                {t('buttons.close')}
               </button>
             </div>
           </div>
@@ -3601,14 +3665,14 @@ const Grouping: React.FC = () => {
                 color: '#1F2937',
                 marginBottom: '12px'
               }}>
-                Toplu Silme
+                {t('titles.bulkDelete')}
               </h3>
               <p style={{
                 fontSize: '14px',
                 color: '#6B7280',
                 marginBottom: '24px'
               }}>
-                {selectedItems.length} adet grubu silmek istediğinizden emin misiniz? Bu işlem geri alınamaz.
+                {formatBulkDeleteConfirm(selectedItems.length)}
               </p>
             </div>
             <div style={{
@@ -3631,7 +3695,7 @@ const Grouping: React.FC = () => {
                   fontFamily: 'Inter'
                 }}
               >
-                Hayır
+                {t('buttons.no')}
               </button>
               <button
                 onClick={confirmBulkDelete}
@@ -3648,7 +3712,7 @@ const Grouping: React.FC = () => {
                   fontFamily: 'Inter'
                 }}
               >
-                {isSubmitting ? 'Siliniyor...' : 'Evet, Sil'}
+                {isSubmitting ? t('statuses.deleting') : t('buttons.confirmDelete')}
               </button>
             </div>
           </div>
@@ -3696,14 +3760,14 @@ const Grouping: React.FC = () => {
                 color: '#1F2937',
                 margin: '0 0 8px 0'
               }}>
-                Grup Sil
+                {t('titles.deleteGroup')}
               </h3>
               <p style={{
                 fontSize: '14px',
                 color: '#6B7280',
                 margin: '0'
               }}>
-                "{selectedGroup?.groupName}" grubunu silmek istediğinizden emin misiniz? Bu işlem geri alınamaz.
+                {formatDeleteGroupConfirm(selectedGroup?.groupName || selectedGroup?.name || '')}
               </p>
             </div>
             <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end' }}>
@@ -3727,7 +3791,7 @@ const Grouping: React.FC = () => {
                   (e.target as HTMLButtonElement).style.borderColor = '#E5E7EB';
                 }}
               >
-                İptal
+                {t('buttons.cancel')}
               </button>
               <button
                 onClick={handleConfirmDelete}
@@ -3749,7 +3813,7 @@ const Grouping: React.FC = () => {
                   (e.target as HTMLButtonElement).style.backgroundColor = '#DC2626';
                 }}
               >
-                Sil
+                {t('buttons.deleteGroup')}
               </button>
             </div>
           </div>
@@ -3797,7 +3861,7 @@ const Grouping: React.FC = () => {
                 color: '#1F2937',
                 margin: '0 0 8px 0'
               }}>
-                Başarılı!
+                {t('labels.success')}
               </h3>
               <p style={{
                 fontSize: '14px',
@@ -3874,7 +3938,7 @@ const Grouping: React.FC = () => {
                 color: '#1F2937',
                 margin: '0 0 8px 0'
               }}>
-                Hata!
+                {t('labels.error')}
               </h3>
               <p style={{
                 fontSize: '14px',

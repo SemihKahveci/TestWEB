@@ -1,4 +1,5 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useLanguage } from '../contexts/LanguageContext';
 import { useNavigate } from 'react-router-dom';
 import { evaluationAPI, adminAPI, organizationAPI } from '../services/api';
 
@@ -78,14 +79,16 @@ interface UserResult {
   idikScore: number | string;
 }
 
-const allCompetencies = [
-  'Müşteri Odaklılık',
-  'Belirsizlik Yönetimi',
-  'İnsanları Etkileme',
-  'Güven Veren İşbirliği ve Sinerji'
-];
+const allCompetencyKeys = ['customerFocus', 'uncertainty', 'ie', 'idik'] as const;
 
 const DashboardPage: React.FC = () => {
+  const { language, t } = useLanguage();
+  const competencyLabelMap = useMemo(() => ({
+    customerFocus: t('competency.customerFocus'),
+    uncertainty: t('competency.uncertainty'),
+    ie: t('competency.ie'),
+    idik: t('competency.idik')
+  }), [t]);
   const navigate = useNavigate();
   const [filterOpen, setFilterOpen] = useState(false);
   const [isFilterModalOpen, setIsFilterModalOpen] = useState(false);
@@ -132,12 +135,7 @@ const DashboardPage: React.FC = () => {
   const [forceCompact, setForceCompact] = useState(false);
   const plotlyLoadedRef = useRef(false);
   const shouldCompact = isCompact || forceCompact;
-  const [selectedCompetencies, setSelectedCompetencies] = useState<string[]>([
-    'Müşteri Odaklılık',
-    'Belirsizlik Yönetimi',
-    'İnsanları Etkileme',
-    'Güven Veren İşbirliği ve Sinerji'
-  ]);
+  const [selectedCompetencies, setSelectedCompetencies] = useState<string[]>([...allCompetencyKeys]);
   
   useEffect(() => {
     const mobileQuery = window.matchMedia('(max-width: 768px)');
@@ -157,7 +155,7 @@ const DashboardPage: React.FC = () => {
       mobileQuery.removeEventListener('change', handleResize);
       window.removeEventListener('resize', handleResize);
     };
-  }, []);
+  }, [competencyLabelMap]);
 
   useEffect(() => {
     const loadOrganizationOptions = async () => {
@@ -238,28 +236,28 @@ const DashboardPage: React.FC = () => {
         if (response.data?.success && response.data.stats) {
           const stats = response.data.stats;
 
-          const scoreDistributions = [
-            {
-              name: 'Müşteri Odaklılık',
-              data: stats.scoreDistributions?.customerFocus || new Array(10).fill(0),
-              color: '#0d6efd'
-            },
-            {
-              name: 'Belirsizlik Yönetimi',
-              data: stats.scoreDistributions?.uncertainty || new Array(10).fill(0),
-              color: '#6610f2'
-            },
-            {
-              name: 'İnsanları Etkileme',
-              data: stats.scoreDistributions?.ie || new Array(10).fill(0),
-              color: '#d63384'
-            },
-            {
-              name: 'Güven Veren İşbirliği ve Sinerji',
-              data: stats.scoreDistributions?.idik || new Array(10).fill(0),
-              color: '#fd7e14'
-            }
-          ];
+      const scoreDistributions = [
+        {
+          name: competencyLabelMap.customerFocus,
+          data: stats.scoreDistributions?.customerFocus || new Array(10).fill(0),
+          color: '#0d6efd'
+        },
+        {
+          name: competencyLabelMap.uncertainty,
+          data: stats.scoreDistributions?.uncertainty || new Array(10).fill(0),
+          color: '#6610f2'
+        },
+        {
+          name: competencyLabelMap.ie,
+          data: stats.scoreDistributions?.ie || new Array(10).fill(0),
+          color: '#d63384'
+        },
+        {
+          name: competencyLabelMap.idik,
+          data: stats.scoreDistributions?.idik || new Array(10).fill(0),
+          color: '#fd7e14'
+        }
+      ];
 
           const shouldUpdate =
             !statsCache.initialized ||
@@ -383,7 +381,7 @@ const DashboardPage: React.FC = () => {
 
     const gameStatusData = [{
       type: 'pie',
-      labels: ['Tamamlandı', 'Oyun Devam Ediyor', 'Süresi Doldu', 'Gönderildi'],
+      labels: [t('status.completed'), t('status.inProgress'), t('status.expired'), t('status.sent')],
       values: [statusCounts.completed, statusCounts.inProgress, statusCounts.expired, statusCounts.pending],
       marker: {
         colors: ['#28a745', '#ffc107', '#dc3545', '#0d6efd'],
@@ -405,17 +403,17 @@ const DashboardPage: React.FC = () => {
     };
 
     plotly.react('game-status-chart', gameStatusData, gameStatusLayout, { responsive: true, displayModeBar: false, displaylogo: false });
-  }, [statusCounts]);
+  }, [statusCounts, t]);
 
   useEffect(() => {
     const plotly = window.Plotly;
     if (!plotlyLoadedRef.current || !plotly) return;
 
     const xLabels = [
-      'Müşteri Odaklılık',
-      'Belirsizlik Yönetimi',
-      'İnsanları Etkileme',
-      'Güven Veren İşbirliği ve Sinerji'
+      competencyLabelMap.customerFocus,
+      competencyLabelMap.uncertainty,
+      competencyLabelMap.ie,
+      competencyLabelMap.idik
     ];
 
     const venusTrace = {
@@ -457,7 +455,7 @@ const DashboardPage: React.FC = () => {
     };
 
     plotly.react('competency-chart', [venusTrace, titanTrace], competencyLayout, { responsive: true, displayModeBar: false, displaylogo: false });
-  }, [competencyCounts]);
+  }, [competencyCounts, competencyLabelMap]);
 
   useEffect(() => {
     const plotly = window.Plotly;
@@ -528,10 +526,10 @@ const DashboardPage: React.FC = () => {
   };
 
   const resetFilterModal = () => {
-    setTempSelectedCompetencies(allCompetencies);
+    setTempSelectedCompetencies([...allCompetencyKeys]);
     setTempSelectedTitles([]);
     setTempSelectedPositions([]);
-    setSelectedCompetencies(allCompetencies);
+    setSelectedCompetencies([...allCompetencyKeys]);
     setSelectedTitles([]);
     setSelectedPositions([]);
     setIsFilterModalOpen(false);
@@ -569,13 +567,13 @@ const DashboardPage: React.FC = () => {
 
   const getScoreByCompetency = (item: UserResult, competency: string) => {
     switch (competency) {
-      case 'Müşteri Odaklılık':
+      case 'customerFocus':
         return item.customerFocusScore;
-      case 'Belirsizlik Yönetimi':
+      case 'uncertainty':
         return item.uncertaintyScore;
-      case 'İnsanları Etkileme':
+      case 'ie':
         return item.ieScore;
-      case 'Güven Veren İşbirliği ve Sinerji':
+      case 'idik':
         return item.idikScore;
       default:
         return null;
@@ -585,7 +583,7 @@ const DashboardPage: React.FC = () => {
   const isFilterActive =
     selectedTitles.length > 0 ||
     selectedPositions.length > 0 ||
-    (selectedCompetencies.length > 0 && selectedCompetencies.length < allCompetencies.length);
+    (selectedCompetencies.length > 0 && selectedCompetencies.length < allCompetencyKeys.length);
 
   const applyResultFilters = (items: UserResult[]) =>
     items.filter((item) => {
@@ -746,7 +744,7 @@ const DashboardPage: React.FC = () => {
         padding: isMobile ? '0 16px' : '0 32px',
         marginBottom: '24px'
       }}>
-        <div style={{ color: 'white', fontSize: isMobile ? '22px' : '28px', fontWeight: 700 }}>Kontrol Paneli</div>
+        <div style={{ color: 'white', fontSize: isMobile ? '22px' : '28px', fontWeight: 700 }}>{t('titles.dashboard')}</div>
       </div>
 
       <section style={{
@@ -758,7 +756,7 @@ const DashboardPage: React.FC = () => {
         <div style={{ background: 'white', padding: '20px', borderRadius: '12px', borderLeft: '4px solid #2563EB', boxShadow: '0 2px 8px rgba(0,0,0,0.05)' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <div>
-              <div style={{ fontSize: '13px', color: '#6B7280', marginBottom: '6px', fontWeight: 600 }}>Değerlendirme Gönderilen Kişi Sayısı</div>
+              <div style={{ fontSize: '13px', color: '#6B7280', marginBottom: '6px', fontWeight: 600 }}>{t('labels.peopleEvaluated')}</div>
               <div style={{ fontSize: '30px', fontWeight: 700, color: '#111827' }}>{uniquePeopleCount}</div>
             </div>
             <div style={{ width: '52px', height: '52px', background: '#DBEAFE', borderRadius: '999px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '22px' }}>👥</div>
@@ -767,7 +765,7 @@ const DashboardPage: React.FC = () => {
         <div style={{ background: 'white', padding: '20px', borderRadius: '12px', borderLeft: '4px solid #16A34A', boxShadow: '0 2px 8px rgba(0,0,0,0.05)' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <div>
-              <div style={{ fontSize: '13px', color: '#6B7280', marginBottom: '6px', fontWeight: 600 }}>Toplam Gönderilen Oyun Sayısı</div>
+              <div style={{ fontSize: '13px', color: '#6B7280', marginBottom: '6px', fontWeight: 600 }}>{t('labels.totalGamesSent')}</div>
               <div style={{ fontSize: '30px', fontWeight: 700, color: '#111827' }}>{totalSentGames}</div>
             </div>
             <div style={{ width: '52px', height: '52px', background: '#DCFCE7', borderRadius: '999px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '22px' }}>📤</div>
@@ -777,11 +775,11 @@ const DashboardPage: React.FC = () => {
 
       <section style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(auto-fit, minmax(320px, 1fr))', gap: isMobile ? '16px' : '24px', marginBottom: '24px' }}>
         <div style={{ background: 'white', padding: '20px', borderRadius: '12px', boxShadow: '0 2px 8px rgba(0,0,0,0.05)' }}>
-          <div style={{ fontSize: '16px', fontWeight: 600, color: '#111827', marginBottom: '12px' }}>Oyun Gönderim Durumu</div>
+          <div style={{ fontSize: '16px', fontWeight: 600, color: '#111827', marginBottom: '12px' }}>{t('labels.gameSendStatus')}</div>
           <div id="game-status-chart" style={{ height: '300px' }} />
         </div>
         <div style={{ background: 'white', padding: '20px', borderRadius: '12px', boxShadow: '0 2px 8px rgba(0,0,0,0.05)' }}>
-          <div style={{ fontSize: '16px', fontWeight: 600, color: '#111827', marginBottom: '12px' }}>Yetkinliğe Göre Oyun Dağılımı</div>
+          <div style={{ fontSize: '16px', fontWeight: 600, color: '#111827', marginBottom: '12px' }}>{t('labels.competencyGameDistribution')}</div>
           <div id="competency-chart" style={{ height: '360px' }} />
         </div>
       </section>
@@ -789,7 +787,7 @@ const DashboardPage: React.FC = () => {
       <section style={{ background: 'white', padding: '20px', borderRadius: '12px', boxShadow: '0 2px 8px rgba(0,0,0,0.05)', marginBottom: '24px' }}>
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: '16px', alignItems: 'center', justifyContent: 'space-between', marginBottom: '20px' }}>
           <div>
-            <div style={{ fontSize: '16px', fontWeight: 600, color: '#111827', marginBottom: '4px' }}>Yetkinlik Skor Dağılımları</div>
+            <div style={{ fontSize: '16px', fontWeight: 600, color: '#111827', marginBottom: '4px' }}>{t('labels.competencyDistributions')}</div>
             </div>
           <div style={{ display: 'flex', gap: '10px', alignItems: 'center', position: 'relative' }}>
             <button
@@ -808,34 +806,29 @@ const DashboardPage: React.FC = () => {
                 fontSize: '13px'
               }}
             >
-              🔍 Filtrele
+              🔍 {t('buttons.filter')}
             </button>
             <button
               onClick={loadResults}
               style={{ padding: '10px 16px', borderRadius: '8px', border: '1px solid #D1D5DB', background: '#F3F4F6', cursor: 'pointer', fontWeight: 600, fontSize: '13px', display: 'flex', alignItems: 'center', gap: '8px' }}
             >
               <i className="fas fa-sync-alt" />
-              Yenile
+              {t('buttons.refresh')}
             </button>
             <button
               onClick={() => setShowDownloadPopup(true)}
               style={{ padding: '10px 16px', borderRadius: '8px', border: 'none', background: '#16A34A', color: 'white', cursor: 'pointer', fontWeight: 600, fontSize: '13px', display: 'flex', alignItems: 'center', gap: '8px' }}
             >
               <i className="fas fa-file-excel" />
-              Sonuçları İndir
+              {t('buttons.downloadResults')}
             </button>
           </div>
         </div>
         <div style={{ overflowX: 'auto', width: '100%', maxWidth: '100%' }}>
           <div style={{ display: 'flex', flexWrap: 'nowrap', gap: '16px', width: '100%' }}>
-            {[
-              'Müşteri Odaklılık',
-              'Belirsizlik Yönetimi',
-              'İnsanları Etkileme',
-              'Güven Veren İşbirliği ve Sinerji'
-            ].map((label, index) => (
+            {allCompetencyKeys.map((key, index) => (
               <div
-                key={label}
+                key={key}
                 id={`score-distribution-chart-${index + 1}`}
                 style={{
                   height: '320px',
@@ -847,7 +840,7 @@ const DashboardPage: React.FC = () => {
                   borderRadius: '10px',
                   padding: '12px',
                   boxSizing: 'border-box',
-                  display: selectedCompetencies.includes(label) ? 'block' : 'none'
+                  display: selectedCompetencies.includes(key) ? 'block' : 'none'
                 }}
               />
             ))}
@@ -858,16 +851,16 @@ const DashboardPage: React.FC = () => {
       <section style={{ background: 'white', padding: '20px', borderRadius: '12px', boxShadow: '0 2px 8px rgba(0,0,0,0.05)' }}>
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: '16px', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
           <div>
-            <div style={{ fontSize: '16px', fontWeight: 600, color: '#111827', marginBottom: '4px' }}>Kişi Sonuçları</div>
+            <div style={{ fontSize: '16px', fontWeight: 600, color: '#111827', marginBottom: '4px' }}>{t('titles.personResultsSection')}</div>
           </div>
           <div />
         </div>
 
         <div style={{ overflowX: 'auto', width: '100%', maxWidth: '100%' }}>
           {isLoadingResults || (isFilterActive && isFullResultsLoading) ? (
-            <div style={{ textAlign: 'center', padding: '24px', color: '#6B7280' }}>Sonuçlar yükleniyor...</div>
+            <div style={{ textAlign: 'center', padding: '24px', color: '#6B7280' }}>{t('labels.loadingResults')}</div>
           ) : filteredResults.length === 0 ? (
-            <div style={{ textAlign: 'center', padding: '24px', color: '#6B7280' }}>Gösterilecek sonuç bulunamadı.</div>
+            <div style={{ textAlign: 'center', padding: '24px', color: '#6B7280' }}>{t('labels.noResults')}</div>
           ) : shouldCompact ? (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
               {pagedResults.map((result, index) => (
@@ -889,29 +882,29 @@ const DashboardPage: React.FC = () => {
                         cursor: 'pointer',
                         color: '#2563EB'
                       }}
-                      title="Kişi sonuçlarına git"
+                      title={t('labels.goToPersonResults')}
                     >
                       <i className="fa-solid fa-arrow-right" />
                     </button>
                   </div>
                   <div style={{ fontSize: '12px', color: '#6B7280', marginBottom: '10px' }}>
-                    Tamamlanma Tarihi: {formatDate(result.completionDate)}
+                    {t('labels.completionDate')}: {formatDate(result.completionDate)}
                   </div>
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
                     <div>
-                      <div style={{ fontSize: '11px', color: '#6B7280', marginBottom: '4px' }}>Müşteri Odaklılık</div>
+                      <div style={{ fontSize: '11px', color: '#6B7280', marginBottom: '4px' }}>{competencyLabelMap.customerFocus}</div>
                       {renderScoreBadge(result.customerFocusScore)}
                     </div>
                     <div>
-                      <div style={{ fontSize: '11px', color: '#6B7280', marginBottom: '4px' }}>Belirsizlik Yönetimi</div>
+                      <div style={{ fontSize: '11px', color: '#6B7280', marginBottom: '4px' }}>{competencyLabelMap.uncertainty}</div>
                       {renderScoreBadge(result.uncertaintyScore)}
                     </div>
                     <div>
-                      <div style={{ fontSize: '11px', color: '#6B7280', marginBottom: '4px' }}>İnsanları Etkileme</div>
+                      <div style={{ fontSize: '11px', color: '#6B7280', marginBottom: '4px' }}>{competencyLabelMap.ie}</div>
                       {renderScoreBadge(result.ieScore)}
                     </div>
                     <div>
-                      <div style={{ fontSize: '11px', color: '#6B7280', marginBottom: '4px' }}>Güven Veren İşbirliği</div>
+                      <div style={{ fontSize: '11px', color: '#6B7280', marginBottom: '4px' }}>{competencyLabelMap.idik}</div>
                       {renderScoreBadge(result.idikScore)}
                     </div>
                   </div>
@@ -920,15 +913,15 @@ const DashboardPage: React.FC = () => {
             </div>
           ) : (
             <table style={{ width: '100%', maxWidth: '100%', tableLayout: 'fixed', borderCollapse: 'collapse', fontSize: '13px' }}>
-              <thead style={{ background: '#F9FAFB', color: '#6B7280', textTransform: 'uppercase' }}>
+              <thead style={{ background: '#F9FAFB', color: '#6B7280', textTransform: language === 'en' ? 'none' : 'uppercase' }}>
                 <tr>
-                  <th style={{ padding: '12px 16px', textAlign: 'center', fontWeight: 600, wordBreak: 'break-word' }}>Ad Soyad</th>
-                  <th style={{ padding: '12px 16px', textAlign: 'center', fontWeight: 600, wordBreak: 'break-word' }}>Tamamlanma Tarihi</th>
-                  <th style={{ padding: '12px 16px', textAlign: 'center', fontWeight: 600, wordBreak: 'break-word' }}>Müşteri Odaklılık</th>
-                  <th style={{ padding: '12px 16px', textAlign: 'center', fontWeight: 600, wordBreak: 'break-word' }}>Belirsizlik Yönetimi</th>
-                  <th style={{ padding: '12px 16px', textAlign: 'center', fontWeight: 600, wordBreak: 'break-word' }}>İnsanları Etkileme</th>
-                  <th style={{ padding: '12px 16px', textAlign: 'center', fontWeight: 600, wordBreak: 'break-word' }}>Güven Veren İşbirliği ve Sinerji</th>
-                  <th style={{ padding: '12px 16px', textAlign: 'center', fontWeight: 600, wordBreak: 'break-word' }}>Detay</th>
+                  <th style={{ padding: '12px 16px', textAlign: 'left', fontWeight: 600, wordBreak: 'break-word' }}>{t('labels.nameSurname')}</th>
+                  <th style={{ padding: '12px 16px', textAlign: 'center', fontWeight: 600, wordBreak: 'break-word' }}>{t('labels.completionDate')}</th>
+                  <th style={{ padding: '12px 16px', textAlign: 'center', fontWeight: 600, wordBreak: 'break-word' }}>{competencyLabelMap.customerFocus}</th>
+                  <th style={{ padding: '12px 16px', textAlign: 'center', fontWeight: 600, wordBreak: 'break-word' }}>{competencyLabelMap.uncertainty}</th>
+                  <th style={{ padding: '12px 16px', textAlign: 'center', fontWeight: 600, wordBreak: 'break-word' }}>{competencyLabelMap.ie}</th>
+                  <th style={{ padding: '12px 16px', textAlign: 'center', fontWeight: 600, wordBreak: 'break-word' }}>{competencyLabelMap.idik}</th>
+                  <th style={{ padding: '12px 16px', textAlign: 'center', fontWeight: 600, wordBreak: 'break-word' }}>{t('labels.detail')}</th>
                 </tr>
               </thead>
               <tbody>
@@ -956,7 +949,7 @@ const DashboardPage: React.FC = () => {
                           cursor: 'pointer',
                           color: '#2563EB'
                         }}
-                        title="Kişi sonuçlarına git"
+                        title={t('labels.goToPersonResults')}
                       >
                         <i className="fa-solid fa-arrow-right" />
                       </button>
@@ -1187,7 +1180,7 @@ const DashboardPage: React.FC = () => {
               padding: '20px 24px',
               borderBottom: '1px solid #E5E7EB'
             }}>
-              <h3 style={{ margin: 0, fontSize: '20px', fontWeight: 700, color: '#111827' }}>Filtreleme</h3>
+              <h3 style={{ margin: 0, fontSize: '20px', fontWeight: 700, color: '#111827' }}>{t('titles.filtering')}</h3>
               <button
                 onClick={closeFilterModal}
                 style={{
@@ -1203,12 +1196,12 @@ const DashboardPage: React.FC = () => {
             </div>
             <div style={{ padding: '20px 24px', maxHeight: '60vh', overflowY: 'auto' }}>
               <div style={{ marginBottom: '16px', fontSize: '14px', fontWeight: 600, color: '#374151' }}>
-                Yetkinlik Seçimi
+                {t('labels.competencySelection')}
               </div>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', background: '#F9FAFB', borderRadius: '10px', padding: '16px' }}>
-                {allCompetencies.map((competency) => (
+                {allCompetencyKeys.map((competency) => (
                   <label key={competency} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px' }}>
-                    <span style={{ fontSize: '13px', color: '#111827' }}>{competency}</span>
+                    <span style={{ fontSize: '13px', color: '#111827' }}>{competencyLabelMap[competency]}</span>
                     <label style={{ position: 'relative', display: 'inline-flex', alignItems: 'center', cursor: 'pointer' }}>
                       <input
                         type="checkbox"
@@ -1242,10 +1235,10 @@ const DashboardPage: React.FC = () => {
 
               <div style={{ marginTop: '20px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
                 <div>
-                  <div style={{ marginBottom: '8px', fontSize: '14px', fontWeight: 600, color: '#374151' }}>Unvan</div>
+                  <div style={{ marginBottom: '8px', fontSize: '14px', fontWeight: 600, color: '#374151' }}>{t('labels.title')}</div>
                   <div style={{ border: '1px solid #E5E7EB', borderRadius: '8px', padding: '10px', maxHeight: '160px', overflowY: 'auto' }}>
                     {titleOptions.length === 0 ? (
-                      <div style={{ fontSize: '12px', color: '#9CA3AF' }}>Kayıt bulunamadı</div>
+                      <div style={{ fontSize: '12px', color: '#9CA3AF' }}>{t('labels.noRecords')}</div>
                     ) : (
                       titleOptions.map((title) => (
                         <label key={title} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '10px', gap: '12px' }}>
@@ -1283,10 +1276,10 @@ const DashboardPage: React.FC = () => {
                   </div>
                 </div>
                 <div>
-                  <div style={{ marginBottom: '8px', fontSize: '14px', fontWeight: 600, color: '#374151' }}>Pozisyon</div>
+                  <div style={{ marginBottom: '8px', fontSize: '14px', fontWeight: 600, color: '#374151' }}>{t('labels.position')}</div>
                   <div style={{ border: '1px solid #E5E7EB', borderRadius: '8px', padding: '10px', maxHeight: '160px', overflowY: 'auto' }}>
                     {positionOptions.length === 0 ? (
-                      <div style={{ fontSize: '12px', color: '#9CA3AF' }}>Kayıt bulunamadı</div>
+                      <div style={{ fontSize: '12px', color: '#9CA3AF' }}>{t('labels.noRecords')}</div>
                     ) : (
                       positionOptions.map((position) => (
                         <label key={position} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '10px', gap: '12px' }}>
@@ -1338,7 +1331,7 @@ const DashboardPage: React.FC = () => {
                   cursor: 'pointer'
                 }}
               >
-                Filtreleri Temizle
+                {t('buttons.clearFilters')}
               </button>
               <div style={{ display: 'flex', gap: '12px' }}>
               <button
@@ -1353,7 +1346,7 @@ const DashboardPage: React.FC = () => {
                   cursor: 'pointer'
                 }}
               >
-                İptal
+                {t('buttons.cancel')}
               </button>
               <button
                 onClick={saveFilterModal}
@@ -1367,7 +1360,7 @@ const DashboardPage: React.FC = () => {
                   cursor: 'pointer'
                 }}
               >
-                Filtreleri Uygula
+                {t('buttons.applyFilters')}
               </button>
               </div>
             </div>
@@ -1484,7 +1477,7 @@ const DashboardPage: React.FC = () => {
                   onChange={(event) => setDownloadOptions((prev) => ({ ...prev, competencyScore: event.target.checked }))}
                   style={{ width: '16px', height: '16px', accentColor: '#0286F7' }}
                 />
-                <span style={{ fontSize: '14px', color: '#232D42' }}>Yetkinlik Puanı</span>
+                <span style={{ fontSize: '14px', color: '#232D42' }}>{t('labels.competencyScore')}</span>
               </label>
             </div>
             <div style={{

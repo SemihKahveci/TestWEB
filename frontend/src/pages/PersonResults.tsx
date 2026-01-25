@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
+import { useLanguage } from '../contexts/LanguageContext';
 
 type TabKey = 'trend' | 'summary' | 'full';
 
@@ -32,33 +33,34 @@ const PersonResults: React.FC = () => {
   const [isPdfLoading, setIsPdfLoading] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
+  const { language, t } = useLanguage();
 
   const competencyConfig = useMemo(() => ([
     {
       key: 'uyumluluk',
-      name: 'Uyumluluk ve Dayanıklılık',
-      description: 'Belirsizliklerle başa çıkma ve dayanıklılık gösterme',
+      name: t('competency.uncertainty'),
+      description: t('competency.uncertainty.desc'),
       scoreField: 'uncertaintyScore'
     },
     {
       key: 'musteri',
-      name: 'Müşteri Odaklılık',
-      description: 'Müşteri ihtiyaçlarını anlama ve çözüm üretme',
+      name: t('competency.customerFocus'),
+      description: t('competency.customerFocus.desc'),
       scoreField: 'customerFocusScore'
     },
     {
       key: 'etkileme',
-      name: 'İnsanları Etkileme',
-      description: 'İkna, etkileme ve yönlendirme becerileri',
+      name: t('competency.ie'),
+      description: t('competency.ie.desc'),
       scoreField: 'ieScore'
     },
     {
       key: 'sinerji',
-      name: 'Güven Veren İşbirlikçi ve Sinerji',
-      description: 'Ekip içinde güven, işbirliği ve uyum oluşturma',
+      name: t('competency.idik'),
+      description: t('competency.idik.desc'),
       scoreField: 'idikScore'
     }
-  ]), []);
+  ]), [t]);
 
   const parseScore = (value?: string | number) => {
     if (value === null || value === undefined || value === '-' || value === '') return null;
@@ -82,14 +84,16 @@ const PersonResults: React.FC = () => {
     if (!value) return '-';
     const date = new Date(value);
     if (Number.isNaN(date.getTime())) return '-';
-    return date.toLocaleDateString('tr-TR', { day: '2-digit', month: 'short', year: 'numeric' });
+    const locale = language === 'en' ? 'en-US' : 'tr-TR';
+    return date.toLocaleDateString(locale, { day: '2-digit', month: 'short', year: 'numeric' });
   };
 
   const formatDateLong = (value?: string) => {
     if (!value) return '-';
     const date = new Date(value);
     if (Number.isNaN(date.getTime())) return '-';
-    return date.toLocaleDateString('tr-TR', { day: '2-digit', month: 'long', year: 'numeric' });
+    const locale = language === 'en' ? 'en-US' : 'tr-TR';
+    return date.toLocaleDateString(locale, { day: '2-digit', month: 'long', year: 'numeric' });
   };
 
   const formatQuarterLabel = (value?: string) => {
@@ -174,6 +178,17 @@ const PersonResults: React.FC = () => {
     return Math.round((last - first) * 10) / 10;
   }, [selectedTrend]);
 
+  const trendDeltaText = useMemo(() => {
+    if (trendDelta === null) {
+      return t('labels.notEnoughData');
+    }
+    const prefix = trendDelta >= 0 ? '+' : '';
+    if (language === 'en') {
+      return `Change of ${prefix}${trendDelta} points across last ${selectedTrend.length} evaluations`;
+    }
+    return `Son ${selectedTrend.length} değerlendirmede ${prefix}${trendDelta} puan gelişim`;
+  }, [language, selectedTrend.length, trendDelta]);
+
   const handlePreviewPdf = async () => {
     if (!latestUser?.code) return;
     try {
@@ -186,14 +201,14 @@ const PersonResults: React.FC = () => {
         credentials: 'include'
       });
       if (!response.ok) {
-        throw new Error('PDF oluşturulurken bir hata oluştu');
+        throw new Error(t('errors.pdfCreateFailed'));
       }
       const blob = await response.blob();
       const url = URL.createObjectURL(blob);
       setPdfPreviewUrl(url);
       setShowPDFPreview(true);
     } catch (error) {
-      console.error('PDF önizleme hatası:', error);
+      console.error('PDF preview error:', error);
     } finally {
       setIsPdfLoading(false);
     }
@@ -215,7 +230,7 @@ const PersonResults: React.FC = () => {
         })
       });
       if (!response.ok) {
-        throw new Error('PDF oluşturulurken bir hata oluştu');
+        throw new Error(t('errors.pdfCreateFailed'));
       }
       const blob = await response.blob();
       const url = URL.createObjectURL(blob);
@@ -223,26 +238,26 @@ const PersonResults: React.FC = () => {
       const formattedDate = `${date.getDate().toString().padStart(2, '0')}${(date.getMonth() + 1)
         .toString()
         .padStart(2, '0')}${date.getFullYear()}`;
-      const safeName = (latestUser.name || 'Kullanici').replace(/\s+/g, '_');
+      const safeName = (latestUser.name || t('labels.user')).replace(/\s+/g, '_');
       const a = document.createElement('a');
       a.href = url;
-      a.download = `ANDRON_DeğerlendirmeRaporu_${safeName}_${formattedDate}.pdf`;
+      a.download = `ANDRON_${t('labels.assessmentReport')}_${safeName}_${formattedDate}.pdf`;
       document.body.appendChild(a);
       a.click();
       window.URL.revokeObjectURL(url);
       document.body.removeChild(a);
     } catch (error) {
-      console.error('PDF indirme hatası:', error);
+      console.error('PDF download error:', error);
     } finally {
       setIsPdfLoading(false);
     }
   };
 
   const scoreCards = [
-    { title: 'Uyumluluk ve Dayanıklılık', icon: 'fa-chart-line', badge: '+12%', color: 'from-blue-500 to-blue-600', competency: 'uyumluluk' },
-    { title: 'Müşteri Odaklılık', icon: 'fa-trophy', badge: 'Top 15%', color: 'from-green-500 to-green-600', competency: 'musteri' },
-    { title: 'İnsanları Etkileme', icon: 'fa-star', badge: '8/12', color: 'from-purple-500 to-purple-600', competency: 'etkileme' },
-    { title: 'Güven Veren İşbirlikçi ve Sinerji', icon: 'fa-arrow-trend-up', badge: '+3', color: 'from-orange-500 to-orange-600', competency: 'sinerji' }
+    { title: t('competency.uncertainty'), icon: 'fa-chart-line', badge: '+12%', color: 'from-blue-500 to-blue-600', competency: 'uyumluluk' },
+    { title: t('competency.customerFocus'), icon: 'fa-trophy', badge: 'Top 15%', color: 'from-green-500 to-green-600', competency: 'musteri' },
+    { title: t('competency.ie'), icon: 'fa-star', badge: '8/12', color: 'from-purple-500 to-purple-600', competency: 'etkileme' },
+    { title: t('competency.idik'), icon: 'fa-arrow-trend-up', badge: '+3', color: 'from-orange-500 to-orange-600', competency: 'sinerji' }
   ];
 
   const maxScore = 10;
@@ -324,6 +339,9 @@ const PersonResults: React.FC = () => {
     fetchLatest();
   }, [location.state]);
 
+  const selectedUserFromState = (location.state as { selectedUser?: UserResult } | null)?.selectedUser;
+  const userForDetail = selectedUserFromState || latestUser;
+
   return (
     <div className="bg-gray-50 font-inter">
       <div className="bg-white border-b border-gray-200 sticky top-0 z-30">
@@ -335,13 +353,13 @@ const PersonResults: React.FC = () => {
               </button>
               <div>
                 <div className="flex items-center space-x-2 text-sm text-gray-500 mb-1">
-                  <span className="hover:text-gray-700">Evaluations</span>
+                  <span className="hover:text-gray-700">{t('breadcrumbs.evaluations')}</span>
                   <span>/</span>
-                  <span className="hover:text-gray-700">Person Results</span>
+                  <span className="hover:text-gray-700">{t('breadcrumbs.personResults')}</span>
                   <span>/</span>
                   <span className="text-gray-900 font-medium">Sarah Johnson</span>
                 </div>
-                <h1 className="text-2xl font-bold text-gray-900">Person Evaluation Results</h1>
+                <h1 className="text-2xl font-bold text-gray-900">{t('titles.personResults')}</h1>
               </div>
             </div>
             <div className="flex items-center space-x-4">
@@ -385,15 +403,15 @@ const PersonResults: React.FC = () => {
                   </div>
                   <div className="flex items-center">
                     <i className="fa-solid fa-calendar mr-2 text-gray-400" />
-                    <span>Katılım: Ocak 2020</span>
+                    <span>{t('labels.participation')}: {t('labels.sampleParticipation')}</span>
                   </div>
                 </div>
               </div>
             </div>
             <div className="text-right">
-              <div className="text-sm text-gray-500 mb-1">Son Değerlendirme</div>
+              <div className="text-sm text-gray-500 mb-1">{t('labels.currentEvaluation')}</div>
               <div className="text-lg font-semibold text-gray-900">{formatQuarterLabel(latestUser?.completionDate)}</div>
-              <div className="text-sm text-gray-600">Tamamlandı: {formatDateLong(latestUser?.completionDate)}</div>
+              <div className="text-sm text-gray-600">{t('labels.completion')}: {formatDateLong(latestUser?.completionDate)}</div>
             </div>
           </div>
         </div>
@@ -414,7 +432,7 @@ const PersonResults: React.FC = () => {
                   navigate('/person-results/detail', {
                     state: {
                       competency: card.competency,
-                      latestUser,
+                      latestUser: userForDetail,
                       latestHistory
                     }
                   });
@@ -427,7 +445,7 @@ const PersonResults: React.FC = () => {
                   navigate('/person-results/detail', {
                     state: {
                       competency: card.competency,
-                      latestUser,
+                      latestUser: userForDetail,
                       latestHistory
                     }
                   });
@@ -450,13 +468,13 @@ const PersonResults: React.FC = () => {
           <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
             <div className="flex items-center justify-between mb-6">
               <div>
-                <h3 className="text-xl font-bold text-gray-900 mb-1">Mevcut Yetkinlik Durumu</h3>
-                <p className="text-sm text-gray-500">Son değerlendirme ve benchmark sonuçları</p>
+                <h3 className="text-xl font-bold text-gray-900 mb-1">{t('labels.competencyStatus')}</h3>
+                <p className="text-sm text-gray-500">{t('labels.competencyStatusDesc')}</p>
               </div>
               <div className="flex items-center space-x-2">
                 <button className="px-4 py-1.5 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium">
                   <i className="fa-solid fa-file-lines mr-1" />
-                  Rapor Detayları
+                  {t('labels.reportDetails')}
                 </button>
               </div>
             </div>
@@ -465,8 +483,8 @@ const PersonResults: React.FC = () => {
               <div className="flex items-start">
                 <i className="fa-solid fa-info-circle text-blue-600 mt-0.5 mr-3" />
                 <div className="text-sm text-blue-900">
-                  <div className="font-medium mb-1">Değerlendirme Tarihi: {formatDateLong(latestUser?.completionDate)}</div>
-                  <div className="text-blue-700">Sağ panelde trend görmek için bir yetkinlik seçin</div>
+                  <div className="font-medium mb-1">{t('labels.evaluationDate')}: {formatDateLong(latestUser?.completionDate)}</div>
+                  <div className="text-blue-700">{t('labels.trendTip')}</div>
                 </div>
               </div>
             </div>
@@ -520,9 +538,9 @@ const PersonResults: React.FC = () => {
             <div className="border-b border-gray-200">
               <div className="flex">
                 {[
-                  { key: 'trend', label: 'Trend Analizi' },
-                  { key: 'summary', label: 'Özet' },
-                  { key: 'full', label: 'Tam Rapor' }
+                  { key: 'trend', label: t('tabs.trend') },
+                  { key: 'summary', label: t('tabs.summary') },
+                  { key: 'full', label: t('tabs.fullReport') }
                 ].map((tab) => (
                   <button
                     key={tab.key}
@@ -542,12 +560,12 @@ const PersonResults: React.FC = () => {
             {activeTab === 'trend' && (
               <div className="p-6">
                 <div className="mb-6">
-                  <h3 className="text-xl font-bold text-gray-900 mb-1">Yetkinlik Trend Analizi</h3>
-                  <p className="text-sm text-gray-500">Son 3 değerlendirme sonucu</p>
+                  <h3 className="text-xl font-bold text-gray-900 mb-1">{t('labels.trendAnalysis')}</h3>
+                  <p className="text-sm text-gray-500">{t('labels.lastThreeResults')}</p>
                 </div>
 
                 <div className="mb-6 p-4 bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-lg">
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Yetkinlik Seç</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">{t('labels.selectCompetency')}</label>
                   <select
                     value={selectedCompetency}
                     onChange={(e) => setSelectedCompetency(e.target.value)}
@@ -640,7 +658,7 @@ const PersonResults: React.FC = () => {
                   {selectedTrend.map((point, index) => (
                     <div key={point.label} className={`rounded-lg p-5 text-center border ${index === selectedTrend.length - 1 ? 'bg-blue-50 border-blue-400 border-2' : 'bg-gray-50 border-gray-200'}`}>
                       <div className={`text-xs uppercase tracking-wide mb-2 ${index === selectedTrend.length - 1 ? 'text-blue-600 font-semibold' : 'text-gray-500'}`}>
-                        {point.label}{index === selectedTrend.length - 1 ? ' (Güncel)' : ''}
+                        {point.label}{index === selectedTrend.length - 1 ? ` (${t('labels.currentTag')})` : ''}
                       </div>
                       <div className={`text-4xl font-bold mb-1 ${index === selectedTrend.length - 1 ? 'text-blue-600' : 'text-gray-700'}`}>
                         {point.value}
@@ -658,9 +676,7 @@ const PersonResults: React.FC = () => {
                       <i className="fa-solid fa-arrow-trend-up text-white text-lg" />
                     </div>
                     <p className="text-sm text-green-900 font-medium">
-                      {trendDelta === null
-                        ? 'Yeterli veri yok'
-                        : `Son ${selectedTrend.length} değerlendirmede ${trendDelta >= 0 ? '+' : ''}${trendDelta} puan gelişim`}
+                      {trendDeltaText}
                     </p>
                   </div>
                 </div>
@@ -670,8 +686,8 @@ const PersonResults: React.FC = () => {
             {activeTab === 'summary' && (
               <div className="p-6">
                 <div className="mb-6">
-                  <h3 className="text-xl font-bold text-gray-900 mb-1">Güncel Değerlendirme Özeti</h3>
-                  <p className="text-sm text-gray-500">Q4 2024 Kapsamlı Değerlendirme</p>
+                  <h3 className="text-xl font-bold text-gray-900 mb-1">{t('labels.currentReport')}</h3>
+                  <p className="text-sm text-gray-500">{t('labels.comprehensiveAssessment')}</p>
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
                   <div className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-lg p-5 border border-blue-200">
@@ -681,7 +697,7 @@ const PersonResults: React.FC = () => {
                     </div>
                     <div className="text-3xl font-bold text-blue-900 mb-1">8.4/10</div>
                     <div className="text-sm font-medium text-blue-800">Genel Performans</div>
-                    <div className="text-xs text-blue-700 mt-2">Önceki döneme göre +0.7</div>
+                    <div className="text-xs text-blue-700 mt-2">{t('labels.previousPeriodChange')}</div>
                   </div>
                   <div className="bg-gradient-to-br from-green-50 to-green-100 rounded-lg p-5 border border-green-200">
                     <div className="flex items-center justify-between mb-3">
@@ -689,8 +705,8 @@ const PersonResults: React.FC = () => {
                       <span className="px-3 py-1 bg-green-600 text-white text-xs font-bold rounded-full">GROWING</span>
                     </div>
                     <div className="text-3xl font-bold text-green-900 mb-1">9/12</div>
-                    <div className="text-sm font-medium text-green-800">Gelişen Yetkinlik</div>
-                    <div className="text-xs text-green-700 mt-2">%75 pozitif gelişim</div>
+                    <div className="text-sm font-medium text-green-800">{t('labels.developingCompetency')}</div>
+                    <div className="text-xs text-green-700 mt-2">{t('labels.positiveGrowth')}</div>
                   </div>
                   <div className="bg-gradient-to-br from-purple-50 to-purple-100 rounded-lg p-5 border border-purple-200">
                     <div className="flex items-center justify-between mb-3">
@@ -698,18 +714,18 @@ const PersonResults: React.FC = () => {
                       <span className="px-3 py-1 bg-purple-600 text-white text-xs font-bold rounded-full">TOP 15%</span>
                     </div>
                     <div className="text-3xl font-bold text-purple-900 mb-1">92</div>
-                    <div className="text-sm font-medium text-purple-800">Percentile Sırası</div>
-                    <div className="text-xs text-purple-700 mt-2">Şirket genelinde</div>
+                    <div className="text-sm font-medium text-purple-800">{t('labels.percentileRank')}</div>
+                    <div className="text-xs text-purple-700 mt-2">{t('labels.companyOverall')}</div>
                   </div>
                 </div>
                 <div className="mb-6">
-                  <h4 className="text-lg font-bold text-gray-900 mb-4">Yönetici Özeti</h4>
+                  <h4 className="text-lg font-bold text-gray-900 mb-4">{t('tabs.executiveSummary')}</h4>
                   <div className="prose prose-sm max-w-none text-gray-700 leading-relaxed">
                     <p className="mb-4">
-                      Sarah Johnson, Q4 2024 değerlendirmesinde 8.4/10 genel skorla üstün performans göstermiştir.
+                      {t('labels.executiveSummarySample')}
                     </p>
                     <p className="mb-4">
-                      En güçlü alanları Strategic Thinking, Problem Solving ve Leadership & Influence olarak öne çıkmaktadır.
+                      {t('labels.executiveSummaryHighlights')}
                     </p>
                   </div>
                 </div>
@@ -719,8 +735,8 @@ const PersonResults: React.FC = () => {
             {activeTab === 'full' && (
               <div className="p-6">
                 <div className="mb-6">
-                  <h3 className="text-xl font-bold text-gray-900 mb-1">Tam Değerlendirme Raporu</h3>
-                  <p className="text-sm text-gray-500">Q4 2024 Kapsamlı Değerlendirme</p>
+                  <h3 className="text-xl font-bold text-gray-900 mb-1">{t('labels.fullReport')}</h3>
+                  <p className="text-sm text-gray-500">{t('labels.comprehensiveAssessment')}</p>
                 </div>
                 <div className="text-center py-12">
                   <div className="inline-flex items-center justify-center w-20 h-20 bg-blue-100 rounded-full mb-6">
@@ -728,7 +744,7 @@ const PersonResults: React.FC = () => {
                   </div>
                   <h4 className="text-xl font-bold text-gray-900 mb-2">Q4 2024 Raporu</h4>
                   <p className="text-gray-600 mb-8 max-w-md mx-auto">
-                    Tüm yetkinlikler, 360° geri bildirimler ve gelişim önerileri.
+                    {t('labels.fullReportSummary')}
                   </p>
                   <div className="flex items-center justify-center space-x-4">
                     <button
@@ -736,17 +752,17 @@ const PersonResults: React.FC = () => {
                       onClick={handlePreviewPdf}
                       disabled={isPdfLoading || !latestUser}
                     >
-                      <i className="fa-solid fa-eye mr-2" /> Raporu Görüntüle
+                      <i className="fa-solid fa-eye mr-2" /> {t('buttons.viewReport')}
                     </button>
                     <button
                       className="px-6 py-3 bg-white border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors flex items-center font-medium disabled:opacity-60"
                       onClick={handleDownloadPdf}
                       disabled={isPdfLoading || !latestUser}
                     >
-                      <i className="fa-solid fa-download mr-2" /> PDF İndir
+                      <i className="fa-solid fa-download mr-2" /> {t('buttons.downloadPdf')}
                     </button>
                     <button className="px-6 py-3 bg-white border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors flex items-center font-medium">
-                      <i className="fa-solid fa-share-nodes mr-2" /> Paylaş
+                      <i className="fa-solid fa-share-nodes mr-2" /> {t('buttons.share')}
                     </button>
                   </div>
                 </div>
@@ -759,7 +775,7 @@ const PersonResults: React.FC = () => {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30">
           <div className="bg-white rounded-lg shadow-xl w-[90%] h-[90%] flex flex-col overflow-hidden">
             <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 bg-gray-50">
-              <h3 className="text-lg font-semibold text-gray-900">PDF Önizleme</h3>
+              <h3 className="text-lg font-semibold text-gray-900">{t('labels.pdfPreview')}</h3>
               <button
                 className="text-gray-500 hover:text-gray-700"
                 onClick={() => {
@@ -777,12 +793,12 @@ const PersonResults: React.FC = () => {
               {pdfPreviewUrl ? (
                 <iframe
                   src={pdfPreviewUrl}
-                  title="PDF Önizleme"
+                  title={t('labels.pdfPreview')}
                   className="w-full h-full"
                 />
               ) : (
                 <div className="w-full h-full flex items-center justify-center text-gray-500">
-                  PDF yükleniyor...
+                  {t('labels.pdfLoading')}
                 </div>
               )}
             </div>

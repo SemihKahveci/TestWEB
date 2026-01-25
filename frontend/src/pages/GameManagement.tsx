@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useLanguage } from '../contexts/LanguageContext';
 import { companyAPI } from '../services/api';
 
 interface Game {
@@ -20,6 +21,7 @@ interface Company {
 }
 
 const GameManagement: React.FC = () => {
+  const { t } = useLanguage();
   const [games, setGames] = useState<Game[]>([]);
   const [companies, setCompanies] = useState<Company[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -625,7 +627,7 @@ const GameManagement: React.FC = () => {
             fontFamily: 'Inter',
             fontWeight: 700
           }}>
-            Oyun Tanımlama
+            {t('titles.gameManagement')}
           </div>
         </div>
       </div>

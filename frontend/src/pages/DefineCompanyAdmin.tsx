@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useLanguage } from '../contexts/LanguageContext';
 import { companyAPI } from '../services/api';
 
 interface Admin {
@@ -11,6 +12,7 @@ interface Admin {
 }
 
 const DefineCompanyAdmin: React.FC = () => {
+  const { language, t } = useLanguage();
   const [admins, setAdmins] = useState<Admin[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [showAddPopup, setShowAddPopup] = useState(false);
@@ -28,6 +30,19 @@ const DefineCompanyAdmin: React.FC = () => {
   const [filteredCompanies, setFilteredCompanies] = useState<any[]>([]);
   const [companySearchTerm, setCompanySearchTerm] = useState('');
   const [showCompanyDropdown, setShowCompanyDropdown] = useState(false);
+  const formatCompanyPlaceholder = (count: number) =>
+    language === 'en'
+      ? `${t('labels.companySelect')} (${count} available)`
+      : `${t('labels.companySelect')} (${count} firma mevcut)`;
+
+  const formatNoResultsText = (term: string) => {
+    if (term) {
+      return language === 'en'
+        ? `No results found for "${term}"`
+        : `"${term}" için arama sonucu bulunamadı`;
+    }
+    return t('labels.companyNotFound');
+  };
   
   // Form states
   const [formData, setFormData] = useState({
@@ -290,7 +305,7 @@ const DefineCompanyAdmin: React.FC = () => {
       }
     } catch (error: any) {
       console.error('💥 Admin ekleme hatası:', error);
-      const errorMessage = error.response?.data?.message || 'Admin eklenirken bir hata oluştu';
+      const errorMessage = error.response?.data?.message || t('errors.adminAddError');
       showMessage('Hata', errorMessage, 'error');
     }
   };
@@ -329,7 +344,7 @@ const DefineCompanyAdmin: React.FC = () => {
       }
     } catch (error: any) {
       console.error('💥 Admin güncelleme hatası:', error);
-      const errorMessage = error.response?.data?.message || 'Admin güncellenirken bir hata oluştu';
+      const errorMessage = error.response?.data?.message || t('errors.adminUpdateError');
       showMessage('Hata', errorMessage, 'error');
     }
   };
@@ -351,7 +366,7 @@ const DefineCompanyAdmin: React.FC = () => {
       }
     } catch (error: any) {
       console.error('💥 Admin silme hatası:', error);
-      const errorMessage = error.response?.data?.message || 'Admin silinirken bir hata oluştu';
+      const errorMessage = error.response?.data?.message || t('errors.adminDeleteError');
       showMessage('Hata', errorMessage, 'error');
     }
   };
@@ -381,7 +396,7 @@ const DefineCompanyAdmin: React.FC = () => {
           fontSize: '16px',
           fontFamily: 'Inter'
         }}>
-          Veriler yükleniyor...
+          {t('labels.loadingData')}
         </div>
         <style>{`
           @keyframes spin {
@@ -498,7 +513,7 @@ const DefineCompanyAdmin: React.FC = () => {
             fontFamily: 'Inter',
             fontWeight: 700
           }}>
-            Firma Admini Tanımlama
+            {t('titles.defineCompanyAdmin')}
           </div>
         </div>
       </div>
@@ -544,7 +559,7 @@ const DefineCompanyAdmin: React.FC = () => {
             }}
           >
             <i className="fas fa-plus"></i>
-            Ekle
+            {t('buttons.add')}
           </button>
         </div>
 
@@ -589,7 +604,7 @@ const DefineCompanyAdmin: React.FC = () => {
                   fontWeight: 700,
                   borderBottom: '1px solid #E9ECEF'
                 }}>
-                  Firma
+                  {t('labels.company')}
                 </th>
                 <th style={{
                   padding: '16px',
@@ -611,7 +626,7 @@ const DefineCompanyAdmin: React.FC = () => {
                   fontWeight: 700,
                   borderBottom: '1px solid #E9ECEF'
                 }}>
-                  İşlemler
+                  {t('labels.actions')}
                 </th>
               </tr>
             </thead>
@@ -756,7 +771,7 @@ const DefineCompanyAdmin: React.FC = () => {
               fontSize: '24px',
               fontWeight: 600
             }}>
-              Admin Ekle
+              {t('titles.addAdmin')}
             </h3>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
               <div>
@@ -822,7 +837,7 @@ const DefineCompanyAdmin: React.FC = () => {
                   fontFamily: 'Inter',
                   fontSize: '14px'
                 }}>
-                  Firma
+                  {t('labels.company')}
                 </label>
                 <div style={{ position: 'relative' }} data-company-dropdown>
                   {/* Custom Dropdown */}
@@ -844,7 +859,7 @@ const DefineCompanyAdmin: React.FC = () => {
                     }}
                   >
                     <span style={{ color: companySearchTerm ? '#232D42' : '#8A92A6' }}>
-                      {companySearchTerm || `Firma seçin (${companies.length} firma mevcut)`}
+                      {companySearchTerm || formatCompanyPlaceholder(companies.length)}
                     </span>
                     <i 
                       className={`fas fa-chevron-${showCompanyDropdown ? 'up' : 'down'}`}
@@ -874,7 +889,7 @@ const DefineCompanyAdmin: React.FC = () => {
                       <div style={{ padding: '8px', borderBottom: '1px solid #E9ECEF', position: 'relative' }}>
                         <input
                           type="text"
-                          placeholder="Firma ara..."
+                          placeholder={t('placeholders.companySearch')}
                           value={companySearchTerm}
                           onChange={(e) => {
                             handleCompanySearch(e.target.value);
@@ -957,7 +972,7 @@ const DefineCompanyAdmin: React.FC = () => {
                             color: '#8A92A6',
                             textAlign: 'center'
                           }}>
-                            {companySearchTerm ? `"${companySearchTerm}" için arama sonucu bulunamadı` : 'Firma bulunamadı'}
+                            {formatNoResultsText(companySearchTerm)}
                           </div>
                         )}
                       </div>
@@ -974,13 +989,13 @@ const DefineCompanyAdmin: React.FC = () => {
                   fontFamily: 'Inter',
                   fontSize: '14px'
                 }}>
-                  Şifre
+                  {t('labels.password')}
                 </label>
                 <input
                   type="password"
                   value={formData.password}
                   onChange={(e) => setFormData({...formData, password: e.target.value})}
-                  placeholder="Şifre giriniz"
+                  placeholder={t('placeholders.password')}
                   style={{
                     width: '100%',
                     padding: '8px 16px',
@@ -1013,7 +1028,7 @@ const DefineCompanyAdmin: React.FC = () => {
                   cursor: 'pointer'
                 }}
               >
-                İptal
+                {t('buttons.cancel')}
               </button>
               <button
                 onClick={handleSubmitAdd}
@@ -1086,7 +1101,7 @@ const DefineCompanyAdmin: React.FC = () => {
               fontSize: '24px',
               fontWeight: 600
             }}>
-              Admin Düzenle
+              {t('titles.editAdmin')}
             </h3>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
               <div>
@@ -1152,7 +1167,7 @@ const DefineCompanyAdmin: React.FC = () => {
                   fontFamily: 'Inter',
                   fontSize: '14px'
                 }}>
-                  Firma
+                  {t('labels.company')}
                 </label>
                 <div style={{ position: 'relative' }} data-company-dropdown>
                   {/* Custom Dropdown */}
@@ -1174,7 +1189,7 @@ const DefineCompanyAdmin: React.FC = () => {
                     }}
                   >
                     <span style={{ color: companySearchTerm ? '#232D42' : '#8A92A6' }}>
-                      {companySearchTerm || `Firma seçin (${companies.length} firma mevcut)`}
+                      {companySearchTerm || formatCompanyPlaceholder(companies.length)}
                     </span>
                     <i 
                       className={`fas fa-chevron-${showCompanyDropdown ? 'up' : 'down'}`}
@@ -1205,7 +1220,7 @@ const DefineCompanyAdmin: React.FC = () => {
                       <div style={{ padding: '8px', borderBottom: '1px solid #E9ECEF', position: 'relative' }}>
                         <input
                           type="text"
-                          placeholder="Firma ara..."
+                          placeholder={t('placeholders.companySearch')}
                           value={companySearchTerm}
                           onChange={(e) => {
                             handleCompanySearch(e.target.value);
@@ -1288,7 +1303,7 @@ const DefineCompanyAdmin: React.FC = () => {
                             color: '#8A92A6',
                             textAlign: 'center'
                           }}>
-                            Firma bulunamadı
+                            {t('labels.companyNotFound')}
                           </div>
                         )}
                       </div>
@@ -1305,13 +1320,13 @@ const DefineCompanyAdmin: React.FC = () => {
                   fontFamily: 'Inter',
                   fontSize: '14px'
                 }}>
-                  Yeni Şifre (Opsiyonel)
+                  {t('labels.newPasswordOptional')}
                 </label>
                 <input
                   type="password"
                   value={formData.password}
                   onChange={(e) => setFormData({...formData, password: e.target.value})}
-                  placeholder="Yeni şifre giriniz (değiştirmek istemiyorsanız boş bırakın)"
+                  placeholder={t('placeholders.newPasswordOptional')}
                   style={{
                     width: '100%',
                     padding: '8px 16px',
@@ -1344,7 +1359,7 @@ const DefineCompanyAdmin: React.FC = () => {
                   cursor: 'pointer'
                 }}
               >
-                İptal
+                {t('buttons.cancel')}
               </button>
               <button
                 onClick={handleSubmitEdit}
@@ -1364,7 +1379,7 @@ const DefineCompanyAdmin: React.FC = () => {
                 }}
               >
                 <i className="fas fa-save"></i>
-                Güncelle
+                {t('buttons.update')}
               </button>
             </div>
           </div>
@@ -1399,7 +1414,7 @@ const DefineCompanyAdmin: React.FC = () => {
               fontSize: '24px',
               fontWeight: 600
             }}>
-              Admin Sil
+              {t('titles.deleteAdmin')}
             </h3>
             <div style={{
               marginBottom: '20px'
@@ -1410,7 +1425,7 @@ const DefineCompanyAdmin: React.FC = () => {
                 marginBottom: '10px',
                 fontFamily: 'Inter'
               }}>
-                Bu admini silmek istediğinizden emin misiniz?
+                {t('labels.deleteAdminConfirm')}
               </p>
               <p style={{
                 color: '#dc3545',
@@ -1418,7 +1433,7 @@ const DefineCompanyAdmin: React.FC = () => {
                 fontWeight: 500,
                 fontFamily: 'Inter'
               }}>
-                Bu işlem geri alınamaz!
+                {t('labels.actionIrreversible')}
               </p>
             </div>
             <div style={{
@@ -1440,7 +1455,7 @@ const DefineCompanyAdmin: React.FC = () => {
                   cursor: 'pointer'
                 }}
               >
-                İptal
+                {t('buttons.cancel')}
               </button>
               <button
                 onClick={handleConfirmDelete}
@@ -1456,7 +1471,7 @@ const DefineCompanyAdmin: React.FC = () => {
                   cursor: 'pointer'
                 }}
               >
-                Sil
+                {t('buttons.delete')}
               </button>
             </div>
           </div>

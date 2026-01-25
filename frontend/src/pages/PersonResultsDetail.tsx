@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
+import { useLanguage } from '../contexts/LanguageContext';
 
 type DetailTab = 'executive-summary' | 'competency-details' | 'report-access' | 'ai-assistant';
 type CompetencyKey = 'uyumluluk' | 'musteri' | 'etkileme' | 'sinerji';
@@ -35,12 +36,14 @@ type ReportDetail = {
 const PersonResultsDetail: React.FC = () => {
   const location = useLocation();
   const navigate = useNavigate();
+  const { language, t } = useLanguage();
   const [activeTab, setActiveTab] = useState<DetailTab>('executive-summary');
   const [activeCompetency, setActiveCompetency] = useState<CompetencyKey>('uyumluluk');
   const [competencySubTab, setCompetencySubTab] = useState<CompetencySubTab>('general-evaluation');
   const [latestUser, setLatestUser] = useState<UserResult | null>(null);
   const [latestHistory, setLatestHistory] = useState<UserResult[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [hasExplicitUser, setHasExplicitUser] = useState(false);
   const [reportDetails, setReportDetails] = useState<Record<string, ReportDetail>>({});
   const [openDevPlans, setOpenDevPlans] = useState<Record<string, boolean>>({
     'dev-plan-1': false,
@@ -51,7 +54,7 @@ const PersonResultsDetail: React.FC = () => {
   const competencyConfig = useMemo(() => ([
     {
       key: 'uyumluluk',
-      title: 'Uyumluluk ve Dayanıklılık',
+      title: t('competency.uncertainty'),
       scoreField: 'uncertaintyScore',
       color: 'from-blue-500 to-blue-600',
       icon: 'fa-chart-line',
@@ -59,7 +62,7 @@ const PersonResultsDetail: React.FC = () => {
     },
     {
       key: 'musteri',
-      title: 'Müşteri Odaklılık',
+      title: t('competency.customerFocus'),
       scoreField: 'customerFocusScore',
       color: 'from-green-500 to-green-600',
       icon: 'fa-trophy',
@@ -67,7 +70,7 @@ const PersonResultsDetail: React.FC = () => {
     },
     {
       key: 'etkileme',
-      title: 'İnsanları Etkileme',
+      title: t('competency.ie'),
       scoreField: 'ieScore',
       color: 'from-purple-500 to-purple-600',
       icon: 'fa-star',
@@ -75,13 +78,13 @@ const PersonResultsDetail: React.FC = () => {
     },
     {
       key: 'sinerji',
-      title: 'Güven Veren İşbirlikçi ve Sinerji',
+      title: t('competency.idik'),
       scoreField: 'idikScore',
       color: 'from-orange-500 to-orange-600',
       icon: 'fa-arrow-trend-up',
       badge: '+0.7'
     }
-  ]), []);
+  ]), [t]);
 
   const parseScore = (value?: string | number) => {
     if (value === null || value === undefined || value === '-' || value === '') return null;
@@ -112,11 +115,11 @@ const PersonResultsDetail: React.FC = () => {
   };
 
   const competencyOptions = useMemo(() => ([
-    { value: 'uyumluluk', label: `Uyumluluk ve Dayanıklılık (${formatScoreRaw(latestUser?.uncertaintyScore)})` },
-    { value: 'musteri', label: `Müşteri Odaklılık (${formatScoreRaw(latestUser?.customerFocusScore)})` },
-    { value: 'etkileme', label: `İnsanları Etkileme (${formatScoreRaw(latestUser?.ieScore)})` },
-    { value: 'sinerji', label: `Güven Veren İşbirlikçi ve Sinerji (${formatScoreRaw(latestUser?.idikScore)})` }
-  ]), [latestUser]);
+    { value: 'uyumluluk', label: `${t('competency.uncertainty')} (${formatScoreRaw(latestUser?.uncertaintyScore)})` },
+    { value: 'musteri', label: `${t('competency.customerFocus')} (${formatScoreRaw(latestUser?.customerFocusScore)})` },
+    { value: 'etkileme', label: `${t('competency.ie')} (${formatScoreRaw(latestUser?.ieScore)})` },
+    { value: 'sinerji', label: `${t('competency.idik')} (${formatScoreRaw(latestUser?.idikScore)})` }
+  ]), [latestUser, t]);
 
   const competencyTypeMap = useMemo(() => ({
     uyumluluk: 'BY',
@@ -138,14 +141,17 @@ const PersonResultsDetail: React.FC = () => {
     const state = location.state as {
       competency?: CompetencyKey;
       latestUser?: UserResult | null;
+      selectedUser?: UserResult | null;
       latestHistory?: UserResult[];
     } | null;
     if (state?.competency) {
       setActiveCompetency(state.competency);
       setActiveTab('competency-details');
     }
-    if (state?.latestUser) {
-      setLatestUser(state.latestUser);
+    const incomingUser = state?.latestUser || state?.selectedUser || null;
+    if (incomingUser) {
+      setLatestUser(incomingUser);
+      setHasExplicitUser(true);
     }
     if (state?.latestHistory) {
       setLatestHistory(state.latestHistory);
@@ -153,6 +159,10 @@ const PersonResultsDetail: React.FC = () => {
   }, [location.state]);
 
   useEffect(() => {
+    const state = location.state as { latestUser?: UserResult | null; selectedUser?: UserResult | null } | null;
+    if (hasExplicitUser || state?.latestUser || state?.selectedUser) {
+      return;
+    }
     const cached = sessionStorage.getItem('latestUserResults');
     if (cached) {
       try {
@@ -195,7 +205,7 @@ const PersonResultsDetail: React.FC = () => {
     if (!latestUser || latestHistory.length === 0) {
       fetchLatest();
     }
-  }, [latestHistory.length, latestUser]);
+  }, [hasExplicitUser, latestHistory.length, latestUser]);
 
   useEffect(() => {
     const fetchReportDetails = async () => {
@@ -218,76 +228,143 @@ const PersonResultsDetail: React.FC = () => {
 
   const competencyCopy = useMemo(() => ({
     uyumluluk: {
-      title: 'Uyumluluk ve Dayanıklılık',
-      overviewTitle: 'Uyumluluk ve Dayanıklılık Hakkında',
-      overviewText: 'Bu yetkinlik, uzun vadeli hedefleri belirleme, pazar trendlerini analiz etme ve organizasyonel vizyonla uyumlu kararlar alma becerisini ölçer.',
-      strengths: ['Vizyoner bakış açısı', 'Veri odaklı karar alma', 'Sistemsel düşünme'],
-      development: ['Kısa vadeli taktiksel uygulama', 'Senaryo planlama pratiği'],
-      questions: [
-        'Karmaşık bir stratejik kararı, verilerin yetersiz olduğu bir durumda nasıl aldığınızı anlatır mısınız?',
-        'Uzun vadeli bir planın, değişen pazar koşulları nedeniyle başarısız olduğu bir örneği paylaşın.'
-      ],
-      plan: [
-        { title: 'Sektör Trendlerini Takip', text: 'Aylık sektör raporlarını inceleyip ekip ile paylaşın.' },
-        { title: 'Senaryo Planlaması', text: 'Gelecek çeyrek için en az 3 farklı senaryo analizi yapın.' }
-      ]
+      title: t('competency.uncertainty'),
+      overviewTitle: `${t('competency.uncertainty')} ${t('labels.about')}`,
+      overviewText: language === 'en'
+        ? 'Measures the ability to set long-term goals, analyze market trends, and make decisions aligned with organizational vision.'
+        : 'Bu yetkinlik, uzun vadeli hedefleri belirleme, pazar trendlerini analiz etme ve organizasyonel vizyonla uyumlu kararlar alma becerisini ölçer.',
+      strengths: language === 'en'
+        ? ['Visionary perspective', 'Data-driven decisions', 'Systems thinking']
+        : ['Vizyoner bakış açısı', 'Veri odaklı karar alma', 'Sistemsel düşünme'],
+      development: language === 'en'
+        ? ['Short-term tactical execution', 'Scenario planning practice']
+        : ['Kısa vadeli taktiksel uygulama', 'Senaryo planlama pratiği'],
+      questions: language === 'en'
+        ? [
+          'Tell us how you made a complex strategic decision when data was insufficient.',
+          'Share an example of a long-term plan that failed due to changing market conditions.'
+        ]
+        : [
+          'Karmaşık bir stratejik kararı, verilerin yetersiz olduğu bir durumda nasıl aldığınızı anlatır mısınız?',
+          'Uzun vadeli bir planın, değişen pazar koşulları nedeniyle başarısız olduğu bir örneği paylaşın.'
+        ],
+      plan: language === 'en'
+        ? [
+          { title: 'Track Industry Trends', text: 'Review monthly industry reports and share them with the team.' },
+          { title: 'Scenario Planning', text: 'Create at least 3 scenario analyses for the next quarter.' }
+        ]
+        : [
+          { title: 'Sektör Trendlerini Takip', text: 'Aylık sektör raporlarını inceleyip ekip ile paylaşın.' },
+          { title: 'Senaryo Planlaması', text: 'Gelecek çeyrek için en az 3 farklı senaryo analizi yapın.' }
+        ]
     },
     musteri: {
-      title: 'Müşteri Odaklılık',
-      overviewTitle: 'Müşteri Odaklılık Hakkında',
-      overviewText: 'Ekipleri yönlendirme, ilham verme ve değişimi yönetme kabiliyetini ölçer.',
-      strengths: ['İlham veren iletişim', 'Güven inşası', 'Paydaş yönetimi'],
-      development: ['Zor konuşmalar', 'Üst yönetim etkisi'],
-      questions: [
-        'Resmi otorite olmadan bir kararı nasıl etkilediniz?',
-        'Değişime direnç gösteren bir ekibi nasıl yönettiniz?'
-      ],
-      plan: [
-        { title: 'Mentorluk', text: 'Kıdemsiz ekip üyelerine mentorluk yapın.' },
-        { title: 'Yönetici Sunumu', text: 'Üst yönetime düzenli sunumlar yapın.' }
-      ]
+      title: t('competency.customerFocus'),
+      overviewTitle: `${t('competency.customerFocus')} ${t('labels.about')}`,
+      overviewText: language === 'en'
+        ? 'Measures the capability to guide teams, inspire others, and lead change.'
+        : 'Ekipleri yönlendirme, ilham verme ve değişimi yönetme kabiliyetini ölçer.',
+      strengths: language === 'en'
+        ? ['Inspiring communication', 'Building trust', 'Stakeholder management']
+        : ['İlham veren iletişim', 'Güven inşası', 'Paydaş yönetimi'],
+      development: language === 'en'
+        ? ['Difficult conversations', 'Executive influence']
+        : ['Zor konuşmalar', 'Üst yönetim etkisi'],
+      questions: language === 'en'
+        ? [
+          'How did you influence a decision without formal authority?',
+          'How did you lead a team that resisted change?'
+        ]
+        : [
+          'Resmi otorite olmadan bir kararı nasıl etkilediniz?',
+          'Değişime direnç gösteren bir ekibi nasıl yönettiniz?'
+        ],
+      plan: language === 'en'
+        ? [
+          { title: 'Mentoring', text: 'Provide mentoring to junior team members.' },
+          { title: 'Executive Presentations', text: 'Present regularly to senior leadership.' }
+        ]
+        : [
+          { title: 'Mentorluk', text: 'Kıdemsiz ekip üyelerine mentorluk yapın.' },
+          { title: 'Yönetici Sunumu', text: 'Üst yönetime düzenli sunumlar yapın.' }
+        ]
     },
     etkileme: {
-      title: 'İnsanları Etkileme',
-      overviewTitle: 'İnsanları Etkileme Hakkında',
-      overviewText: 'Karmaşık problemleri analiz etme, kök nedenleri bulma ve çözüm geliştirme becerisini ölçer.',
-      strengths: ['Kök neden analizi', 'Yapısal yaklaşım', 'Yaratıcı çözümler'],
-      development: ['Hız ve derinlik dengesi', 'Ekipli problem çözme'],
-      questions: [
-        'Açık çözümü olmayan bir problemde yaklaşımınızı anlatır mısınız?',
-        'İlk çözümünüzün işe yaramadığı bir durumu paylaşın.'
-      ],
-      plan: [
-        { title: 'Problem Çözme Atölyesi', text: 'Çeyreklik atölyeler düzenleyin.' },
-        { title: 'Vaka Analizi', text: 'Örnek vakaları analiz edip paylaşın.' }
-      ]
+      title: t('competency.ie'),
+      overviewTitle: `${t('competency.ie')} ${t('labels.about')}`,
+      overviewText: language === 'en'
+        ? 'Measures the ability to analyze complex problems, identify root causes, and develop solutions.'
+        : 'Karmaşık problemleri analiz etme, kök nedenleri bulma ve çözüm geliştirme becerisini ölçer.',
+      strengths: language === 'en'
+        ? ['Root cause analysis', 'Structured approach', 'Creative solutions']
+        : ['Kök neden analizi', 'Yapısal yaklaşım', 'Yaratıcı çözümler'],
+      development: language === 'en'
+        ? ['Balancing speed and depth', 'Collaborative problem solving']
+        : ['Hız ve derinlik dengesi', 'Ekipli problem çözme'],
+      questions: language === 'en'
+        ? [
+          'Describe your approach to a problem with no clear solution.',
+          'Share a time when your first solution did not work.'
+        ]
+        : [
+          'Açık çözümü olmayan bir problemde yaklaşımınızı anlatır mısınız?',
+          'İlk çözümünüzün işe yaramadığı bir durumu paylaşın.'
+        ],
+      plan: language === 'en'
+        ? [
+          { title: 'Problem Solving Workshop', text: 'Run quarterly workshops.' },
+          { title: 'Case Analysis', text: 'Analyze sample cases and share outcomes.' }
+        ]
+        : [
+          { title: 'Problem Çözme Atölyesi', text: 'Çeyreklik atölyeler düzenleyin.' },
+          { title: 'Vaka Analizi', text: 'Örnek vakaları analiz edip paylaşın.' }
+        ]
     },
     sinerji: {
-      title: 'Güven Veren İşbirlikçi ve Sinerji',
-      overviewTitle: 'Güven Veren İşbirlikçi ve Sinerji Hakkında',
-      overviewText: 'Bu yetkinlik, ekip içinde güven oluşturma, işbirliğini güçlendirme ve ortak hedeflere uyumu artırma becerisini temsil eder.',
-      strengths: ['Güven inşa etme', 'Ortak hedeflere bağlılık', 'Ekip uyumu'],
-      development: ['İletişimde tutarlılık', 'Karşılıklı geri bildirim kültürü'],
-      questions: [
-        'Ekip içinde güveni artırmak için hangi adımları atarsın?',
-        'İşbirliğini zorlaştıran bir durumu nasıl ele aldığını paylaşır mısın?'
-      ],
-      plan: [
-        { title: 'Güven Atölyeleri', text: 'Ekip içinde düzenli güven ve iletişim atölyeleri planla.' },
-        { title: 'Geri Bildirim Ritmi', text: 'Aylık geri bildirim toplantılarıyla işbirliğini güçlendir.' }
-      ]
+      title: t('competency.idik'),
+      overviewTitle: `${t('competency.idik')} ${t('labels.about')}`,
+      overviewText: language === 'en'
+        ? 'Represents the ability to build trust within teams, strengthen collaboration, and improve alignment on shared goals.'
+        : 'Bu yetkinlik, ekip içinde güven oluşturma, işbirliğini güçlendirme ve ortak hedeflere uyumu artırma becerisini temsil eder.',
+      strengths: language === 'en'
+        ? ['Building trust', 'Commitment to shared goals', 'Team cohesion']
+        : ['Güven inşa etme', 'Ortak hedeflere bağlılık', 'Ekip uyumu'],
+      development: language === 'en'
+        ? ['Consistency in communication', 'Mutual feedback culture']
+        : ['İletişimde tutarlılık', 'Karşılıklı geri bildirim kültürü'],
+      questions: language === 'en'
+        ? [
+          'What steps would you take to build trust within the team?',
+          'How would you handle a situation that made collaboration difficult?'
+        ]
+        : [
+          'Ekip içinde güveni artırmak için hangi adımları atarsın?',
+          'İşbirliğini zorlaştıran bir durumu nasıl ele aldığını paylaşır mısın?'
+        ],
+      plan: language === 'en'
+        ? [
+          { title: 'Trust Workshops', text: 'Plan regular trust and communication workshops within the team.' },
+          { title: 'Feedback Rhythm', text: 'Strengthen collaboration with monthly feedback meetings.' }
+        ]
+        : [
+          { title: 'Güven Atölyeleri', text: 'Ekip içinde düzenli güven ve iletişim atölyeleri planla.' },
+          { title: 'Geri Bildirim Ritmi', text: 'Aylık geri bildirim toplantılarıyla işbirliğini güçlendir.' }
+        ]
     }
-  }), []);
+  }), [language, t]);
 
   const activeContent = competencyCopy[activeCompetency];
   const activeReportType = competencyTypeMap[activeCompetency];
   const activeReport = activeReportType ? reportDetails[activeReportType] : undefined;
+  const activeScoreField = competencyConfig.find((item) => item.key === activeCompetency)?.scoreField;
+  const activeScoreValue = activeScoreField ? parseScore((latestUser as any)?.[activeScoreField]) : null;
+  const hasCompetencyScore = activeScoreValue !== null && activeScoreValue > 0;
   const toggleDevPlan = (key: string) => {
     setOpenDevPlans((prev) => ({ ...prev, [key]: !prev[key] }));
   };
 
   const renderLines = (text?: string) => {
-    if (!text) return null;
+    if (!text || text === '-') return null;
     return text
       .split(/\n+/)
       .map((line) => line.trim())
@@ -297,6 +374,69 @@ const PersonResultsDetail: React.FC = () => {
           {line}
         </p>
       ));
+  };
+
+  const renderNumberedLines = (text?: string, badgeColor?: string, cardClassName?: string) => {
+    if (!text || text === '-') return null;
+    const lines = text
+      .split(/\n+/)
+      .map((line) => line.trim())
+      .filter(Boolean);
+
+    const items: Array<{ title: string; description?: string }> = [];
+    let i = 0;
+    while (i < lines.length) {
+      const line = lines[i];
+      const separators = [':', ' - ', ' – ', ' — '];
+      const match = separators
+        .map((sep) => ({ sep, idx: line.indexOf(sep) }))
+        .find((item) => item.idx > 0);
+      if (match) {
+        items.push({
+          title: line.slice(0, match.idx).trim(),
+          description: line.slice(match.idx + match.sep.length).trim()
+        });
+        i += 1;
+        continue;
+      }
+
+      const firstDot = line.indexOf('.');
+      if (firstDot > 0 && firstDot < line.length - 1) {
+        items.push({
+          title: line.slice(0, firstDot).trim(),
+          description: line.slice(firstDot + 1).trim()
+        });
+        i += 1;
+        continue;
+      }
+
+      const nextLine = lines[i + 1];
+      if (nextLine) {
+        items.push({ title: line, description: nextLine });
+        i += 2;
+        continue;
+      }
+
+      items.push({ title: line });
+      i += 1;
+    }
+
+    return items.map((item, index) => (
+      <div
+        key={`${item.title}-${index}`}
+        className={cardClassName || 'rounded-xl p-5 flex items-start gap-4'}
+      >
+        <div className={`flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center text-white font-bold text-sm shadow-sm ${badgeColor || ''}`}>
+          {index + 1}
+        </div>
+        <div>
+          <h4 className="font-bold text-gray-900 text-sm mb-2">{item.title}</h4>
+          {item.description && (
+            <p className="text-sm text-gray-700 leading-relaxed">{item.description}</p>
+          )}
+        </div>
+      </div>
+    ));
   };
 
   return (
@@ -313,15 +453,15 @@ const PersonResultsDetail: React.FC = () => {
               </button>
               <div>
                 <div className="flex items-center space-x-2 text-sm text-gray-500 mb-1">
-                  <span className="hover:text-gray-700">Değerlendirmeler</span>
+                  <span className="hover:text-gray-700">{t('breadcrumbs.evaluations')}</span>
                   <span>/</span>
-                  <span className="hover:text-gray-700">Kişi Sonuçları</span>
+                  <span className="hover:text-gray-700">{t('breadcrumbs.personResults')}</span>
                   <span>/</span>
                   <span className="text-gray-900 font-medium">{latestUser?.name || '—'}</span>
                   <span>/</span>
-                  <span className="text-gray-900 font-medium">Rapor Detayları</span>
+                  <span className="text-gray-900 font-medium">{t('breadcrumbs.reportDetails')}</span>
                 </div>
-                <h1 className="text-2xl font-bold text-gray-900">Kapsamlı Değerlendirme Raporu</h1>
+                <h1 className="text-2xl font-bold text-gray-900">{t('titles.personReport')}</h1>
               </div>
             </div>
             <div className="flex items-center space-x-4">
@@ -361,19 +501,19 @@ const PersonResultsDetail: React.FC = () => {
                 <div className="flex items-center space-x-4 text-sm text-gray-600 mb-3">
                   <div className="flex items-center">
                     <i className="fa-solid fa-briefcase mr-2 text-gray-400" />
-                    <span>Senior Product Manager</span>
+                    <span>{t('labels.sampleRole')}</span>
                   </div>
                   <div className="flex items-center">
                     <i className="fa-solid fa-calendar mr-2 text-gray-400" />
-                    <span>Katılım: Ocak 2020</span>
+                    <span>{t('labels.participation')}: {t('labels.sampleParticipation')}</span>
                   </div>
                 </div>
               </div>
             </div>
             <div className="text-right">
-              <div className="text-sm text-gray-500 mb-1">Son Değerlendirme</div>
+              <div className="text-sm text-gray-500 mb-1">{t('labels.currentEvaluation')}</div>
               <div className="text-lg font-semibold text-gray-900">{formatQuarterLabel(latestUser?.completionDate)}</div>
-              <div className="text-sm text-gray-600">Tamamlandı: {formatDateLong(latestUser?.completionDate)}</div>
+              <div className="text-sm text-gray-600">{t('labels.completion')}: {formatDateLong(latestUser?.completionDate)}</div>
             </div>
           </div>
 
@@ -423,10 +563,10 @@ const PersonResultsDetail: React.FC = () => {
           <div className="border-b border-gray-200">
             <nav className="flex px-6" role="tablist">
               {[
-                { key: 'executive-summary', label: 'Yönetici Özeti', icon: 'fa-file-lines' },
-                { key: 'competency-details', label: 'Yetkinlik Detayları', icon: 'fa-list-check' },
-                { key: 'report-access', label: 'Rapor Erişimi', icon: 'fa-file-pdf' },
-                { key: 'ai-assistant', label: 'AI Asistan', icon: 'fa-robot' }
+                { key: 'executive-summary', label: t('tabs.executiveSummary'), icon: 'fa-file-lines' },
+                { key: 'competency-details', label: t('tabs.competencyDetails'), icon: 'fa-list-check' },
+                { key: 'report-access', label: t('tabs.reportAccess'), icon: 'fa-file-pdf' },
+                { key: 'ai-assistant', label: t('tabs.aiAssistant'), icon: 'fa-robot' }
               ].map((tab) => (
                 <button
                   key={tab.key}
@@ -448,14 +588,14 @@ const PersonResultsDetail: React.FC = () => {
           {activeTab === 'executive-summary' && (
             <div className="p-8">
               <div className="mb-8">
-                <h2 className="text-2xl font-bold text-gray-900 mb-2">Yönetici Özeti</h2>
-                <p className="text-gray-600">Q4 2024 değerlendirme sonuçlarının üst düzey özeti</p>
+                <h2 className="text-2xl font-bold text-gray-900 mb-2">{t('tabs.executiveSummary')}</h2>
+                <p className="text-gray-600">{t('labels.executiveSummarySubtitle')}</p>
               </div>
 
               <div className="mb-8">
                 <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center">
                   <i className="fa-solid fa-file-lines text-blue-600 mr-3" />
-                  Genel Özet
+                  {t('labels.generalSummary')}
                 </h3>
                 <div className="bg-blue-50 border border-blue-200 rounded-lg p-6">
                   <p className="text-gray-800 leading-relaxed mb-4">
@@ -475,7 +615,7 @@ const PersonResultsDetail: React.FC = () => {
                 <div>
                   <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center">
                     <i className="fa-solid fa-circle-check text-green-600 mr-3" />
-                    Güçlü Yönler
+                    {t('labels.strengths')}
                   </h3>
                   <div className="space-y-4">
                     {[
@@ -510,7 +650,7 @@ const PersonResultsDetail: React.FC = () => {
                 <div>
                   <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center">
                     <i className="fa-solid fa-arrow-trend-up text-orange-600 mr-3" />
-                    Gelişim Alanları
+                    {t('labels.developmentAreas')}
                   </h3>
                   <div className="space-y-4">
                     {[
@@ -548,9 +688,9 @@ const PersonResultsDetail: React.FC = () => {
           {activeTab === 'competency-details' && (
             <div className="p-8">
               <div className="mb-6">
-                <h2 className="text-2xl font-bold text-gray-900 mb-4">Yetkinlik Detayları</h2>
+                <h2 className="text-2xl font-bold text-gray-900 mb-4">{t('labels.competencyDetailsHeader')}</h2>
                 <div className="flex items-center space-x-3">
-                  <label className="text-sm font-medium text-gray-700">Yetkinlik Seç:</label>
+                  <label className="text-sm font-medium text-gray-700">{t('labels.competencySelect')}</label>
                   <select
                     value={activeCompetency}
                     onChange={(event) => setActiveCompetency(event.target.value as CompetencyKey)}
@@ -567,10 +707,10 @@ const PersonResultsDetail: React.FC = () => {
                 <div className="border-b border-gray-200">
                   <nav className="flex" role="tablist">
                     {[
-                      { key: 'general-evaluation', label: 'Genel Değerlendirme' },
-                      { key: 'strengths-development', label: 'Güçlü Yönler & Gelişim Alanları' },
-                      { key: 'interview-questions', label: 'Mülakat Soruları' },
-                      { key: 'development-plan', label: 'Gelişim Planı' }
+                      { key: 'general-evaluation', label: t('labels.generalEvaluation') },
+                      { key: 'strengths-development', label: t('labels.strengthsDev') },
+                      { key: 'interview-questions', label: t('labels.interviewQuestions') },
+                      { key: 'development-plan', label: t('labels.developmentPlan') }
                     ].map((tab) => (
                       <button
                         key={tab.key}
@@ -592,163 +732,185 @@ const PersonResultsDetail: React.FC = () => {
                   {competencySubTab === 'general-evaluation' && (
                     <div className="bg-blue-50 border-l-4 border-blue-600 p-6 rounded-r-lg">
                       <h3 className="text-lg font-semibold text-gray-900 mb-2">{activeContent.overviewTitle}</h3>
-                      <div className="space-y-3 text-gray-800">
-                        {activeReport?.generalEvaluation
-                          ? renderLines(activeReport.generalEvaluation)
-                          : <p className="leading-relaxed">{activeContent.overviewText}</p>}
-                      </div>
+                      {!hasCompetencyScore ? (
+                        <p className="text-gray-700 leading-relaxed">-</p>
+                      ) : (
+                        <div className="space-y-3 text-gray-800">
+                          {activeReport?.generalEvaluation
+                            ? renderLines(activeReport.generalEvaluation)
+                            : <p className="leading-relaxed">{activeContent.overviewText}</p>}
+                        </div>
+                      )}
                     </div>
                   )}
 
                   {competencySubTab === 'strengths-development' && (
-                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                      <div>
-                        <div className="flex items-center space-x-2 mb-6">
-                          <i className="fa-solid fa-circle-check text-green-600 text-lg" />
-                          <h3 className="text-lg font-bold text-gray-900">Güçlü Yönler</h3>
-                        </div>
-                        <div className="space-y-4">
-                          {activeReport?.strengths ? (
-                            <div className="bg-green-50 border border-green-100 rounded-xl p-5 space-y-3">
-                              {renderLines(activeReport.strengths)}
-                            </div>
-                          ) : (
-                            activeContent.strengths.map((item, index) => (
-                              <div
-                                key={item}
-                                className="bg-green-50 border border-green-100 rounded-xl p-5 flex items-start gap-4 hover:shadow-md transition-shadow"
-                              >
-                                <div className="flex-shrink-0 w-8 h-8 rounded-full bg-green-500 flex items-center justify-center text-white font-bold text-sm shadow-sm">
-                                  {index + 1}
-                                </div>
-                                <div>
-                                  <h4 className="font-bold text-gray-900 text-sm mb-2">{item}</h4>
-                                  <p className="text-sm text-gray-600 leading-relaxed">{activeContent.overviewText}</p>
-                                </div>
+                    !hasCompetencyScore ? (
+                      <div className="text-gray-700">-</div>
+                    ) : (
+                      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                        <div>
+                          <div className="flex items-center space-x-2 mb-6">
+                            <i className="fa-solid fa-circle-check text-green-600 text-lg" />
+                            <h3 className="text-lg font-bold text-gray-900">{t('labels.strengths')}</h3>
+                          </div>
+                          <div className="space-y-4">
+                            {activeReport?.strengths ? (
+                              <div className="space-y-4">
+                                {renderNumberedLines(
+                                  activeReport.strengths,
+                                  'bg-green-500',
+                                  'bg-green-50 border border-green-100 rounded-xl p-5 flex items-start gap-4 hover:shadow-md transition-shadow'
+                                )}
                               </div>
-                            ))
-                          )}
+                            ) : (
+                              activeContent.strengths.map((item, index) => (
+                                <div
+                                  key={item}
+                                  className="bg-green-50 border border-green-100 rounded-xl p-5 flex items-start gap-4 hover:shadow-md transition-shadow"
+                                >
+                                  <div className="flex-shrink-0 w-8 h-8 rounded-full bg-green-500 flex items-center justify-center text-white font-bold text-sm shadow-sm">
+                                    {index + 1}
+                                  </div>
+                                  <div>
+                                    <h4 className="font-bold text-gray-900 text-sm mb-2">{item}</h4>
+                                    <p className="text-sm text-gray-600 leading-relaxed">{activeContent.overviewText}</p>
+                                  </div>
+                                </div>
+                              ))
+                            )}
+                          </div>
                         </div>
-                      </div>
 
-                      <div>
-                        <div className="flex items-center space-x-2 mb-6">
-                          <i className="fa-solid fa-arrow-trend-up text-orange-500 text-lg" />
-                          <h3 className="text-lg font-bold text-gray-900">Gelişim Alanları</h3>
-                        </div>
-                        <div className="space-y-4">
-                          {activeReport?.developmentAreas ? (
-                            <div className="bg-orange-50 border border-orange-100 rounded-xl p-5 space-y-3">
-                              {renderLines(activeReport.developmentAreas)}
-                            </div>
-                          ) : (
-                            activeContent.development.map((item, index) => (
-                              <div
-                                key={item}
-                                className="bg-orange-50 border border-orange-100 rounded-xl p-5 flex items-start gap-4 hover:shadow-md transition-shadow"
-                              >
-                                <div className="flex-shrink-0 w-8 h-8 rounded-full bg-orange-500 flex items-center justify-center text-white font-bold text-sm shadow-sm">
-                                  {index + 1}
-                                </div>
-                                <div>
-                                  <h4 className="font-bold text-gray-900 text-sm mb-2">{item}</h4>
-                                  <p className="text-sm text-gray-600 leading-relaxed">{activeContent.overviewText}</p>
-                                </div>
+                        <div>
+                          <div className="flex items-center space-x-2 mb-6">
+                            <i className="fa-solid fa-arrow-trend-up text-orange-500 text-lg" />
+                            <h3 className="text-lg font-bold text-gray-900">{t('labels.developmentAreas')}</h3>
+                          </div>
+                          <div className="space-y-4">
+                            {activeReport?.developmentAreas ? (
+                              <div className="space-y-4">
+                                {renderNumberedLines(
+                                  activeReport.developmentAreas,
+                                  'bg-orange-500',
+                                  'bg-orange-50 border border-orange-100 rounded-xl p-5 flex items-start gap-4 hover:shadow-md transition-shadow'
+                                )}
                               </div>
-                            ))
-                          )}
+                            ) : (
+                              activeContent.development.map((item, index) => (
+                                <div
+                                  key={item}
+                                  className="bg-orange-50 border border-orange-100 rounded-xl p-5 flex items-start gap-4 hover:shadow-md transition-shadow"
+                                >
+                                  <div className="flex-shrink-0 w-8 h-8 rounded-full bg-orange-500 flex items-center justify-center text-white font-bold text-sm shadow-sm">
+                                    {index + 1}
+                                  </div>
+                                  <div>
+                                    <h4 className="font-bold text-gray-900 text-sm mb-2">{item}</h4>
+                                    <p className="text-sm text-gray-600 leading-relaxed">{activeContent.overviewText}</p>
+                                  </div>
+                                </div>
+                              ))
+                            )}
+                          </div>
                         </div>
                       </div>
-                    </div>
+                    )
                   )}
 
                   {competencySubTab === 'interview-questions' && (
-                    <div className="space-y-6">
-                      {activeReport?.interviewQuestions ? (
-                        <div className="bg-white border border-gray-200 rounded-xl shadow-sm p-6 space-y-3">
-                          <h3 className="text-lg font-bold text-gray-900">Mülakat Soruları</h3>
-                          {renderLines(activeReport.interviewQuestions)}
-                        </div>
-                      ) : (
-                        <div className="overflow-hidden border border-gray-200 rounded-xl shadow-sm">
-                          <table className="min-w-full divide-y divide-gray-200">
-                            <thead className="bg-gray-100">
-                              <tr>
-                                <th
-                                  scope="col"
-                                  className="px-6 py-4 text-left text-sm font-bold text-gray-900 w-1/4 uppercase tracking-wider"
-                                >
-                                  Gelişim Alanı
-                                </th>
-                                <th
-                                  scope="col"
-                                  className="px-6 py-4 text-left text-sm font-bold text-gray-900 w-1/3 uppercase tracking-wider"
-                                >
-                                  Mülakat Sorusu
-                                </th>
-                                <th
-                                  scope="col"
-                                  className="px-6 py-4 text-left text-sm font-bold text-gray-900 w-1/3 uppercase tracking-wider"
-                                >
-                                  Devam Sorusu
-                                </th>
-                              </tr>
-                            </thead>
-                            <tbody className="bg-white divide-y divide-gray-200">
-                              <tr>
-                                <td className="px-6 py-5 text-sm text-gray-900 font-medium align-top">
-                                  İlişkide Tutarlılık
-                                </td>
-                                <td className="px-6 py-5 text-sm text-gray-700 align-top leading-relaxed">
-                                  Sosyal ilişkilerde, kendinizi yanlış anlaşıldığınız veya gerçek niyetinizin
-                                  sorgulandığı bir durumu paylaşır mısınız? Bu durum nasıl gelişti ve siz nasıl
-                                  bir tutum sergilediniz?
-                                </td>
-                                <td className="px-6 py-5 text-sm text-gray-600 align-top italic leading-relaxed">
-                                  “Bu deneyimden ne öğrendiniz ve sonraki ilişkilerinizde bu öğrendiklerinizi
-                                  nasıl uyguladınız?”
-                                </td>
-                              </tr>
-                              <tr>
-                                <td className="px-6 py-5 text-sm text-gray-900 font-medium align-top">
-                                  Kriz Anında Proaktif Aksiyon Alma ve Güven Verme
-                                </td>
-                                <td className="px-6 py-5 text-sm text-gray-700 align-top leading-relaxed">
-                                  “Olayın içinde bulunduğun sırada daha çok inisiyatif alabileceğini fark
-                                  ettiğin bir örnek var mı?”
-                                </td>
-                                <td className="px-6 py-5 text-sm text-gray-600 align-top italic leading-relaxed space-y-2">
-                                  <p>“İlk anda neden beklemeyi tercih ettin?”</p>
-                                  <p>“Sonradan durumu nasıl yönlendirdin?”</p>
-                                  <p>“Bu davranışının ekibe nasıl yansıdığını düşünüyorsun?”</p>
-                                  <p>“Şimdi aynı duruma düşsen neyi farklı yapardın?”</p>
-                                </td>
-                              </tr>
-                            </tbody>
-                          </table>
-                        </div>
-                      )}
+                    !hasCompetencyScore ? (
+                      <div className="text-gray-700">-</div>
+                    ) : (
+                      <div className="space-y-6">
+                        {activeReport?.interviewQuestions ? (
+                          <div className="bg-white border border-gray-200 rounded-xl shadow-sm p-6 space-y-3">
+                            <h3 className="text-lg font-bold text-gray-900">{t('labels.interviewQuestions')}</h3>
+                            {renderLines(activeReport.interviewQuestions)}
+                          </div>
+                        ) : (
+                          <div className="overflow-hidden border border-gray-200 rounded-xl shadow-sm">
+                            <table className="min-w-full divide-y divide-gray-200">
+                              <thead className="bg-gray-100">
+                                <tr>
+                                  <th
+                                    scope="col"
+                                    className="px-6 py-4 text-left text-sm font-bold text-gray-900 w-1/4 uppercase tracking-wider"
+                                  >
+                                    {t('labels.developmentArea')}
+                                  </th>
+                                  <th
+                                    scope="col"
+                                    className="px-6 py-4 text-left text-sm font-bold text-gray-900 w-1/3 uppercase tracking-wider"
+                                  >
+                                    {t('labels.interviewQuestion')}
+                                  </th>
+                                  <th
+                                    scope="col"
+                                    className="px-6 py-4 text-left text-sm font-bold text-gray-900 w-1/3 uppercase tracking-wider"
+                                  >
+                                    {t('labels.followUpQuestion')}
+                                  </th>
+                                </tr>
+                              </thead>
+                              <tbody className="bg-white divide-y divide-gray-200">
+                                <tr>
+                                  <td className="px-6 py-5 text-sm text-gray-900 font-medium align-top">
+                                    İlişkide Tutarlılık
+                                  </td>
+                                  <td className="px-6 py-5 text-sm text-gray-700 align-top leading-relaxed">
+                                    Sosyal ilişkilerde, kendinizi yanlış anlaşıldığınız veya gerçek niyetinizin
+                                    sorgulandığı bir durumu paylaşır mısınız? Bu durum nasıl gelişti ve siz nasıl
+                                    bir tutum sergilediniz?
+                                  </td>
+                                  <td className="px-6 py-5 text-sm text-gray-600 align-top italic leading-relaxed">
+                                    “Bu deneyimden ne öğrendiniz ve sonraki ilişkilerinizde bu öğrendiklerinizi
+                                    nasıl uyguladınız?”
+                                  </td>
+                                </tr>
+                                <tr>
+                                  <td className="px-6 py-5 text-sm text-gray-900 font-medium align-top">
+                                    Kriz Anında Proaktif Aksiyon Alma ve Güven Verme
+                                  </td>
+                                  <td className="px-6 py-5 text-sm text-gray-700 align-top leading-relaxed">
+                                    “Olayın içinde bulunduğun sırada daha çok inisiyatif alabileceğini fark
+                                    ettiğin bir örnek var mı?”
+                                  </td>
+                                  <td className="px-6 py-5 text-sm text-gray-600 align-top italic leading-relaxed space-y-2">
+                                    <p>“İlk anda neden beklemeyi tercih ettin?”</p>
+                                    <p>“Sonradan durumu nasıl yönlendirdin?”</p>
+                                    <p>“Bu davranışının ekibe nasıl yansıdığını düşünüyorsun?”</p>
+                                    <p>“Şimdi aynı duruma düşsen neyi farklı yapardın?”</p>
+                                  </td>
+                                </tr>
+                              </tbody>
+                            </table>
+                          </div>
+                        )}
 
-                      <div className="bg-gray-50 rounded-xl p-8 border border-gray-100 space-y-3">
-                        <h3 className="text-xl font-bold text-gray-900">Neden Bu Sorular?</h3>
-                        {activeReport?.whyTheseQuestions
-                          ? renderLines(activeReport.whyTheseQuestions)
-                          : (
-                            <p className="text-gray-700 leading-relaxed text-base">
-                              Değerlendirme sürecinde kişinin ilişki dinamiklerinde aşırı temkinli davrandığı,
-                              bu nedenle kararsızlık ve güven sorunu algısı yaratabildiği gözlemlenmiştir. Bu
-                              soru seti, kişinin bu alanlardaki içgörüsünü ve gelişim pratiğini değerlendirmek
-                              amacıyla seçilmiştir.
-                            </p>
-                          )}
+                        <div className="bg-gray-50 rounded-xl p-8 border border-gray-100 space-y-3">
+                          <h3 className="text-xl font-bold text-gray-900">{t('labels.whyTheseQuestions')}</h3>
+                          {activeReport?.whyTheseQuestions
+                            ? renderLines(activeReport.whyTheseQuestions)
+                            : (
+                              <p className="text-gray-700 leading-relaxed text-base">
+                                Değerlendirme sürecinde kişinin ilişki dinamiklerinde aşırı temkinli davrandığı,
+                                bu nedenle kararsızlık ve güven sorunu algısı yaratabildiği gözlemlenmiştir. Bu
+                                soru seti, kişinin bu alanlardaki içgörüsünü ve gelişim pratiğini değerlendirmek
+                                amacıyla seçilmiştir.
+                              </p>
+                            )}
+                        </div>
                       </div>
-                    </div>
+                    )
                   )}
 
                   {competencySubTab === 'development-plan' && (
-                    activeReport?.developmentPlan ? (
+                    !hasCompetencyScore ? (
+                      <div className="text-gray-700">-</div>
+                    ) : activeReport?.developmentPlan ? (
                       <div className="bg-blue-50 border border-blue-100 rounded-xl p-6 space-y-3">
-                        <h3 className="text-lg font-bold text-gray-900">Gelişim Planı</h3>
+                        <h3 className="text-lg font-bold text-gray-900">{t('labels.developmentPlan')}</h3>
                         {renderLines(activeReport.developmentPlan)}
                       </div>
                     ) : (
@@ -920,15 +1082,15 @@ const PersonResultsDetail: React.FC = () => {
           {activeTab === 'report-access' && (
             <div className="p-8">
               <div className="mb-8">
-                <h2 className="text-2xl font-bold text-gray-900 mb-2">Rapor Erişimi</h2>
-                <p className="text-gray-600">Tam raporu görüntüleyin, indirin veya paylaşın</p>
+                <h2 className="text-2xl font-bold text-gray-900 mb-2">{t('labels.reportAccessTitle')}</h2>
+                <p className="text-gray-600">{t('labels.reportAccessSubtitle')}</p>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
                 {[
-                  { title: 'View Online', desc: 'Raporu tarayıcıda görüntüle', color: 'bg-blue-600 hover:bg-blue-700', icon: 'fa-eye' },
-                  { title: 'Download PDF', desc: 'Cihazınıza indirin', color: 'bg-green-600 hover:bg-green-700', icon: 'fa-download' },
-                  { title: 'Share Report', desc: 'Paydaşlarla paylaşın', color: 'bg-purple-600 hover:bg-purple-700', icon: 'fa-share-nodes' }
+                  { title: t('labels.viewOnline'), desc: t('labels.viewOnlineDesc'), color: 'bg-blue-600 hover:bg-blue-700', icon: 'fa-eye' },
+                  { title: t('labels.downloadReport'), desc: t('labels.downloadPdfDesc'), color: 'bg-green-600 hover:bg-green-700', icon: 'fa-download' },
+                  { title: t('labels.shareReport'), desc: t('labels.shareReportDesc'), color: 'bg-purple-600 hover:bg-purple-700', icon: 'fa-share-nodes' }
                 ].map((card) => (
                   <button key={card.title} className={`${card.color} text-white rounded-xl p-6 text-left transition-colors group`}>
                     <div className="flex items-center justify-between mb-4">
@@ -998,7 +1160,9 @@ const PersonResultsDetail: React.FC = () => {
                 <div className="w-20 h-20 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-2xl flex items-center justify-center mx-auto mb-6">
                   <i className="fa-solid fa-robot text-white text-4xl" />
                 </div>
-                <h2 className="text-3xl font-bold text-gray-900 mb-3">AI Asistan Yakında</h2>
+                <h2 className="text-3xl font-bold text-gray-900 mb-3">
+                  {t('labels.aiAssistantSoon')}
+                </h2>
                 <p className="text-gray-600 text-lg mb-8 max-w-2xl mx-auto">
                   Assessment sonuçlarına özel içgörüler ve öneriler yakında eklenecek.
                 </p>

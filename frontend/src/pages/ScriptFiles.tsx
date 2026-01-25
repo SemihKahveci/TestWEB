@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useLanguage } from '../contexts/LanguageContext';
 
 // Sabit yetkinlik listesi
 const COMPETENCIES = [
@@ -9,6 +10,7 @@ const COMPETENCIES = [
 ];
 
 const ScriptFiles: React.FC = () => {
+  const { t } = useLanguage();
   const [selectedCompetency, setSelectedCompetency] = useState<string>('');
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -328,7 +330,7 @@ const ScriptFiles: React.FC = () => {
               fontFamily: 'Inter',
               fontWeight: 700
             }}>
-              Komut Dosyaları
+              {t('titles.scriptFiles')}
             </div>
           </div>
         </div>

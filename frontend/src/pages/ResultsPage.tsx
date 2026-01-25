@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { useLanguage } from '../contexts/LanguageContext';
 import { evaluationAPI } from '../services/api';
 import * as XLSX from 'xlsx';
 
@@ -25,6 +26,7 @@ interface UserResult {
 }
 
 const ResultsPage: React.FC = () => {
+  const { t } = useLanguage();
   const [results, setResults] = useState<UserResult[]>([]);
   const [filteredResults, setFilteredResults] = useState<UserResult[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -633,7 +635,7 @@ const ResultsPage: React.FC = () => {
             fontFamily: 'Inter',
             fontWeight: 700
           }}>
-            Kişi Skorları Sayfası
+            {t('titles.personScores')}
           </div>
         </div>
       </div>

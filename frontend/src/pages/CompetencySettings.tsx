@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useLanguage } from '../contexts/LanguageContext';
 import * as XLSX from 'xlsx';
 import { organizationAPI } from '../services/api';
 
@@ -33,6 +34,7 @@ interface Organization {
 }
 
 const CompetencySettings: React.FC = () => {
+  const { t } = useLanguage();
   const [competencies, setCompetencies] = useState<Competency[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
@@ -967,7 +969,7 @@ const CompetencySettings: React.FC = () => {
               fontFamily: 'Inter',
               fontWeight: 700
             }}>
-              Yetkinlik Ayarları
+              {t('titles.competencySettings')}
             </div>
           </div>
         </div>

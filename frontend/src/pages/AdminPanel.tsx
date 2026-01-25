@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { evaluationAPI, creditAPI } from '../services/api';
 import { useAuth } from '../contexts/AuthContext';
+import { useLanguage } from '../contexts/LanguageContext';
 
 // Dinamik API base URL - hem local hem live'da çalışır
 const API_BASE_URL = (import.meta as any).env?.DEV 
@@ -46,6 +47,7 @@ interface PDFOptions {
 
 const AdminPanel: React.FC = () => {
   const { user } = useAuth();
+  const { t } = useLanguage();
   const [results, setResults] = useState<UserResult[]>([]);
   const [filteredResults, setFilteredResults] = useState<UserResult[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -666,7 +668,7 @@ const AdminPanel: React.FC = () => {
             fontFamily: 'Inter',
             fontWeight: 700
           }}>
-            Genel Takip Sistemi
+            {t('titles.adminPanel')}
           </div>
         </div>
       </div>
