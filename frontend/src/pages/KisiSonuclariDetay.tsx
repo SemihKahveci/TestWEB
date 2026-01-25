@@ -2,26 +2,101 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { useLocation } from 'react-router-dom';
 
 type DetailTab = 'executive-summary' | 'competency-details' | 'report-access' | 'ai-assistant';
-type CompetencyKey = 'strategic-thinking' | 'leadership' | 'problem-solving' | 'overall-score';
+type CompetencyKey = 'uyumluluk' | 'musteri' | 'etkileme' | 'sinerji';
 type CompetencySubTab = 'general-evaluation' | 'strengths-development' | 'interview-questions' | 'development-plan';
+
+type UserResult = {
+  code: string;
+  name: string;
+  email?: string;
+  status?: string;
+  completionDate?: string;
+  sentDate?: string;
+  customerFocusScore?: string | number;
+  uncertaintyScore?: string | number;
+  ieScore?: string | number;
+  idikScore?: string | number;
+};
+
+type CachedUserResults = {
+  latestUser: UserResult | null;
+  latestHistory: UserResult[];
+};
 
 const KisiSonuclariDetay: React.FC = () => {
   const location = useLocation();
   const [activeTab, setActiveTab] = useState<DetailTab>('executive-summary');
-  const [activeCompetency, setActiveCompetency] = useState<CompetencyKey>('strategic-thinking');
+  const [activeCompetency, setActiveCompetency] = useState<CompetencyKey>('uyumluluk');
   const [competencySubTab, setCompetencySubTab] = useState<CompetencySubTab>('general-evaluation');
+  const [latestUser, setLatestUser] = useState<UserResult | null>(null);
+  const [latestHistory, setLatestHistory] = useState<UserResult[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
   const [openDevPlans, setOpenDevPlans] = useState<Record<string, boolean>>({
     'dev-plan-1': false,
     'dev-plan-2': false,
     'dev-plan-3': false
   });
 
-  const competencyOptions = useMemo(() => ([
-    { value: 'strategic-thinking', label: 'Uyumluluk ve Dayanıklılık (9.2)' },
-    { value: 'leadership', label: 'Müşteri Odaklılık (8.8)' },
-    { value: 'problem-solving', label: 'İnsanları Etkileme (8.9)' },
-    { value: 'overall-score', label: 'Güven Veren İşbirlikçi ve Sinerji (8.4)' }
+  const competencyConfig = useMemo(() => ([
+    {
+      key: 'uyumluluk',
+      title: 'Uyumluluk ve Dayanıklılık',
+      scoreField: 'uncertaintyScore',
+      color: 'from-blue-500 to-blue-600',
+      icon: 'fa-chart-line',
+      badge: '+12%'
+    },
+    {
+      key: 'musteri',
+      title: 'Müşteri Odaklılık',
+      scoreField: 'customerFocusScore',
+      color: 'from-green-500 to-green-600',
+      icon: 'fa-trophy',
+      badge: 'Top 15%'
+    },
+    {
+      key: 'etkileme',
+      title: 'İnsanları Etkileme',
+      scoreField: 'ieScore',
+      color: 'from-purple-500 to-purple-600',
+      icon: 'fa-star',
+      badge: '8/12'
+    },
+    {
+      key: 'sinerji',
+      title: 'Güven Veren İşbirlikçi ve Sinerji',
+      scoreField: 'idikScore',
+      color: 'from-orange-500 to-orange-600',
+      icon: 'fa-arrow-trend-up',
+      badge: '+0.7'
+    }
   ]), []);
+
+  const parseScore = (value?: string | number) => {
+    if (value === null || value === undefined || value === '-' || value === '') return null;
+    const parsed = Number(value);
+    return Number.isNaN(parsed) ? null : parsed;
+  };
+
+  const formatScoreRaw = (value?: string | number) => {
+    const parsed = parseScore(value);
+    if (parsed === null) return '-';
+    return Math.round(parsed);
+  };
+
+  const formatDateLong = (value?: string) => {
+    if (!value) return '-';
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return '-';
+    return date.toLocaleDateString('tr-TR', { day: '2-digit', month: 'long', year: 'numeric' });
+  };
+
+  const competencyOptions = useMemo(() => ([
+    { value: 'uyumluluk', label: `Uyumluluk ve Dayanıklılık (${formatScoreRaw(latestUser?.uncertaintyScore)})` },
+    { value: 'musteri', label: `Müşteri Odaklılık (${formatScoreRaw(latestUser?.customerFocusScore)})` },
+    { value: 'etkileme', label: `İnsanları Etkileme (${formatScoreRaw(latestUser?.ieScore)})` },
+    { value: 'sinerji', label: `Güven Veren İşbirlikçi ve Sinerji (${formatScoreRaw(latestUser?.idikScore)})` }
+  ]), [latestUser]);
 
   useEffect(() => {
     setCompetencySubTab('general-evaluation');
@@ -33,15 +108,89 @@ const KisiSonuclariDetay: React.FC = () => {
   }, [activeCompetency]);
 
   useEffect(() => {
-    const state = location.state as { competency?: CompetencyKey } | null;
+    const state = location.state as {
+      competency?: CompetencyKey;
+      latestUser?: UserResult | null;
+      latestHistory?: UserResult[];
+    } | null;
     if (state?.competency) {
       setActiveCompetency(state.competency);
       setActiveTab('competency-details');
     }
+    if (state?.latestUser) {
+      setLatestUser(state.latestUser);
+    }
+    if (state?.latestHistory) {
+      setLatestHistory(state.latestHistory);
+    }
   }, [location.state]);
 
+  useEffect(() => {
+    const cached = sessionStorage.getItem('latestUserResults');
+    if (cached) {
+      try {
+        const parsed = JSON.parse(cached) as CachedUserResults;
+        if (!latestUser) {
+          setLatestUser(parsed.latestUser);
+        }
+        if (latestHistory.length === 0) {
+          setLatestHistory(parsed.latestHistory || []);
+        }
+      } catch (error) {
+        sessionStorage.removeItem('latestUserResults');
+      }
+    }
+
+    const fetchLatest = async () => {
+      try {
+        setIsLoading(true);
+        const response = await fetch('/api/user-results?statusFilter=Tamamlandı', {
+          credentials: 'include'
+        });
+        const data = await response.json();
+        if (!data?.success || !Array.isArray(data?.results)) {
+          return;
+        }
+
+        const results = data.results as UserResult[];
+        const completed = results.filter((item) => item.completionDate);
+        if (completed.length === 0) {
+          return;
+        }
+
+        const latest = [...completed].sort((a, b) => {
+          const aDate = new Date(a.completionDate || 0).getTime();
+          const bDate = new Date(b.completionDate || 0).getTime();
+          return bDate - aDate;
+        })[0];
+
+        const userKey = (latest.email || latest.name || '').toLowerCase();
+        let history = completed.filter((item) => {
+          const key = (item.email || item.name || '').toLowerCase();
+          return key && key === userKey;
+        });
+
+        if (history.length === 0) {
+          history = [latest];
+        }
+
+        setLatestUser(latest);
+        setLatestHistory(history);
+        sessionStorage.setItem('latestUserResults', JSON.stringify({ latestUser: latest, latestHistory: history }));
+      } catch (error) {
+        // Sessiz geç
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    if (!latestUser || latestHistory.length === 0) {
+      fetchLatest();
+    }
+  }, [latestHistory.length, latestUser]);
+
   const competencyCopy = useMemo(() => ({
-    'strategic-thinking': {
+    uyumluluk: {
       title: 'Uyumluluk ve Dayanıklılık',
       overviewTitle: 'Uyumluluk ve Dayanıklılık Hakkında',
       overviewText: 'Bu yetkinlik, uzun vadeli hedefleri belirleme, pazar trendlerini analiz etme ve organizasyonel vizyonla uyumlu kararlar alma becerisini ölçer.',
@@ -56,7 +205,7 @@ const KisiSonuclariDetay: React.FC = () => {
         { title: 'Senaryo Planlaması', text: 'Gelecek çeyrek için en az 3 farklı senaryo analizi yapın.' }
       ]
     },
-    leadership: {
+    musteri: {
       title: 'Müşteri Odaklılık',
       overviewTitle: 'Müşteri Odaklılık Hakkında',
       overviewText: 'Ekipleri yönlendirme, ilham verme ve değişimi yönetme kabiliyetini ölçer.',
@@ -71,7 +220,7 @@ const KisiSonuclariDetay: React.FC = () => {
         { title: 'Yönetici Sunumu', text: 'Üst yönetime düzenli sunumlar yapın.' }
       ]
     },
-    'problem-solving': {
+    etkileme: {
       title: 'İnsanları Etkileme',
       overviewTitle: 'İnsanları Etkileme Hakkında',
       overviewText: 'Karmaşık problemleri analiz etme, kök nedenleri bulma ve çözüm geliştirme becerisini ölçer.',
@@ -86,7 +235,7 @@ const KisiSonuclariDetay: React.FC = () => {
         { title: 'Vaka Analizi', text: 'Örnek vakaları analiz edip paylaşın.' }
       ]
     },
-    'overall-score': {
+    sinerji: {
       title: 'Güven Veren İşbirlikçi ve Sinerji',
       overviewTitle: 'Güven Veren İşbirlikçi ve Sinerji Hakkında',
       overviewText: 'Bu yetkinlik, ekip içinde güven oluşturma, işbirliğini güçlendirme ve ortak hedeflere uyumu artırma becerisini temsil eder.',
@@ -123,7 +272,7 @@ const KisiSonuclariDetay: React.FC = () => {
                   <span>/</span>
                   <span className="hover:text-gray-700">Kişi Sonuçları</span>
                   <span>/</span>
-                  <span className="text-gray-900 font-medium">Sarah Johnson</span>
+                  <span className="text-gray-900 font-medium">{latestUser?.name || '—'}</span>
                   <span>/</span>
                   <span className="text-gray-900 font-medium">Rapor Detayları</span>
                 </div>
@@ -163,7 +312,7 @@ const KisiSonuclariDetay: React.FC = () => {
           <div className="flex items-start justify-between mb-6">
             <div className="flex items-center space-x-6">
               <div>
-                <h2 className="text-2xl font-bold text-gray-900 mb-2">Sarah Johnson</h2>
+                <h2 className="text-2xl font-bold text-gray-900 mb-2">{latestUser?.name || '—'}</h2>
                 <div className="flex items-center space-x-4 text-sm text-gray-600 mb-3">
                   <div className="flex items-center">
                     <i className="fa-solid fa-briefcase mr-2 text-gray-400" />
@@ -178,23 +327,19 @@ const KisiSonuclariDetay: React.FC = () => {
             </div>
             <div className="text-right">
               <div className="text-sm text-gray-500 mb-1">Son Değerlendirme</div>
-              <div className="text-lg font-semibold text-gray-900">Q4 2024 Review</div>
-              <div className="text-sm text-gray-600">Tamamlandı: 15 Aralık 2024</div>
+              <div className="text-lg font-semibold text-gray-900">Son Tamamlama</div>
+              <div className="text-sm text-gray-600">Tamamlandı: {formatDateLong(latestUser?.completionDate)}</div>
             </div>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
-            {[
-              { key: 'strategic-thinking', title: 'Uyumluluk ve Dayanıklılık', score: '9.2', color: 'from-blue-500 to-blue-600', icon: 'fa-chart-line', badge: '+12%' },
-              { key: 'leadership', title: 'Müşteri Odaklılık', score: '8.8', color: 'from-green-500 to-green-600', icon: 'fa-trophy', badge: 'Top 15%' },
-              { key: 'problem-solving', title: 'İnsanları Etkileme', score: '8.9', color: 'from-purple-500 to-purple-600', icon: 'fa-star', badge: '8/12' },
-              { key: 'overall-score', title: 'Güven Veren İşbirlikçi ve Sinerji', score: '8.4', color: 'from-orange-500 to-orange-600', icon: 'fa-arrow-trend-up', badge: '+0.7' }
-            ].map((item) => {
+            {competencyConfig.map((item) => {
               const isSelectable = true;
               const isActive = activeCompetency === item.key;
+              const scoreValue = formatScoreRaw((latestUser as any)?.[item.scoreField]);
               return (
                 <div
-                  key={`${item.title}-${item.score}`}
+                  key={`${item.title}-${item.key}`}
                   className={`bg-gradient-to-br ${item.color} rounded-xl shadow-sm p-6 text-white transition-all ${
                     isSelectable ? 'cursor-pointer hover:shadow-md' : ''
                   } ${isActive ? 'ring-2 ring-white/70 ring-offset-2 ring-offset-gray-50' : ''}`}
@@ -221,7 +366,7 @@ const KisiSonuclariDetay: React.FC = () => {
                       {item.badge}
                     </div>
                   </div>
-                  <div className="text-3xl font-bold mb-1">{item.score}</div>
+                  <div className="text-3xl font-bold mb-1">{scoreValue}</div>
                   <div className="text-sm opacity-90">{item.title}</div>
                 </div>
               );

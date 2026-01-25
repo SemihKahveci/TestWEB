@@ -1,31 +1,220 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 type TabKey = 'trend' | 'summary' | 'full';
 
+type UserResult = {
+  code: string;
+  name: string;
+  email?: string;
+  status?: string;
+  completionDate?: string;
+  sentDate?: string;
+  customerFocusScore?: string | number;
+  uncertaintyScore?: string | number;
+  ieScore?: string | number;
+  idikScore?: string | number;
+};
+
+type CachedUserResults = {
+  latestUser: UserResult | null;
+  latestHistory: UserResult[];
+};
+
 const KisiSonuclari: React.FC = () => {
   const [activeTab, setActiveTab] = useState<TabKey>('trend');
   const [selectedCompetency, setSelectedCompetency] = useState('uyumluluk');
+  const [latestUser, setLatestUser] = useState<UserResult | null>(null);
+  const [latestHistory, setLatestHistory] = useState<UserResult[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
 
-  const competencyData = useMemo(() => ({
-    uyumluluk: { name: 'Uyumluluk ve Dayanıklılık', values: [8.1, 8.7, 9.2] },
-    musteri: { name: 'Müşteri Odaklılık', values: [8.0, 8.4, 8.8] },
-    etkileme: { name: 'İnsanları Etkileme', values: [8.2, 8.5, 8.9] },
-    sinerji: { name: 'Güven Veren İşbirlikçi ve Sinerji', values: [7.8, 8.1, 8.4] }
-  }), []);
+  const competencyConfig = useMemo(() => ([
+    {
+      key: 'uyumluluk',
+      name: 'Uyumluluk ve Dayanıklılık',
+      description: 'Belirsizliklerle başa çıkma ve dayanıklılık gösterme',
+      scoreField: 'uncertaintyScore'
+    },
+    {
+      key: 'musteri',
+      name: 'Müşteri Odaklılık',
+      description: 'Müşteri ihtiyaçlarını anlama ve çözüm üretme',
+      scoreField: 'customerFocusScore'
+    },
+    {
+      key: 'etkileme',
+      name: 'İnsanları Etkileme',
+      description: 'İkna, etkileme ve yönlendirme becerileri',
+      scoreField: 'ieScore'
+    },
+    {
+      key: 'sinerji',
+      name: 'Güven Veren İşbirlikçi ve Sinerji',
+      description: 'Ekip içinde güven, işbirliği ve uyum oluşturma',
+      scoreField: 'idikScore'
+    }
+  ]), []);
 
-  const selected = competencyData[selectedCompetency as keyof typeof competencyData];
+  const parseScore = (value?: string | number) => {
+    if (value === null || value === undefined || value === '-' || value === '') return null;
+    const parsed = Number(value);
+    return Number.isNaN(parsed) ? null : parsed;
+  };
+
+  const formatScoreRaw = (value?: string | number) => {
+    const parsed = parseScore(value);
+    if (parsed === null) return '-';
+    return Math.round(parsed);
+  };
+
+  const toScore10 = (value?: string | number) => {
+    const parsed = parseScore(value);
+    if (parsed === null) return null;
+    return Math.round((parsed / 10) * 10) / 10;
+  };
+
+  const formatDateShort = (value?: string) => {
+    if (!value) return '-';
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return '-';
+    return date.toLocaleDateString('tr-TR', { day: '2-digit', month: 'short', year: 'numeric' });
+  };
+
+  const formatDateLong = (value?: string) => {
+    if (!value) return '-';
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return '-';
+    return date.toLocaleDateString('tr-TR', { day: '2-digit', month: 'long', year: 'numeric' });
+  };
+
+  const historySorted = useMemo(() => {
+    return [...latestHistory].sort((a, b) => {
+      const aDate = new Date(a.completionDate || a.sentDate || 0).getTime();
+      const bDate = new Date(b.completionDate || b.sentDate || 0).getTime();
+      return aDate - bDate;
+    });
+  }, [latestHistory]);
+
+  const trendByCompetency = useMemo(() => {
+    const lastThree = historySorted.slice(-3);
+    const base = Object.fromEntries(
+      competencyConfig.map((item) => [item.key, [] as { label: string; date: string; value: number }[]])
+    );
+
+    lastThree.forEach((row) => {
+      competencyConfig.forEach((item) => {
+        const score10 = toScore10((row as any)[item.scoreField]);
+        if (score10 !== null) {
+          base[item.key].push({
+            label: formatDateShort(row.completionDate || row.sentDate),
+            date: formatDateLong(row.completionDate || row.sentDate),
+            value: score10
+          });
+        }
+      });
+    });
+
+    if (latestUser) {
+      competencyConfig.forEach((item) => {
+        if (base[item.key].length === 0) {
+          const score10 = toScore10((latestUser as any)[item.scoreField]);
+          if (score10 !== null) {
+            base[item.key].push({
+              label: formatDateShort(latestUser.completionDate || latestUser.sentDate),
+              date: formatDateLong(latestUser.completionDate || latestUser.sentDate),
+              value: score10
+            });
+          }
+        }
+      });
+    }
+
+    return base;
+  }, [competencyConfig, historySorted, latestUser]);
+
+  const selectedTrend = trendByCompetency[selectedCompetency] || [];
+  const selectedMeta = competencyConfig.find((item) => item.key === selectedCompetency) || competencyConfig[0];
+  const axisLabels = useMemo(() => {
+    if (selectedTrend.length === 0) return [];
+    const span = selectedTrend.length > 1 ? 460 / (selectedTrend.length - 1) : 0;
+    return selectedTrend.map((point, i) => ({
+      ...point,
+      x: 40 + (selectedTrend.length === 1 ? 230 : i * span)
+    }));
+  }, [selectedTrend]);
 
   const scoreCards = [
-    { title: 'Uyumluluk ve Dayanıklılık', score: 85, icon: 'fa-chart-line', badge: '+12%', color: 'from-blue-500 to-blue-600', competency: 'strategic-thinking' },
-    { title: 'Müşteri Odaklılık', score: 63, icon: 'fa-trophy', badge: 'Top 15%', color: 'from-green-500 to-green-600', competency: 'leadership' },
-    { title: 'İnsanları Etkileme', score: 54, icon: 'fa-star', badge: '8/12', color: 'from-purple-500 to-purple-600', competency: 'problem-solving' },
-    { title: 'Güven Veren İşbirlikçi ve Sinerji', score: 45, icon: 'fa-arrow-trend-up', badge: '+3', color: 'from-orange-500 to-orange-600', competency: 'overall-score' }
+    { title: 'Uyumluluk ve Dayanıklılık', icon: 'fa-chart-line', badge: '+12%', color: 'from-blue-500 to-blue-600', competency: 'uyumluluk' },
+    { title: 'Müşteri Odaklılık', icon: 'fa-trophy', badge: 'Top 15%', color: 'from-green-500 to-green-600', competency: 'musteri' },
+    { title: 'İnsanları Etkileme', icon: 'fa-star', badge: '8/12', color: 'from-purple-500 to-purple-600', competency: 'etkileme' },
+    { title: 'Güven Veren İşbirlikçi ve Sinerji', icon: 'fa-arrow-trend-up', badge: '+3', color: 'from-orange-500 to-orange-600', competency: 'sinerji' }
   ];
 
-  const trendLabels = ['Q2 2024', 'Q3 2024', 'Q4 2024'];
   const maxScore = 10;
+
+  useEffect(() => {
+    const cached = sessionStorage.getItem('latestUserResults');
+    if (cached) {
+      try {
+        const parsed = JSON.parse(cached) as CachedUserResults;
+        setLatestUser(parsed.latestUser);
+        setLatestHistory(parsed.latestHistory || []);
+      } catch (error) {
+        sessionStorage.removeItem('latestUserResults');
+      }
+    }
+
+    const fetchLatest = async () => {
+      try {
+        setIsLoading(true);
+        const response = await fetch('/api/user-results?statusFilter=Tamamlandı', {
+          credentials: 'include'
+        });
+        const data = await response.json();
+        if (!data?.success || !Array.isArray(data?.results)) {
+          setLatestUser(null);
+          setLatestHistory([]);
+          return;
+        }
+
+        const results = data.results as UserResult[];
+        const completed = results.filter((item) => item.completionDate);
+        if (completed.length === 0) {
+          setLatestUser(null);
+          setLatestHistory([]);
+          return;
+        }
+
+        const latest = [...completed].sort((a, b) => {
+          const aDate = new Date(a.completionDate || 0).getTime();
+          const bDate = new Date(b.completionDate || 0).getTime();
+          return bDate - aDate;
+        })[0];
+
+        const userKey = (latest.email || latest.name || '').toLowerCase();
+        let history = completed.filter((item) => {
+          const key = (item.email || item.name || '').toLowerCase();
+          return key && key === userKey;
+        });
+
+        if (history.length === 0) {
+          history = [latest];
+        }
+
+        setLatestUser(latest);
+        setLatestHistory(history);
+        sessionStorage.setItem('latestUserResults', JSON.stringify({ latestUser: latest, latestHistory: history }));
+      } catch (error) {
+        setLatestUser(null);
+        setLatestHistory([]);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchLatest();
+  }, []);
 
   return (
     <div className="bg-gray-50 font-inter">
@@ -80,7 +269,7 @@ const KisiSonuclari: React.FC = () => {
           <div className="flex items-start justify-between">
             <div className="flex items-center space-x-6">
               <div>
-                <h2 className="text-2xl font-bold text-gray-900 mb-2">Sarah Johnson</h2>
+                <h2 className="text-2xl font-bold text-gray-900 mb-2">{latestUser?.name || '—'}</h2>
                 <div className="flex items-center space-x-4 text-sm text-gray-600 mb-3">
                   <div className="flex items-center">
                     <i className="fa-solid fa-briefcase mr-2 text-gray-400" />
@@ -95,8 +284,8 @@ const KisiSonuclari: React.FC = () => {
             </div>
             <div className="text-right">
               <div className="text-sm text-gray-500 mb-1">Son Değerlendirme</div>
-              <div className="text-lg font-semibold text-gray-900">Q4 2024 Review</div>
-              <div className="text-sm text-gray-600">Tamamlandı: 15 Aralık 2024</div>
+              <div className="text-lg font-semibold text-gray-900">Son Tamamlama</div>
+              <div className="text-sm text-gray-600">Tamamlandı: {formatDateLong(latestUser?.completionDate)}</div>
             </div>
           </div>
         </div>
@@ -104,6 +293,8 @@ const KisiSonuclari: React.FC = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6 mb-6">
           {scoreCards.map((card) => {
             const isClickable = Boolean(card.competency);
+            const scoreField = competencyConfig.find((item) => item.key === card.competency)?.scoreField;
+            const rawScore = scoreField ? formatScoreRaw((latestUser as any)?.[scoreField]) : '-';
             return (
             <div
               key={card.title}
@@ -112,14 +303,26 @@ const KisiSonuclari: React.FC = () => {
               tabIndex={isClickable ? 0 : undefined}
               onClick={() => {
                 if (isClickable) {
-                  navigate('/kisi-sonuclari/detay', { state: { competency: card.competency } });
+                  navigate('/kisi-sonuclari/detay', {
+                    state: {
+                      competency: card.competency,
+                      latestUser,
+                      latestHistory
+                    }
+                  });
                 }
               }}
               onKeyDown={(event) => {
                 if (!isClickable) return;
                 if (event.key === 'Enter' || event.key === ' ') {
                   event.preventDefault();
-                  navigate('/kisi-sonuclari/detay', { state: { competency: card.competency } });
+                  navigate('/kisi-sonuclari/detay', {
+                    state: {
+                      competency: card.competency,
+                      latestUser,
+                      latestHistory
+                    }
+                  });
                 }
               }}
             >
@@ -129,7 +332,7 @@ const KisiSonuclari: React.FC = () => {
                   {card.badge}
                 </div>
               </div>
-              <div className="text-3xl font-bold mb-1">{card.score}</div>
+              <div className="text-3xl font-bold mb-1">{rawScore}</div>
               <div className="text-sm opacity-90">{card.title}</div>
             </div>
           )})}
@@ -161,77 +364,47 @@ const KisiSonuclari: React.FC = () => {
             </div>
 
             <div className="space-y-4 max-h-[800px] overflow-y-auto pr-2">
-              {[
-                {
-                  title: 'Uyumluluk ve Dayanıklılık',
-                  description: 'Belirsizliklerle başa çıkma ve dayanıklılık gösterme',
-                  score: 9.2,
-                  positionAvg: 7.8,
-                  companyAvg: 7.2,
-                  highlight: true
-                },
-                {
-                  title: 'Müşteri Odaklılık',
-                  description: 'Müşteri ihtiyaçlarını anlama ve çözüm üretme',
-                  score: 8.8,
-                  positionAvg: 8.1,
-                  companyAvg: 7.5
-                },
-                {
-                  title: 'İnsanları Etkileme',
-                  description: 'İkna, etkileme ve yönlendirme becerileri',
-                  score: 8.9,
-                  positionAvg: 7.7,
-                  companyAvg: 7.3
-                },
-                {
-                  title: 'Güven Veren İşbirlikçi ve Sinerji',
-                  description: 'Ekip içinde güven, işbirliği ve uyum oluşturma',
-                  score: 8.4,
-                  positionAvg: 7.9,
-                  companyAvg: 7.1
-                }
-              ].map((item) => (
+              {competencyConfig.map((item, index) => {
+                const score10 = toScore10((latestUser as any)?.[item.scoreField]);
+                const isActive = selectedCompetency === item.key;
+                return (
                 <div
-                  key={item.title}
+                  key={item.key}
                   className={`border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow cursor-pointer ${
-                    item.highlight ? 'bg-blue-50 border-blue-300' : ''
+                    isActive ? 'bg-blue-50 border-blue-300' : ''
                   }`}
                   onClick={() => {
-                    const key = Object.entries(competencyData).find(([, value]) => value.name === item.title)?.[0];
-                    if (key) setSelectedCompetency(key);
+                    setSelectedCompetency(item.key);
                     setActiveTab('trend');
                   }}
                 >
                   <div className="flex items-start justify-between mb-3">
                     <div className="flex-1">
-                      <h4 className="font-semibold text-gray-900 mb-1">{item.title}</h4>
+                      <h4 className="font-semibold text-gray-900 mb-1">{item.name}</h4>
                       <p className="text-xs text-gray-600">{item.description}</p>
                     </div>
                     <div className="text-right ml-4">
-                      <div className={`text-2xl font-bold ${item.highlight ? 'text-blue-600' : 'text-green-600'}`}>
-                        {item.score}
+                      <div className={`text-2xl font-bold ${isActive ? 'text-blue-600' : 'text-green-600'}`}>
+                        {score10 ?? '-'}
                       </div>
                       <div className="text-xs text-gray-500">out of 10</div>
                     </div>
                   </div>
                   <div className="space-y-2">
-                    {[{ label: 'Your Score', value: item.score, color: 'bg-green-600' },
-                      { label: 'Position Average', value: item.positionAvg, color: 'bg-orange-400' },
-                      { label: 'Company Average', value: item.companyAvg, color: 'bg-gray-400' }].map((row) => (
+                    {[{ label: 'Your Score', value: score10 ?? 0, color: 'bg-green-600' }].map((row) => (
                         <div key={row.label} className="flex items-center justify-between text-sm">
                           <span className="text-gray-600">{row.label}</span>
                           <div className="flex items-center">
                             <div className="w-32 h-2 bg-gray-200 rounded-full mr-2">
-                              <div className={`h-2 ${row.color} rounded-full`} style={{ width: `${(row.value / 10) * 100}%` }} />
+                              <div className={`h-2 ${row.color} rounded-full`} style={{ width: `${(row.value / maxScore) * 100}%` }} />
                             </div>
-                            <span className="font-medium text-gray-700 w-8">{row.value}</span>
+                            <span className="font-medium text-gray-700 w-8">{row.value || '-'}</span>
                           </div>
                         </div>
                     ))}
                   </div>
                 </div>
-              ))}
+              )})}
             </div>
           </div>
 
@@ -272,15 +445,15 @@ const KisiSonuclari: React.FC = () => {
                     onChange={(e) => setSelectedCompetency(e.target.value)}
                     className="w-full px-4 py-2.5 bg-white border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900 font-medium cursor-pointer"
                   >
-                    {Object.entries(competencyData).map(([key, value]) => (
-                      <option key={key} value={key}>{value.name}</option>
+                    {competencyConfig.map((item) => (
+                      <option key={item.key} value={item.key}>{item.name}</option>
                     ))}
                   </select>
                 </div>
 
                 <div className="mb-8">
                   <div className="h-72 bg-gray-50 border border-gray-200 rounded-lg p-6">
-                    <div className="text-sm text-gray-500 mb-4">{selected.name} - Trend</div>
+                    <div className="text-sm text-gray-500 mb-4">{selectedMeta.name} - Trend</div>
                     <div className="h-48">
                       <svg viewBox="0 0 520 200" className="w-full h-full">
                         <defs>
@@ -306,17 +479,21 @@ const KisiSonuclari: React.FC = () => {
                           ))}
                         </g>
                         {(() => {
-                          const points = selected.values.map((value, index) => {
-                            const x = 40 + index * 230;
-                            const y = 180 - (value / maxScore) * 160;
-                            return { x, y, value };
+                          if (selectedTrend.length === 0) {
+                            return null;
+                          }
+                          const span = selectedTrend.length > 1 ? 460 / (selectedTrend.length - 1) : 0;
+                          const points = selectedTrend.map((point, index) => {
+                            const x = 40 + (selectedTrend.length === 1 ? 230 : index * span);
+                            const y = 180 - (point.value / maxScore) * 160;
+                            return { x, y, value: point.value };
                           });
                           const path = points.map((p, i) => `${i === 0 ? 'M' : 'L'} ${p.x} ${p.y}`).join(' ');
                           return (
                             <>
                               <path d={path} fill="none" stroke="url(#trend-line)" strokeWidth="3" />
                               {points.map((p, i) => (
-                                <g key={trendLabels[i]}>
+                                <g key={`${selectedTrend[i]?.label}-${i}`}>
                                   <circle cx={p.x} cy={p.y} r="6" fill="#2563EB" />
                                   <circle cx={p.x} cy={p.y} r="3" fill="#93C5FD" />
                                 </g>
@@ -325,8 +502,10 @@ const KisiSonuclari: React.FC = () => {
                           );
                         })()}
                         <g fill="#6B7280" fontSize="11">
-                          {trendLabels.map((label, i) => (
-                            <text key={label} x={40 + i * 230} y="195" textAnchor="middle">{label}</text>
+                          {axisLabels.map((point) => (
+                            <text key={point.label} x={point.x} y="195" textAnchor="middle">
+                              {point.label}
+                            </text>
                           ))}
                         </g>
                       </svg>
@@ -334,17 +513,17 @@ const KisiSonuclari: React.FC = () => {
                   </div>
                 </div>
 
-                <div className="grid grid-cols-3 gap-4">
-                  {selected.values.map((value, index) => (
-                    <div key={trendLabels[index]} className={`rounded-lg p-5 text-center border ${index === 2 ? 'bg-blue-50 border-blue-400 border-2' : 'bg-gray-50 border-gray-200'}`}>
-                      <div className={`text-xs uppercase tracking-wide mb-2 ${index === 2 ? 'text-blue-600 font-semibold' : 'text-gray-500'}`}>
-                        {trendLabels[index]}{index === 2 ? ' (Güncel)' : ''}
+                <div className={`grid gap-4 ${selectedTrend.length === 1 ? 'grid-cols-1' : selectedTrend.length === 2 ? 'grid-cols-2' : 'grid-cols-3'}`}>
+                  {selectedTrend.map((point, index) => (
+                    <div key={point.label} className={`rounded-lg p-5 text-center border ${index === selectedTrend.length - 1 ? 'bg-blue-50 border-blue-400 border-2' : 'bg-gray-50 border-gray-200'}`}>
+                      <div className={`text-xs uppercase tracking-wide mb-2 ${index === selectedTrend.length - 1 ? 'text-blue-600 font-semibold' : 'text-gray-500'}`}>
+                        {point.label}{index === selectedTrend.length - 1 ? ' (Güncel)' : ''}
                       </div>
-                      <div className={`text-4xl font-bold mb-1 ${index === 2 ? 'text-blue-600' : 'text-gray-700'}`}>
-                        {value}
+                      <div className={`text-4xl font-bold mb-1 ${index === selectedTrend.length - 1 ? 'text-blue-600' : 'text-gray-700'}`}>
+                        {point.value}
                       </div>
-                      <div className={`text-xs ${index === 2 ? 'text-blue-700' : 'text-gray-600'}`}>
-                        {index === 0 ? '15 Haziran 2024' : index === 1 ? '20 Eylül 2024' : '15 Aralık 2024'}
+                      <div className={`text-xs ${index === selectedTrend.length - 1 ? 'text-blue-700' : 'text-gray-600'}`}>
+                        {point.date}
                       </div>
                     </div>
                   ))}
