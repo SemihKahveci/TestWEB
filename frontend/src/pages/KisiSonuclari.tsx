@@ -1,10 +1,12 @@
 import React, { useMemo, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 
 type TabKey = 'trend' | 'summary' | 'full';
 
 const KisiSonuclari: React.FC = () => {
   const [activeTab, setActiveTab] = useState<TabKey>('trend');
   const [selectedCompetency, setSelectedCompetency] = useState('strategic');
+  const navigate = useNavigate();
 
   const competencyData = useMemo(() => ({
     strategic: { name: 'Strategic Thinking', values: [8.1, 8.7, 9.2] },
@@ -18,10 +20,10 @@ const KisiSonuclari: React.FC = () => {
   const selected = competencyData[selectedCompetency as keyof typeof competencyData];
 
   const scoreCards = [
-    { title: 'Yetkinlik 1', score: 85, icon: 'fa-chart-line', badge: '+12%', color: 'from-blue-500 to-blue-600' },
-    { title: 'Yetkinlik 2', score: 63, icon: 'fa-trophy', badge: 'Top 15%', color: 'from-green-500 to-green-600' },
-    { title: 'Yetkinlik 3', score: 54, icon: 'fa-star', badge: '8/12', color: 'from-purple-500 to-purple-600' },
-    { title: 'Yetkinlik 4', score: 45, icon: 'fa-arrow-trend-up', badge: '+3', color: 'from-orange-500 to-orange-600' }
+    { title: 'Uyumluluk ve Dayanıklılık', score: 85, icon: 'fa-chart-line', badge: '+12%', color: 'from-blue-500 to-blue-600', competency: 'strategic-thinking' },
+    { title: 'Müşteri Odaklılık', score: 63, icon: 'fa-trophy', badge: 'Top 15%', color: 'from-green-500 to-green-600', competency: 'leadership' },
+    { title: 'İnsanları Etkileme', score: 54, icon: 'fa-star', badge: '8/12', color: 'from-purple-500 to-purple-600', competency: 'problem-solving' },
+    { title: 'Güven Veren İşbirlikçi ve Sinerji', score: 45, icon: 'fa-arrow-trend-up', badge: '+3', color: 'from-orange-500 to-orange-600', competency: 'overall-score' }
   ];
 
   const trendLabels = ['Q2 2024', 'Q3 2024', 'Q4 2024'];
@@ -102,8 +104,27 @@ const KisiSonuclari: React.FC = () => {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6 mb-6">
-          {scoreCards.map((card) => (
-            <div key={card.title} className={`bg-gradient-to-br ${card.color} rounded-xl shadow-sm p-6 text-white`}>
+          {scoreCards.map((card) => {
+            const isClickable = Boolean(card.competency);
+            return (
+            <div
+              key={card.title}
+              className={`bg-gradient-to-br ${card.color} rounded-xl shadow-sm p-6 text-white ${isClickable ? 'cursor-pointer hover:shadow-md' : ''}`}
+              role={isClickable ? 'button' : undefined}
+              tabIndex={isClickable ? 0 : undefined}
+              onClick={() => {
+                if (isClickable) {
+                  navigate('/kisi-sonuclari/detay', { state: { competency: card.competency } });
+                }
+              }}
+              onKeyDown={(event) => {
+                if (!isClickable) return;
+                if (event.key === 'Enter' || event.key === ' ') {
+                  event.preventDefault();
+                  navigate('/kisi-sonuclari/detay', { state: { competency: card.competency } });
+                }
+              }}
+            >
               <div className="flex items-center justify-between mb-4">
                 <i className={`fa-solid ${card.icon} text-3xl opacity-80`} />
                 <div className="bg-white bg-opacity-20 rounded-lg px-3 py-1 text-xs font-medium">
@@ -113,7 +134,7 @@ const KisiSonuclari: React.FC = () => {
               <div className="text-3xl font-bold mb-1">{card.score}</div>
               <div className="text-sm opacity-90">{card.title}</div>
             </div>
-          ))}
+          )})}
         </div>
 
         <div className="grid grid-cols-1 xl:grid-cols-2 gap-6 mb-6">
@@ -144,48 +165,33 @@ const KisiSonuclari: React.FC = () => {
             <div className="space-y-4 max-h-[800px] overflow-y-auto pr-2">
               {[
                 {
-                  title: 'Strategic Thinking',
-                  description: 'Ability to think long-term and align decisions with organizational goals',
+                  title: 'Uyumluluk ve Dayanıklılık',
+                  description: 'Belirsizliklerle başa çıkma ve dayanıklılık gösterme',
                   score: 9.2,
                   positionAvg: 7.8,
                   companyAvg: 7.2,
                   highlight: true
                 },
                 {
-                  title: 'Leadership & Influence',
-                  description: 'Capacity to inspire, guide teams, and drive organizational change',
+                  title: 'Müşteri Odaklılık',
+                  description: 'Müşteri ihtiyaçlarını anlama ve çözüm üretme',
                   score: 8.8,
                   positionAvg: 8.1,
                   companyAvg: 7.5
                 },
                 {
-                  title: 'Communication Skills',
-                  description: 'Effectiveness in conveying ideas clearly across various channels',
-                  score: 8.6,
-                  positionAvg: 7.9,
-                  companyAvg: 7.6
-                },
-                {
-                  title: 'Problem Solving',
-                  description: 'Analytical approach to identifying and resolving complex challenges',
+                  title: 'İnsanları Etkileme',
+                  description: 'İkna, etkileme ve yönlendirme becerileri',
                   score: 8.9,
                   positionAvg: 7.7,
                   companyAvg: 7.3
                 },
                 {
-                  title: 'Adaptability',
-                  description: 'Flexibility in responding to changing circumstances and priorities',
-                  score: 7.8,
-                  positionAvg: 8.0,
-                  companyAvg: 7.4,
-                  warning: true
-                },
-                {
-                  title: 'Team Collaboration',
-                  description: 'Working effectively with diverse teams toward common objectives',
-                  score: 8.5,
-                  positionAvg: 8.2,
-                  companyAvg: 7.8
+                  title: 'Güven Veren İşbirlikçi ve Sinerji',
+                  description: 'Ekip içinde güven, işbirliği ve uyum oluşturma',
+                  score: 8.4,
+                  positionAvg: 7.9,
+                  companyAvg: 7.1
                 }
               ].map((item) => (
                 <div
@@ -205,7 +211,7 @@ const KisiSonuclari: React.FC = () => {
                       <p className="text-xs text-gray-600">{item.description}</p>
                     </div>
                     <div className="text-right ml-4">
-                      <div className={`text-2xl font-bold ${item.warning ? 'text-yellow-600' : 'text-green-600'}`}>
+                      <div className={`text-2xl font-bold ${item.highlight ? 'text-blue-600' : 'text-green-600'}`}>
                         {item.score}
                       </div>
                       <div className="text-xs text-gray-500">out of 10</div>

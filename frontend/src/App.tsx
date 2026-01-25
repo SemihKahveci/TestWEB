@@ -21,6 +21,7 @@ import SubscriptionSettings from './pages/SubscriptionSettings';
 import ScriptFiles from './pages/ScriptFiles';
 import DashboardPage from './pages/DashboardPage';
 import KisiSonuclari from './pages/KisiSonuclari';
+import KisiSonuclariDetay from './pages/KisiSonuclariDetay';
 
 const AppContent: React.FC = () => {
   const location = useLocation();
@@ -136,6 +137,14 @@ const AppContent: React.FC = () => {
               <ProtectedRoute>
                 <Layout>
                   <KisiSonuclari />
+                </Layout>
+              </ProtectedRoute>
+            } />
+
+            <Route path="/kisi-sonuclari/detay" element={
+              <ProtectedRoute>
+                <Layout>
+                  <KisiSonuclariDetay />
                 </Layout>
               </ProtectedRoute>
             } />
