@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { useLocation } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 
 type DetailTab = 'executive-summary' | 'competency-details' | 'report-access' | 'ai-assistant';
 type CompetencyKey = 'uyumluluk' | 'musteri' | 'etkileme' | 'sinerji';
@@ -32,8 +32,9 @@ type ReportDetail = {
   developmentPlan?: string;
 };
 
-const KisiSonuclariDetay: React.FC = () => {
+const PersonResultsDetail: React.FC = () => {
   const location = useLocation();
+  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState<DetailTab>('executive-summary');
   const [activeCompetency, setActiveCompetency] = useState<CompetencyKey>('uyumluluk');
   const [competencySubTab, setCompetencySubTab] = useState<CompetencySubTab>('general-evaluation');
@@ -304,7 +305,10 @@ const KisiSonuclariDetay: React.FC = () => {
         <div className="px-8 py-4">
           <div className="flex justify-between items-center">
             <div className="flex items-center space-x-4">
-              <button className="text-gray-500 hover:text-gray-700">
+              <button
+                className="text-gray-500 hover:text-gray-700"
+                onClick={() => navigate('/kisi-sonuclari', { state: { selectedUser: latestUser } })}
+              >
                 <i className="fa-solid fa-arrow-left" />
               </button>
               <div>
@@ -1011,4 +1015,4 @@ const KisiSonuclariDetay: React.FC = () => {
   );
 };
 
-export default KisiSonuclariDetay;
+export default PersonResultsDetail;

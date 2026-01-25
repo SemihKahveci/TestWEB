@@ -21,7 +21,7 @@ type CachedUserResults = {
   latestHistory: UserResult[];
 };
 
-const KisiSonuclari: React.FC = () => {
+const PersonResults: React.FC = () => {
   const [activeTab, setActiveTab] = useState<TabKey>('trend');
   const [selectedCompetency, setSelectedCompetency] = useState('uyumluluk');
   const [latestUser, setLatestUser] = useState<UserResult | null>(null);
@@ -793,4 +793,4 @@ const KisiSonuclari: React.FC = () => {
   );
 };
 
-export default KisiSonuclari;
+export default PersonResults;
