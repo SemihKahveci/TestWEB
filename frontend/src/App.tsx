@@ -20,6 +20,7 @@ import DefineCompanyAdmin from './pages/DefineCompanyAdmin';
 import SubscriptionSettings from './pages/SubscriptionSettings';
 import ScriptFiles from './pages/ScriptFiles';
 import DashboardPage from './pages/DashboardPage';
+import KisiSonuclari from './pages/KisiSonuclari';
 
 const AppContent: React.FC = () => {
   const location = useLocation();
@@ -127,6 +128,14 @@ const AppContent: React.FC = () => {
               <ProtectedRoute>
                 <Layout>
                   <ResultsPage />
+                </Layout>
+              </ProtectedRoute>
+            } />
+
+            <Route path="/kisi-sonuclari" element={
+              <ProtectedRoute>
+                <Layout>
+                  <KisiSonuclari />
                 </Layout>
               </ProtectedRoute>
             } />

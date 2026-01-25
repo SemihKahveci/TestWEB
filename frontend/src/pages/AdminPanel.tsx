@@ -416,7 +416,7 @@ const AdminPanel: React.FC = () => {
 
   const handleWord = async (code: string) => {
     try {
-      const response = await fetch(`${API_BASE_URL}/api/evaluation/generateWord`, {
+      const response = await fetch(`${API_BASE_URL}/api/evaluation/generateWordFromTemplate`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'

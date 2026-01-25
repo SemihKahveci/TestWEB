@@ -198,6 +198,7 @@ apiRouter.get('/evaluation/results', evaluationController.getAllEvaluations);
 apiRouter.get('/evaluation/:id', evaluationController.getEvaluationById);
 apiRouter.post('/evaluation/generatePDF', evaluationController.generatePDF);
 apiRouter.post('/evaluation/generateWord', evaluationController.generateWord);
+apiRouter.post('/evaluation/generateWordFromTemplate', evaluationController.generateWordFromTemplate);
 
 // PDF işlemleri
 apiRouter.get('/preview-pdf', evaluationController.previewPDF);

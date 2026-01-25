@@ -6,8 +6,12 @@ const mongoose = require('mongoose');
 const UserCode = require('../models/userCode');
 const Game = require('../models/game');
 const { Document, Packer, Paragraph, TextRun, HeadingLevel, AlignmentType, Footer, PageNumber, BorderStyle, Table, TableRow, TableCell, WidthType } = require('docx');
+const PizZip = require('pizzip');
+const Docxtemplater = require('docxtemplater');
 const { safeLog, getSafeErrorMessage } = require('../utils/helpers');
 const { getCompanyFilter } = require('../middleware/auth');
+
+const DEFAULT_WORD_TEMPLATE_PATH = path.join(__dirname, '..', 'templates', 'Gelişim Planı Metin_2.docx');
 
 const evaluationController = {
     async getEvaluationById(req, res) {
@@ -166,6 +170,83 @@ const evaluationController = {
         }
     },
 
+    async generateWordFromTemplate(req, res) {
+        try {
+            const { userCode, templateData = {}, templatePath } = req.body;
+
+            if (!userCode) {
+                return res.status(400).json({ message: 'userCode alanı zorunludur' });
+            }
+
+            const companyFilter = getCompanyFilter(req);
+            const filter = companyFilter.companyId ? { code: userCode, companyId: companyFilter.companyId } : { code: userCode };
+            const userCodeData = await UserCode.findOne(filter);
+
+            if (!userCodeData) {
+                return res.status(404).json({ message: 'Kullanıcı bulunamadı' });
+            }
+
+            const evaluationResults = await getEvaluationResultsByUserCode(userCode, companyFilter);
+            const developmentText = extractDevelopmentSuggestionsText(evaluationResults);
+            const developmentSections = splitDevelopmentSections(developmentText);
+
+            const completionDate = userCodeData.completionDate ? new Date(userCodeData.completionDate) : null;
+            const completionDayMonth = completionDate && !Number.isNaN(completionDate.getTime())
+                ? completionDate.toLocaleDateString('tr-TR', { day: 'numeric', month: 'long' })
+                : '-';
+            const completionYear = completionDate && !Number.isNaN(completionDate.getTime())
+                ? completionDate.toLocaleDateString('tr-TR', { year: 'numeric' })
+                : '-';
+            const gameDuration = formatDuration(userCodeData.sentDate, completionDate);
+
+            const templatePayload = {
+                'Kullanıcı Adı Soyadı': userCodeData.name || '-',
+                'Kullanıcı Pozisyon': '',
+                'Kullanıcı Pozisyon ': '',
+                'Oyun Süresi': gameDuration,
+                'Oyun Tamamlama Gün ve ay': completionDayMonth,
+                'Oyun Tamamlana Gün ve ay': completionDayMonth,
+                'Oyun tamamlanma yıl': completionYear,
+                'Günlük_Kullanım': developmentSections.Günlük_Kullanım || '',
+                'Podcast': developmentSections.Podcast || '',
+                'Eğitim_Önerileri': developmentSections.Eğitim_Önerileri || '',
+                'Uygulama': developmentSections.Uygulama || '',
+                'Hedef': developmentSections.Hedef || '',
+                ...templateData
+            };
+
+            const resolvedTemplatePath = templatePath || process.env.WORD_TEMPLATE_PATH || DEFAULT_WORD_TEMPLATE_PATH;
+            if (!fs.existsSync(resolvedTemplatePath)) {
+                return res.status(400).json({
+                    message: 'Word template bulunamadı',
+                    templatePath: resolvedTemplatePath
+                });
+            }
+
+            const content = fs.readFileSync(resolvedTemplatePath, 'binary');
+            const zip = new PizZip(content);
+            const doc = new Docxtemplater(zip, {
+                paragraphLoop: true,
+                linebreaks: true,
+                delimiters: { start: '{{', end: '}}' },
+                nullGetter: () => ''
+            });
+
+            doc.setData(templatePayload);
+            doc.render();
+
+            const buffer = doc.getZip().generate({ type: 'nodebuffer' });
+
+            res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document');
+            res.setHeader('Content-Disposition', `attachment; filename=evaluation_${userCode}_template.docx`);
+            res.send(buffer);
+        } catch (error) {
+            safeLog('error', 'Word template oluşturma hatası', error);
+            const message = getSafeErrorMessage ? getSafeErrorMessage(error) : 'Word oluşturulurken bir hata oluştu';
+            res.status(500).json({ message });
+        }
+    },
+
     previewPDF: async (req, res) => {
         try {
             const { code } = req.query;
@@ -265,20 +346,169 @@ async function getUserInfo(userCode, companyId = null) {
         if (userCodeData) {
             return {
                 name: userCodeData.name || 'Bilinmeyen',
-                completionDate: userCodeData.completionDate || new Date()
+                completionDate: userCodeData.completionDate || new Date(),
+                sentDate: userCodeData.sentDate || null
             };
         }
         return {
             name: 'Bilinmeyen',
-            completionDate: new Date()
+            completionDate: new Date(),
+            sentDate: null
         };
     } catch (error) {
         safeLog('error', 'Kullanıcı bilgisi alınırken hata', error);
         return {
             name: 'Bilinmeyen',
-            completionDate: new Date()
+            completionDate: new Date(),
+            sentDate: null
         };
     }
+}
+
+function formatDuration(startDate, endDate) {
+    if (!startDate || !endDate) return '-';
+    const start = new Date(startDate);
+    const end = new Date(endDate);
+    if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) return '-';
+    const diffMs = Math.max(0, end.getTime() - start.getTime());
+    const totalMinutes = Math.floor(diffMs / 60000);
+    const days = Math.floor(totalMinutes / (24 * 60));
+    const hours = Math.floor((totalMinutes % (24 * 60)) / 60);
+    const minutes = totalMinutes % 60;
+
+    const parts = [];
+    if (days > 0) parts.push(`${days} gün`);
+    if (hours > 0) parts.push(`${hours} saat`);
+    if (minutes > 0 || parts.length === 0) parts.push(`${minutes} dakika`);
+    return parts.join(' ');
+}
+
+async function getEvaluationResultsByUserCode(userCode, companyFilter) {
+    const games = await Game.find({ playerCode: userCode, ...companyFilter });
+    let allEvaluationResults = [];
+
+    if (!games || games.length === 0) {
+        const evaluation = await EvaluationResult.findOne({ ID: userCode, ...companyFilter });
+        if (evaluation) {
+            allEvaluationResults = Array.isArray(evaluation) ? evaluation : [evaluation];
+        }
+    } else {
+        for (const game of games) {
+            if (game.evaluationResult) {
+                if (Array.isArray(game.evaluationResult)) {
+                    allEvaluationResults = allEvaluationResults.concat(game.evaluationResult);
+                } else {
+                    allEvaluationResults.push(game.evaluationResult);
+                }
+            }
+        }
+
+        if (allEvaluationResults.length === 0) {
+            const evaluation = await EvaluationResult.findOne({ ID: userCode, ...companyFilter });
+            if (evaluation) {
+                allEvaluationResults = Array.isArray(evaluation) ? evaluation : [evaluation];
+            }
+        }
+    }
+
+    const uniqueResults = [];
+    const seenIds = new Set();
+
+    for (const result of allEvaluationResults) {
+        if (result && result.data && result.data.ID && !seenIds.has(result.data.ID)) {
+            seenIds.add(result.data.ID);
+            uniqueResults.push(result);
+        }
+    }
+
+    return uniqueResults.length > 0 ? uniqueResults : allEvaluationResults;
+}
+
+function extractDevelopmentSuggestionsText(evaluationResults = []) {
+    if (!Array.isArray(evaluationResults) || evaluationResults.length === 0) return '';
+
+    const texts = [];
+    for (const result of evaluationResults) {
+        const data = result?.data;
+        if (!data || typeof data !== 'object') continue;
+
+        for (const key of Object.keys(data)) {
+            if (/Gelişim\s*Önerileri/i.test(key)) {
+                const value = data[key];
+                if (typeof value === 'string' && value.trim()) {
+                    texts.push(value.trim());
+                }
+            }
+        }
+    }
+
+    return texts.join('\n\n');
+}
+
+function splitDevelopmentSections(text = '') {
+    const empty = {
+        'Günlük_Kullanım': '',
+        'Podcast': '',
+        'Eğitim_Önerileri': '',
+        'Uygulama': '',
+        'Hedef': ''
+    };
+
+    if (!text || typeof text !== 'string') return empty;
+
+    const headingRegex = /(G[uü]nl[uü]k\s*Kullan[ıi]m|Podcast|E[ğg]itim\s*O[öo]nerileri|Uygulama|Hedef)\s*[:\-–]?\s*/gi;
+    const matches = [];
+    let match;
+
+    while ((match = headingRegex.exec(text)) !== null) {
+        matches.push({
+            raw: match[1],
+            index: match.index,
+            length: match[0].length
+        });
+    }
+
+    if (matches.length === 0) {
+        return {
+            ...empty,
+            'Eğitim_Önerileri': text.trim()
+        };
+    }
+
+    const normalize = (value) => value
+        .toLowerCase()
+        .replace(/[ıİ]/g, 'i')
+        .replace(/[ğĞ]/g, 'g')
+        .replace(/[üÜ]/g, 'u')
+        .replace(/[şŞ]/g, 's')
+        .replace(/[öÖ]/g, 'o')
+        .replace(/[çÇ]/g, 'c')
+        .replace(/\s+/g, '');
+
+    const mapKey = (raw) => {
+        const normalized = normalize(raw);
+        if (normalized === 'gunlukkullanim') return 'Günlük_Kullanım';
+        if (normalized === 'podcast') return 'Podcast';
+        if (normalized === 'egitimönerileri' || normalized === 'egitimonerileri') return 'Eğitim_Önerileri';
+        if (normalized === 'uygulama') return 'Uygulama';
+        if (normalized === 'hedef') return 'Hedef';
+        return null;
+    };
+
+    const result = { ...empty };
+    for (let i = 0; i < matches.length; i++) {
+        const current = matches[i];
+        const next = matches[i + 1];
+        const start = current.index + current.length;
+        const end = next ? next.index : text.length;
+        const content = text.slice(start, end).trim();
+        const key = mapKey(current.raw);
+        if (key && content) {
+            result[key] = content;
+        }
+    }
+
+    return result;
 }
 
 // Gezegen seçim sırasına göre raporları sıralama fonksiyonu
