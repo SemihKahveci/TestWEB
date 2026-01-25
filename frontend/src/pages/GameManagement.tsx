@@ -21,7 +21,7 @@ interface Company {
 }
 
 const GameManagement: React.FC = () => {
-  const { t } = useLanguage();
+  const { language, t } = useLanguage();
   const [games, setGames] = useState<Game[]>([]);
   const [companies, setCompanies] = useState<Company[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -44,6 +44,19 @@ const GameManagement: React.FC = () => {
   // Error popup states
   const [showErrorPopup, setShowErrorPopup] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
+  const formatCompanyPlaceholder = (count: number) =>
+    language === 'en'
+      ? `${t('labels.companySelect')} (${count} available)`
+      : `${t('labels.companySelect')} (${count} firma mevcut)`;
+
+  const formatNoResultsText = (term: string) => {
+    if (term) {
+      return language === 'en'
+        ? `No results found for "${term}"`
+        : `"${term}" için arama sonucu bulunamadı`;
+    }
+    return t('labels.companyNotFound');
+  };
   
   // Form states
   const [formData, setFormData] = useState({
@@ -104,12 +117,12 @@ const GameManagement: React.FC = () => {
     try {
       setIsLoading(true);
       const response = await fetch('/api/game-management/games');
-      if (!response.ok) throw new Error('Veriler yüklenemedi');
+      if (!response.ok) throw new Error(t('errors.dataLoadFailed'));
       
       const data = await response.json();
       setGames(data.games || []);
     } catch (error) {
-      console.error('💥 Oyunlar yüklenirken hata:', error);
+      console.error('Games load error:', error);
     } finally {
       setIsLoading(false);
     }
@@ -128,7 +141,7 @@ const GameManagement: React.FC = () => {
         setFilteredCompanies(sortedCompanies);
       }
     } catch (error) {
-      console.error('Firmalar yüklenirken hata:', error);
+      console.error('Companies load error:', error);
     }
   };
 
@@ -243,7 +256,7 @@ const GameManagement: React.FC = () => {
     try {
       setIsLoadingEdit(true);
       const response = await fetch(`/api/game-management/games/${game._id}`);
-      if (!response.ok) throw new Error('Oyun verileri alınamadı');
+      if (!response.ok) throw new Error(t('errors.gameDataFetch'));
       
       const gameData = await response.json();
       
@@ -257,7 +270,7 @@ const GameManagement: React.FC = () => {
       });
       setShowEditPopup(true);
     } catch (error) {
-      console.error('💥 Oyun detayları yüklenirken hata:', error);
+      console.error('Game details load error:', error);
     } finally {
       setIsLoadingEdit(false);
     }
@@ -275,13 +288,13 @@ const GameManagement: React.FC = () => {
       // API'den oyun verilerini ID'ye göre al
       const response = await fetch(`/api/game-management/games/${game._id}`);
       if (!response.ok) {
-        throw new Error('Oyun verileri alınamadı');
+        throw new Error(t('errors.gameDataFetch'));
       }
       
       const gameData = await response.json();
       
       if (!gameData.game.invoiceFile) {
-        showError('Bu oyun için fatura dosyası bulunamadı!');
+        showError(t('errors.invoiceNotFound'));
         return;
       }
       
@@ -295,8 +308,8 @@ const GameManagement: React.FC = () => {
       setShowInvoicePopup(true);
       
     } catch (error: any) {
-      console.error('💥 Fatura görüntüleme hatası:', error);
-      showError(error.message || 'Fatura görüntülenirken bir hata oluştu');
+      console.error('Invoice preview error:', error);
+      showError(error.message || t('errors.invoicePreviewError'));
     } finally {
       setIsLoadingInvoice(false);
     }
@@ -321,23 +334,23 @@ const GameManagement: React.FC = () => {
   const handleSubmitAdd = async () => {
     // Form validation - Tüm alanlar zorunlu
     if (!formData.firmName.trim()) {
-      showError('Firma adı zorunludur!');
+      showError(t('errors.companyNameRequired'));
       return;
     }
     if (!formData.companyId || !formData.companyId.trim()) {
-      showError('Lütfen firma seçiniz!');
+      showError(t('errors.selectCompany'));
       return;
     }
     if (!formData.invoiceNo.trim()) {
-      showError('Fatura numarası zorunludur!');
+      showError(t('errors.invoiceRequired'));
       return;
     }
     if (!formData.credit || !formData.credit.trim() || Number(formData.credit) <= 0) {
-      showError('Geçerli bir kredi miktarı giriniz!');
+      showError(t('errors.creditRequired'));
       return;
     }
     if (!formData.invoiceFile) {
-      showError('Fatura dosyası zorunludur!');
+      showError(t('errors.invoiceFileRequired'));
       return;
     }
 
@@ -379,12 +392,12 @@ const GameManagement: React.FC = () => {
       // Başarı mesajı göster - popup ile
       setShowAddPopup(false);
       setShowSuccessPopup(true);
-      setSuccessMessage('Oyun başarıyla eklendi!');
+      setSuccessMessage(t('messages.gameAdded'));
       
       loadGames();
     } catch (error: any) {
-      console.error('💥 Oyun ekleme hatası:', error);
-      showError(error.message || 'Oyun eklenirken bir hata oluştu');
+      console.error('Game add error:', error);
+      showError(error.message || t('errors.gameAddError'));
     } finally {
       setIsSubmitting(false);
     }
@@ -396,11 +409,11 @@ const GameManagement: React.FC = () => {
       
       // Form validation
       if (!formData.invoiceNo.trim()) {
-        showError('Fatura numarası zorunludur!');
+        showError(t('errors.invoiceRequired'));
         return;
       }
       if (!formData.credit || Number(formData.credit) <= 0) {
-        showError('Geçerli bir kredi miktarı giriniz!');
+        showError(t('errors.creditRequired'));
         return;
       }
       
@@ -430,7 +443,7 @@ const GameManagement: React.FC = () => {
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.message || 'Oyun güncellenemedi');
+        throw new Error(errorData.message || t('errors.gameUpdateFailed'));
       }
 
       const responseData = await response.json();
@@ -438,12 +451,12 @@ const GameManagement: React.FC = () => {
       // Başarı mesajı göster - popup ile
       setShowEditPopup(false);
       setShowSuccessPopup(true);
-      setSuccessMessage('Oyun başarıyla güncellendi!');
+      setSuccessMessage(t('messages.gameUpdated'));
       
       loadGames();
     } catch (error: any) {
-      console.error('💥 Oyun güncelleme hatası:', error);
-      showError(error.message || 'Oyun güncellenirken bir hata oluştu');
+      console.error('Game update error:', error);
+      showError(error.message || t('errors.gameUpdateError'));
     }
   };
 
@@ -456,7 +469,7 @@ const GameManagement: React.FC = () => {
       });
 
       if (!response.ok) {
-        throw new Error('Silme işlemi başarısız');
+        throw new Error(t('errors.deleteFailed'));
       }
 
       const responseData = await response.json();
@@ -464,12 +477,12 @@ const GameManagement: React.FC = () => {
       // Başarı mesajı göster - popup ile
       setShowDeletePopup(false);
       setShowSuccessPopup(true);
-      setSuccessMessage('Oyun başarıyla silindi!');
+      setSuccessMessage(t('messages.gameDeleted'));
       
       loadGames();
     } catch (error: any) {
-      console.error('💥 Oyun silme hatası:', error);
-      showError(error.message || 'Oyun silinirken bir hata oluştu');
+      console.error('Game delete error:', error);
+      showError(error.message || t('errors.gameDeleteError'));
     }
   };
 
@@ -503,7 +516,7 @@ const GameManagement: React.FC = () => {
           fontSize: '16px',
           fontFamily: 'Inter'
         }}>
-          Veriler yükleniyor...
+          {t('labels.loadingData')}
         </div>
         <style>{`
           @keyframes spin {
@@ -664,7 +677,7 @@ const GameManagement: React.FC = () => {
               }} />
               <input
                 type="text"
-                placeholder="Firma adı ve fatura no'da akıllı arama yapın..."
+                placeholder={t('placeholders.gameSearch')}
                 value={searchTerm}
                 onChange={(e) => {
                   const value = e.target.value;
@@ -803,7 +816,7 @@ const GameManagement: React.FC = () => {
               fontWeight: 700,
               borderBottom: '1px solid #E9ECEF'
             }}>
-              Firma Adı
+              {t('labels.companyName')}
             </div>
             <div style={{
               padding: '16px',
@@ -851,7 +864,7 @@ const GameManagement: React.FC = () => {
               fontWeight: 700,
               borderBottom: '1px solid #E9ECEF'
             }}>
-              İşlemler
+              {t('labels.actions')}
             </div>
 
             {/* Table Rows */}
@@ -937,7 +950,7 @@ const GameManagement: React.FC = () => {
                     onMouseLeave={(e) => {
                       e.currentTarget.style.backgroundColor = 'transparent';
                     }}
-                    title={isLoadingEdit ? "Yükleniyor..." : "Düzenle"}
+                    title={isLoadingEdit ? t('labels.loading') : t('buttons.update')}
                   >
                     <i className="fas fa-edit" style={{ color: '#3B82F6', fontSize: '16px' }}></i>
                   </button>
@@ -961,7 +974,7 @@ const GameManagement: React.FC = () => {
                     onMouseLeave={(e) => {
                       e.currentTarget.style.backgroundColor = 'transparent';
                     }}
-                    title={isLoadingInvoice ? "Yükleniyor..." : "Faturayı Görüntüle"}
+                    title={isLoadingInvoice ? t('labels.loading') : t('buttons.viewInvoice')}
                   >
                     <i className="fas fa-eye" style={{ color: '#0286F7', fontSize: '16px' }}></i>
                   </button>
@@ -1057,7 +1070,7 @@ const GameManagement: React.FC = () => {
                   fontFamily: 'Inter',
                   fontSize: '14px'
                 }}>
-                  Firma Adı *
+                  {t('labels.companyName')} *
                 </label>
                 <div style={{ position: 'relative' }} data-company-dropdown>
                   {/* Custom Dropdown */}
@@ -1079,7 +1092,7 @@ const GameManagement: React.FC = () => {
                     }}
                   >
                     <span style={{ color: companySearchTerm ? '#232D42' : '#8A92A6' }}>
-                      {companySearchTerm || `Firma seçin (${companies.length} firma mevcut)`}
+                      {companySearchTerm || formatCompanyPlaceholder(companies.length)}
                     </span>
                     <i 
                       className={`fas fa-chevron-${showCompanyDropdown ? 'up' : 'down'}`}
@@ -1192,7 +1205,7 @@ const GameManagement: React.FC = () => {
                             color: '#8A92A6',
                             textAlign: 'center'
                           }}>
-                            {companySearchTerm ? `"${companySearchTerm}" için arama sonucu bulunamadı` : 'Firma bulunamadı'}
+                            {formatNoResultsText(companySearchTerm)}
                           </div>
                         )}
                       </div>
@@ -1215,7 +1228,7 @@ const GameManagement: React.FC = () => {
                   type="text"
                   value={formData.invoiceNo}
                   onChange={(e) => setFormData({...formData, invoiceNo: e.target.value})}
-                  placeholder="Fatura numarasını giriniz"
+                  placeholder={t('placeholders.invoiceNo')}
                   required
                   style={{
                     width: '100%',
@@ -1243,7 +1256,7 @@ const GameManagement: React.FC = () => {
                   type="number"
                   value={formData.credit}
                   onChange={(e) => setFormData({...formData, credit: e.target.value})}
-                  placeholder="Kredi miktarını giriniz"
+                  placeholder={t('placeholders.credit')}
                   required
                   min="1"
                   style={{
@@ -1266,7 +1279,7 @@ const GameManagement: React.FC = () => {
                   fontFamily: 'Inter',
                   fontSize: '14px'
                 }}>
-                  Fatura Yükle <span style={{ color: '#EF4444' }}>*</span>
+                  {t('labels.uploadInvoice')} <span style={{ color: '#EF4444' }}>*</span>
                 </label>
                 <input
                   type="file"
@@ -1289,7 +1302,7 @@ const GameManagement: React.FC = () => {
                     color: '#6B7280',
                     fontFamily: 'Inter'
                   }}>
-                    Seçilen dosya: {formData.invoiceFile.name}
+                    {t('labels.selectedFile')}: {formData.invoiceFile.name}
                   </div>
                 )}
               </div>
@@ -1314,7 +1327,7 @@ const GameManagement: React.FC = () => {
                   cursor: 'pointer'
                 }}
               >
-                İptal
+                {t('buttons.cancel')}
               </button>
               <button
                 onClick={handleSubmitAdd}
@@ -1395,7 +1408,7 @@ const GameManagement: React.FC = () => {
               fontSize: '24px',
               fontWeight: 600
             }}>
-              Oyun Düzenle
+              {t('titles.editGame')}
             </h3>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
               <div>
@@ -1407,7 +1420,7 @@ const GameManagement: React.FC = () => {
                   fontFamily: 'Inter',
                   fontSize: '14px'
                 }}>
-                  Firma Adı *
+                  {t('labels.companyName')} *
                 </label>
                 <input
                   type="text"
@@ -1441,7 +1454,7 @@ const GameManagement: React.FC = () => {
                   type="text"
                   value={formData.invoiceNo}
                   onChange={(e) => setFormData({...formData, invoiceNo: e.target.value})}
-                  placeholder="Fatura numarasını giriniz"
+                  placeholder={t('placeholders.invoiceNo')}
                   required
                   style={{
                     width: '100%',
@@ -1469,7 +1482,7 @@ const GameManagement: React.FC = () => {
                   type="number"
                   value={formData.credit}
                   onChange={(e) => setFormData({...formData, credit: e.target.value})}
-                  placeholder="Kredi miktarını giriniz"
+                  placeholder={t('placeholders.credit')}
                   required
                   min="1"
                   style={{
@@ -1492,7 +1505,7 @@ const GameManagement: React.FC = () => {
                   fontFamily: 'Inter',
                   fontSize: '14px'
                 }}>
-                  Fatura Yükle (Opsiyonel)
+                  {t('labels.uploadInvoiceOptional')}
                 </label>
                 <input
                   type="file"
@@ -1515,7 +1528,7 @@ const GameManagement: React.FC = () => {
                     color: '#6B7280',
                     fontFamily: 'Inter'
                   }}>
-                    Seçilen dosya: {formData.invoiceFile.name}
+                    {t('labels.selectedFile')}: {formData.invoiceFile.name}
                   </div>
                 )}
                 {selectedGame?.invoiceFile && !formData.invoiceFile && (
@@ -1541,7 +1554,7 @@ const GameManagement: React.FC = () => {
                         textDecoration: 'underline'
                       }}
                     >
-                      Görüntüle
+                      {t('buttons.view')}
                     </button>
                   </div>
                 )}
@@ -1567,7 +1580,7 @@ const GameManagement: React.FC = () => {
                   cursor: 'pointer'
                 }}
               >
-                İptal
+                {t('buttons.cancel')}
               </button>
               <button
                 onClick={handleSubmitEdit}
@@ -1587,7 +1600,7 @@ const GameManagement: React.FC = () => {
                 }}
               >
                 <i className="fas fa-save"></i>
-                Güncelle
+                {t('buttons.update')}
               </button>
             </div>
           </div>
@@ -1641,7 +1654,7 @@ const GameManagement: React.FC = () => {
                 marginBottom: '10px',
                 fontFamily: 'Inter'
               }}>
-                Bu oyunu silmek istediğinizden emin misiniz?
+                {t('labels.deleteGameConfirm')}
               </p>
               <p style={{
                 color: '#dc3545',
@@ -1649,7 +1662,7 @@ const GameManagement: React.FC = () => {
                 fontWeight: 500,
                 fontFamily: 'Inter'
               }}>
-                Bu işlem geri alınamaz!
+                {t('labels.actionIrreversible')}
               </p>
             </div>
             <div style={{
@@ -1671,7 +1684,7 @@ const GameManagement: React.FC = () => {
                   cursor: 'pointer'
                 }}
               >
-                İptal
+                {t('buttons.cancel')}
               </button>
               <button
                 onClick={handleConfirmDelete}
@@ -1732,7 +1745,7 @@ const GameManagement: React.FC = () => {
                 fontWeight: 700,
                 fontFamily: 'Montserrat'
               }}>
-                Fatura Görüntüle
+                {t('titles.viewInvoice')}
               </div>
               <button
                 onClick={() => setShowInvoicePopup(false)}
@@ -1821,7 +1834,7 @@ const GameManagement: React.FC = () => {
               fontWeight: 500,
               fontFamily: 'Inter'
             }}>
-              Oyun detayları yükleniyor...
+              {t('labels.gameDetailsLoading')}
             </div>
           </div>
         </div>
@@ -1865,7 +1878,7 @@ const GameManagement: React.FC = () => {
               fontWeight: 500,
               fontFamily: 'Inter'
             }}>
-              Fatura yükleniyor...
+              {t('labels.invoiceLoading')}
             </div>
           </div>
         </div>
@@ -1912,7 +1925,7 @@ const GameManagement: React.FC = () => {
                 fontFamily: 'Montserrat',
                 marginBottom: '20px'
               }}>
-                Başarılı!
+                {t('labels.success')}
               </div>
               <div style={{
                 color: '#6B7280',

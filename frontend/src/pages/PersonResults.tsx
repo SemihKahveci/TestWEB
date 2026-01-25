@@ -394,7 +394,7 @@ const PersonResults: React.FC = () => {
                   <span>/</span>
                   <span className="hover:text-gray-700">{t('breadcrumbs.personResults')}</span>
                   <span>/</span>
-                  <span className="text-gray-900 font-medium">Sarah Johnson</span>
+                  <span className="text-gray-900 font-medium">{latestUser?.name || '—'}</span>
                 </div>
                 <h1 className="text-2xl font-bold text-gray-900">{t('titles.personResults')}</h1>
               </div>
