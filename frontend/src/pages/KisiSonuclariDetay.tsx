@@ -144,39 +144,20 @@ const KisiSonuclariDetay: React.FC = () => {
     const fetchLatest = async () => {
       try {
         setIsLoading(true);
-        const response = await fetch('/api/user-results?statusFilter=Tamamlandı', {
+        const response = await fetch('/api/user-results/latest-summary', {
           credentials: 'include'
         });
         const data = await response.json();
-        if (!data?.success || !Array.isArray(data?.results)) {
+        if (!data?.success || !data?.latestUser) {
           return;
         }
-
-        const results = data.results as UserResult[];
-        const completed = results.filter((item) => item.completionDate);
-        if (completed.length === 0) {
-          return;
-        }
-
-        const latest = [...completed].sort((a, b) => {
-          const aDate = new Date(a.completionDate || 0).getTime();
-          const bDate = new Date(b.completionDate || 0).getTime();
-          return bDate - aDate;
-        })[0];
-
-        const userKey = (latest.email || latest.name || '').toLowerCase();
-        let history = completed.filter((item) => {
-          const key = (item.email || item.name || '').toLowerCase();
-          return key && key === userKey;
-        });
-
-        if (history.length === 0) {
-          history = [latest];
-        }
+        const latest = data.latestUser as UserResult;
+        const history = Array.isArray(data.history) ? (data.history as UserResult[]) : [];
+        const historySafe = history.length > 0 ? history : [latest];
 
         setLatestUser(latest);
-        setLatestHistory(history);
-        sessionStorage.setItem('latestUserResults', JSON.stringify({ latestUser: latest, latestHistory: history }));
+        setLatestHistory(historySafe);
+        sessionStorage.setItem('latestUserResults', JSON.stringify({ latestUser: latest, latestHistory: historySafe }));
       } catch (error) {
         // Sessiz geç
       } finally {

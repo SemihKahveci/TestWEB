@@ -770,6 +770,180 @@ const adminController = {
         }
     },
 
+    // Son tamamlayan kullanıcı ve son 3 sonucu getir
+    getLatestUserSummary: async (req, res) => {
+        try {
+            const { getCompanyFilter } = require('../middleware/auth');
+            const companyFilter = getCompanyFilter(req);
+
+            const latestUser = await UserCode.findOne({
+                ...companyFilter,
+                status: 'Tamamlandı',
+                completionDate: { $ne: null }
+            })
+                .sort({ completionDate: -1 })
+                .lean();
+
+            if (!latestUser) {
+                return res.status(404).json({ success: false, message: 'Tamamlanan kullanıcı bulunamadı' });
+            }
+
+            const historyQuery = {
+                ...companyFilter,
+                status: 'Tamamlandı',
+                completionDate: { $ne: null }
+            };
+
+            if (latestUser.email) {
+                historyQuery.email = latestUser.email;
+            } else if (latestUser.name) {
+                historyQuery.name = latestUser.name;
+            }
+
+            const userHistory = await UserCode.find(historyQuery)
+                .sort({ completionDate: 1 })
+                .lean();
+
+            const codes = userHistory.map((user) => user.code);
+            const games = await Game.find({
+                playerCode: { $in: codes },
+                ...companyFilter
+            })
+                .select('playerCode section customerFocusScore uncertaintyScore ieScore idikScore')
+                .lean();
+
+            const gamesByCode = new Map();
+            games.forEach((game) => {
+                if (!gamesByCode.has(game.playerCode)) {
+                    gamesByCode.set(game.playerCode, []);
+                }
+                gamesByCode.get(game.playerCode).push(game);
+            });
+
+            const mapUserScores = (user) => {
+                const userGames = gamesByCode.get(user.code) || [];
+                const venusGame = userGames.find((g) => g.section === '0' || g.section === 0);
+                const titanGame = userGames.find((g) => g.section === '1' || g.section === 1);
+
+                const customerFocusScore = (venusGame ? venusGame.customerFocusScore : null) || user.customerFocusScore || '-';
+                const uncertaintyScore = (venusGame ? venusGame.uncertaintyScore : null) || user.uncertaintyScore || '-';
+                const ieScore = (titanGame ? titanGame.ieScore : null) || user.ieScore || '-';
+                const idikScore = (titanGame ? titanGame.idikScore : null) || user.idikScore || '-';
+
+                return {
+                    ...user,
+                    customerFocusScore,
+                    uncertaintyScore,
+                    ieScore,
+                    idikScore
+                };
+            };
+
+            const historyWithScores = userHistory.map(mapUserScores);
+            const latestWithScores = mapUserScores(latestUser);
+            const lastThree = historyWithScores.slice(-3);
+
+            res.json({
+                success: true,
+                latestUser: latestWithScores,
+                history: lastThree
+            });
+        } catch (error) {
+            safeLog('error', 'Son kullanıcı özeti hatası', error);
+            res.status(500).json({
+                success: false,
+                message: getSafeErrorMessage(error, 'Özet veriler alınırken bir hata oluştu')
+            });
+        }
+    },
+
+    // Belirli kullanıcı için son 3 sonucu getir (code ile)
+    getUserSummaryByCode: async (req, res) => {
+        try {
+            const { code } = req.query;
+            if (!code) {
+                return res.status(400).json({ success: false, message: 'Kod gereklidir' });
+            }
+
+            const { getCompanyFilter } = require('../middleware/auth');
+            const companyFilter = getCompanyFilter(req);
+
+            const user = await UserCode.findOne({ code, ...companyFilter }).lean();
+            if (!user) {
+                return res.status(404).json({ success: false, message: 'Kullanıcı bulunamadı' });
+            }
+
+            const historyQuery = {
+                ...companyFilter,
+                status: 'Tamamlandı',
+                completionDate: { $ne: null }
+            };
+
+            if (user.email) {
+                historyQuery.email = user.email;
+            } else if (user.name) {
+                historyQuery.name = user.name;
+            } else {
+                historyQuery.code = user.code;
+            }
+
+            const userHistory = await UserCode.find(historyQuery)
+                .sort({ completionDate: 1 })
+                .lean();
+
+            const codes = userHistory.map((item) => item.code);
+            const games = await Game.find({
+                playerCode: { $in: codes },
+                ...companyFilter
+            })
+                .select('playerCode section customerFocusScore uncertaintyScore ieScore idikScore')
+                .lean();
+
+            const gamesByCode = new Map();
+            games.forEach((game) => {
+                if (!gamesByCode.has(game.playerCode)) {
+                    gamesByCode.set(game.playerCode, []);
+                }
+                gamesByCode.get(game.playerCode).push(game);
+            });
+
+            const mapUserScores = (userItem) => {
+                const userGames = gamesByCode.get(userItem.code) || [];
+                const venusGame = userGames.find((g) => g.section === '0' || g.section === 0);
+                const titanGame = userGames.find((g) => g.section === '1' || g.section === 1);
+
+                const customerFocusScore = (venusGame ? venusGame.customerFocusScore : null) || userItem.customerFocusScore || '-';
+                const uncertaintyScore = (venusGame ? venusGame.uncertaintyScore : null) || userItem.uncertaintyScore || '-';
+                const ieScore = (titanGame ? titanGame.ieScore : null) || userItem.ieScore || '-';
+                const idikScore = (titanGame ? titanGame.idikScore : null) || userItem.idikScore || '-';
+
+                return {
+                    ...userItem,
+                    customerFocusScore,
+                    uncertaintyScore,
+                    ieScore,
+                    idikScore
+                };
+            };
+
+            const historyWithScores = userHistory.map(mapUserScores);
+            const latestWithScores = mapUserScores(user);
+            const lastThree = historyWithScores.slice(-3);
+
+            res.json({
+                success: true,
+                latestUser: latestWithScores,
+                history: lastThree
+            });
+        } catch (error) {
+            safeLog('error', 'Kullanıcı özeti hatası', error);
+            res.status(500).json({
+                success: false,
+                message: getSafeErrorMessage(error, 'Özet veriler alınırken bir hata oluştu')
+            });
+        }
+    },
+
     getDashboardStats: async (req, res) => {
         try {
             const { getCompanyFilter } = require('../middleware/auth');

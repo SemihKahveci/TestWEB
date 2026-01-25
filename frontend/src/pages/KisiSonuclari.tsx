@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 
 type TabKey = 'trend' | 'summary' | 'full';
 
@@ -27,6 +27,7 @@ const KisiSonuclari: React.FC = () => {
   const [latestUser, setLatestUser] = useState<UserResult | null>(null);
   const [latestHistory, setLatestHistory] = useState<UserResult[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const location = useLocation();
   const navigate = useNavigate();
 
   const competencyConfig = useMemo(() => ([
@@ -133,7 +134,7 @@ const KisiSonuclari: React.FC = () => {
     return base;
   }, [competencyConfig, historySorted, latestUser]);
 
-  const selectedTrend = trendByCompetency[selectedCompetency] || [];
+  const selectedTrend = (trendByCompetency[selectedCompetency] || []).slice(-3);
   const selectedMeta = competencyConfig.find((item) => item.key === selectedCompetency) || competencyConfig[0];
   const axisLabels = useMemo(() => {
     if (selectedTrend.length === 0) return [];
@@ -142,6 +143,14 @@ const KisiSonuclari: React.FC = () => {
       ...point,
       x: 40 + (selectedTrend.length === 1 ? 230 : i * span)
     }));
+  }, [selectedTrend]);
+
+  const trendDelta = useMemo(() => {
+    if (selectedTrend.length < 2) return null;
+    const first = selectedTrend[0]?.value ?? null;
+    const last = selectedTrend[selectedTrend.length - 1]?.value ?? null;
+    if (first === null || last === null) return null;
+    return Math.round((last - first) * 10) / 10;
   }, [selectedTrend]);
 
   const scoreCards = [
@@ -154,6 +163,41 @@ const KisiSonuclari: React.FC = () => {
   const maxScore = 10;
 
   useEffect(() => {
+    const state = location.state as { selectedUser?: UserResult } | null;
+    if (state?.selectedUser) {
+      setLatestUser(state.selectedUser);
+      setLatestHistory([state.selectedUser]);
+      sessionStorage.setItem('latestUserResults', JSON.stringify({
+        latestUser: state.selectedUser,
+        latestHistory: [state.selectedUser]
+      }));
+
+      const fetchSelectedHistory = async () => {
+        try {
+          const response = await fetch(`/api/user-results/summary?code=${encodeURIComponent(state.selectedUser!.code)}`, {
+            credentials: 'include'
+          });
+          const data = await response.json();
+          if (!data?.success || !data?.latestUser) {
+            return;
+          }
+          const history = Array.isArray(data.history) ? (data.history as UserResult[]) : [];
+          const historySafe = history.length > 0 ? history : [data.latestUser as UserResult];
+          setLatestUser(data.latestUser as UserResult);
+          setLatestHistory(historySafe);
+          sessionStorage.setItem('latestUserResults', JSON.stringify({
+            latestUser: data.latestUser,
+            latestHistory: historySafe
+          }));
+        } catch (error) {
+          // Sessiz geç
+        }
+      };
+
+      fetchSelectedHistory();
+      return;
+    }
+
     const cached = sessionStorage.getItem('latestUserResults');
     if (cached) {
       try {
@@ -168,43 +212,22 @@ const KisiSonuclari: React.FC = () => {
     const fetchLatest = async () => {
       try {
         setIsLoading(true);
-        const response = await fetch('/api/user-results?statusFilter=Tamamlandı', {
+        const response = await fetch('/api/user-results/latest-summary', {
           credentials: 'include'
         });
         const data = await response.json();
-        if (!data?.success || !Array.isArray(data?.results)) {
+        if (!data?.success || !data?.latestUser) {
           setLatestUser(null);
           setLatestHistory([]);
           return;
         }
-
-        const results = data.results as UserResult[];
-        const completed = results.filter((item) => item.completionDate);
-        if (completed.length === 0) {
-          setLatestUser(null);
-          setLatestHistory([]);
-          return;
-        }
-
-        const latest = [...completed].sort((a, b) => {
-          const aDate = new Date(a.completionDate || 0).getTime();
-          const bDate = new Date(b.completionDate || 0).getTime();
-          return bDate - aDate;
-        })[0];
-
-        const userKey = (latest.email || latest.name || '').toLowerCase();
-        let history = completed.filter((item) => {
-          const key = (item.email || item.name || '').toLowerCase();
-          return key && key === userKey;
-        });
-
-        if (history.length === 0) {
-          history = [latest];
-        }
+        const latest = data.latestUser as UserResult;
+        const history = Array.isArray(data.history) ? (data.history as UserResult[]) : [];
+        const historySafe = history.length > 0 ? history : [latest];
 
         setLatestUser(latest);
-        setLatestHistory(history);
-        sessionStorage.setItem('latestUserResults', JSON.stringify({ latestUser: latest, latestHistory: history }));
+        setLatestHistory(historySafe);
+        sessionStorage.setItem('latestUserResults', JSON.stringify({ latestUser: latest, latestHistory: historySafe }));
       } catch (error) {
         setLatestUser(null);
         setLatestHistory([]);
@@ -214,7 +237,7 @@ const KisiSonuclari: React.FC = () => {
     };
 
     fetchLatest();
-  }, []);
+  }, [location.state]);
 
   return (
     <div className="bg-gray-50 font-inter">
@@ -491,7 +514,22 @@ const KisiSonuclari: React.FC = () => {
                           const path = points.map((p, i) => `${i === 0 ? 'M' : 'L'} ${p.x} ${p.y}`).join(' ');
                           return (
                             <>
-                              <path d={path} fill="none" stroke="url(#trend-line)" strokeWidth="3" />
+                              <path
+                                d={path}
+                                fill="none"
+                                stroke="#2563EB"
+                                strokeWidth="3"
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                              />
+                              <path
+                                d={path}
+                                fill="none"
+                                stroke="url(#trend-line)"
+                                strokeWidth="3"
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                              />
                               {points.map((p, i) => (
                                 <g key={`${selectedTrend[i]?.label}-${i}`}>
                                   <circle cx={p.x} cy={p.y} r="6" fill="#2563EB" />
@@ -534,7 +572,11 @@ const KisiSonuclari: React.FC = () => {
                     <div className="w-10 h-10 bg-green-500 rounded-full flex items-center justify-center mr-3">
                       <i className="fa-solid fa-arrow-trend-up text-white text-lg" />
                     </div>
-                    <p className="text-sm text-green-900 font-medium">Son 3 değerlendirmede +1.1 puan gelişim</p>
+                    <p className="text-sm text-green-900 font-medium">
+                      {trendDelta === null
+                        ? 'Yeterli veri yok'
+                        : `Son ${selectedTrend.length} değerlendirmede ${trendDelta >= 0 ? '+' : ''}${trendDelta} puan gelişim`}
+                    </p>
                   </div>
                 </div>
               </div>

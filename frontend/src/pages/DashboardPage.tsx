@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { evaluationAPI, adminAPI, organizationAPI } from '../services/api';
 
 declare global {
@@ -85,6 +86,7 @@ const allCompetencies = [
 ];
 
 const DashboardPage: React.FC = () => {
+  const navigate = useNavigate();
   const [filterOpen, setFilterOpen] = useState(false);
   const [isFilterModalOpen, setIsFilterModalOpen] = useState(false);
   const [tempSelectedCompetencies, setTempSelectedCompetencies] = useState<string[]>([]);
@@ -600,6 +602,9 @@ const DashboardPage: React.FC = () => {
     });
 
   const filteredResults = applyResultFilters(isFilterActive ? fullResults : results);
+  const pagedResults = isFilterActive
+    ? filteredResults.slice((currentPage - 1) * 10, currentPage * 10)
+    : filteredResults;
 
   const handleExcelDownload = async () => {
     if (filteredResults.length === 0) {
@@ -865,11 +870,30 @@ const DashboardPage: React.FC = () => {
             <div style={{ textAlign: 'center', padding: '24px', color: '#6B7280' }}>Gösterilecek sonuç bulunamadı.</div>
           ) : shouldCompact ? (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-              {filteredResults
-                .slice((currentPage - 1) * 10, currentPage * 10)
-                .map((result, index) => (
+              {pagedResults.map((result, index) => (
                 <div key={`${result.code}-${index}`} style={{ border: '1px solid #E5E7EB', borderRadius: '10px', padding: '12px', background: index % 2 === 1 ? '#F8FAFF' : 'white' }}>
-                  <div style={{ fontWeight: 600, color: '#111827', marginBottom: '6px' }}>{result.name}</div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '12px', marginBottom: '6px' }}>
+                    <div style={{ fontWeight: 600, color: '#111827' }}>{result.name}</div>
+                    <button
+                      type="button"
+                      onClick={() => navigate('/kisi-sonuclari', { state: { selectedUser: result } })}
+                      style={{
+                        border: '1px solid #E5E7EB',
+                        background: 'white',
+                        width: '32px',
+                        height: '32px',
+                        borderRadius: '8px',
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        cursor: 'pointer',
+                        color: '#2563EB'
+                      }}
+                      title="Kişi sonuçlarına git"
+                    >
+                      <i className="fa-solid fa-arrow-right" />
+                    </button>
+                  </div>
                   <div style={{ fontSize: '12px', color: '#6B7280', marginBottom: '10px' }}>
                     Tamamlanma Tarihi: {formatDate(result.completionDate)}
                   </div>
@@ -904,12 +928,11 @@ const DashboardPage: React.FC = () => {
                   <th style={{ padding: '12px 16px', textAlign: 'center', fontWeight: 600, wordBreak: 'break-word' }}>Belirsizlik Yönetimi</th>
                   <th style={{ padding: '12px 16px', textAlign: 'center', fontWeight: 600, wordBreak: 'break-word' }}>İnsanları Etkileme</th>
                   <th style={{ padding: '12px 16px', textAlign: 'center', fontWeight: 600, wordBreak: 'break-word' }}>Güven Veren İşbirliği ve Sinerji</th>
+                  <th style={{ padding: '12px 16px', textAlign: 'center', fontWeight: 600, wordBreak: 'break-word' }}>Detay</th>
                 </tr>
               </thead>
               <tbody>
-                {filteredResults
-                  .slice((currentPage - 1) * 10, currentPage * 10)
-                  .map((result, index) => (
+                {pagedResults.map((result, index) => (
                   <tr key={`${result.code}-${index}`} style={{ background: index % 2 === 1 ? '#EFF6FF' : 'white', borderBottom: '1px solid #E5E7EB' }}>
                     <td style={{ padding: '12px 16px', textAlign: 'left', fontWeight: 600, color: '#111827', wordBreak: 'break-word' }}>{result.name}</td>
                     <td style={{ padding: '12px 16px', textAlign: 'center', color: '#6B7280', wordBreak: 'break-word' }}>{formatDate(result.completionDate)}</td>
@@ -917,6 +940,27 @@ const DashboardPage: React.FC = () => {
                     <td style={{ padding: '12px 16px', textAlign: 'center', wordBreak: 'break-word' }}>{renderScoreBadge(result.uncertaintyScore)}</td>
                     <td style={{ padding: '12px 16px', textAlign: 'center', wordBreak: 'break-word' }}>{renderScoreBadge(result.ieScore)}</td>
                     <td style={{ padding: '12px 16px', textAlign: 'center', wordBreak: 'break-word' }}>{renderScoreBadge(result.idikScore)}</td>
+                    <td style={{ padding: '12px 16px', textAlign: 'center' }}>
+                      <button
+                        type="button"
+                        onClick={() => navigate('/kisi-sonuclari', { state: { selectedUser: result } })}
+                        style={{
+                          border: '1px solid #E5E7EB',
+                          background: 'white',
+                          width: '34px',
+                          height: '34px',
+                          borderRadius: '8px',
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          cursor: 'pointer',
+                          color: '#2563EB'
+                        }}
+                        title="Kişi sonuçlarına git"
+                      >
+                        <i className="fa-solid fa-arrow-right" />
+                      </button>
+                    </td>
                   </tr>
                 ))}
               </tbody>
