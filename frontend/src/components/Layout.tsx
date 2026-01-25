@@ -70,7 +70,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
   const mainMenuItems = [
     { path: '/dashboard', label: 'Kontrol Paneli', icon: '📊' },
     { path: '/admin', label: 'Genel Takip Sistemi', icon: '🏠' },
-    { path: '/kisi-sonuclari', label: 'Kişi Sonuçları', icon: '👤' },
+    { path: '/kisi-sonuclari', label: 'Detaylı Kişi Sonuçları', icon: '👤' },
     { path: '/results', label: 'Kişi Skorları Sayfası', icon: '📈' },
     { path: '/game-send', label: 'Oyun Gönder', icon: '📤' },
     { path: '/subscription-settings', label: 'Oyun Kullanım Özeti', icon: '💳' },

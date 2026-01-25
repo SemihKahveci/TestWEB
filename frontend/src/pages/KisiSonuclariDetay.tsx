@@ -343,7 +343,7 @@ const KisiSonuclariDetay: React.FC = () => {
                 >
                   <div className="flex items-center justify-between mb-4">
                     <i className={`fa-solid ${item.icon} text-3xl opacity-80`} />
-                    <div className="bg-white bg-opacity-20 rounded-lg px-3 py-1 text-xs font-medium">
+                    <div className="rounded-lg px-3 py-1 text-xs font-semibold text-white bg-white/30 shadow-sm">
                       {item.badge}
                     </div>
                   </div>
