@@ -1048,7 +1048,7 @@ const DefineCompanyAdmin: React.FC = () => {
                 }}
               >
                 <i className="fas fa-save"></i>
-                Kaydet
+                {t('buttons.save')}
               </button>
             </div>
           </div>

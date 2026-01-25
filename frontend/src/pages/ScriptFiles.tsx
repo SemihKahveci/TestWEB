@@ -1,16 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { useLanguage } from '../contexts/LanguageContext';
 
-// Sabit yetkinlik listesi
-const COMPETENCIES = [
-  'Müşteri Odaklılık',
-  'Uyumluluk ve Dayanıklılık',
-  'İnsanları Etkileme',
-  'Güven Veren İşbirliği ve Sinerji'
-];
-
 const ScriptFiles: React.FC = () => {
   const { t } = useLanguage();
+  const competencies = [
+    { value: 'Müşteri Odaklılık', label: t('competency.customerFocus') },
+    { value: 'Uyumluluk ve Dayanıklılık', label: t('competency.adaptability') },
+    { value: 'İnsanları Etkileme', label: t('competency.influence') },
+    { value: 'Güven Veren İşbirliği ve Sinerji', label: t('competency.trust') }
+  ];
   const [selectedCompetency, setSelectedCompetency] = useState<string>('');
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -45,7 +43,7 @@ const ScriptFiles: React.FC = () => {
       if (file.name.endsWith('.csv') || file.name.endsWith('.xlsx') || file.name.endsWith('.xls')) {
         setSelectedFile(file);
       } else {
-        setErrorMessage('Lütfen CSV (.csv) veya Excel (.xlsx, .xls) dosyası seçin!');
+        setErrorMessage(t('errors.selectCsvOrExcel'));
         setShowErrorPopup(true);
       }
     }
@@ -73,7 +71,7 @@ const ScriptFiles: React.FC = () => {
       if (file.name.endsWith('.csv') || file.name.endsWith('.xlsx') || file.name.endsWith('.xls')) {
         setSelectedFile(file);
       } else {
-        setErrorMessage('Lütfen CSV (.csv) veya Excel (.xlsx, .xls) dosyası seçin!');
+        setErrorMessage(t('errors.selectCsvOrExcel'));
         setShowErrorPopup(true);
       }
     }
@@ -81,13 +79,13 @@ const ScriptFiles: React.FC = () => {
 
   const handleSubmit = async () => {
     if (!selectedCompetency) {
-      setErrorMessage('Lütfen bir yetkinlik seçin!');
+      setErrorMessage(t('errors.selectCompetency'));
       setShowErrorPopup(true);
       return;
     }
 
     if (!selectedFile) {
-      setErrorMessage('Lütfen bir Excel dosyası seçin!');
+      setErrorMessage(t('errors.selectExcelFile'));
       setShowErrorPopup(true);
       return;
     }
@@ -108,16 +106,16 @@ const ScriptFiles: React.FC = () => {
       const result = await response.json();
 
       if (response.ok && result.success) {
-        setSuccessMessage(result.message || 'Dosya başarıyla yüklendi! Güncelleme butonlarına basarak işlemi tamamlayabilirsiniz.');
+        setSuccessMessage(result.message || t('messages.fileUploadComplete'));
         setShowSuccessPopup(true);
         // Dosya ve yetkinlik seçimini koru, sadece başarı mesajı göster
       } else {
-        setErrorMessage(result.message || 'Dosya yüklenirken bir hata oluştu');
+        setErrorMessage(result.message || t('errors.fileUploadFailed'));
         setShowErrorPopup(true);
       }
     } catch (error: any) {
       console.error('💥 Dosya yükleme hatası:', error);
-      setErrorMessage('Dosya yüklenirken bir hata oluştu: ' + error.message);
+      setErrorMessage(`${t('errors.fileUploadFailed')}: ${error.message}`);
       setShowErrorPopup(true);
     } finally {
       setIsSubmitting(false);
@@ -126,13 +124,13 @@ const ScriptFiles: React.FC = () => {
 
   const handleUpdateReports = async () => {
     if (!selectedCompetency) {
-      setErrorMessage('Lütfen bir yetkinlik seçin!');
+      setErrorMessage(t('errors.selectCompetency'));
       setShowErrorPopup(true);
       return;
     }
 
     if (!selectedFile) {
-      setErrorMessage('Lütfen bir CSV dosyası seçin!');
+      setErrorMessage(t('errors.selectCsvFile'));
       setShowErrorPopup(true);
       return;
     }
@@ -153,15 +151,15 @@ const ScriptFiles: React.FC = () => {
       const result = await response.json();
 
       if (response.ok && result.success) {
-        setSuccessMessage(result.message || 'Raporlar başarıyla güncellendi!');
+        setSuccessMessage(result.message || t('messages.reportsUpdated'));
         setShowSuccessPopup(true);
       } else {
-        setErrorMessage(result.message || 'Rapor güncelleme sırasında bir hata oluştu');
+        setErrorMessage(result.message || t('errors.reportsUpdateFailed'));
         setShowErrorPopup(true);
       }
     } catch (error: any) {
       console.error('💥 Rapor güncelleme hatası:', error);
-      setErrorMessage('Rapor güncelleme sırasında bir hata oluştu: ' + error.message);
+      setErrorMessage(`${t('errors.reportsUpdateFailed')}: ${error.message}`);
       setShowErrorPopup(true);
     } finally {
       setIsSubmitting(false);
@@ -170,13 +168,13 @@ const ScriptFiles: React.FC = () => {
 
   const handleUpdateIDs = async () => {
     if (!selectedCompetency) {
-      setErrorMessage('Lütfen bir yetkinlik seçin!');
+      setErrorMessage(t('errors.selectCompetency'));
       setShowErrorPopup(true);
       return;
     }
 
     if (!selectedFile) {
-      setErrorMessage('Lütfen bir CSV dosyası seçin!');
+      setErrorMessage(t('errors.selectCsvFile'));
       setShowErrorPopup(true);
       return;
     }
@@ -197,15 +195,15 @@ const ScriptFiles: React.FC = () => {
       const result = await response.json();
 
       if (response.ok && result.success) {
-        setSuccessMessage(result.message || 'ID\'ler başarıyla güncellendi!');
+        setSuccessMessage(result.message || t('messages.idsUpdated'));
         setShowSuccessPopup(true);
       } else {
-        setErrorMessage(result.message || 'ID güncelleme sırasında bir hata oluştu');
+        setErrorMessage(result.message || t('errors.idsUpdateFailed'));
         setShowErrorPopup(true);
       }
     } catch (error: any) {
       console.error('💥 ID güncelleme hatası:', error);
-      setErrorMessage('ID güncelleme sırasında bir hata oluştu: ' + error.message);
+      setErrorMessage(`${t('errors.idsUpdateFailed')}: ${error.message}`);
       setShowErrorPopup(true);
     } finally {
       setIsSubmitting(false);
@@ -359,7 +357,7 @@ const ScriptFiles: React.FC = () => {
               fontFamily: 'Inter',
               fontWeight: 500
             }}>
-              Yetkinlik Adı *
+              {t('labels.competencyName')} *
             </label>
             <select
               value={selectedCompetency}
@@ -384,10 +382,10 @@ const ScriptFiles: React.FC = () => {
                 e.target.style.boxShadow = 'none';
               }}
             >
-              <option value="">Yetkinlik seçin...</option>
-              {COMPETENCIES.map((competency) => (
-                <option key={competency} value={competency}>
-                  {competency}
+              <option value="">{t('placeholders.selectCompetency')}</option>
+              {competencies.map((competency) => (
+                <option key={competency.value} value={competency.value}>
+                  {competency.label}
                 </option>
               ))}
             </select>
@@ -406,7 +404,7 @@ const ScriptFiles: React.FC = () => {
               fontFamily: 'Inter',
               fontWeight: 500
             }}>
-              CSV/Excel Dosyası *
+              {t('labels.fileUpload')} *
             </label>
             <div
               onClick={() => document.getElementById('excelFileInput')?.click()}
@@ -447,13 +445,13 @@ const ScriptFiles: React.FC = () => {
                     fontWeight: 500,
                     marginBottom: '8px'
                   }}>
-                    {selectedFile ? selectedFile.name : 'Excel dosyası seçin veya sürükleyin'}
+                    {selectedFile ? selectedFile.name : t('labels.fileDropSelect')}
                   </div>
                   <div style={{
                     color: '#8A92A6',
                     fontSize: '14px'
                   }}>
-                    .csv, .xlsx veya .xls formatında dosya yükleyin
+                    {t('labels.fileFormats')}
                   </div>
                 </div>
               </div>
@@ -496,12 +494,12 @@ const ScriptFiles: React.FC = () => {
                     borderRadius: '50%',
                     animation: 'spin 1s linear infinite'
                   }}></div>
-                  Güncelleniyor...
+                  {t('labels.updating')}
                 </>
               ) : (
                 <>
                   <i className="fas fa-sync-alt"></i>
-                  Raporları Güncelle
+                  {t('buttons.updateReports')}
                 </>
               )}
             </button>
@@ -534,12 +532,12 @@ const ScriptFiles: React.FC = () => {
                     borderRadius: '50%',
                     animation: 'spin 1s linear infinite'
                   }}></div>
-                  Güncelleniyor...
+                  {t('labels.updating')}
                 </>
               ) : (
                 <>
                   <i className="fas fa-id-card"></i>
-                  ID'leri Güncelle
+                  {t('buttons.updateIds')}
                 </>
               )}
             </button>
@@ -576,7 +574,7 @@ const ScriptFiles: React.FC = () => {
                 fontFamily: 'Montserrat',
                 marginBottom: '20px'
               }}>
-                Başarılı!
+                {t('labels.success')}
               </div>
               <div style={{
                 color: '#6B7280',

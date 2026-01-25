@@ -546,7 +546,7 @@ const CompetencySettings: React.FC = () => {
             errorMessage += '\n\nDetaylar:\n';
             errorResult.errors.forEach((error: any) => {
               if (typeof error === 'object' && error.row && error.message) {
-                errorMessage += `• Satır ${error.row}: ${error.message}\n`;
+                errorMessage += `• ${t('labels.row')} ${error.row}: ${error.message}\n`;
               } else {
                 errorMessage += `• ${error}\n`;
               }
@@ -567,10 +567,10 @@ const CompetencySettings: React.FC = () => {
       if (result.success) {
         let message = formatImportSuccess(result.importedCount);
         if (result.errors && result.errors.length > 0) {
-          message += '\n\nHatalar:\n';
+          message += `\n\n${t('labels.errors')}:\n`;
           result.errors.forEach((error: any) => {
             if (typeof error === 'object' && error.row && error.message) {
-              message += `• Satır ${error.row}: ${error.message}\n`;
+              message += `• ${t('labels.row')} ${error.row}: ${error.message}\n`;
             } else {
               message += `• ${error}\n`;
             }
@@ -586,7 +586,7 @@ const CompetencySettings: React.FC = () => {
           errorMessage += '\n\nDetaylar:\n';
           result.errors.forEach((error: any) => {
             if (typeof error === 'object' && error.row && error.message) {
-              errorMessage += `• Satır ${error.row}: ${error.message}\n`;
+              errorMessage += `• ${t('labels.row')} ${error.row}: ${error.message}\n`;
             } else {
               errorMessage += `• ${error}\n`;
             }
@@ -697,7 +697,7 @@ const CompetencySettings: React.FC = () => {
       XLSX.writeFile(wb, t('labels.competencySettingsTemplateFile'));
     } catch (error) {
       console.error('Template download error:', error);
-      setErrorMessage('Template indirilemedi!');
+      setErrorMessage(t('errors.templateDownloadError'));
       setShowErrorPopup(true);
     }
   };
@@ -739,7 +739,7 @@ const CompetencySettings: React.FC = () => {
             errorMessage += '\n\nDetaylar:\n';
             errorResult.errors.forEach((error: any) => {
               if (typeof error === 'object' && error.row && error.message) {
-                errorMessage += `• Satır ${error.row}: ${error.message}\n`;
+              errorMessage += `• ${t('labels.row')} ${error.row}: ${error.message}\n`;
               } else {
                 errorMessage += `• ${error}\n`;
               }
@@ -760,10 +760,10 @@ const CompetencySettings: React.FC = () => {
       if (result.success) {
         let message = formatImportSuccess(result.importedCount);
         if (result.errors && result.errors.length > 0) {
-          message += '\n\nHatalar:\n';
+          message += `\n\n${t('labels.errors')}:\n`;
           result.errors.forEach((error: any) => {
             if (typeof error === 'object' && error.row && error.message) {
-              message += `• Satır ${error.row}: ${error.message}\n`;
+              message += `• ${t('labels.row')} ${error.row}: ${error.message}\n`;
             } else {
               message += `• ${error}\n`;
             }
@@ -780,7 +780,7 @@ const CompetencySettings: React.FC = () => {
           errorMessage += '\n\nDetaylar:\n';
           result.errors.forEach((error: any) => {
             if (typeof error === 'object' && error.row && error.message) {
-              errorMessage += `• Satır ${error.row}: ${error.message}\n`;
+              errorMessage += `• ${t('labels.row')} ${error.row}: ${error.message}\n`;
             } else {
               errorMessage += `• ${error}\n`;
             }
@@ -1136,7 +1136,7 @@ const CompetencySettings: React.FC = () => {
                 }}
               >
                 <i className="fas fa-plus"></i>
-                Ekle
+                {t('buttons.add')}
               </button>
               <button
                 onClick={() => setShowImportPopup(true)}
@@ -1198,7 +1198,7 @@ const CompetencySettings: React.FC = () => {
                 }}
               >
                 <i className="fas fa-trash"></i>
-                Sil
+                {t('buttons.delete')}
               </button>
             </div>
           </div>
@@ -1780,7 +1780,7 @@ const CompetencySettings: React.FC = () => {
                         type="number"
                         value={formData.customerFocusMin}
                         onChange={(e) => setFormData({ ...formData, customerFocusMin: e.target.value })}
-                        placeholder="Minimum"
+                        placeholder={t('labels.minimum')}
                         min="0"
                         max="100"
                         style={{
@@ -1797,7 +1797,7 @@ const CompetencySettings: React.FC = () => {
                         type="number"
                         value={formData.customerFocusMax}
                         onChange={(e) => setFormData({ ...formData, customerFocusMax: e.target.value })}
-                        placeholder="Maksimum"
+                        placeholder={t('labels.maximum')}
                         min="0"
                         max="100"
                         style={{
@@ -1838,7 +1838,7 @@ const CompetencySettings: React.FC = () => {
                         type="number"
                         value={formData.uncertaintyManagementMin}
                         onChange={(e) => setFormData({ ...formData, uncertaintyManagementMin: e.target.value })}
-                        placeholder="Minimum"
+                        placeholder={t('labels.minimum')}
                         min="0"
                         max="100"
                         style={{
@@ -1855,7 +1855,7 @@ const CompetencySettings: React.FC = () => {
                         type="number"
                         value={formData.uncertaintyManagementMax}
                         onChange={(e) => setFormData({ ...formData, uncertaintyManagementMax: e.target.value })}
-                        placeholder="Maksimum"
+                        placeholder={t('labels.maximum')}
                         min="0"
                         max="100"
                         style={{
@@ -1896,7 +1896,7 @@ const CompetencySettings: React.FC = () => {
                         type="number"
                         value={formData.influenceMin}
                         onChange={(e) => setFormData({ ...formData, influenceMin: e.target.value })}
-                        placeholder="Minimum"
+                        placeholder={t('labels.minimum')}
                         min="0"
                         max="100"
                         style={{
@@ -1913,7 +1913,7 @@ const CompetencySettings: React.FC = () => {
                         type="number"
                         value={formData.influenceMax}
                         onChange={(e) => setFormData({ ...formData, influenceMax: e.target.value })}
-                        placeholder="Maksimum"
+                        placeholder={t('labels.maximum')}
                         min="0"
                         max="100"
                         style={{
@@ -1954,7 +1954,7 @@ const CompetencySettings: React.FC = () => {
                         type="number"
                         value={formData.collaborationMin}
                         onChange={(e) => setFormData({ ...formData, collaborationMin: e.target.value })}
-                        placeholder="Minimum"
+                        placeholder={t('labels.minimum')}
                         min="0"
                         max="100"
                         style={{
@@ -1971,7 +1971,7 @@ const CompetencySettings: React.FC = () => {
                         type="number"
                         value={formData.collaborationMax}
                         onChange={(e) => setFormData({ ...formData, collaborationMax: e.target.value })}
-                        placeholder="Maksimum"
+                        placeholder={t('labels.maximum')}
                         min="0"
                         max="100"
                         style={{
@@ -2228,10 +2228,10 @@ const CompetencySettings: React.FC = () => {
                           display: 'inline-block',
                           marginRight: '8px'
                         }}></div>
-                        Siliniyor...
+                        {t('statuses.deleting')}
                       </>
                     ) : (
-                      'Sil'
+                      t('buttons.delete')
                     )}
                   </button>
                 </div>
@@ -2285,7 +2285,7 @@ const CompetencySettings: React.FC = () => {
                     fontSize: '20px',
                     fontWeight: 700
                   }}>
-                    Excel Import
+                    {t('labels.excelImport')}
                   </div>
                   <button
                     onClick={() => setShowImportPopup(false)}
@@ -2510,7 +2510,7 @@ const CompetencySettings: React.FC = () => {
                       cursor: 'pointer'
                     }}
                   >
-                    Tamam
+                    {t('buttons.close')}
                   </button>
                 </div>
               </div>
@@ -2548,7 +2548,7 @@ const CompetencySettings: React.FC = () => {
                 marginBottom: '16px',
                 fontFamily: 'Inter'
               }}>
-                Hata!
+                {t('labels.error')}
               </div>
               <div style={{
                 fontSize: '14px',
@@ -2573,7 +2573,7 @@ const CompetencySettings: React.FC = () => {
                   cursor: 'pointer'
                 }}
               >
-                Tamam
+                {t('buttons.close')}
               </button>
             </div>
           </div>

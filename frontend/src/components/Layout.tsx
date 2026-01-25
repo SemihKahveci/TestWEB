@@ -161,7 +161,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
           </div>
           <button
             type="button"
-            disabled
+            onClick={toggleLanguage}
             title={language === 'tr' ? t('buttons.switchToEnglish') : t('buttons.switchToTurkish')}
             style={{
               border: '1px solid #E5E7EB',
@@ -173,8 +173,8 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              cursor: 'not-allowed',
-              opacity: 0.6
+              cursor: 'pointer',
+              opacity: 1
             }}
           >
             <i className="fa-solid fa-globe" />

@@ -81,6 +81,75 @@ const GameSendPage: React.FC = () => {
   });
   const [isMobile, setIsMobile] = useState(false);
 
+  const formatConfirmSend = (count: number) =>
+    language === 'en'
+      ? `${count} people will receive a game code. Do you want to continue?`
+      : `${count} kişiye oyun kodu gönderilecek. Devam etmek istiyor musunuz?`;
+
+  const formatInsufficientCredits = (remaining: number, needed: number) =>
+    language === 'en'
+      ? `Insufficient credits! Remaining: ${remaining}, Required: ${needed}`
+      : `Yetersiz kredi! Mevcut kredi: ${remaining}, Gerekli kredi: ${needed}`;
+
+  const formatCodeSent = (creditCost: number) =>
+    language === 'en'
+      ? `Code sent successfully! (${creditCost} credits deducted)`
+      : `Kod başarıyla gönderildi! (${creditCost} kredi düşüldü)`;
+
+  const formatCreditDeductionFailed = (message: string) =>
+    language === 'en'
+      ? `Credit deduction failed: ${message}`
+      : `Kredi düşürülemedi: ${message}`;
+
+  const formatSendFailed = (message: string) =>
+    language === 'en'
+      ? `Send failed: ${message}`
+      : `Gönderilemedi: ${message}`;
+
+  const formatSendErrorGeneric = () =>
+    language === 'en' ? 'Send failed: An error occurred' : 'Gönderilemedi: Bir hata oluştu';
+
+  const formatCreditSuccess = (successCount: number, totalCreditCost: number, superAdmin: boolean) =>
+    superAdmin
+      ? (language === 'en'
+        ? `${successCount} people sent successfully!`
+        : `${successCount} kişiye başarıyla gönderildi!`)
+      : (language === 'en'
+        ? `${successCount} people sent successfully! (${totalCreditCost} credits deducted)`
+        : `${successCount} kişiye başarıyla gönderildi! (${totalCreditCost} kredi düşüldü)`);
+
+  const formatPartialSuccess = (successCount: number, errorCount: number, totalCreditCost: number, superAdmin: boolean) =>
+    superAdmin
+      ? (language === 'en'
+        ? `${successCount} people sent, ${errorCount} failed.`
+        : `${successCount} kişiye gönderildi, ${errorCount} kişiye gönderilemedi.`)
+      : (language === 'en'
+        ? `${successCount} people sent, ${errorCount} failed. (${totalCreditCost} credits deducted)`
+        : `${successCount} kişiye gönderildi, ${errorCount} kişiye gönderilemedi. (${totalCreditCost} kredi düşüldü)`);
+
+  const formatNoOneSent = () =>
+    language === 'en' ? 'No recipients could be sent!' : 'Hiçbir kişiye gönderilemedi!';
+
+  const formatPersonError = (name: string, message: string) =>
+    `${name}: ${message}`;
+
+  const formatSendErrorLabel = () =>
+    language === 'en' ? 'Send error' : 'Gönderim hatası';
+
+  const formatCodeGenerationFailed = () =>
+    language === 'en' ? 'Code generation failed' : 'Kod üretim hatası';
+
+  const formatCodeGenerateMissing = () =>
+    language === 'en' ? 'Code could not be generated' : 'Kod üretilemedi';
+
+  const formatServerError = (status: number) =>
+    language === 'en' ? `Server error (${status})` : `Sunucu hatası (${status})`;
+
+  const formatNoSearchResults = (query: string) =>
+    language === 'en'
+      ? `No results found for "${query}"`
+      : `"${query}" için arama sonucu bulunamadı`;
+
   // Available planets
   const availablePlanets: Planet[] = [
     { value: 'venus', label: `${t('labels.planetVenus')} (${t('competency.uncertainty')} - ${t('competency.customerFocus')})` },
@@ -288,7 +357,7 @@ const GameSendPage: React.FC = () => {
       });
 
       if (!response.ok) {
-        throw new Error('Grup listesi yüklenemedi');
+        throw new Error(t('errors.groupListLoad'));
       }
 
       const result = await response.json();
@@ -299,11 +368,11 @@ const GameSendPage: React.FC = () => {
           .sort((a: Group, b: Group) => a.name.localeCompare(b.name, 'tr-TR'));
         setGroups(activeGroups);
       } else {
-        throw new Error(result.message || 'Grup listesi alınamadı');
+        throw new Error(result.message || t('errors.groupListFetch'));
       }
     } catch (error) {
       safeLog('error', 'Grup listesi yükleme hatası', error);
-      showMessage('Hata', 'Grup listesi yüklenemedi', 'error');
+      showMessage(t('labels.error'), t('errors.groupListLoad'), 'error');
     } finally {
       setIsLoading(false);
     }
@@ -318,7 +387,7 @@ const GameSendPage: React.FC = () => {
       });
 
       if (!response.ok) {
-        throw new Error('Unvan listesi yüklenemedi');
+        throw new Error(t('errors.titleListLoad'));
       }
 
       const result = await response.json();
@@ -333,11 +402,11 @@ const GameSendPage: React.FC = () => {
           }));
         setTitles(uniqueTitles);
       } else {
-        throw new Error(result.message || 'Unvan listesi alınamadı');
+        throw new Error(result.message || t('errors.titleListFetch'));
       }
     } catch (error) {
       safeLog('error', 'Unvan listesi yükleme hatası', error);
-      showMessage('Hata', 'Unvan listesi yüklenemedi', 'error');
+      showMessage(t('labels.error'), t('errors.titleListLoad'), 'error');
     } finally {
       setIsLoading(false);
     }
@@ -357,12 +426,12 @@ const GameSendPage: React.FC = () => {
   // Group management
   const addGroup = (groupId: string) => {
     if (!groupId) {
-      showMessage('Hata', 'Lütfen bir grup seçin!', 'error');
+      showMessage(t('labels.error'), t('errors.selectGroup'), 'error');
       return;
     }
 
     if (selectedGroups.includes(groupId)) {
-      showMessage('Hata', 'Bu grup zaten seçilmiş!', 'error');
+      showMessage(t('labels.error'), t('errors.groupAlreadySelected'), 'error');
       return;
     }
 
@@ -378,12 +447,12 @@ const GameSendPage: React.FC = () => {
   // Title management
   const addTitle = (titleId: string) => {
     if (!titleId) {
-      showMessage('Hata', 'Lütfen bir unvan seçin!', 'error');
+      showMessage(t('labels.error'), t('errors.selectTitle'), 'error');
       return;
     }
 
     if (selectedTitles.includes(titleId)) {
-      showMessage('Hata', 'Bu unvan zaten seçilmiş!', 'error');
+      showMessage(t('labels.error'), t('errors.titleAlreadySelected'), 'error');
       return;
     }
 
@@ -398,7 +467,7 @@ const GameSendPage: React.FC = () => {
 
   const addPlanet = (planetValue: string) => {
     if (selectedPlanets.includes(planetValue)) {
-      showMessage('Hata', 'Bu gezegen zaten seçilmiş!', 'error');
+      showMessage(t('labels.error'), t('errors.planetAlreadySelected'), 'error');
       return;
     }
     setSelectedPlanets([...selectedPlanets, planetValue]);
@@ -600,7 +669,7 @@ const GameSendPage: React.FC = () => {
         }
       } catch (error) {
         safeLog('error', 'Grup detayları yükleme hatası', error);
-        showMessage('Hata', 'Grup detayları yüklenemedi', 'error');
+        showMessage(t('labels.error'), t('errors.groupDetailsLoad'), 'error');
       }
     }
   };
@@ -646,7 +715,7 @@ const GameSendPage: React.FC = () => {
         }
       } catch (error) {
         safeLog('error', 'Unvan detayları yükleme hatası', error);
-        showMessage('Hata', 'Unvan detayları yüklenemedi', 'error');
+        showMessage(t('labels.error'), t('errors.titleDetailsLoad'), 'error');
       }
     }
   };
@@ -654,7 +723,7 @@ const GameSendPage: React.FC = () => {
   // Send person interview
   const sendPersonInterview = async () => {
     if (!personName || !personEmail || selectedPlanets.length === 0) {
-      showMessage('Hata', 'Lütfen tüm alanları doldurun ve en az bir gezegen seçin.', 'error');
+      showMessage(t('labels.error'), t('errors.fillAllFieldsSelectPlanet'), 'error');
       return;
     }
 
@@ -662,7 +731,7 @@ const GameSendPage: React.FC = () => {
     if (!isSuperAdmin) {
       const creditCost = selectedPlanets.length;
       if (remainingCredits < creditCost) {
-        showMessage('Hata', `Yetersiz kredi! Mevcut kredi: ${remainingCredits}, Gerekli kredi: ${creditCost}`, 'error');
+        showMessage(t('labels.error'), formatInsufficientCredits(remainingCredits, creditCost), 'error');
         return;
       }
     }
@@ -688,7 +757,7 @@ const GameSendPage: React.FC = () => {
 
       const codeData = await codeResponse.json();
       if (!codeData.success || !codeData.code) {
-        throw new Error('Kod üretilemedi veya geçersiz kod döndü');
+        throw new Error(t('errors.codeGenerateInvalid'));
       }
 
       // Send code
@@ -710,7 +779,7 @@ const GameSendPage: React.FC = () => {
       const sendData = await sendResponse.json();
       if (sendData.success) {
         const creditCost = selectedPlanets.length;
-        showMessage('Başarılı', `Kod başarıyla gönderildi! (${creditCost} kredi düşüldü)`, 'success');
+        showMessage(t('labels.success'), formatCodeSent(creditCost), 'success');
         // Clear form
         setPersonName('');
         setPersonEmail('');
@@ -721,7 +790,7 @@ const GameSendPage: React.FC = () => {
           const deductResponse = await creditAPI.deductCredits({
             amount: creditCost,
             type: 'game_send',
-            description: `Kişi gönderimi: ${personName} (${creditCost} gezegen)`
+            description: `${t('labels.personSend')}: ${personName} (${creditCost} ${t('labels.planet')})`
           });
           
           if (deductResponse.data.success) {
@@ -735,15 +804,15 @@ const GameSendPage: React.FC = () => {
             setRemainingCredits(remainingCredits);
           }
         } catch (error) {
-          showMessage('Hata', `Kredi düşürülemedi: ${error.response?.data?.message || error.message}`, 'error');
+          showMessage(t('labels.error'), formatCreditDeductionFailed(error.response?.data?.message || error.message), 'error');
           }
         }
       } else {
-        showMessage('Hata', 'Gönderilemedi: ' + sendData.message, 'error');
+        showMessage(t('labels.error'), formatSendFailed(sendData.message), 'error');
       }
     } catch (error) {
       safeLog('error', 'Kod gönderme hatası', error);
-      showMessage('Hata', 'Gönderilemedi: Bir hata oluştu', 'error');
+      showMessage(t('labels.error'), formatSendErrorGeneric(), 'error');
     } finally {
       setIsSubmitting(false);
     }
@@ -752,12 +821,12 @@ const GameSendPage: React.FC = () => {
   // Send title interview
   const sendTitleInterview = async () => {
     if (selectedTitles.length === 0) {
-      showMessage('Hata', 'Lütfen en az bir unvan seçin!', 'error');
+      showMessage(t('labels.error'), t('errors.selectTitleAtLeastOne'), 'error');
       return;
     }
 
     if (selectedTitlePlanets.length === 0) {
-      showMessage('Hata', 'Lütfen en az bir gezegen seçin!', 'error');
+      showMessage(t('labels.error'), t('errors.selectPlanetAtLeastOne'), 'error');
       return;
     }
 
@@ -850,7 +919,7 @@ const GameSendPage: React.FC = () => {
       }
 
       if (allPersons.length === 0) {
-        showMessage('Hata', 'Seçilen unvanlarda email adresi olan kişi bulunamadı!', 'error');
+        showMessage(t('labels.error'), t('errors.noEmailInTitle'), 'error');
         return;
       }
 
@@ -860,28 +929,28 @@ const GameSendPage: React.FC = () => {
         const totalCreditCost = allPersons.length * selectedTitlePlanets.length;
         
         if (remainingCredits < totalCreditCost) {
-          showMessage('Hata', `Yetersiz kredi! Mevcut kredi: ${remainingCredits}, Gerekli kredi: ${totalCreditCost}`, 'error');
+          showMessage(t('labels.error'), formatInsufficientCredits(remainingCredits, totalCreditCost), 'error');
           return;
         }
       }
 
       // Show confirmation
-      const confirmMessage = `${allPersons.length} kişiye oyun kodu gönderilecek. Devam etmek istiyor musunuz?`;
-      showConfirm('Onay', confirmMessage, (result) => {
+      const confirmMessage = formatConfirmSend(allPersons.length);
+      showConfirm(t('labels.confirm'), confirmMessage, (result) => {
         if (result) {
           sendCodesToTitlePersons(allPersons);
         }
       });
     } catch (error) {
       safeLog('error', 'Unvan gönderim hatası', error);
-      showMessage('Hata', 'Gönderim sırasında bir hata oluştu!', 'error');
+      showMessage(t('labels.error'), t('errors.sendDuring'), 'error');
     }
   };
 
   // Send group interview
   const sendGroupInterview = async () => {
     if (selectedGroups.length === 0) {
-      showMessage('Hata', 'Lütfen en az bir grup seçin!', 'error');
+      showMessage(t('labels.error'), t('errors.selectGroupAtLeastOne'), 'error');
       return;
     }
 
@@ -920,7 +989,7 @@ const GameSendPage: React.FC = () => {
       }
 
       if (allPersons.length === 0) {
-        showMessage('Hata', 'Seçilen gruplarda email adresi olan kişi bulunamadı!', 'error');
+        showMessage(t('labels.error'), t('errors.noEmailInGroup'), 'error');
         return;
       }
 
@@ -937,21 +1006,21 @@ const GameSendPage: React.FC = () => {
         }
         
         if (remainingCredits < totalCreditCost) {
-          showMessage('Hata', `Yetersiz kredi! Mevcut kredi: ${remainingCredits}, Gerekli kredi: ${totalCreditCost}`, 'error');
+          showMessage(t('labels.error'), formatInsufficientCredits(remainingCredits, totalCreditCost), 'error');
           return;
         }
       }
 
       // Show confirmation
-      const confirmMessage = `${allPersons.length} kişiye oyun kodu gönderilecek. Devam etmek istiyor musunuz?`;
-      showConfirm('Onay', confirmMessage, (result) => {
+      const confirmMessage = formatConfirmSend(allPersons.length);
+      showConfirm(t('labels.confirm'), confirmMessage, (result) => {
         if (result) {
           sendCodesToPersons(allPersons);
         }
       });
     } catch (error) {
       safeLog('error', 'Grup gönderim hatası', error);
-      showMessage('Hata', 'Gönderim sırasında bir hata oluştu!', 'error');
+      showMessage(t('labels.error'), t('errors.sendDuring'), 'error');
     }
   };
 
@@ -1001,31 +1070,31 @@ const GameSendPage: React.FC = () => {
                   successCount++;
                 } else {
                   errorCount++;
-                  errors.push(`${person.name}: ${sendData.message || 'Gönderim hatası'}`);
+                  errors.push(formatPersonError(person.name, sendData.message || formatSendErrorLabel()));
                 }
               } else {
                 // 500 hatası için daha detaylı mesaj
-                let errorMessage = 'Gönderim hatası';
+                let errorMessage = formatSendErrorLabel();
                 try {
                   const errorData = await sendResponse.json();
                   errorMessage = errorData.message || errorMessage;
                 } catch {
-                  errorMessage = `Sunucu hatası (${sendResponse.status})`;
+                  errorMessage = formatServerError(sendResponse.status);
                 }
                 errorCount++;
-                errors.push(`${person.name}: ${errorMessage}`);
+                errors.push(formatPersonError(person.name, errorMessage));
               }
             } else {
               errorCount++;
-              errors.push(`${person.name}: Kod üretilemedi`);
+              errors.push(formatPersonError(person.name, formatCodeGenerateMissing()));
             }
           } else {
             errorCount++;
-            errors.push(`${person.name}: Kod üretim hatası`);
+            errors.push(formatPersonError(person.name, formatCodeGenerationFailed()));
           }
         } catch (error) {
           errorCount++;
-          errors.push(`${person.name}: ${error instanceof Error ? error.message : 'Bilinmeyen hata'}`);
+          errors.push(formatPersonError(person.name, error instanceof Error ? error.message : t('labels.unknownError')));
         }
       }
 
@@ -1043,15 +1112,15 @@ const GameSendPage: React.FC = () => {
       
       // Show results
       if (successCount > 0 && errorCount === 0) {
-        const creditMessage = isSuperAdmin ? `${successCount} kişiye başarıyla gönderildi!` : `${successCount} kişiye başarıyla gönderildi! (${totalCreditCost} kredi düşüldü)`;
-        showMessage('Başarılı', creditMessage, 'success');
+        const creditMessage = formatCreditSuccess(successCount, totalCreditCost, isSuperAdmin);
+        showMessage(t('labels.success'), creditMessage, 'success');
         // Kredi düşür (API ile) - Super admin için atla
         if (!isSuperAdmin) {
         try {
           const deductResponse = await creditAPI.deductCredits({
             amount: totalCreditCost,
             type: 'game_send',
-            description: `Grup gönderimi: ${successCount} kişi (${totalCreditCost} kredi)`
+            description: `${t('labels.groupSend')}: ${successCount} ${t('labels.person')} (${totalCreditCost} ${t('labels.credits')})`
           });
           
           if (deductResponse.data.success) {
@@ -1065,12 +1134,12 @@ const GameSendPage: React.FC = () => {
             setRemainingCredits(remainingCredits);
           }
         } catch (error) {
-          showMessage('Hata', `Kredi düşürülemedi: ${error.response?.data?.message || error.message}`, 'error');
+          showMessage(t('labels.error'), formatCreditDeductionFailed(error.response?.data?.message || error.message), 'error');
           }
         }
       } else if (successCount > 0 && errorCount > 0) {
-        const creditMessage = isSuperAdmin ? `${successCount} kişiye gönderildi, ${errorCount} kişiye gönderilemedi.` : `${successCount} kişiye gönderildi, ${errorCount} kişiye gönderilemedi. (${totalCreditCost} kredi düşüldü)`;
-        showMessage('Kısmi Başarı', creditMessage, 'warning', errors);
+        const creditMessage = formatPartialSuccess(successCount, errorCount, totalCreditCost, isSuperAdmin);
+        showMessage(t('labels.partialSuccess'), creditMessage, 'warning', errors);
         safeLog('error', 'Gönderim hataları', errors);
         // Kredi düşür (sadece başarılı gönderimler için - API ile) - Super admin için atla
         if (!isSuperAdmin) {
@@ -1078,7 +1147,7 @@ const GameSendPage: React.FC = () => {
           const deductResponse = await creditAPI.deductCredits({
             amount: totalCreditCost,
             type: 'game_send',
-            description: `Grup gönderimi (kısmi): ${successCount} kişi (${totalCreditCost} kredi)`
+            description: `${t('labels.groupSendPartial')}: ${successCount} ${t('labels.person')} (${totalCreditCost} ${t('labels.credits')})`
           });
           
           if (deductResponse.data.success) {
@@ -1092,11 +1161,11 @@ const GameSendPage: React.FC = () => {
             setRemainingCredits(remainingCredits);
           }
         } catch (error) {
-          showMessage('Hata', `Kredi düşürülemedi: ${error.response?.data?.message || error.message}`, 'error');
+          showMessage(t('labels.error'), formatCreditDeductionFailed(error.response?.data?.message || error.message), 'error');
           }
         }
       } else {
-        showMessage('Hata', 'Hiçbir kişiye gönderilemedi!', 'error', errors);
+        showMessage(t('labels.error'), formatNoOneSent(), 'error', errors);
         safeLog('error', 'Tüm gönderim hataları', errors);
       }
 
@@ -1104,7 +1173,7 @@ const GameSendPage: React.FC = () => {
       setSelectedGroups([]);
     } catch (error) {
       safeLog('error', 'Grup gönderim hatası', error);
-      showMessage('Hata', 'Gönderim sırasında bir hata oluştu!', 'error');
+      showMessage(t('labels.error'), t('errors.sendDuring'), 'error');
     } finally {
       setIsSubmitting(false);
     }
@@ -1156,31 +1225,31 @@ const GameSendPage: React.FC = () => {
                   successCount++;
                 } else {
                   errorCount++;
-                  errors.push(`${person.name}: ${sendData.message || 'Gönderim hatası'}`);
+                  errors.push(formatPersonError(person.name, sendData.message || formatSendErrorLabel()));
                 }
               } else {
                 // 500 hatası için daha detaylı mesaj
-                let errorMessage = 'Gönderim hatası';
+                let errorMessage = formatSendErrorLabel();
                 try {
                   const errorData = await sendResponse.json();
                   errorMessage = errorData.message || errorMessage;
                 } catch {
-                  errorMessage = `Sunucu hatası (${sendResponse.status})`;
+                  errorMessage = formatServerError(sendResponse.status);
                 }
                 errorCount++;
                 errors.push(`${person.name}: ${errorMessage}`);
               }
             } else {
               errorCount++;
-              errors.push(`${person.name}: Kod üretilemedi`);
+              errors.push(formatPersonError(person.name, formatCodeGenerateMissing()));
             }
           } else {
             errorCount++;
-            errors.push(`${person.name}: Kod üretim hatası`);
+            errors.push(formatPersonError(person.name, formatCodeGenerationFailed()));
           }
         } catch (error) {
           errorCount++;
-          errors.push(`${person.name}: ${error instanceof Error ? error.message : 'Bilinmeyen hata'}`);
+          errors.push(formatPersonError(person.name, error instanceof Error ? error.message : t('labels.unknownError')));
         }
       }
 
@@ -1189,15 +1258,15 @@ const GameSendPage: React.FC = () => {
       
       // Show results
       if (successCount > 0 && errorCount === 0) {
-        const creditMessage = isSuperAdmin ? `${successCount} kişiye başarıyla gönderildi!` : `${successCount} kişiye başarıyla gönderildi! (${totalCreditCost} kredi düşüldü)`;
-        showMessage('Başarılı', creditMessage, 'success');
+        const creditMessage = formatCreditSuccess(successCount, totalCreditCost, isSuperAdmin);
+        showMessage(t('labels.success'), creditMessage, 'success');
         // Kredi düşür (API ile) - Super admin için atla
         if (!isSuperAdmin) {
         try {
           const deductResponse = await creditAPI.deductCredits({
             amount: totalCreditCost,
             type: 'game_send',
-            description: `Unvan gönderimi: ${successCount} kişi (${totalCreditCost} kredi)`
+            description: `${t('labels.titleSend')}: ${successCount} ${t('labels.person')} (${totalCreditCost} ${t('labels.credits')})`
           });
           
           if (deductResponse.data.success) {
@@ -1211,12 +1280,12 @@ const GameSendPage: React.FC = () => {
             setRemainingCredits(remainingCredits);
           }
         } catch (error) {
-          showMessage('Hata', `Kredi düşürülemedi: ${error.response?.data?.message || error.message}`, 'error');
+          showMessage(t('labels.error'), formatCreditDeductionFailed(error.response?.data?.message || error.message), 'error');
           }
         }
       } else if (successCount > 0 && errorCount > 0) {
-        const creditMessage = isSuperAdmin ? `${successCount} kişiye gönderildi, ${errorCount} kişiye gönderilemedi.` : `${successCount} kişiye gönderildi, ${errorCount} kişiye gönderilemedi. (${totalCreditCost} kredi düşüldü)`;
-        showMessage('Kısmi Başarı', creditMessage, 'warning', errors);
+        const creditMessage = formatPartialSuccess(successCount, errorCount, totalCreditCost, isSuperAdmin);
+        showMessage(t('labels.partialSuccess'), creditMessage, 'warning', errors);
         safeLog('error', 'Gönderim hataları', errors);
         // Kredi düşür (sadece başarılı gönderimler için - API ile) - Super admin için atla
         if (!isSuperAdmin) {
@@ -1224,7 +1293,7 @@ const GameSendPage: React.FC = () => {
           const deductResponse = await creditAPI.deductCredits({
             amount: totalCreditCost,
             type: 'game_send',
-            description: `Unvan gönderimi (kısmi): ${successCount} kişi (${totalCreditCost} kredi)`
+            description: `${t('labels.titleSendPartial')}: ${successCount} ${t('labels.person')} (${totalCreditCost} ${t('labels.credits')})`
           });
           
           if (deductResponse.data.success) {
@@ -1238,11 +1307,11 @@ const GameSendPage: React.FC = () => {
             setRemainingCredits(remainingCredits);
           }
         } catch (error) {
-          showMessage('Hata', `Kredi düşürülemedi: ${error.response?.data?.message || error.message}`, 'error');
+          showMessage(t('labels.error'), formatCreditDeductionFailed(error.response?.data?.message || error.message), 'error');
           }
         }
       } else {
-        showMessage('Hata', 'Hiçbir kişiye gönderilemedi!', 'error', errors);
+        showMessage(t('labels.error'), formatNoOneSent(), 'error', errors);
         safeLog('error', 'Tüm gönderim hataları', errors);
       }
 
@@ -1251,7 +1320,7 @@ const GameSendPage: React.FC = () => {
       setSelectedTitlePlanets([]);
     } catch (error) {
       safeLog('error', 'Unvan gönderim hatası', error);
-      showMessage('Hata', 'Gönderim sırasında bir hata oluştu!', 'error');
+      showMessage(t('labels.error'), t('errors.sendDuring'), 'error');
     } finally {
       setIsSubmitting(false);
     }
@@ -1743,7 +1812,7 @@ const GameSendPage: React.FC = () => {
                               fontSize: '14px',
                               textAlign: 'center'
                             }}>
-                              "{planetSearchTerm}" için arama sonucu bulunamadı
+                              {formatNoSearchResults(planetSearchTerm)}
                             </div>
                           )}
                         </div>
@@ -1980,7 +2049,7 @@ const GameSendPage: React.FC = () => {
                               fontSize: '14px',
                               textAlign: 'center'
                             }}>
-                              "{groupSearchTerm}" için arama sonucu bulunamadı
+                              {formatNoSearchResults(groupSearchTerm)}
                             </div>
                           )}
                         </div>
@@ -2233,7 +2302,7 @@ const GameSendPage: React.FC = () => {
                               fontSize: '14px',
                               textAlign: 'center'
                             }}>
-                              "{titleSearchTerm}" için arama sonucu bulunamadı
+                              {formatNoSearchResults(titleSearchTerm)}
                             </div>
                           )}
                         </div>
@@ -2482,7 +2551,7 @@ const GameSendPage: React.FC = () => {
                               fontSize: '14px',
                               textAlign: 'center'
                             }}>
-                              "{titlePlanetSearchTerm}" için arama sonucu bulunamadı
+                              {formatNoSearchResults(titlePlanetSearchTerm)}
                             </div>
                           )}
                         </div>
@@ -2666,7 +2735,7 @@ const GameSendPage: React.FC = () => {
                   fontSize: '12px',
                   fontWeight: 500
                 }}>
-                  Oluşturulma: {new Date(selectedGroupDetails.createdAt).toLocaleDateString('tr-TR')}
+                  {t('labels.createdAt')}: {new Date(selectedGroupDetails.createdAt).toLocaleDateString(language === 'en' ? 'en-US' : 'tr-TR')}
                 </span>
               </div>
             </div>
@@ -2939,7 +3008,7 @@ const GameSendPage: React.FC = () => {
                   fontSize: '12px',
                   fontWeight: 500
                 }}>
-                  Organizasyon Sayısı: {selectedTitleDetails.organizations.length}
+                  {t('labels.organizationCount')}: {selectedTitleDetails.organizations.length}
                 </span>
               </div>
             </div>

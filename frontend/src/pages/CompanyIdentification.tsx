@@ -347,7 +347,7 @@ const CompanyIdentification: React.FC = () => {
             }}
           >
             <i className="fas fa-plus"></i>
-            Ekle
+            {t('buttons.add')}
           </button>
         </div>
 
@@ -660,7 +660,7 @@ const CompanyIdentification: React.FC = () => {
                   cursor: 'pointer'
                 }}
               >
-                Kaydet
+                {t('buttons.save')}
               </button>
             </div>
           </div>

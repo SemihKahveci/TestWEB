@@ -788,7 +788,7 @@ const GameManagement: React.FC = () => {
             }}
           >
             <i className="fas fa-plus"></i>
-            Ekle
+            {t('buttons.add')}
           </button>
         </div>
 
@@ -828,7 +828,7 @@ const GameManagement: React.FC = () => {
               fontWeight: 700,
               borderBottom: '1px solid #E9ECEF'
             }}>
-              Fatura No
+              {t('labels.invoiceNo')}
             </div>
             <div style={{
               padding: '16px',
@@ -840,7 +840,7 @@ const GameManagement: React.FC = () => {
               fontWeight: 700,
               borderBottom: '1px solid #E9ECEF'
             }}>
-              Kredi
+              {t('labels.credit')}
             </div>
             <div style={{
               padding: '16px',
@@ -852,7 +852,7 @@ const GameManagement: React.FC = () => {
               fontWeight: 700,
               borderBottom: '1px solid #E9ECEF'
             }}>
-              Tarih
+              {t('labels.date')}
             </div>
             <div style={{
               padding: '16px',
@@ -920,7 +920,7 @@ const GameManagement: React.FC = () => {
                   alignItems: 'center',
                   justifyContent: 'center'
                 }}>
-                  {new Date(game.date).toLocaleDateString('tr-TR')}
+                  {new Date(game.date).toLocaleDateString(language === 'en' ? 'en-US' : 'tr-TR')}
                 </div>
                 <div style={{
                   padding: '16px',
@@ -994,7 +994,7 @@ const GameManagement: React.FC = () => {
                     onMouseLeave={(e) => {
                       e.currentTarget.style.backgroundColor = 'transparent';
                     }}
-                    title="Sil"
+                    title={t('buttons.delete')}
                   >
                     <i className="fas fa-trash" style={{ color: '#EF4444', fontSize: '16px' }}></i>
                   </button>
@@ -1058,7 +1058,7 @@ const GameManagement: React.FC = () => {
               fontSize: '24px',
               fontWeight: 600
             }}>
-              Oyun Ekle
+              {t('titles.addGame')}
             </h3>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
               <div>
@@ -1122,7 +1122,7 @@ const GameManagement: React.FC = () => {
                       <div style={{ padding: '8px', borderBottom: '1px solid #E9ECEF', position: 'relative' }}>
                         <input
                           type="text"
-                          placeholder="Firma ara..."
+                          placeholder={t('placeholders.searchCompany')}
                           value={companySearchTerm}
                           onChange={(e) => {
                             handleCompanySearch(e.target.value);
@@ -1222,7 +1222,7 @@ const GameManagement: React.FC = () => {
                   fontFamily: 'Inter',
                   fontSize: '14px'
                 }}>
-                  Fatura No *
+                  {t('labels.invoiceNo')} *
                 </label>
                 <input
                   type="text"
@@ -1250,7 +1250,7 @@ const GameManagement: React.FC = () => {
                   fontFamily: 'Inter',
                   fontSize: '14px'
                 }}>
-                  Kredi *
+                  {t('labels.credit')} *
                 </label>
                 <input
                   type="number"
@@ -1347,7 +1347,7 @@ const GameManagement: React.FC = () => {
                 }}
               >
                 <i className="fas fa-save"></i>
-                Kaydet
+                {t('buttons.save')}
               </button>
             </div>
           </div>
@@ -1448,7 +1448,7 @@ const GameManagement: React.FC = () => {
                   fontFamily: 'Inter',
                   fontSize: '14px'
                 }}>
-                  Fatura No *
+                  {t('labels.invoiceNo')} *
                 </label>
                 <input
                   type="text"
@@ -1476,7 +1476,7 @@ const GameManagement: React.FC = () => {
                   fontFamily: 'Inter',
                   fontSize: '14px'
                 }}>
-                  Kredi *
+                  {t('labels.credit')} *
                 </label>
                 <input
                   type="number"
@@ -1643,7 +1643,7 @@ const GameManagement: React.FC = () => {
               fontSize: '24px',
               fontWeight: 600
             }}>
-              Oyun Sil
+              {t('titles.deleteGame')}
             </h3>
             <div style={{
               marginBottom: '20px'
@@ -1700,7 +1700,7 @@ const GameManagement: React.FC = () => {
                   cursor: 'pointer'
                 }}
               >
-                Sil
+                {t('buttons.delete')}
               </button>
             </div>
           </div>
@@ -1775,12 +1775,12 @@ const GameManagement: React.FC = () => {
                     border: 'none',
                     borderRadius: '8px'
                   }}
-                  title="Fatura PDF"
+                  title={t('labels.invoicePdf')}
                 />
               ) : (
                 <img
                   src={selectedGame.invoiceFile.fileData}
-                  alt="Fatura"
+                  alt={t('labels.invoice')}
                   style={{
                     width: '100%',
                     height: 'auto',

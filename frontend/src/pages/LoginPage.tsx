@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
+import { useLanguage } from '../contexts/LanguageContext';
 
 const LoginPage: React.FC = () => {
+  const { t, language, toggleLanguage } = useLanguage();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [remember, setRemember] = useState(true);
@@ -55,7 +57,7 @@ const LoginPage: React.FC = () => {
 
   const handleSubmit = async () => {
     if (!email || !password) {
-      setError('Lütfen tüm alanları doldurun');
+      setError(t('errors.fillAllFields'));
       return;
     }
 
@@ -71,18 +73,17 @@ const LoginPage: React.FC = () => {
       // Rate limit hatası (429) veya diğer hatalar için backend'den gelen mesajı göster
       if (error?.response?.status === 429) {
         // Rate limit hatası - backend'den gelen mesajı kullan
-        const rateLimitMessage = error?.response?.data?.message || 
-          'Çok fazla başarısız giriş denemesi. Lütfen birkaç dakika sonra tekrar deneyin.';
+        const rateLimitMessage = error?.response?.data?.message || t('errors.tooManyLoginAttempts');
         setError(rateLimitMessage);
       } else if (error?.response?.status === 401) {
         // Yetkilendirme hatası - email veya şifre hatalı
-        setError('E-posta veya şifre hatalı');
+        setError(t('errors.invalidEmailPassword'));
       } else if (error?.response?.data?.message) {
         // Backend'den gelen diğer hata mesajları
         setError(error.response.data.message);
       } else {
         // Genel hata mesajı
-      setError('Giriş yapılırken bir hata oluştu');
+        setError(t('errors.loginFailed'));
       }
     } finally {
       setIsLoading(false);
@@ -98,7 +99,7 @@ const LoginPage: React.FC = () => {
 
   const handleSendResetCode = async () => {
     if (!email) {
-      setError('Lütfen e-posta adresinizi girin');
+      setError(t('errors.emailRequired'));
       return;
     }
 
@@ -117,13 +118,13 @@ const LoginPage: React.FC = () => {
       const result = await response.json();
 
       if (result.success) {
-        setSuccessMessage('Şifre sıfırlama kodu e-posta adresinize gönderildi');
+        setSuccessMessage(t('messages.resetCodeSent'));
         setForgotPasswordStep('code');
       } else {
-        setError(result.message || 'Kod gönderilirken bir hata oluştu');
+        setError(result.message || t('errors.resetCodeSendFailed'));
       }
     } catch (error) {
-      setError('Kod gönderilirken bir hata oluştu');
+      setError(t('errors.resetCodeSendFailed'));
     } finally {
       setIsLoading(false);
     }
@@ -131,7 +132,7 @@ const LoginPage: React.FC = () => {
 
   const handleVerifyCode = async () => {
     if (!resetCode) {
-      setError('Lütfen doğrulama kodunu girin');
+      setError(t('errors.resetCodeRequired'));
       return;
     }
 
@@ -150,13 +151,13 @@ const LoginPage: React.FC = () => {
       const result = await response.json();
 
       if (result.success) {
-        setSuccessMessage('Kod doğrulandı. Yeni şifrenizi belirleyin');
+        setSuccessMessage(t('messages.resetCodeVerified'));
         setForgotPasswordStep('reset');
       } else {
-        setError(result.message || 'Doğrulama kodu hatalı');
+        setError(result.message || t('errors.resetCodeInvalid'));
       }
     } catch (error) {
-      setError('Kod doğrulanırken bir hata oluştu');
+      setError(t('errors.resetCodeVerifyFailed'));
     } finally {
       setIsLoading(false);
     }
@@ -164,12 +165,12 @@ const LoginPage: React.FC = () => {
 
   const handleResetPassword = async () => {
     if (!newPassword || !confirmPassword) {
-      setError('Lütfen tüm alanları doldurun');
+      setError(t('errors.fillAllFields'));
       return;
     }
 
     if (newPassword !== confirmPassword) {
-      setError('Şifreler eşleşmiyor');
+      setError(t('errors.passwordMismatch'));
       return;
     }
 
@@ -195,7 +196,7 @@ const LoginPage: React.FC = () => {
       const result = await response.json();
 
       if (result.success) {
-        setSuccessMessage('Şifreniz başarıyla güncellendi. Giriş yapabilirsiniz');
+        setSuccessMessage(t('messages.passwordUpdated'));
         // Reset form
         setForgotPasswordStep('login');
         setEmail('');
@@ -204,10 +205,10 @@ const LoginPage: React.FC = () => {
         setNewPassword('');
         setConfirmPassword('');
       } else {
-        setError(result.message || 'Şifre güncellenirken bir hata oluştu');
+        setError(result.message || t('errors.passwordUpdateFailed'));
       }
     } catch (error) {
-      setError('Şifre güncellenirken bir hata oluştu');
+      setError(t('errors.passwordUpdateFailed'));
     } finally {
       setIsLoading(false);
     }
@@ -222,6 +223,39 @@ const LoginPage: React.FC = () => {
     setConfirmPassword('');
   };
 
+  const stepTitle = {
+    login: t('login.welcome'),
+    email: t('login.forgotPassword'),
+    code: t('login.codeVerification'),
+    reset: t('login.resetPassword')
+  }[forgotPasswordStep];
+
+  const stepSubtitle = {
+    login: t('login.loginSubtitle'),
+    email: t('login.emailSubtitle'),
+    code: t('login.codeSubtitle'),
+    reset: t('login.resetSubtitle')
+  }[forgotPasswordStep];
+
+  const stepLoadingText = {
+    login: t('login.signingIn'),
+    email: t('login.sendingCode'),
+    code: t('login.verifyingCode'),
+    reset: t('login.updatingPassword')
+  }[forgotPasswordStep];
+
+  const stepButtonText = {
+    login: t('login.signIn'),
+    email: t('login.sendCode'),
+    code: t('login.verifyCode'),
+    reset: t('login.updatePassword')
+  }[forgotPasswordStep];
+
+  const formatPasswordMinLength = (minLength: number) =>
+    language === 'en'
+      ? `Password must be at least ${minLength} characters`
+      : `Şifre en az ${minLength} karakter olmalıdır`;
+
   // Şifre validasyon fonksiyonu
   const validatePassword = (password: string) => {
     const minLength = 8;
@@ -233,41 +267,41 @@ const LoginPage: React.FC = () => {
     if (password.length < minLength) {
       return {
         isValid: false,
-        message: `Şifre en az ${minLength} karakter olmalıdır`
+        message: formatPasswordMinLength(minLength)
       };
     }
 
     if (!hasUpperCase) {
       return {
         isValid: false,
-        message: 'Şifre en az 1 büyük harf içermelidir'
+        message: t('password.requirements.uppercase')
       };
     }
 
     if (!hasLowerCase) {
       return {
         isValid: false,
-        message: 'Şifre en az 1 küçük harf içermelidir'
+        message: t('password.requirements.lowercase')
       };
     }
 
     if (!hasNumbers) {
       return {
         isValid: false,
-        message: 'Şifre en az 1 sayı içermelidir'
+        message: t('password.requirements.number')
       };
     }
 
     if (!hasSymbols) {
       return {
         isValid: false,
-        message: 'Şifre en az 1 özel karakter (!@#$%^&* vb.) içermelidir'
+        message: t('password.requirements.special')
       };
     }
 
     return {
       isValid: true,
-      message: 'Şifre geçerli'
+      message: t('password.valid')
     };
   };
 
@@ -285,6 +319,28 @@ const LoginPage: React.FC = () => {
       width: '100%',
       padding: isMobile ? '20px' : '0'
     }}>
+      <button
+        type="button"
+        onClick={toggleLanguage}
+        title={language === 'tr' ? t('buttons.switchToEnglish') : t('buttons.switchToTurkish')}
+        style={{
+          position: 'absolute',
+          top: '20px',
+          right: '20px',
+          border: '1px solid #E5E7EB',
+          backgroundColor: '#F9FAFB',
+          color: '#374151',
+          width: '36px',
+          height: '36px',
+          borderRadius: '8px',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          cursor: 'pointer'
+        }}
+      >
+        <i className="fa-solid fa-globe" />
+      </button>
 
       {/* Login Container */}
       <div style={{
@@ -337,10 +393,7 @@ const LoginPage: React.FC = () => {
             textAlign: 'center',
             margin: 0
           }}>
-            {forgotPasswordStep === 'login' && 'Hoş Geldiniz'}
-            {forgotPasswordStep === 'email' && 'Şifremi Unuttum'}
-            {forgotPasswordStep === 'code' && 'Kod Doğrulama'}
-            {forgotPasswordStep === 'reset' && 'Şifre Belirleme'}
+            {stepTitle}
           </h1>
           <p style={{
             color: '#8A92A6',
@@ -351,10 +404,7 @@ const LoginPage: React.FC = () => {
             textAlign: 'center',
             margin: 0
           }}>
-            {forgotPasswordStep === 'login' && 'Devam etmek için lütfen giriş yapın'}
-            {forgotPasswordStep === 'email' && 'E-posta adresinizi girin, size şifre sıfırlama kodu gönderelim'}
-            {forgotPasswordStep === 'code' && 'E-posta adresinize gönderilen doğrulama kodunu girin'}
-            {forgotPasswordStep === 'reset' && 'Yeni şifrenizi belirleyin'}
+            {stepSubtitle}
           </p>
 
           {/* Email Input - Her aşamada göster */}
@@ -373,7 +423,7 @@ const LoginPage: React.FC = () => {
               fontWeight: 500,
               lineHeight: '20px'
             }}>
-              E-posta
+              {t('labels.email')}
             </label>
             <input
               id="email"
@@ -395,7 +445,7 @@ const LoginPage: React.FC = () => {
                 lineHeight: '24px',
                 outline: 'none'
               }}
-              placeholder="E-posta adresinizi girin"
+              placeholder={t('placeholders.email')}
             />
           </div>
 
@@ -416,7 +466,7 @@ const LoginPage: React.FC = () => {
                 fontWeight: 500,
                 lineHeight: '20px'
               }}>
-                Şifre
+                {t('labels.password')}
               </label>
               <div style={{ position: 'relative', width: '100%' }}>
                 <input
@@ -438,7 +488,7 @@ const LoginPage: React.FC = () => {
                     lineHeight: '24px',
                     outline: 'none'
                   }}
-                  placeholder="Şifrenizi girin"
+                  placeholder={t('placeholders.password')}
                 />
                 <button
                   type="button"
@@ -482,7 +532,7 @@ const LoginPage: React.FC = () => {
                 fontWeight: 500,
                 lineHeight: '20px'
               }}>
-                Doğrulama Kodu
+                {t('labels.resetCode')}
               </label>
               <input
                 id="resetCode"
@@ -503,7 +553,7 @@ const LoginPage: React.FC = () => {
                   lineHeight: '24px',
                   outline: 'none'
                 }}
-                placeholder="6 haneli doğrulama kodunu girin"
+                placeholder={t('placeholders.resetCode')}
                 maxLength={6}
               />
             </div>
@@ -527,7 +577,7 @@ const LoginPage: React.FC = () => {
                   fontWeight: 500,
                   lineHeight: '20px'
                 }}>
-                  Yeni Şifre
+                  {t('labels.newPassword')}
                 </label>
                 <div style={{ position: 'relative', width: '100%' }}>
                   <input
@@ -549,7 +599,7 @@ const LoginPage: React.FC = () => {
                       lineHeight: '24px',
                       outline: 'none'
                     }}
-                    placeholder="Yeni şifrenizi girin"
+                    placeholder={t('placeholders.newPassword')}
                   />
                   <button
                     type="button"
@@ -585,14 +635,14 @@ const LoginPage: React.FC = () => {
                   fontFamily: 'Inter, sans-serif'
                 }}>
                   <div style={{ fontWeight: 600, marginBottom: '6px', color: '#374151' }}>
-                    Şifre Kriterleri:
+                    {t('labels.passwordRequirements')}
                   </div>
                   <div style={{ lineHeight: '1.4' }}>
                     • En az 8 karakter<br/>
-                    • En az 1 büyük harf (A-Z)<br/>
-                    • En az 1 küçük harf (a-z)<br/>
-                    • En az 1 sayı (0-9)<br/>
-                    • En az 1 özel karakter (!@#$%^&* vb.)
+                    {t('password.requirements.uppercase')} (A-Z)<br/>
+                    {t('password.requirements.lowercase')} (a-z)<br/>
+                    {t('password.requirements.number')} (0-9)<br/>
+                    {t('password.requirements.special')}
                   </div>
                 </div>
               </div>
@@ -612,7 +662,7 @@ const LoginPage: React.FC = () => {
                   fontWeight: 500,
                   lineHeight: '20px'
                 }}>
-                  Şifre Tekrar
+                  {t('labels.confirmPassword')}
                 </label>
                 <div style={{ position: 'relative', width: '100%' }}>
                   <input
@@ -634,7 +684,7 @@ const LoginPage: React.FC = () => {
                       lineHeight: '24px',
                       outline: 'none'
                     }}
-                    placeholder="Şifrenizi tekrar girin"
+                    placeholder={t('placeholders.confirmPassword')}
                   />
                   <button
                     type="button"
@@ -689,7 +739,7 @@ const LoginPage: React.FC = () => {
                   fontWeight: 400,
                   lineHeight: '20px'
                 }}>
-                  Beni Hatırla
+                  {t('labels.rememberMe')}
                 </label>
               </div>
               <button 
@@ -707,7 +757,7 @@ const LoginPage: React.FC = () => {
                   padding: 0
                 }}
               >
-                Şifremi Unuttum
+                {t('labels.forgotPassword')}
               </button>
             </div>
           )}
@@ -738,7 +788,7 @@ const LoginPage: React.FC = () => {
                   gap: '8px'
                 }}
               >
-                ← Giriş sayfasına dön
+                {t('labels.backToLogin')}
               </button>
             </div>
           )}
@@ -825,17 +875,11 @@ const LoginPage: React.FC = () => {
                   animation: 'spin 1s linear infinite',
                   marginRight: '8px'
                 }}></div>
-                {forgotPasswordStep === 'login' && 'Giriş yapılıyor...'}
-                {forgotPasswordStep === 'email' && 'Kod gönderiliyor...'}
-                {forgotPasswordStep === 'code' && 'Kod doğrulanıyor...'}
-                {forgotPasswordStep === 'reset' && 'Şifre güncelleniyor...'}
+                {stepLoadingText}
               </div>
             ) : (
               <>
-                {forgotPasswordStep === 'login' && 'Giriş Yap'}
-                {forgotPasswordStep === 'email' && 'Kod Gönder'}
-                {forgotPasswordStep === 'code' && 'Kodu Doğrula'}
-                {forgotPasswordStep === 'reset' && 'Şifreyi Güncelle'}
+                {stepButtonText}
               </>
             )}
           </button>
@@ -859,7 +903,7 @@ const LoginPage: React.FC = () => {
           lineHeight: '20px',
           margin: 0
         }}>
-          © 2025 Tüm Hakları Saklıdır
+          {t('labels.allRightsReserved')}
         </p>
       </div>
 

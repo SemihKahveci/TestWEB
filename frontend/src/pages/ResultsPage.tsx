@@ -26,7 +26,7 @@ interface UserResult {
 }
 
 const ResultsPage: React.FC = () => {
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   const [results, setResults] = useState<UserResult[]>([]);
   const [filteredResults, setFilteredResults] = useState<UserResult[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -63,6 +63,60 @@ const ResultsPage: React.FC = () => {
   
   const hasLoaded = useRef(false);
   const lastSearchTerm = useRef<string>('');
+
+  const formatDateRangeError = () =>
+    language === 'en'
+      ? 'Start date cannot be after end date!'
+      : 'Başlangıç tarihi bitiş tarihinden sonra olamaz!';
+
+  const formatMinMaxError = (label: string) =>
+    language === 'en'
+      ? `${label} score: Minimum must be less than maximum!`
+      : `${label} Skoru: Minimum değer maksimum değerden küçük olmalıdır!`;
+
+  const formatRangeInfo = (start: number, end: number, total: number) =>
+    language === 'en'
+      ? `${start}-${end} of ${total} records`
+      : `${start}-${end} arası, toplam ${total} kayıt`;
+
+  const formatGroupCount = (count: number) =>
+    language === 'en' ? `(${count} results)` : `(${count} sonuç)`;
+
+  const formatNoSearchResults = (query: string) =>
+    language === 'en'
+      ? `No search results for "${query}"`
+      : `"${query}" için arama sonucu bulunamadı`;
+
+  const formatExcelFileName = (dateStr: string, timeStr: string) =>
+    language === 'en'
+      ? `Andron_Competency_Results_${dateStr}_${timeStr}.xlsx`
+      : `Andron_Yetkinlik_Sonuçları_${dateStr}_${timeStr}.xlsx`;
+
+  const parseDateInput = (value: string) => {
+    if (!value) return null;
+    const normalized = value.trim();
+    if (!normalized) return null;
+
+    if (language === 'en') {
+      const match = normalized.match(/^(\d{1,2})[\/.-](\d{1,2})[\/.-](\d{4})$/);
+      if (!match) return null;
+      const month = Number(match[1]);
+      const day = Number(match[2]);
+      const year = Number(match[3]);
+      const date = new Date(year, month - 1, day);
+      if (date.getFullYear() !== year || date.getMonth() !== month - 1 || date.getDate() !== day) return null;
+      return date;
+    }
+
+    const match = normalized.match(/^(\d{1,2})[\/.-](\d{1,2})[\/.-](\d{4})$/);
+    if (!match) return null;
+    const day = Number(match[1]);
+    const month = Number(match[2]);
+    const year = Number(match[3]);
+    const date = new Date(year, month - 1, day);
+    if (date.getFullYear() !== year || date.getMonth() !== month - 1 || date.getDate() !== day) return null;
+    return date;
+  };
 
   const loadData = useCallback(async (showLoading = true, page?: number, search?: string) => {
     try {
@@ -279,11 +333,16 @@ const ResultsPage: React.FC = () => {
     try {
 
       // Tarih kontrolü
-      if (filters.startDate && filters.endDate) {
-        const startDate = new Date(filters.startDate);
-        const endDate = new Date(filters.endDate);
-        if (startDate > endDate) {
-          setErrorMessage('Başlangıç tarihi bitiş tarihinden sonra olamaz!');
+      if (filters.startDate || filters.endDate) {
+        const startDate = parseDateInput(filters.startDate);
+        const endDate = parseDateInput(filters.endDate);
+        if ((filters.startDate && !startDate) || (filters.endDate && !endDate)) {
+          setErrorMessage(t('errors.invalidDate'));
+          setShowErrorPopup(true);
+          return;
+        }
+        if (startDate && endDate && startDate > endDate) {
+          setErrorMessage(formatDateRangeError());
           setShowErrorPopup(true);
           return;
         }
@@ -293,7 +352,7 @@ const ResultsPage: React.FC = () => {
       const customerFocusMin = typeof filters.customerFocusMin === 'string' ? 5 : filters.customerFocusMin;
       const customerFocusMax = typeof filters.customerFocusMax === 'string' ? 95 : filters.customerFocusMax;
       if (customerFocusMin >= customerFocusMax) {
-        setErrorMessage('Müşteri Odaklılık Skoru: Minimum değer maksimum değerden küçük olmalıdır!');
+        setErrorMessage(formatMinMaxError(t('labels.customerFocusScore')));
         setShowErrorPopup(true);
         return;
       }
@@ -301,7 +360,7 @@ const ResultsPage: React.FC = () => {
       const uncertaintyMin = typeof filters.uncertaintyMin === 'string' ? 5 : filters.uncertaintyMin;
       const uncertaintyMax = typeof filters.uncertaintyMax === 'string' ? 95 : filters.uncertaintyMax;
       if (uncertaintyMin >= uncertaintyMax) {
-        setErrorMessage('Belirsizlik Yönetimi Skoru: Minimum değer maksimum değerden küçük olmalıdır!');
+        setErrorMessage(formatMinMaxError(t('labels.adaptabilityScore')));
         setShowErrorPopup(true);
         return;
       }
@@ -309,7 +368,7 @@ const ResultsPage: React.FC = () => {
       const ieMin = typeof filters.ieMin === 'string' ? 5 : filters.ieMin;
       const ieMax = typeof filters.ieMax === 'string' ? 95 : filters.ieMax;
       if (ieMin >= ieMax) {
-        setErrorMessage('İnsanları Etkileme Skoru: Minimum değer maksimum değerden küçük olmalıdır!');
+        setErrorMessage(formatMinMaxError(t('labels.influenceScore')));
         setShowErrorPopup(true);
         return;
       }
@@ -317,7 +376,7 @@ const ResultsPage: React.FC = () => {
       const idikMin = typeof filters.idikMin === 'string' ? 5 : filters.idikMin;
       const idikMax = typeof filters.idikMax === 'string' ? 95 : filters.idikMax;
       if (idikMin >= idikMax) {
-        setErrorMessage('Güven Veren İşbirliği ve Sinerji Skoru: Minimum değer maksimum değerden küçük olmalıdır!');
+        setErrorMessage(formatMinMaxError(t('labels.trustScore')));
         setShowErrorPopup(true);
         return;
       }
@@ -333,7 +392,7 @@ const ResultsPage: React.FC = () => {
       );
 
       if (!response.data.success || !response.data.results) {
-        setErrorMessage('Veriler yüklenirken bir hata oluştu.');
+        setErrorMessage(t('errors.dataLoadFailed'));
         setShowErrorPopup(true);
         setIsSearching(false);
         return;
@@ -398,12 +457,12 @@ const ResultsPage: React.FC = () => {
           let dateMatch = true;
           if (filters.startDate || filters.endDate) {
             const completionDate = new Date(item.completionDate);
-            if (filters.startDate) {
-              const startDate = new Date(filters.startDate);
+            const startDate = parseDateInput(filters.startDate);
+            const endDate = parseDateInput(filters.endDate);
+            if (startDate) {
               dateMatch = dateMatch && completionDate >= startDate;
             }
-            if (filters.endDate) {
-              const endDate = new Date(filters.endDate);
+            if (endDate) {
               endDate.setHours(23, 59, 59, 999); // Günün sonuna kadar
               dateMatch = dateMatch && completionDate <= endDate;
             }
@@ -431,7 +490,7 @@ const ResultsPage: React.FC = () => {
     } catch (error) {
       console.error('Filtreleme hatası:', error);
       setIsSearching(false);
-      setErrorMessage('Filtreleme yapılırken bir hata oluştu!');
+      setErrorMessage(t('errors.filterFailed'));
       setShowErrorPopup(true);
     }
   };
@@ -487,13 +546,13 @@ const ResultsPage: React.FC = () => {
         dataToExport = filteredResults
           .filter(item => item.status === 'Tamamlandı')
           .map(item => ({
-            'Ad Soyad': item.name || '-',
-            'E-posta': item.email || '-',
-            'Tamamlanma Tarihi': formatDate(item.completionDate) || '-',
-            'Müşteri Odaklılık Skoru': formatScoreForExcel(item.customerFocusScore),
-            'Belirsizlik Yönetimi Skoru': formatScoreForExcel(item.uncertaintyScore),
-            'İnsanları Etkileme Skoru': formatScoreForExcel(item.ieScore),
-            'Güven Veren İşbirliği ve Sinerji Skoru': formatScoreForExcel(item.idikScore)
+            [t('labels.nameSurname')]: item.name || '-',
+            [t('labels.email')]: item.email || '-',
+            [t('labels.completionDate')]: formatDate(item.completionDate) || '-',
+            [t('labels.customerFocusScore')]: formatScoreForExcel(item.customerFocusScore),
+            [t('labels.adaptabilityScore')]: formatScoreForExcel(item.uncertaintyScore),
+            [t('labels.influenceScore')]: formatScoreForExcel(item.ieScore),
+            [t('labels.trustScore')]: formatScoreForExcel(item.idikScore)
           }));
       } else {
         // Filtreleme yapılmamışsa, backend'den tüm verileri çek
@@ -506,7 +565,7 @@ const ResultsPage: React.FC = () => {
         );
 
         if (!response.data.success || !response.data.results) {
-          setErrorMessage('Veriler yüklenirken bir hata oluştu.');
+          setErrorMessage(t('errors.dataLoadFailed'));
           setShowErrorPopup(true);
           return;
         }
@@ -518,18 +577,18 @@ const ResultsPage: React.FC = () => {
         dataToExport = allResults
           .filter(item => item.status === 'Tamamlandı')
           .map(item => ({
-            'Ad Soyad': item.name || '-',
-            'E-posta': item.email || '-',
-            'Tamamlanma Tarihi': formatDate(item.completionDate) || '-',
-            'Müşteri Odaklılık Skoru': formatScoreForExcel(item.customerFocusScore),
-            'Belirsizlik Yönetimi Skoru': formatScoreForExcel(item.uncertaintyScore),
-            'İnsanları Etkileme Skoru': formatScoreForExcel(item.ieScore),
-            'Güven Veren İşbirliği ve Sinerji Skoru': formatScoreForExcel(item.idikScore)
+            [t('labels.nameSurname')]: item.name || '-',
+            [t('labels.email')]: item.email || '-',
+            [t('labels.completionDate')]: formatDate(item.completionDate) || '-',
+            [t('labels.customerFocusScore')]: formatScoreForExcel(item.customerFocusScore),
+            [t('labels.adaptabilityScore')]: formatScoreForExcel(item.uncertaintyScore),
+            [t('labels.influenceScore')]: formatScoreForExcel(item.ieScore),
+            [t('labels.trustScore')]: formatScoreForExcel(item.idikScore)
           }));
       }
 
       if (dataToExport.length === 0) {
-        setErrorMessage('İndirilecek veri bulunamadı.');
+        setErrorMessage(t('errors.noDataToDownload'));
         setShowErrorPopup(true);
         return;
       }
@@ -551,20 +610,20 @@ const ResultsPage: React.FC = () => {
       worksheet['!cols'] = columnWidths;
 
       // Worksheet'i workbook'a ekle
-      XLSX.utils.book_append_sheet(workbook, worksheet, 'Kişi Skorları');
+      XLSX.utils.book_append_sheet(workbook, worksheet, t('labels.personScoresSheet'));
 
       // Dosya adını oluştur
       const now = new Date();
       const dateStr = now.toISOString().split('T')[0];
       const timeStr = now.toTimeString().split(' ')[0].replace(/:/g, '-');
-      const fileName = `Andron_Yetkinlik_Sonuçları_${dateStr}_${timeStr}.xlsx`;
+      const fileName = formatExcelFileName(dateStr, timeStr);
 
       // Excel dosyasını indir
       XLSX.writeFile(workbook, fileName);
 
     } catch (error) {
       console.error('Excel indirme hatası:', error);
-      setErrorMessage('Excel dosyası indirilirken bir hata oluştu!');
+      setErrorMessage(t('errors.excelDownloadFailed'));
       setShowErrorPopup(true);
     }
   };
@@ -597,7 +656,7 @@ const ResultsPage: React.FC = () => {
           fontSize: '14px',
           fontFamily: 'Inter'
         }}>
-          Veriler yükleniyor...
+          {t('labels.loadingData')}
         </div>
       </div>
     );
@@ -660,7 +719,7 @@ const ResultsPage: React.FC = () => {
           }} />
           <input
             type="text"
-            placeholder="Kişi adına göre akıllı arama yapın..."
+            placeholder={t('placeholders.searchByNameSmart')}
             value={searchTerm}
             onChange={(e) => {
               const value = e.target.value;
@@ -782,7 +841,7 @@ const ResultsPage: React.FC = () => {
               <path d="M23 20V14H17" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
               <path d="M20.49 9A9 9 0 0 0 5.64 5.64L1 10M23 14L18.36 18.36A9 9 0 0 1 3.51 15" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
             </svg>
-            Yenile
+            {t('buttons.refresh')}
           </button>
 
           {/* Filter Button */}
@@ -810,7 +869,7 @@ const ResultsPage: React.FC = () => {
             }}
           >
             <i className="fas fa-filter"></i>
-            Filtrele
+            {t('buttons.filter')}
           </button>
 
           {/* Download Button */}
@@ -838,7 +897,7 @@ const ResultsPage: React.FC = () => {
             }}
           >
             <i className="fas fa-download"></i>
-            Excel İndir
+            {t('buttons.downloadResults')}
           </button>
         </div>
       </div>
@@ -871,7 +930,7 @@ const ResultsPage: React.FC = () => {
                   color: '#232D42',
                   fontFamily: 'Inter',
                   borderRight: '1px solid #E9ECEF'
-                }}>Ad Soyad</th>
+                }}>{t('labels.nameSurname')}</th>
                 <th style={{
                   padding: '16px',
                   textAlign: 'center',
@@ -880,7 +939,7 @@ const ResultsPage: React.FC = () => {
                   color: '#232D42',
                   fontFamily: 'Inter',
                   borderRight: '1px solid #E9ECEF'
-                }}>Tamamlanma Tarihi</th>
+                }}>{t('labels.completionDate')}</th>
                 <th style={{
                   padding: '16px',
                   textAlign: 'center',
@@ -889,7 +948,7 @@ const ResultsPage: React.FC = () => {
                   color: '#232D42',
                   fontFamily: 'Inter',
                   borderRight: '1px solid #E9ECEF'
-                }}>Müşteri Odaklılık Skoru</th>
+                }}>{t('labels.customerFocusScore')}</th>
                 <th style={{
                   padding: '16px',
                   textAlign: 'center',
@@ -898,7 +957,7 @@ const ResultsPage: React.FC = () => {
                   color: '#232D42',
                   fontFamily: 'Inter',
                   borderRight: '1px solid #E9ECEF'
-                }}>Belirsizlik Yönetimi Skoru</th>
+                }}>{t('labels.adaptabilityScore')}</th>
                 <th style={{
                   padding: '16px',
                   textAlign: 'center',
@@ -907,7 +966,7 @@ const ResultsPage: React.FC = () => {
                   color: '#232D42',
                   fontFamily: 'Inter',
                   borderRight: '1px solid #E9ECEF'
-                }}>İnsanları Etkileme Skoru</th>
+                }}>{t('labels.influenceScore')}</th>
                 <th style={{
                   padding: '16px',
                   textAlign: 'center',
@@ -915,7 +974,7 @@ const ResultsPage: React.FC = () => {
                   fontWeight: 600,
                   color: '#232D42',
                   fontFamily: 'Inter'
-                }}>Güven Veren İşbirliği ve Sinerji Skoru</th>
+                }}>{t('labels.trustScore')}</th>
               </tr>
             </thead>
             <tbody>
@@ -941,7 +1000,7 @@ const ResultsPage: React.FC = () => {
                           fontSize: '12px',
                           marginLeft: '8px'
                         }}>
-                          ({result.groupCount} sonuç)
+                          {formatGroupCount(result.groupCount)}
                         </span>
                       )}
                     </td>
@@ -1066,7 +1125,11 @@ const ResultsPage: React.FC = () => {
             color: '#6B7280',
             fontFamily: 'Inter'
           }}>
-            {((currentPage - 1) * itemsPerPage) + 1}-{Math.min(currentPage * itemsPerPage, totalCount)} arası, toplam {totalCount} kayıt
+            {formatRangeInfo(
+              ((currentPage - 1) * itemsPerPage) + 1,
+              Math.min(currentPage * itemsPerPage, totalCount),
+              totalCount
+            )}
           </div>
 
           {/* Pagination Controls */}
@@ -1302,13 +1365,15 @@ const ResultsPage: React.FC = () => {
                   fontFamily: 'Inter',
                   fontSize: '14px'
                 }}>
-                  Tamamlanma Tarihi
+                  {t('labels.completionDate')}
                 </label>
                 <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', flex: 1 }}>
-                    <span style={{ fontSize: '12px', color: '#6B7280', fontWeight: 500 }}>Başlangıç Tarihi</span>
+                    <span style={{ fontSize: '12px', color: '#6B7280', fontWeight: 500 }}>{t('labels.startDate')}</span>
                     <input
-                      type="date"
+                      type="text"
+                      placeholder={language === 'en' ? 'mm/dd/yyyy' : 'gg.aa.yyyy'}
+                      inputMode="numeric"
                       value={filters.startDate}
                       onChange={(e) => setFilters({...filters, startDate: e.target.value})}
                       style={{
@@ -1324,9 +1389,11 @@ const ResultsPage: React.FC = () => {
                   </div>
                   <span style={{ fontSize: '14px', color: '#6B7280', marginTop: '20px' }}>-</span>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', flex: 1 }}>
-                    <span style={{ fontSize: '12px', color: '#6B7280', fontWeight: 500 }}>Bitiş Tarihi</span>
+                    <span style={{ fontSize: '12px', color: '#6B7280', fontWeight: 500 }}>{t('labels.endDate')}</span>
                     <input
-                      type="date"
+                      type="text"
+                      placeholder={language === 'en' ? 'mm/dd/yyyy' : 'gg.aa.yyyy'}
+                      inputMode="numeric"
                       value={filters.endDate}
                       onChange={(e) => setFilters({...filters, endDate: e.target.value})}
                       style={{
@@ -1353,11 +1420,11 @@ const ResultsPage: React.FC = () => {
                   fontFamily: 'Inter',
                   fontSize: '14px'
                 }}>
-                  Müşteri Odaklılık Skoru
+                  {t('labels.customerFocusScore')}
                 </label>
                 <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
                   <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px', flex: 1 }}>
-                    <span style={{ fontSize: '12px', color: '#6B7280', fontWeight: 500 }}>Minimum</span>
+                    <span style={{ fontSize: '12px', color: '#6B7280', fontWeight: 500 }}>{t('labels.minimum')}</span>
                     <input
                       type="range"
                       min="5"
@@ -1409,7 +1476,7 @@ const ResultsPage: React.FC = () => {
                   </div>
                   <span style={{ fontSize: '14px', color: '#6B7280', marginTop: '20px' }}>-</span>
                   <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px', flex: 1 }}>
-                    <span style={{ fontSize: '12px', color: '#6B7280', fontWeight: 500 }}>Maksimum</span>
+                    <span style={{ fontSize: '12px', color: '#6B7280', fontWeight: 500 }}>{t('labels.maximum')}</span>
                     <input
                       type="range"
                       min="5"
@@ -1472,11 +1539,11 @@ const ResultsPage: React.FC = () => {
                   fontFamily: 'Inter',
                   fontSize: '14px'
                 }}>
-                  Belirsizlik Yönetimi Skoru
+                  {t('labels.adaptabilityScore')}
                 </label>
                 <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
                   <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px', flex: 1 }}>
-                    <span style={{ fontSize: '12px', color: '#6B7280', fontWeight: 500 }}>Minimum</span>
+                    <span style={{ fontSize: '12px', color: '#6B7280', fontWeight: 500 }}>{t('labels.minimum')}</span>
                     <input
                       type="range"
                       min="5"
@@ -1528,7 +1595,7 @@ const ResultsPage: React.FC = () => {
                   </div>
                   <span style={{ fontSize: '14px', color: '#6B7280', marginTop: '20px' }}>-</span>
                   <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px', flex: 1 }}>
-                    <span style={{ fontSize: '12px', color: '#6B7280', fontWeight: 500 }}>Maksimum</span>
+                    <span style={{ fontSize: '12px', color: '#6B7280', fontWeight: 500 }}>{t('labels.maximum')}</span>
                     <input
                       type="range"
                       min="5"
@@ -1591,11 +1658,11 @@ const ResultsPage: React.FC = () => {
                   fontFamily: 'Inter',
                   fontSize: '14px'
                 }}>
-                  IE Skoru
+                  {t('labels.influenceScore')}
                 </label>
                 <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
                   <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px', flex: 1 }}>
-                    <span style={{ fontSize: '12px', color: '#6B7280', fontWeight: 500 }}>Minimum</span>
+                    <span style={{ fontSize: '12px', color: '#6B7280', fontWeight: 500 }}>{t('labels.minimum')}</span>
                     <input
                       type="range"
                       min="5"
@@ -1647,7 +1714,7 @@ const ResultsPage: React.FC = () => {
                   </div>
                   <span style={{ fontSize: '14px', color: '#6B7280', marginTop: '20px' }}>-</span>
                   <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px', flex: 1 }}>
-                    <span style={{ fontSize: '12px', color: '#6B7280', fontWeight: 500 }}>Maksimum</span>
+                    <span style={{ fontSize: '12px', color: '#6B7280', fontWeight: 500 }}>{t('labels.maximum')}</span>
                     <input
                       type="range"
                       min="5"
@@ -1710,11 +1777,11 @@ const ResultsPage: React.FC = () => {
                   fontFamily: 'Inter',
                   fontSize: '14px'
                 }}>
-                  IDIK Skoru
+                  {t('labels.trustScore')}
                 </label>
                 <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
                   <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px', flex: 1 }}>
-                    <span style={{ fontSize: '12px', color: '#6B7280', fontWeight: 500 }}>Minimum</span>
+                    <span style={{ fontSize: '12px', color: '#6B7280', fontWeight: 500 }}>{t('labels.minimum')}</span>
                     <input
                       type="range"
                       min="5"
@@ -1766,7 +1833,7 @@ const ResultsPage: React.FC = () => {
                   </div>
                   <span style={{ fontSize: '14px', color: '#6B7280', marginTop: '20px' }}>-</span>
                   <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px', flex: 1 }}>
-                    <span style={{ fontSize: '12px', color: '#6B7280', fontWeight: 500 }}>Maksimum</span>
+                    <span style={{ fontSize: '12px', color: '#6B7280', fontWeight: 500 }}>{t('labels.maximum')}</span>
                     <input
                       type="range"
                       min="5"
@@ -1842,7 +1909,7 @@ const ResultsPage: React.FC = () => {
                   cursor: 'pointer'
                 }}
               >
-                İptal
+                {t('buttons.cancel')}
               </button>
               <button
                 onClick={clearFilters}
@@ -1858,7 +1925,7 @@ const ResultsPage: React.FC = () => {
                   cursor: 'pointer'
                 }}
               >
-                Filtreleri Temizle
+                {t('buttons.clearFilters')}
               </button>
               <button
                 onClick={applyFilters}
@@ -1874,7 +1941,7 @@ const ResultsPage: React.FC = () => {
                   cursor: 'pointer'
                 }}
               >
-                Uygula
+                {t('buttons.applyFilters')}
               </button>
             </div>
           </div>
@@ -1939,7 +2006,7 @@ const ResultsPage: React.FC = () => {
                   fontSize: '18px',
                   fontWeight: 600
                 }}>
-                  Filtre Hatası
+                  {t('labels.filterErrorTitle')}
                 </h3>
               </div>
               <button
