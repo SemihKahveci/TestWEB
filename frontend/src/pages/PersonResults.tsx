@@ -31,6 +31,7 @@ const PersonResults: React.FC = () => {
   const [showPDFPreview, setShowPDFPreview] = useState(false);
   const [pdfPreviewUrl, setPdfPreviewUrl] = useState<string | null>(null);
   const [isPdfLoading, setIsPdfLoading] = useState(false);
+  const [hasRestoredState, setHasRestoredState] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
   const { language, t } = useLanguage();
@@ -298,6 +299,30 @@ const PersonResults: React.FC = () => {
       return;
     }
 
+    if (hasRestoredState) {
+      return;
+    }
+
+    const cachedViewState = sessionStorage.getItem('personResultsState');
+    if (cachedViewState) {
+      try {
+        const parsed = JSON.parse(cachedViewState) as {
+          activeTab?: TabKey;
+          selectedCompetency?: string;
+          latestUser?: UserResult | null;
+          latestHistory?: UserResult[];
+        };
+        if (parsed.activeTab) setActiveTab(parsed.activeTab);
+        if (parsed.selectedCompetency) setSelectedCompetency(parsed.selectedCompetency);
+        if (parsed.latestUser) setLatestUser(parsed.latestUser);
+        if (parsed.latestHistory) setLatestHistory(parsed.latestHistory);
+        setHasRestoredState(true);
+        return;
+      } catch (error) {
+        sessionStorage.removeItem('personResultsState');
+      }
+    }
+
     const cached = sessionStorage.getItem('latestUserResults');
     if (cached) {
       try {
@@ -336,8 +361,20 @@ const PersonResults: React.FC = () => {
       }
     };
 
-    fetchLatest();
-  }, [location.state]);
+    if (!hasRestoredState) {
+      fetchLatest();
+    }
+  }, [location.state, hasRestoredState]);
+
+  useEffect(() => {
+    if (!latestUser) return;
+    sessionStorage.setItem('personResultsState', JSON.stringify({
+      activeTab,
+      selectedCompetency,
+      latestUser,
+      latestHistory
+    }));
+  }, [activeTab, selectedCompetency, latestUser, latestHistory]);
 
   const selectedUserFromState = (location.state as { selectedUser?: UserResult } | null)?.selectedUser;
   const userForDetail = selectedUserFromState || latestUser;

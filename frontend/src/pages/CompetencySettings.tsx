@@ -34,7 +34,7 @@ interface Organization {
 }
 
 const CompetencySettings: React.FC = () => {
-  const { t } = useLanguage();
+  const { language, t } = useLanguage();
   const [competencies, setCompetencies] = useState<Competency[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
@@ -52,6 +52,29 @@ const CompetencySettings: React.FC = () => {
   const [isImporting, setIsImporting] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const formatPositionPlaceholder = (count: number) =>
+    language === 'en'
+      ? `${t('labels.selectPosition')} (${count} available)`
+      : `${t('labels.selectPosition')} (${count} pozisyon mevcut)`;
+
+  const formatNoResultsText = (term: string, emptyKey: string) => {
+    if (term) {
+      return language === 'en'
+        ? `No results found for "${term}"`
+        : `"${term}" için arama sonucu bulunamadı`;
+    }
+    return t(emptyKey);
+  };
+
+  const formatSearchResultsCount = (term: string, count: number) =>
+    language === 'en'
+      ? `${count} results found for "${term}"`
+      : `"${term}" için ${count} sonuç bulundu`;
+
+  const formatImportSuccess = (count: number) =>
+    language === 'en'
+      ? `${count} competencies imported successfully!`
+      : `Başarıyla ${count} yetkinlik import edildi!`;
   
   // Pagination states
   const [currentPage, setCurrentPage] = useState(1);
@@ -125,7 +148,7 @@ const CompetencySettings: React.FC = () => {
         credentials: 'include'
       });
       
-      if (!response.ok) throw new Error('Veriler yüklenemedi');
+      if (!response.ok) throw new Error(t('errors.dataLoadFailed'));
       
       const data = await response.json();
       setCompetencies(data.competencies || []);
@@ -154,7 +177,7 @@ const CompetencySettings: React.FC = () => {
         setPositions(allPositions);
         setFilteredPositions(allPositions); // İlk yüklemede tüm pozisyonları göster
       } else {
-        throw new Error(result.data.message || 'Organizasyon listesi alınamadı');
+        throw new Error(result.data.message || t('errors.organizationListFetch'));
       }
     } catch (error) {
       console.error('❌ Organizasyon yükleme hatası:', error);
@@ -329,13 +352,13 @@ const CompetencySettings: React.FC = () => {
       });
 
       if (!response.ok) {
-        let errorMessage = 'Yetkinlik eklenemedi';
+        let errorMessage = t('errors.competencyAddFailed');
         try {
           const errorData = await response.json();
           errorMessage = errorData.message || errorData.error || errorMessage;
         } catch (parseError) {
           // JSON parse edilemezse status text'i kullan
-          errorMessage = `Sunucu hatası: ${response.status} ${response.statusText}`;
+          errorMessage = `${t('errors.serverError')}: ${response.status} ${response.statusText}`;
         }
         throw new Error(errorMessage);
       }
@@ -344,7 +367,7 @@ const CompetencySettings: React.FC = () => {
       
       // Backend'den dönen _id'yi kontrol et
       if (!responseData._id && !responseData.competency?._id) {
-        throw new Error('Yetkinlik oluşturuldu ancak ID alınamadı');
+        throw new Error(t('errors.competencyIdMissing'));
       }
       
       // Yeni yetkinliği listeye ekle - backend'den dönen veriyi kullan
@@ -374,9 +397,9 @@ const CompetencySettings: React.FC = () => {
       // Başarı mesajı göster - popup ile
       setShowAddPopup(false);
       setShowSuccessPopup(true);
-      setSuccessMessage('Yetkinlik başarıyla eklendi!');
+      setSuccessMessage(t('messages.competencyAdded'));
     } catch (error: any) {
-      setErrorMessage(error.message || 'Yetkinlik eklenirken bir hata oluştu');
+      setErrorMessage(error.message || t('errors.competencyAddError'));
       setShowErrorPopup(true);
     } finally {
       setIsSubmitting(false);
@@ -409,7 +432,7 @@ const CompetencySettings: React.FC = () => {
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.message || 'Yetkinlik güncellenemedi');
+        throw new Error(errorData.message || t('errors.competencyUpdateFailed'));
       }
 
       const responseData = await response.json();
@@ -441,10 +464,10 @@ const CompetencySettings: React.FC = () => {
       // Başarı mesajı göster - popup ile
       setShowEditPopup(false);
       setShowSuccessPopup(true);
-      setSuccessMessage('Yetkinlik başarıyla güncellendi!');
+      setSuccessMessage(t('messages.competencyUpdated'));
     } catch (error: any) {
       console.error('💥 Yetkinlik güncelleme hatası:', error);
-      setErrorMessage(error.message || 'Yetkinlik güncellenirken bir hata oluştu');
+      setErrorMessage(error.message || t('errors.competencyUpdateError'));
       setShowErrorPopup(true);
     } finally {
       setIsSubmitting(false);
@@ -468,7 +491,7 @@ const CompetencySettings: React.FC = () => {
       // Tüm silme işlemlerinin başarılı olduğunu kontrol et
       const failedDeletes = responses.filter(response => !response.ok);
       if (failedDeletes.length > 0) {
-        throw new Error('Bazı yetkinlikler silinemedi');
+        throw new Error(t('errors.competencyDeleteFailed'));
       }
 
       
@@ -478,11 +501,11 @@ const CompetencySettings: React.FC = () => {
       // Başarı mesajı göster - popup ile
       setShowDeletePopup(false);
       setShowSuccessPopup(true);
-      setSuccessMessage(`${selectedItems.length} yetkinlik başarıyla silindi!`);
+      setSuccessMessage(`${selectedItems.length} ${t('labels.competencyDeleted')}`);
       setSelectedItems([]);
     } catch (error: any) {
       console.error('💥 Yetkinlik silme hatası:', error);
-      setErrorMessage(error.message || 'Yetkinlik silinirken bir hata oluştu');
+      setErrorMessage(error.message || t('errors.competencyDeleteError'));
       setShowErrorPopup(true);
     } finally {
       setIsSubmitting(false);
@@ -508,17 +531,17 @@ const CompetencySettings: React.FC = () => {
       // HTTP status koduna göre hata yönetimi
       if (!response.ok) {
         if (response.status === 401) {
-          setErrorMessage('Yetkiniz bulunmuyor. Lütfen tekrar giriş yapın.');
+          setErrorMessage(t('errors.noPermissionRelogin'));
           setShowErrorPopup(true);
           return;
         } else if (response.status === 413) {
-          setErrorMessage('Dosya çok büyük. Lütfen daha küçük bir dosya seçin.');
+          setErrorMessage(t('errors.fileTooLarge'));
           setShowErrorPopup(true);
           return;
         } else if (response.status === 400) {
           // Backend'den gelen detaylı hata mesajını kullan
           const errorResult = await response.json();
-          let errorMessage = errorResult.message || 'Dosya formatı hatalı. Lütfen geçerli bir Excel dosyası seçin.';
+          let errorMessage = errorResult.message || t('errors.invalidFileFormat');
           if (errorResult.errors && errorResult.errors.length > 0) {
             errorMessage += '\n\nDetaylar:\n';
             errorResult.errors.forEach((error: any) => {
@@ -533,7 +556,7 @@ const CompetencySettings: React.FC = () => {
           setShowErrorPopup(true);
           return;
         } else {
-          setErrorMessage(`Sunucu hatası (${response.status}). Lütfen tekrar deneyin.`);
+          setErrorMessage(`${t('errors.serverError')} (${response.status}). ${t('errors.tryAgain')}`);
           setShowErrorPopup(true);
           return;
         }
@@ -542,7 +565,7 @@ const CompetencySettings: React.FC = () => {
       const result = await response.json();
 
       if (result.success) {
-        let message = `Başarıyla ${result.importedCount} yetkinlik import edildi!`;
+        let message = formatImportSuccess(result.importedCount);
         if (result.errors && result.errors.length > 0) {
           message += '\n\nHatalar:\n';
           result.errors.forEach((error: any) => {
@@ -558,7 +581,7 @@ const CompetencySettings: React.FC = () => {
         setSuccessMessage(message);
         loadCompetencies();
       } else {
-        let errorMessage = result.message || 'Import işlemi başarısız!';
+        let errorMessage = result.message || t('errors.importFailed');
         if (result.errors && result.errors.length > 0) {
           errorMessage += '\n\nDetaylar:\n';
           result.errors.forEach((error: any) => {
@@ -575,7 +598,7 @@ const CompetencySettings: React.FC = () => {
 
     } catch (error: any) {
       console.error('💥 Import hatası:', error);
-      setErrorMessage('Import işlemi sırasında bir hata oluştu: ' + error.message);
+      setErrorMessage(`${t('errors.importError')}: ${error.message}`);
       setShowErrorPopup(true);
     } finally {
       setIsImporting(false);
@@ -611,7 +634,7 @@ const CompetencySettings: React.FC = () => {
       if (file.name.endsWith('.xlsx') || file.name.endsWith('.xls')) {
         setSelectedFile(file);
       } else {
-        setErrorMessage('Lütfen sadece Excel dosyası (.xlsx, .xls) seçin!');
+        setErrorMessage(t('errors.onlyExcelAllowed'));
         setShowErrorPopup(true);
       }
     }
@@ -621,19 +644,19 @@ const CompetencySettings: React.FC = () => {
     try {
       // Excel template verilerini oluştur
       const headers = [
-        'Pozisyon',
-        'Müş. Odak. Min Değer',
-        'Müş. Odak. Max Değer',
-        'Bel. Yönt. Min Değer',
-        'Bel. Yönt. Max Değer',
-        'İns. Etk. Min Değer',
-        'İns. Etk. Max Değer',
-        'Güv. Ver. İş ve Sinerji Min Değer',
-        'Güv. Ver. İş ve Sinerji Max Değer'
+        t('labels.position'),
+        t('labels.customerFocusMin'),
+        t('labels.customerFocusMax'),
+        t('labels.uncertaintyMin'),
+        t('labels.uncertaintyMax'),
+        t('labels.ieMin'),
+        t('labels.ieMax'),
+        t('labels.idikMin'),
+        t('labels.idikMax')
       ];
 
       const exampleData = [
-        'Örnek Pozisyon',
+        t('labels.samplePosition'),
         '1',
         '5',
         '1',
@@ -668,12 +691,12 @@ const CompetencySettings: React.FC = () => {
       ];
 
       const wb = XLSX.utils.book_new();
-      XLSX.utils.book_append_sheet(wb, ws, 'Yetkinlik Ayarları');
+      XLSX.utils.book_append_sheet(wb, ws, t('labels.competencySettingsSheet'));
 
       // Dosyayı indir
-      XLSX.writeFile(wb, 'yetkinlik_ayarlari_template.xlsx');
+      XLSX.writeFile(wb, t('labels.competencySettingsTemplateFile'));
     } catch (error) {
-      console.error('Template indirme hatası:', error);
+      console.error('Template download error:', error);
       setErrorMessage('Template indirilemedi!');
       setShowErrorPopup(true);
     }
@@ -681,7 +704,7 @@ const CompetencySettings: React.FC = () => {
 
   const handleImport = async () => {
     if (!selectedFile) {
-      setErrorMessage('Lütfen bir Excel dosyası seçin!');
+      setErrorMessage(t('errors.selectExcelFirst'));
       setShowErrorPopup(true);
       return;
     }
@@ -701,17 +724,17 @@ const CompetencySettings: React.FC = () => {
       // HTTP status koduna göre hata yönetimi
       if (!response.ok) {
         if (response.status === 401) {
-          setErrorMessage('Yetkiniz bulunmuyor. Lütfen tekrar giriş yapın.');
+          setErrorMessage(t('errors.noPermissionRelogin'));
           setShowErrorPopup(true);
           return;
         } else if (response.status === 413) {
-          setErrorMessage('Dosya çok büyük. Lütfen daha küçük bir dosya seçin.');
+          setErrorMessage(t('errors.fileTooLarge'));
           setShowErrorPopup(true);
           return;
         } else if (response.status === 400) {
           // Backend'den gelen detaylı hata mesajını kullan
           const errorResult = await response.json();
-          let errorMessage = errorResult.message || 'Dosya formatı hatalı. Lütfen geçerli bir Excel dosyası seçin.';
+          let errorMessage = errorResult.message || t('errors.invalidFileFormat');
           if (errorResult.errors && errorResult.errors.length > 0) {
             errorMessage += '\n\nDetaylar:\n';
             errorResult.errors.forEach((error: any) => {
@@ -726,7 +749,7 @@ const CompetencySettings: React.FC = () => {
           setShowErrorPopup(true);
           return;
         } else {
-          setErrorMessage(`Sunucu hatası (${response.status}). Lütfen tekrar deneyin.`);
+          setErrorMessage(`${t('errors.serverError')} (${response.status}). ${t('errors.tryAgain')}`);
           setShowErrorPopup(true);
           return;
         }
@@ -735,7 +758,7 @@ const CompetencySettings: React.FC = () => {
       const result = await response.json();
 
       if (result.success) {
-        let message = `Başarıyla ${result.importedCount} yetkinlik import edildi!`;
+        let message = formatImportSuccess(result.importedCount);
         if (result.errors && result.errors.length > 0) {
           message += '\n\nHatalar:\n';
           result.errors.forEach((error: any) => {
@@ -752,7 +775,7 @@ const CompetencySettings: React.FC = () => {
         setSelectedFile(null);
         loadCompetencies();
       } else {
-        let errorMessage = result.message || 'Import işlemi başarısız!';
+        let errorMessage = result.message || t('errors.importFailed');
         if (result.errors && result.errors.length > 0) {
           errorMessage += '\n\nDetaylar:\n';
           result.errors.forEach((error: any) => {
@@ -768,7 +791,7 @@ const CompetencySettings: React.FC = () => {
       }
     } catch (error) {
       console.error('Import error:', error);
-      setErrorMessage('Import işlemi sırasında bir hata oluştu!');
+      setErrorMessage(t('errors.importError'));
       setShowErrorPopup(true);
     } finally {
       setIsImporting(false);
@@ -839,7 +862,7 @@ const CompetencySettings: React.FC = () => {
             fontWeight: 500,
             fontFamily: 'Inter'
           }}>
-            Yetkinlikler yükleniyor...
+            {t('labels.competenciesLoading')}
           </div>
         </div>
         <style>{`
@@ -1032,7 +1055,7 @@ const CompetencySettings: React.FC = () => {
                     setCurrentPage(1);
                   }
                 }}
-                placeholder="Yetkinlik adında akıllı arama yapın..."
+                placeholder={t('placeholders.competencySearch')}
                 style={{
                   padding: '12px 16px 12px 48px',
                   border: '2px solid #E5E7EB',
@@ -1133,7 +1156,7 @@ const CompetencySettings: React.FC = () => {
                 }}
               >
                 <i className="fas fa-file-excel"></i>
-                Excel Yükle
+                {t('buttons.uploadExcel')}
               </button>
               <button
                 onClick={handleEditCompetency}
@@ -1154,7 +1177,7 @@ const CompetencySettings: React.FC = () => {
                 }}
               >
                 <i className="fas fa-edit"></i>
-                Düzenle
+                {t('buttons.update')}
               </button>
               <button
                 onClick={handleDeleteCompetency}
@@ -1252,7 +1275,7 @@ const CompetencySettings: React.FC = () => {
                           }} />
                         )}
                       </span>
-                      Seçim
+                      {t('labels.selection')}
                     </label>
                   </th>
                   <th style={{
@@ -1264,7 +1287,7 @@ const CompetencySettings: React.FC = () => {
                     fontWeight: 600,
                     fontFamily: 'Inter'
                   }}>
-                    Pozisyon
+                    {t('labels.position')}
                   </th>
                   <th style={{
                     padding: '16px',
@@ -1275,7 +1298,7 @@ const CompetencySettings: React.FC = () => {
                     fontWeight: 600,
                     fontFamily: 'Inter'
                   }}>
-                    Müşteri Odaklılık
+                    {t('competency.customerFocus')}
                   </th>
                   <th style={{
                     padding: '16px',
@@ -1286,7 +1309,7 @@ const CompetencySettings: React.FC = () => {
                     fontWeight: 600,
                     fontFamily: 'Inter'
                   }}>
-                    Belirsizlik Yönetimi
+                    {t('competency.uncertainty')}
                   </th>
                   <th style={{
                     padding: '16px',
@@ -1297,7 +1320,7 @@ const CompetencySettings: React.FC = () => {
                     fontWeight: 600,
                     fontFamily: 'Inter'
                   }}>
-                    İnsanları Etkileme
+                    {t('competency.ie')}
                   </th>
                   <th style={{
                     padding: '16px',
@@ -1308,7 +1331,7 @@ const CompetencySettings: React.FC = () => {
                     fontWeight: 600,
                     fontFamily: 'Inter'
                   }}>
-                    Güven Veren İşbirlikçi ve Sinerji
+                    {t('competency.idik')}
                   </th>
                 </tr>
               </thead>
@@ -1324,7 +1347,7 @@ const CompetencySettings: React.FC = () => {
                       fontFamily: 'Inter',
                       fontWeight: '500'
                     }}>
-                      🔍 "{searchTerm}" için {filteredCompetencies.length} sonuç bulundu
+                      🔍 {formatSearchResultsCount(searchTerm, filteredCompetencies.length)}
                     </td>
                   </tr>
                 )}
@@ -1336,7 +1359,7 @@ const CompetencySettings: React.FC = () => {
                       color: '#8A92A6',
                       fontSize: '14px'
                     }}>
-                      {searchTerm ? `"${searchTerm}" için arama sonucu bulunamadı` : 'Henüz yetkinlik bulunmuyor'}
+                      {formatNoResultsText(searchTerm, 'labels.competenciesEmpty')}
                     </td>
                   </tr>
                 ) : (
@@ -1471,7 +1494,7 @@ const CompetencySettings: React.FC = () => {
               fontSize: '14px'
             }}
           >
-            Önceki
+            {t('buttons.previous')}
           </button>
           
           {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
@@ -1505,7 +1528,7 @@ const CompetencySettings: React.FC = () => {
               fontSize: '14px'
             }}
           >
-            Sonraki
+            {t('buttons.next')}
           </button>
         </div>
 
@@ -1564,7 +1587,7 @@ const CompetencySettings: React.FC = () => {
                     fontFamily: 'Inter',
                     fontWeight: 700
                   }}>
-                    {showAddPopup ? 'Yetkinlik Ekle' : 'Yetkinlik Düzenle'}
+                    {showAddPopup ? t('titles.addCompetency') : t('titles.editCompetency')}
                   </div>
                   <div style={{
                     width: '44px',
@@ -1591,7 +1614,7 @@ const CompetencySettings: React.FC = () => {
                       fontWeight: 500,
                       marginBottom: '8px'
                     }}>
-                      Pozisyon
+                      {t('labels.position')}
                     </div>
                     {/* Custom Dropdown */}
                     <div
@@ -1612,7 +1635,7 @@ const CompetencySettings: React.FC = () => {
                       }}
                     >
                       <span style={{ color: positionSearchTerm ? '#232D42' : '#8A92A6' }}>
-                        {positionSearchTerm || `Pozisyon seçin (${positions.length} pozisyon mevcut)`}
+                        {positionSearchTerm || formatPositionPlaceholder(positions.length)}
                       </span>
                       <i 
                         className={`fas fa-chevron-${showPositionDropdown ? 'up' : 'down'}`}
@@ -1641,7 +1664,7 @@ const CompetencySettings: React.FC = () => {
                         <div style={{ padding: '8px', borderBottom: '1px solid #E9ECEF', position: 'relative' }}>
                           <input
                             type="text"
-                            placeholder="Pozisyon ara..."
+                            placeholder={t('placeholders.positionSearch')}
                             value={positionSearchTerm}
                             onChange={(e) => {
                               handlePositionSearch(e.target.value);
@@ -1724,7 +1747,7 @@ const CompetencySettings: React.FC = () => {
                               color: '#8A92A6',
                               textAlign: 'center'
                             }}>
-                              {positionSearchTerm ? `"${positionSearchTerm}" için arama sonucu bulunamadı` : 'Pozisyon bulunamadı'}
+                              {formatNoResultsText(positionSearchTerm, 'labels.positionNotFound')}
                             </div>
                           )}
                         </div>
@@ -1746,7 +1769,7 @@ const CompetencySettings: React.FC = () => {
                       fontFamily: 'Inter',
                       fontWeight: 500
                     }}>
-                      Müşteri Odaklılık
+                      {t('competency.customerFocus')}
                     </div>
                     <div style={{
                       width: '100%',
@@ -1804,7 +1827,7 @@ const CompetencySettings: React.FC = () => {
                       fontFamily: 'Inter',
                       fontWeight: 500
                     }}>
-                      Belirsizlik Yönetimi
+                      {t('competency.uncertainty')}
                     </div>
                     <div style={{
                       width: '100%',
@@ -1862,7 +1885,7 @@ const CompetencySettings: React.FC = () => {
                       fontFamily: 'Inter',
                       fontWeight: 500
                     }}>
-                      İnsanları Etkileme
+                      {t('competency.ie')}
                     </div>
                     <div style={{
                       width: '100%',
@@ -1920,7 +1943,7 @@ const CompetencySettings: React.FC = () => {
                       fontFamily: 'Inter',
                       fontWeight: 500
                     }}>
-                      Güven Veren İşbirlikçi ve Sinerji
+                      {t('competency.idik')}
                     </div>
                     <div style={{
                       width: '100%',
@@ -1996,7 +2019,7 @@ const CompetencySettings: React.FC = () => {
                       fontFamily: 'Inter',
                       fontWeight: 500
                     }}>
-                      İptal
+                      {t('buttons.cancel')}
                     </div>
                   </button>
                   <button
@@ -2027,7 +2050,7 @@ const CompetencySettings: React.FC = () => {
                           animation: 'spin 1s linear infinite',
                           marginRight: '8px'
                         }}></div>
-                        {showAddPopup ? 'Kaydediliyor...' : 'Güncelleniyor...'}
+                        {showAddPopup ? t('statuses.saving') : t('statuses.updating')}
                       </>
                     ) : (
                       <div style={{
@@ -2036,7 +2059,7 @@ const CompetencySettings: React.FC = () => {
                         fontFamily: 'Inter',
                         fontWeight: 500
                       }}>
-                        {showAddPopup ? 'Kaydet' : 'Güncelle'}
+                        {showAddPopup ? t('buttons.save') : t('buttons.update')}
                       </div>
                     )}
                   </button>
@@ -2120,7 +2143,7 @@ const CompetencySettings: React.FC = () => {
                     fontSize: '20px',
                     fontWeight: 700
                   }}>
-                    Yetkinlik Sil
+                    {t('titles.deleteCompetency')}
                   </div>
                   <button
                     onClick={() => setShowDeletePopup(false)}
@@ -2144,7 +2167,7 @@ const CompetencySettings: React.FC = () => {
                     color: '#232D42',
                     fontSize: '16px'
                   }}>
-                    Bu yetkinlikleri silmek istediğinizden emin misiniz?
+                    {t('labels.deleteCompetencyConfirm')}
                   </p>
                   <p style={{
                     margin: '10px 0',
@@ -2152,7 +2175,7 @@ const CompetencySettings: React.FC = () => {
                     fontWeight: 500,
                     fontSize: '16px'
                   }}>
-                    Bu işlem geri alınamaz!
+                    {t('labels.actionIrreversible')}
                   </p>
                 </div>
                 <div style={{
@@ -2175,7 +2198,7 @@ const CompetencySettings: React.FC = () => {
                       fontWeight: 500
                     }}
                   >
-                    İptal
+                    {t('buttons.cancel')}
                   </button>
                   <button
                     onClick={handleConfirmDelete}
@@ -2303,7 +2326,7 @@ const CompetencySettings: React.FC = () => {
                       }}
                     >
                       <i className="fas fa-download"></i>
-                      Template İndir
+                      {t('buttons.downloadTemplate')}
                     </button>
                   </div>
 
@@ -2346,13 +2369,13 @@ const CompetencySettings: React.FC = () => {
                           fontWeight: 500,
                           marginBottom: '8px'
                         }}>
-                          {selectedFile ? selectedFile.name : 'Excel dosyası seçin veya sürükleyin'}
+                          {selectedFile ? selectedFile.name : t('labels.selectOrDropExcel')}
                         </div>
                         <div style={{
                           color: '#8A92A6',
                           fontSize: '14px'
                         }}>
-                          .xlsx veya .xls formatında dosya yükleyin
+                          {t('labels.supportedFormats')}
                         </div>
                       </div>
                     </div>
@@ -2378,7 +2401,7 @@ const CompetencySettings: React.FC = () => {
                       fontWeight: 500
                     }}
                   >
-                    İptal
+                    {t('buttons.cancel')}
                   </button>
                   <button
                     onClick={handleImport}
@@ -2401,12 +2424,12 @@ const CompetencySettings: React.FC = () => {
                     {isImporting ? (
                       <>
                         <i className="fas fa-spinner fa-spin"></i>
-                        Yükleniyor...
+                        {t('labels.uploading')}
                       </>
                     ) : (
                       <>
                         <i className="fas fa-upload"></i>
-                        Yükle
+                        {t('buttons.upload')}
                       </>
                     )}
                   </button>
@@ -2457,7 +2480,7 @@ const CompetencySettings: React.FC = () => {
                   fontFamily: 'Montserrat',
                   marginBottom: '20px'
                 }}>
-                  Başarılı!
+                  {t('labels.success')}
                 </div>
                 <div style={{
                   color: '#6B7280',

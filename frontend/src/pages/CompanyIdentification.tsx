@@ -10,7 +10,7 @@ interface Company {
 }
 
 const CompanyIdentification: React.FC = () => {
-  const { t } = useLanguage();
+  const { language, t } = useLanguage();
   const [companies, setCompanies] = useState<Company[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [showAddPopup, setShowAddPopup] = useState(false);
@@ -24,6 +24,10 @@ const CompanyIdentification: React.FC = () => {
   });
   const [selectedCompany, setSelectedCompany] = useState<Company | null>(null);
   const [isMobile, setIsMobile] = useState(false);
+  const formatDeleteCompanyConfirm = (name: string) =>
+    language === 'en'
+      ? `Are you sure you want to delete "${name}"? This action cannot be undone.`
+      : `"${name}" firmasını silmek istediğinizden emin misiniz? Bu işlem geri alınamaz.`;
   
   // Form states
   const [formData, setFormData] = useState({
@@ -108,12 +112,12 @@ const CompanyIdentification: React.FC = () => {
         loadCompanies();
       } else {
         console.error('❌ Firma ekleme hatası:', response.data.message);
-        showMessage('Hata', response.data.message, 'error');
+        showMessage(t('labels.error'), response.data.message, 'error');
       }
     } catch (error: any) {
       console.error('💥 Firma ekleme hatası:', error);
-      const errorMessage = error.response?.data?.message || 'Firma eklenirken bir hata oluştu';
-      showMessage('Hata', errorMessage, 'error');
+      const errorMessage = error.response?.data?.message || t('errors.companyAddError');
+      showMessage(t('labels.error'), errorMessage, 'error');
     }
   };
 
@@ -129,12 +133,12 @@ const CompanyIdentification: React.FC = () => {
         loadCompanies();
       } else {
         console.error('❌ Firma güncelleme hatası:', response.data.message);
-        showMessage('Hata', response.data.message, 'error');
+        showMessage(t('labels.error'), response.data.message, 'error');
       }
     } catch (error: any) {
       console.error('💥 Firma güncelleme hatası:', error);
-      const errorMessage = error.response?.data?.message || 'Firma güncellenirken bir hata oluştu';
-      showMessage('Hata', errorMessage, 'error');
+      const errorMessage = error.response?.data?.message || t('errors.companyUpdateError');
+      showMessage(t('labels.error'), errorMessage, 'error');
     }
   };
 
@@ -147,12 +151,12 @@ const CompanyIdentification: React.FC = () => {
         loadCompanies();
       } else {
         console.error('❌ Firma silme hatası:', response.data.message);
-        showMessage('Hata', response.data.message, 'error');
+        showMessage(t('labels.error'), response.data.message, 'error');
       }
     } catch (error: any) {
       console.error('💥 Firma silme hatası:', error);
-      const errorMessage = error.response?.data?.message || 'Firma silinirken bir hata oluştu';
-      showMessage('Hata', errorMessage, 'error');
+      const errorMessage = error.response?.data?.message || t('errors.companyDeleteError');
+      showMessage(t('labels.error'), errorMessage, 'error');
     }
   };
 
@@ -180,7 +184,7 @@ const CompanyIdentification: React.FC = () => {
           fontSize: '16px',
           fontFamily: 'Inter'
         }}>
-          Veriler yükleniyor...
+          {t('labels.loadingData')}
         </div>
         <style>{`
           @keyframes spin {
@@ -383,7 +387,7 @@ const CompanyIdentification: React.FC = () => {
               fontWeight: 700,
               borderBottom: '1px solid #E9ECEF'
             }}>
-              FİRMA ADI
+              {t('labels.companyName')}
             </div>
             <div style={{
               padding: '16px',
@@ -395,7 +399,7 @@ const CompanyIdentification: React.FC = () => {
               fontWeight: 700,
               borderBottom: '1px solid #E9ECEF'
             }}>
-              FİRMA MAİLİ
+              {t('labels.companyEmail')}
             </div>
             <div style={{
               padding: '16px',
@@ -407,7 +411,7 @@ const CompanyIdentification: React.FC = () => {
               fontWeight: 700,
               borderBottom: '1px solid #E9ECEF'
             }}>
-              İŞLEMLER
+              {t('labels.actions')}
             </div>
 
             {/* Table Rows */}
@@ -574,13 +578,13 @@ const CompanyIdentification: React.FC = () => {
                   fontFamily: 'Inter',
                   fontSize: '14px'
                 }}>
-                  Firma Adı
+                  {t('labels.companyName')}
                 </label>
                 <input
                   type="text"
                   value={formData.firmName}
                   onChange={(e) => setFormData({...formData, firmName: e.target.value})}
-                  placeholder="Firma adını giriniz"
+                  placeholder={t('placeholders.companyName')}
                   style={{
                     width: '100%',
                     padding: '12px',
@@ -607,7 +611,7 @@ const CompanyIdentification: React.FC = () => {
                   type="email"
                   value={formData.firmMail}
                   onChange={(e) => setFormData({...formData, firmMail: e.target.value})}
-                  placeholder="Firma e-postasını giriniz"
+                  placeholder={t('placeholders.companyEmail')}
                   style={{
                     width: '100%',
                     padding: '12px',
@@ -640,7 +644,7 @@ const CompanyIdentification: React.FC = () => {
                   cursor: 'pointer'
                 }}
               >
-                İptal
+                {t('buttons.cancel')}
               </button>
               <button
                 onClick={handleSubmitAdd}
@@ -693,7 +697,7 @@ const CompanyIdentification: React.FC = () => {
               fontSize: '18px',
               fontWeight: 600
             }}>
-              Firma Düzenle
+              {t('titles.editCompany')}
             </h3>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
               <div>
@@ -733,13 +737,13 @@ const CompanyIdentification: React.FC = () => {
                   fontFamily: 'Inter',
                   fontSize: '14px'
                 }}>
-                  Firma Adı
+                  {t('labels.companyName')}
                 </label>
                 <input
                   type="text"
                   value={formData.firmName}
                   onChange={(e) => setFormData({...formData, firmName: e.target.value})}
-                  placeholder="Firma adını giriniz"
+                  placeholder={t('placeholders.companyName')}
                   style={{
                     width: '100%',
                     padding: '12px',
@@ -766,7 +770,7 @@ const CompanyIdentification: React.FC = () => {
                   type="email"
                   value={formData.firmMail}
                   onChange={(e) => setFormData({...formData, firmMail: e.target.value})}
-                  placeholder="Firma e-postasını giriniz"
+                  placeholder={t('placeholders.companyEmail')}
                   style={{
                     width: '100%',
                     padding: '12px',
@@ -799,7 +803,7 @@ const CompanyIdentification: React.FC = () => {
                   cursor: 'pointer'
                 }}
               >
-                İptal
+                {t('buttons.cancel')}
               </button>
               <button
                 onClick={handleSubmitEdit}
@@ -815,7 +819,7 @@ const CompanyIdentification: React.FC = () => {
                   cursor: 'pointer'
                 }}
               >
-                Güncelle
+                {t('buttons.update')}
               </button>
             </div>
           </div>
@@ -859,7 +863,7 @@ const CompanyIdentification: React.FC = () => {
               fontSize: '14px',
               lineHeight: '20px'
             }}>
-              "{selectedCompany?.firmName}" firmasını silmek istediğinizden emin misiniz? Bu işlem geri alınamaz.
+              {formatDeleteCompanyConfirm(selectedCompany?.firmName || '')}
             </p>
             <div style={{
               display: 'flex',
@@ -880,7 +884,7 @@ const CompanyIdentification: React.FC = () => {
                   cursor: 'pointer'
                 }}
               >
-                İptal
+                {t('buttons.cancel')}
               </button>
               <button
                 onClick={handleConfirmDelete}

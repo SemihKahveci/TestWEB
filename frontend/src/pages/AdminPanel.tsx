@@ -934,7 +934,7 @@ const AdminPanel: React.FC = () => {
               }}>
                 <th style={{
                   padding: '16px',
-                  textAlign: 'center',
+                  textAlign: 'left',
                   fontSize: '14px',
                   fontWeight: 600,
                   color: '#232D42',
@@ -999,7 +999,7 @@ const AdminPanel: React.FC = () => {
                 </th>
                 <th style={{
                   padding: '16px',
-                  textAlign: 'center',
+                  textAlign: 'left',
                   fontSize: '14px',
                   fontWeight: 600,
                   color: '#232D42',

@@ -17,7 +17,7 @@ interface Game {
 }
 
 const SubscriptionSettings: React.FC = () => {
-  const { t } = useLanguage();
+  const { language, t } = useLanguage();
   const [games, setGames] = useState<Game[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isSuperAdmin, setIsSuperAdmin] = useState(false);
@@ -105,7 +105,8 @@ const SubscriptionSettings: React.FC = () => {
   // Tarih formatını düzenle
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
-    return date.toLocaleDateString('tr-TR', {
+    const locale = language === 'en' ? 'en-US' : 'tr-TR';
+    return date.toLocaleDateString(locale, {
       day: '2-digit',
       month: '2-digit',
       year: 'numeric'
@@ -370,7 +371,7 @@ const SubscriptionSettings: React.FC = () => {
                 fontWeight: 400,
                 wordWrap: 'break-word'
               }}>
-                Başlangıç Tarihi
+                {t('labels.startDate')}
               </div>
               <div style={{
                 alignSelf: 'stretch',
@@ -380,7 +381,7 @@ const SubscriptionSettings: React.FC = () => {
                 fontWeight: 600,
                 wordWrap: 'break-word'
               }}>
-                {oldestDate ? formatDate(oldestDate) : 'Veri yok'}
+                {oldestDate ? formatDate(oldestDate) : t('labels.noData')}
               </div>
             </div>
             <div style={{
@@ -398,7 +399,7 @@ const SubscriptionSettings: React.FC = () => {
                 fontWeight: 400,
                 wordWrap: 'break-word'
               }}>
-                Toplam Kredi
+                {t('labels.totalCredits')}
               </div>
               <div style={{
                 alignSelf: 'stretch',
@@ -408,7 +409,7 @@ const SubscriptionSettings: React.FC = () => {
                 fontWeight: 600,
                 wordWrap: 'break-word'
               }}>
-                {isSuperAdmin ? '∞' : `${totalCredits.toLocaleString()} Kredi`}
+                {isSuperAdmin ? '∞' : `${totalCredits.toLocaleString()} ${t('labels.credits')}`}
               </div>
             </div>
             <div style={{
@@ -426,7 +427,7 @@ const SubscriptionSettings: React.FC = () => {
                 fontWeight: 400,
                 wordWrap: 'break-word'
               }}>
-                Ücret
+                {t('labels.fee')}
               </div>
               <div style={{
                 alignSelf: 'stretch',
@@ -436,7 +437,7 @@ const SubscriptionSettings: React.FC = () => {
                 fontWeight: 600,
                 wordWrap: 'break-word'
               }}>
-                120$ /Aylık
+                {t('labels.monthlyFeeSample')}
               </div>
             </div>
           </div>
@@ -471,7 +472,7 @@ const SubscriptionSettings: React.FC = () => {
                   fontWeight: 700,
                   lineHeight: '18px'
                 }}>
-                  Kredi Kullanımları
+                  {t('labels.creditUsage')}
                 </div>
                 <div style={{
                   color: '#6F6F6F',
@@ -480,7 +481,7 @@ const SubscriptionSettings: React.FC = () => {
                   fontWeight: 400,
                   lineHeight: '16px'
                 }}>
-                  10/04/2025 12:16 tarihinden bugüne
+                  {t('labels.usageSinceSample')}
                 </div>
               </div>
               <div style={{
@@ -503,7 +504,7 @@ const SubscriptionSettings: React.FC = () => {
                   fontWeight: 600,
                   lineHeight: '24px'
                 }}>
-                  Daha Fazla Kredi
+                  {t('buttons.moreCredits')}
                 </div>
               </div>
             </div>
@@ -546,7 +547,7 @@ const SubscriptionSettings: React.FC = () => {
                   fontWeight: 700,
                   lineHeight: '16px'
                 }}>
-                  {isSuperAdmin ? '∞' : `${calculatedRemainingCredits.toLocaleString()} Kredi`}
+                  {isSuperAdmin ? '∞' : `${calculatedRemainingCredits.toLocaleString()} ${t('labels.credits')}`}
                 </div>
                 <div style={{
                   position: 'absolute',
@@ -559,7 +560,7 @@ const SubscriptionSettings: React.FC = () => {
                   fontWeight: 700,
                   lineHeight: '16px'
                 }}>
-                  {isSuperAdmin ? '0' : `${usedCredits.toLocaleString()} Kredi`}
+                  {isSuperAdmin ? '0' : `${usedCredits.toLocaleString()} ${t('labels.credits')}`}
                 </div>
               </div>
 
@@ -587,7 +588,7 @@ const SubscriptionSettings: React.FC = () => {
                     fontWeight: 500,
                     lineHeight: '16px'
                   }}>
-                    Kalan Kullanımlarım
+                    {t('labels.remainingUsage')}
                   </div>
                 </div>
                 <div style={{
@@ -608,7 +609,7 @@ const SubscriptionSettings: React.FC = () => {
                     fontWeight: 500,
                     lineHeight: '16px'
                   }}>
-                    Harcanan Kullanımlarım
+                    {t('labels.usedUsage')}
                   </div>
                 </div>
               </div>
@@ -625,7 +626,7 @@ const SubscriptionSettings: React.FC = () => {
           lineHeight: '20px',
           marginBottom: '10px'
         }}>
-          Geçmiş Ödemeler
+          {t('titles.paymentHistory')}
         </div>
 
         {/* History Table */}
@@ -671,7 +672,7 @@ const SubscriptionSettings: React.FC = () => {
               fontWeight: 700,
               lineHeight: '18px'
             }}>
-              Tarih
+              {t('labels.date')}
             </div>
             <div style={{
               padding: '12px',
@@ -686,7 +687,7 @@ const SubscriptionSettings: React.FC = () => {
               fontWeight: 700,
               lineHeight: '18px'
             }}>
-              Fatura No
+              {t('labels.invoiceNo')}
             </div>
             <div style={{
               padding: '12px',
@@ -708,7 +709,7 @@ const SubscriptionSettings: React.FC = () => {
               fontWeight: 700,
               lineHeight: '18px'
             }}>
-              Kredi
+              {t('labels.credit')}
             </div>
             <div style={{
               padding: '12px',
@@ -723,7 +724,7 @@ const SubscriptionSettings: React.FC = () => {
               fontWeight: 700,
               lineHeight: '18px'
             }}>
-              Ücret
+              {t('labels.fee')}
             </div>
           </div>
 
@@ -736,7 +737,7 @@ const SubscriptionSettings: React.FC = () => {
               fontSize: '14px',
               fontFamily: 'Inter'
             }}>
-              Yükleniyor...
+              {t('labels.loading')}
             </div>
           ) : games.length === 0 ? (
             <div style={{
@@ -746,7 +747,7 @@ const SubscriptionSettings: React.FC = () => {
               fontSize: '14px',
               fontFamily: 'Inter'
             }}>
-              Henüz oyun verisi bulunmuyor
+              {t('labels.noGameData')}
             </div>
           ) : (
             games.map((game, index) => (
