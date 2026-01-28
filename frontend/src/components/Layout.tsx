@@ -441,7 +441,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                 margin: 0,
                 fontFamily: 'Inter'
               }}>
-                {user?.name || 'Admin'}
+                {user?.name || t('labels.adminUser')}
               </p>
               <p style={{
                 fontSize: '12px',
@@ -530,7 +530,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
               color: '#111827',
               fontFamily: 'Inter'
             }}>
-              Admin Panel
+              {t('titles.adminPanel')}
             </h1>
           </div>
         )}

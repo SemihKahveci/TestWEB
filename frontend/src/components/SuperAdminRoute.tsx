@@ -1,11 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { Navigate } from 'react-router-dom';
+import { useLanguage } from '../contexts/LanguageContext';
 
 interface SuperAdminRouteProps {
   children: React.ReactNode;
 }
 
 const SuperAdminRoute: React.FC<SuperAdminRouteProps> = ({ children }) => {
+  const { t } = useLanguage();
   const [isSuperAdmin, setIsSuperAdmin] = useState<boolean | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -42,7 +44,7 @@ const SuperAdminRoute: React.FC<SuperAdminRouteProps> = ({ children }) => {
         height: '100vh',
         fontSize: '18px'
       }}>
-        Yetki kontrolü yapılıyor...
+        {t('labels.authorizationCheck')}
       </div>
     );
   }
