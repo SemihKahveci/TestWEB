@@ -537,6 +537,7 @@ const translations: Record<Language, Record<string, string>> = {
     'titles.deleteCompany': 'Firma Sil',
     'titles.editCompany': 'Firma Düzenle',
     'titles.adminPanel': 'Genel Takip Sistemi',
+    'titles.andron': 'ANDRON',
     'titles.authorization': 'Kişiler',
     'titles.organization': 'Organizasyon',
     'titles.grouping': 'Gruplama',

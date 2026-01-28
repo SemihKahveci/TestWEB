@@ -530,7 +530,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
               color: '#111827',
               fontFamily: 'Inter'
             }}>
-              {t('titles.adminPanel')}
+              {t('titles.andron')}
             </h1>
           </div>
         )}
