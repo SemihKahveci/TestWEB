@@ -736,7 +736,15 @@ const DashboardPage: React.FC = () => {
   };
 
   return (
-    <div style={{ fontFamily: 'Inter, sans-serif', background: '#F8F9FA', minHeight: '100vh', padding: isMobile ? '16px' : '24px 32px 24px 10px', boxSizing: 'border-box', overflowX: 'hidden' }}>
+    <div style={{
+      fontFamily: 'Inter, sans-serif',
+      background: '#F8F9FA',
+      minHeight: '100vh',
+      padding: isMobile ? '16px' : '24px 32px 24px 10px',
+      boxSizing: 'border-box',
+      overflowX: 'hidden',
+      touchAction: 'pan-y'
+    }}>
       <div style={{
         width: '100%',
         height: isMobile ? '64px' : '75px',
@@ -829,8 +837,8 @@ const DashboardPage: React.FC = () => {
             </button>
           </div>
         </div>
-        <div style={{ overflowX: 'auto', width: '100%', maxWidth: '100%' }}>
-          <div style={{ display: 'flex', flexWrap: 'nowrap', gap: '16px', width: '100%' }}>
+        <div style={{ overflowX: isMobile ? 'visible' : 'auto', width: '100%', maxWidth: '100%' }}>
+          <div style={{ display: 'flex', flexWrap: isMobile ? 'wrap' : 'nowrap', gap: '16px', width: '100%' }}>
             {allCompetencyKeys.map((key, index) => (
               <div
                 key={key}
@@ -861,7 +869,7 @@ const DashboardPage: React.FC = () => {
           <div />
         </div>
 
-        <div style={{ overflowX: 'auto', width: '100%', maxWidth: '100%' }}>
+        <div style={{ overflowX: isMobile ? 'visible' : 'auto', width: '100%', maxWidth: '100%' }}>
           {isLoadingResults || (isFilterActive && isFullResultsLoading) ? (
             <div style={{ textAlign: 'center', padding: '24px', color: '#6B7280' }}>{t('labels.loadingResults')}</div>
           ) : filteredResults.length === 0 ? (
@@ -968,7 +976,7 @@ const DashboardPage: React.FC = () => {
 
         {(isFilterActive ? Math.ceil(filteredResults.length / 10) : totalPages) > 1 && (
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '12px', marginTop: '16px' }}>
-            <div style={{ fontSize: '13px', color: '#6B7280' }}>
+            <div style={{ fontSize: isMobile ? '12px' : '13px', color: '#6B7280', textAlign: 'center' }}>
               {((currentPage - 1) * 10) + 1}-{Math.min(currentPage * 10, isFilterActive ? filteredResults.length : totalCount)} arası, toplam {isFilterActive ? filteredResults.length : totalCount} kayıt
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
