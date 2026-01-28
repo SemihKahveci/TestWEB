@@ -59,44 +59,35 @@ const Grouping: React.FC = () => {
   const [selectedItems, setSelectedItems] = useState<string[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
+  const formatTemplate = (template: string, params: Record<string, string | number>) =>
+    Object.entries(params).reduce(
+      (text, [key, value]) => text.replace(new RegExp(`\\{${key}\\}`, 'g'), String(value)),
+      template
+    );
+
   const formatNoResultsText = (term: string, emptyKey: string) => {
     if (term) {
-      return language === 'en'
-        ? `No results found for "${term}"`
-        : `"${term}" için arama sonucu bulunamadı`;
+      return formatTemplate(t('labels.noSearchResults'), { query: term });
     }
     return t(emptyKey);
   };
 
   const formatSearchResultsCount = (term: string, count: number) =>
-    language === 'en'
-      ? `${count} results found for "${term}"`
-      : `"${term}" için ${count} sonuç bulundu`;
+    formatTemplate(t('labels.searchResultsCount'), { term, count });
 
   const formatBulkDeleteConfirm = (count: number) =>
-    language === 'en'
-      ? `Are you sure you want to delete ${count} groups? This action cannot be undone.`
-      : `${count} adet grubu silmek istediğinizden emin misiniz? Bu işlem geri alınamaz.`;
+    formatTemplate(t('labels.bulkDeleteGroupsConfirm'), { count });
 
-  const formatSingleDeleteConfirm = () =>
-    language === 'en'
-      ? 'Are you sure you want to delete this group? This action cannot be undone.'
-      : 'Bu grubu silmek istediğinizden emin misiniz? Bu işlem geri alınamaz.';
+  const formatSingleDeleteConfirm = () => t('labels.deleteGroupConfirm');
 
   const formatBulkDeleteSuccess = (count: number) =>
-    language === 'en'
-      ? `${count} groups deleted successfully.`
-      : `${count} grup başarıyla silindi.`;
+    formatTemplate(t('messages.groupsDeleted'), { count });
 
   const formatDeleteGroupConfirm = (name: string) =>
-    language === 'en'
-      ? `Are you sure you want to delete "${name}"? This action cannot be undone.`
-      : `"${name}" grubunu silmek istediğinizden emin misiniz? Bu işlem geri alınamaz.`;
+    formatTemplate(t('labels.deleteGroupConfirmNamed'), { name });
 
   const formatAutoPersonsAdded = (count: number, positionCount: number) =>
-    language === 'en'
-      ? `${count} people were added automatically. (${positionCount} positions)`
-      : `${count} kişi otomatik olarak eklendi! (${positionCount} farklı pozisyondan)`;
+    formatTemplate(t('messages.autoPersonsAdded'), { count, positionCount });
   const [formData, setFormData] = useState({
     groupName: '',
     isActive: true
@@ -2188,11 +2179,9 @@ const Grouping: React.FC = () => {
                         setShowOrganizationDropdown(true);
                       }}
                       onFocus={() => setShowOrganizationDropdown(true)}
-                      placeholder={
-                        language === 'en'
-                          ? `${t('labels.organizationSearchPlaceholder')} (${organizations.length - selectedOrganizations.length} available)`
-                          : `${t('labels.organizationSearchPlaceholder')} (${organizations.length - selectedOrganizations.length} organizasyon mevcut)`
-                      }
+                      placeholder={formatTemplate(t('labels.organizationSearchPlaceholderAvailable'), {
+                        count: organizations.length - selectedOrganizations.length
+                      })}
                       style={{
                         width: '100%',
                         padding: '12px 16px',
@@ -2348,11 +2337,9 @@ const Grouping: React.FC = () => {
                         setShowPersonDropdown(true);
                       }}
                       onFocus={() => setShowPersonDropdown(true)}
-                      placeholder={
-                        language === 'en'
-                          ? `${t('labels.personSearchPlaceholder')} (${persons.length - selectedPersons.length} available)`
-                          : `${t('labels.personSearchPlaceholder')} (${persons.length - selectedPersons.length} kişi mevcut)`
-                      }
+                      placeholder={formatTemplate(t('labels.personSearchPlaceholderAvailable'), {
+                        count: persons.length - selectedPersons.length
+                      })}
                       style={{
                         width: '100%',
                         padding: '12px 16px',
@@ -2488,11 +2475,9 @@ const Grouping: React.FC = () => {
                         setShowPlanetDropdown(true);
                       }}
                       onFocus={() => setShowPlanetDropdown(true)}
-                      placeholder={
-                        language === 'en'
-                          ? `${t('labels.planetSearchPlaceholder')} (${planets.length - selectedPlanets.length} available)`
-                          : `${t('labels.planetSearchPlaceholder')} (${planets.length - selectedPlanets.length} gezegen mevcut)`
-                      }
+                      placeholder={formatTemplate(t('labels.planetSearchPlaceholderAvailable'), {
+                        count: planets.length - selectedPlanets.length
+                      })}
                       style={{
                         width: '100%',
                         padding: '12px 16px',
@@ -2855,11 +2840,9 @@ const Grouping: React.FC = () => {
                         setShowOrganizationDropdown(true);
                       }}
                       onFocus={() => setShowOrganizationDropdown(true)}
-                      placeholder={
-                        language === 'en'
-                          ? `${t('labels.organizationSearchPlaceholder')} (${organizations.length - selectedOrganizations.length} available)`
-                          : `${t('labels.organizationSearchPlaceholder')} (${organizations.length - selectedOrganizations.length} organizasyon mevcut)`
-                      }
+                      placeholder={formatTemplate(t('labels.organizationSearchPlaceholderAvailable'), {
+                        count: organizations.length - selectedOrganizations.length
+                      })}
                       style={{
                         width: '100%',
                         padding: '12px 16px',
@@ -3015,11 +2998,9 @@ const Grouping: React.FC = () => {
                         setShowPersonDropdown(true);
                       }}
                       onFocus={() => setShowPersonDropdown(true)}
-                      placeholder={
-                        language === 'en'
-                          ? `${t('labels.personSearchPlaceholder')} (${persons.length - selectedPersons.length} available)`
-                          : `${t('labels.personSearchPlaceholder')} (${persons.length - selectedPersons.length} kişi mevcut)`
-                      }
+                      placeholder={formatTemplate(t('labels.personSearchPlaceholderAvailable'), {
+                        count: persons.length - selectedPersons.length
+                      })}
                       style={{
                         width: '100%',
                         padding: '12px 16px',
@@ -3155,11 +3136,9 @@ const Grouping: React.FC = () => {
                         setShowPlanetDropdown(true);
                       }}
                       onFocus={() => setShowPlanetDropdown(true)}
-                      placeholder={
-                        language === 'en'
-                          ? `${t('labels.planetSearchPlaceholder')} (${planets.length - selectedPlanets.length} available)`
-                          : `${t('labels.planetSearchPlaceholder')} (${planets.length - selectedPlanets.length} gezegen mevcut)`
-                      }
+                      placeholder={formatTemplate(t('labels.planetSearchPlaceholderAvailable'), {
+                        count: planets.length - selectedPlanets.length
+                      })}
                       style={{
                         width: '100%',
                         padding: '12px 16px',
@@ -3890,7 +3869,7 @@ const Grouping: React.FC = () => {
                   (e.target as HTMLButtonElement).style.backgroundColor = '#3B82F6';
                 }}
               >
-                Tamam
+                {t('buttons.ok')}
               </button>
             </div>
           </div>
@@ -3967,7 +3946,7 @@ const Grouping: React.FC = () => {
                   (e.target as HTMLButtonElement).style.backgroundColor = '#DC2626';
                 }}
               >
-                Tamam
+                {t('buttons.ok')}
               </button>
             </div>
           </div>

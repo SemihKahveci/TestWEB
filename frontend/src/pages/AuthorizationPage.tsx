@@ -23,7 +23,7 @@ interface Organization {
 }
 
 const AuthorizationPage: React.FC = () => {
-  const { language, t } = useLanguage();
+  const { t } = useLanguage();
   // CSS animasyonu için style tag'i ekle
   React.useEffect(() => {
     const style = document.createElement('style');
@@ -67,47 +67,37 @@ const AuthorizationPage: React.FC = () => {
   const [organizations, setOrganizations] = useState<Organization[]>([]);
   const [positions, setPositions] = useState<string[]>([]);
   const [filteredPositions, setFilteredPositions] = useState<string[]>([]);
+  const formatTemplate = (template: string, params: Record<string, string | number>) =>
+    Object.entries(params).reduce(
+      (text, [key, value]) => text.replace(new RegExp(`\\{${key}\\}`, 'g'), String(value)),
+      template
+    );
+
   const formatNoResultsText = (term: string) => {
     if (term) {
-      return language === 'en'
-        ? `No results found for "${term}"`
-        : `"${term}" için arama sonucu bulunamadı`;
+      return formatTemplate(t('labels.noSearchResults'), { query: term });
     }
-    return language === 'en' ? 'No people yet' : 'Henüz kişi bulunmuyor';
+    return t('labels.noPeopleYet');
   };
 
   const formatPositionPlaceholder = (count: number) =>
-    language === 'en'
-      ? `Select position (${count} available)`
-      : `Pozisyon seçin (${count} pozisyon mevcut)`;
+    formatTemplate(t('labels.selectPositionAvailable'), { count });
 
   const formatBulkDeleteSuccess = (count: number) =>
-    language === 'en'
-      ? `${count} authorizations deleted successfully.`
-      : `${count} yetkilendirme başarıyla silindi.`;
+    formatTemplate(t('messages.authorizationsDeleted'), { count });
 
   const formatImportSuccess = (count: number) =>
-    language === 'en'
-      ? `${count} people imported successfully!`
-      : `Başarıyla ${count} kişi eklendi!`;
+    formatTemplate(t('messages.peopleImportSuccess'), { count });
 
   const formatSearchResultsCount = (term: string, count: number) =>
-    language === 'en'
-      ? `${count} results found for "${term}"`
-      : `"${term}" için ${count} sonuç bulundu`;
+    formatTemplate(t('labels.searchResultsCount'), { term, count });
 
   const formatBulkDeleteConfirm = (count: number) =>
-    language === 'en'
-      ? `Are you sure you want to delete ${count} authorizations? This action cannot be undone.`
-      : `${count} adet yetkilendirmeyi silmek istediğinizden emin misiniz? Bu işlem geri alınamaz.`;
+    formatTemplate(t('labels.bulkDeleteAuthorizationsConfirm'), { count });
 
-  const formatSingleDeleteConfirm = () =>
-    language === 'en'
-      ? 'Are you sure you want to delete this person? This action cannot be undone.'
-      : 'Bu kişiyi silmek istediğinizden emin misiniz? Bu işlem geri alınamaz.';
+  const formatSingleDeleteConfirm = () => t('labels.deletePersonConfirm');
 
-  const getTemplateFileName = () =>
-    language === 'en' ? 'people_template.xlsx' : 'kisiler_template.xlsx';
+  const getTemplateFileName = () => t('labels.peopleTemplateFile');
   const [positionSearchTerm, setPositionSearchTerm] = useState('');
   const [showPositionDropdown, setShowPositionDropdown] = useState(false);
   
@@ -716,7 +706,7 @@ const AuthorizationPage: React.FC = () => {
         '12345',
         'Serdar Kahveci',
         'serdar.kahveci@example.com',
-        language === 'en' ? 'Software Developer' : 'Yazılım Geliştirici'
+        t('labels.samplePosition')
       ];
 
       // Boş satırlar için veri
@@ -2316,7 +2306,7 @@ const AuthorizationPage: React.FC = () => {
                   cursor: 'pointer'
                 }}
               >
-                Tamam
+                {t('buttons.ok')}
               </button>
             </div>
           </div>
@@ -2377,7 +2367,7 @@ const AuthorizationPage: React.FC = () => {
                   cursor: 'pointer'
                 }}
               >
-                Tamam
+                {t('buttons.ok')}
               </button>
             </div>
           </div>

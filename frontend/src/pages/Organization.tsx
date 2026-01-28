@@ -15,7 +15,7 @@ interface Organization {
 }
 
 const Organization: React.FC = () => {
-  const { language, t } = useLanguage();
+  const { t } = useLanguage();
   // CSS animasyonu için style tag'i ekle
   React.useEffect(() => {
     const style = document.createElement('style');
@@ -51,32 +51,28 @@ const Organization: React.FC = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [isMobile, setIsMobile] = useState(false);
+  const formatTemplate = (template: string, params: Record<string, string | number>) =>
+    Object.entries(params).reduce(
+      (text, [key, value]) => text.replace(new RegExp(`\\{${key}\\}`, 'g'), String(value)),
+      template
+    );
+
   const formatNoResultsText = (term: string) => {
     if (term) {
-      return language === 'en'
-        ? `No results found for "${term}"`
-        : `"${term}" için arama sonucu bulunamadı`;
+      return formatTemplate(t('labels.noSearchResults'), { query: term });
     }
-    return language === 'en' ? 'No organization yet' : 'Henüz organizasyon bulunmuyor';
+    return t('labels.noOrganizationYet');
   };
 
   const formatSearchResultsCount = (term: string, count: number) =>
-    language === 'en'
-      ? `${count} results found for "${term}"`
-      : `"${term}" için ${count} sonuç bulundu`;
+    formatTemplate(t('labels.searchResultsCount'), { term, count });
 
   const formatBulkDeleteConfirm = (count: number) =>
-    language === 'en'
-      ? `Are you sure you want to delete ${count} organizations? This action cannot be undone.`
-      : `${count} adet organizasyonu silmek istediğinizden emin misiniz? Bu işlem geri alınamaz.`;
+    formatTemplate(t('labels.bulkDeleteOrganizationsConfirm'), { count });
 
-  const formatSingleDeleteConfirm = () =>
-    language === 'en'
-      ? 'Are you sure you want to delete this organization? This action cannot be undone.'
-      : 'Bu organizasyonu silmek istediğinizden emin misiniz? Bu işlem geri alınamaz.';
+  const formatSingleDeleteConfirm = () => t('labels.deleteOrganizationConfirm');
 
-  const getTemplateFileName = () =>
-    language === 'en' ? 'organization_template.xlsx' : 'organizasyon_template.xlsx';
+  const getTemplateFileName = () => t('labels.organizationTemplateFile');
   
   // Form states
   const [formData, setFormData] = useState({
@@ -139,11 +135,11 @@ const Organization: React.FC = () => {
       if (result.data.success) {
         setOrganizations(result.data.organizations || []);
       } else {
-        throw new Error(result.data.message || 'Organizasyon listesi alınamadı');
+        throw new Error(result.data.message || t('errors.organizationListFetch'));
       }
     } catch (error: any) {
       console.error('💥 Organizasyon yükleme hatası:', error);
-      setErrorMessage('Organizasyonlar yüklenirken bir hata oluştu');
+      setErrorMessage(t('errors.organizationLoadFailed'));
       setShowErrorPopup(true);
     } finally {
       setIsLoading(false);
@@ -226,11 +222,11 @@ const Organization: React.FC = () => {
       // Veriyi yeniden yükle
       await loadOrganizations();
       
-      setSuccessMessage(`${selectedItems.length} organizasyon başarıyla silindi.`);
+      setSuccessMessage(formatTemplate(t('messages.organizationsDeleted'), { count: selectedItems.length }));
       setShowSuccessPopup(true);
     } catch (error: any) {
       console.error('Toplu silme hatası:', error);
-      setErrorMessage(error.response?.data?.message || 'Toplu silme işlemi sırasında bir hata oluştu');
+      setErrorMessage(error.response?.data?.message || t('errors.bulkDeleteFailed'));
       setShowErrorPopup(true);
     } finally {
       setIsSubmitting(false);
@@ -243,13 +239,13 @@ const Organization: React.FC = () => {
       
       // Form validasyonu - Pozisyon ve Unvan zorunlu
       if (!formData.pozisyon || formData.pozisyon.trim() === '') {
-        setErrorMessage('Pozisyon alanı boş olamaz!');
+        setErrorMessage(t('errors.positionRequired'));
         setShowErrorPopup(true);
         return;
       }
       
       if (!formData.unvan || formData.unvan.trim() === '') {
-        setErrorMessage('Unvan alanı boş olamaz!');
+        setErrorMessage(t('errors.titleRequired'));
         setShowErrorPopup(true);
         return;
       }
@@ -275,7 +271,7 @@ const Organization: React.FC = () => {
       );
       
       if (isDuplicate) {
-        setErrorMessage('Bu organizasyon yapısı zaten mevcut! Aynı bilgilerle tekrar ekleyemezsiniz.');
+        setErrorMessage(t('errors.organizationStructureExists'));
         setShowErrorPopup(true);
         return;
       }
@@ -289,10 +285,10 @@ const Organization: React.FC = () => {
       // Başarı mesajı göster
       setShowAddPopup(false);
       setShowSuccessPopup(true);
-      setSuccessMessage('Organizasyon başarıyla eklendi!');
+      setSuccessMessage(t('messages.organizationAdded'));
     } catch (error: any) {
       console.error('💥 Organizasyon ekleme hatası:', error);
-      setErrorMessage(error.response?.data?.message || 'Organizasyon eklenirken bir hata oluştu');
+      setErrorMessage(error.response?.data?.message || t('errors.organizationAddError'));
       setShowErrorPopup(true);
     } finally {
       setIsSubmitting(false);
@@ -306,13 +302,13 @@ const Organization: React.FC = () => {
       
       // Form validasyonu - Pozisyon ve Unvan zorunlu
       if (!formData.pozisyon || formData.pozisyon.trim() === '') {
-        setErrorMessage('Pozisyon alanı boş olamaz!');
+        setErrorMessage(t('errors.positionRequired'));
         setShowErrorPopup(true);
         return;
       }
       
       if (!formData.unvan || formData.unvan.trim() === '') {
-        setErrorMessage('Unvan alanı boş olamaz!');
+        setErrorMessage(t('errors.titleRequired'));
         setShowErrorPopup(true);
         return;
       }
@@ -339,7 +335,7 @@ const Organization: React.FC = () => {
       );
       
       if (isDuplicate) {
-        setErrorMessage('Bu organizasyon yapısı zaten mevcut! Aynı bilgilerle tekrar ekleyemezsiniz.');
+        setErrorMessage(t('errors.organizationStructureExists'));
         setShowErrorPopup(true);
         return;
       }
@@ -355,10 +351,10 @@ const Organization: React.FC = () => {
       // Başarı mesajı göster
       setShowEditPopup(false);
       setShowSuccessPopup(true);
-      setSuccessMessage('Organizasyon başarıyla güncellendi!');
+      setSuccessMessage(t('messages.organizationUpdated'));
     } catch (error: any) {
       console.error('💥 Organizasyon güncelleme hatası:', error);
-      setErrorMessage(error.response?.data?.message || 'Organizasyon güncellenirken bir hata oluştu');
+      setErrorMessage(error.response?.data?.message || t('errors.organizationUpdateError'));
       setShowErrorPopup(true);
     } finally {
       setIsSubmitting(false);
@@ -378,10 +374,10 @@ const Organization: React.FC = () => {
       // Başarı mesajı göster
       setShowDeletePopup(false);
       setShowSuccessPopup(true);
-      setSuccessMessage('Organizasyon başarıyla silindi!');
+      setSuccessMessage(t('messages.organizationDeleted'));
     } catch (error: any) {
       console.error('💥 Organizasyon silme hatası:', error);
-      setErrorMessage(error.response?.data?.message || 'Organizasyon silinirken bir hata oluştu');
+      setErrorMessage(error.response?.data?.message || t('errors.organizationDeleteError'));
       setShowErrorPopup(true);
     } finally {
       setIsSubmitting(false);
@@ -619,28 +615,28 @@ const Organization: React.FC = () => {
       // HTTP status koduna göre hata yönetimi
       if (!response.ok) {
         if (response.status === 401) {
-          setErrorMessage('Yetkiniz bulunmuyor. Lütfen tekrar giriş yapın.');
+          setErrorMessage(t('errors.noPermissionRelogin'));
           setShowErrorPopup(true);
           return;
         } else if (response.status === 413) {
-          setErrorMessage('Dosya çok büyük. Lütfen daha küçük bir dosya seçin.');
+          setErrorMessage(t('errors.fileTooLarge'));
           setShowErrorPopup(true);
           return;
         } else if (response.status === 400) {
           // Backend'den gelen detaylı hata mesajını kullan
           const errorResult = await response.json();
-          let errorMessage = errorResult.message || 'Dosya formatı hatalı. Lütfen geçerli bir Excel dosyası seçin.';
+          let errorMessage = errorResult.message || t('errors.invalidExcelFormat');
           if (errorResult.errors && errorResult.errors.length > 0) {
-            errorMessage += '\n\nDetaylar:\n';
+            errorMessage += `\n\n${t('labels.details')}:\n`;
             errorResult.errors.forEach((error: any) => {
-              errorMessage += `• Satır ${error.row}: ${error.message}\n`;
+              errorMessage += `• ${t('labels.row')} ${error.row}: ${error.message}\n`;
             });
           }
           setErrorMessage(errorMessage);
           setShowErrorPopup(true);
           return;
         } else {
-          setErrorMessage(`Sunucu hatası (${response.status}). Lütfen tekrar deneyin.`);
+          setErrorMessage(`${t('errors.serverError')} (${response.status}). ${t('errors.tryAgain')}`);
           setShowErrorPopup(true);
           return;
         }
@@ -653,9 +649,9 @@ const Organization: React.FC = () => {
         
         // Hatalı satırlar varsa onları da göster
         if (result.errors && result.errors.length > 0) {
-          message += `\n\nHatalı satırlar:\n`;
+          message += `\n\n${t('labels.invalidRows')}:\n`;
           result.errors.forEach((error: any) => {
-            message += `• Satır ${error.row}: ${error.message}\n`;
+            message += `• ${t('labels.row')} ${error.row}: ${error.message}\n`;
           });
           
           // Hata varsa success popup yerine error popup göster
@@ -670,13 +666,13 @@ const Organization: React.FC = () => {
         setShowImportPopup(false);
         loadOrganizations(); // Verileri yenile
       } else {
-        let errorMessage = result.message || 'Excel dosyası işlenirken bir hata oluştu';
+        let errorMessage = result.message || t('errors.importError');
         
         // Detaylı hata mesajları varsa onları da göster
         if (result.errors && result.errors.length > 0) {
-          errorMessage += '\n\nDetaylar:\n';
+          errorMessage += `\n\n${t('labels.details')}:\n`;
           result.errors.forEach((error: any) => {
-            errorMessage += `• Satır ${error.row}: ${error.message}\n`;
+            errorMessage += `• ${t('labels.row')} ${error.row}: ${error.message}\n`;
           });
         }
         
@@ -687,10 +683,10 @@ const Organization: React.FC = () => {
     } catch (error: any) {
       console.error('Import hatası:', error);
       
-      let errorMessage = 'Excel dosyası işlenirken bir hata oluştu';
+      let errorMessage = t('errors.importError');
       
       if (error.name === 'TypeError' && error.message.includes('fetch')) {
-        errorMessage = 'Sunucuya bağlanılamıyor. İnternet bağlantınızı kontrol edin.';
+        errorMessage = t('errors.serverUnreachable');
       } else if (error.message) {
         errorMessage += ': ' + error.message;
       }
@@ -975,7 +971,7 @@ const Organization: React.FC = () => {
                 }}
               >
                 <i className="fas fa-trash"></i>
-                Toplu Sil ({selectedItems.length})
+                {formatTemplate(t('labels.bulkDeleteWithCount'), { count: selectedItems.length })}
               </button>
             )}
             <button
@@ -2009,7 +2005,7 @@ const Organization: React.FC = () => {
                 color: '#232D42',
                 marginBottom: '16px'
               }}>
-                Toplu Silme
+                {t('titles.bulkDeleteOrganizations')}
               </div>
               <div style={{
                 fontSize: '14px',
@@ -2055,7 +2051,7 @@ const Organization: React.FC = () => {
                     fontFamily: 'Inter'
                   }}
                 >
-                  {isSubmitting ? 'Siliniyor...' : 'Evet, Sil'}
+                  {isSubmitting ? t('labels.deleting') : t('buttons.confirmDelete')}
                 </button>
               </div>
             </div>
@@ -2137,7 +2133,7 @@ const Organization: React.FC = () => {
                     opacity: isSubmitting ? 0.7 : 1
                   }}
                 >
-                  {isSubmitting ? 'Siliniyor...' : 'Sil'}
+                  {isSubmitting ? t('labels.deleting') : t('buttons.delete')}
                 </button>
               </div>
             </div>
@@ -2198,7 +2194,7 @@ const Organization: React.FC = () => {
                   cursor: 'pointer'
                 }}
               >
-                Tamam
+                {t('buttons.ok')}
               </button>
             </div>
           </div>
@@ -2259,7 +2255,7 @@ const Organization: React.FC = () => {
                   cursor: 'pointer'
                 }}
               >
-                Tamam
+                {t('buttons.ok')}
               </button>
             </div>
           </div>

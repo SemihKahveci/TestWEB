@@ -91,7 +91,7 @@ const SubscriptionSettings: React.FC = () => {
       const response = await fetch('/api/game-management/games', {
         credentials: 'include'
       });
-      if (!response.ok) throw new Error('Veriler yüklenemedi');
+      if (!response.ok) throw new Error(t('errors.dataLoadFailed'));
       
       const data = await response.json();
       setGames(data.games || []);
@@ -281,7 +281,7 @@ const SubscriptionSettings: React.FC = () => {
                   fontWeight: 400,
                   lineHeight: '28px'
                 }}>
-                  Andron Game
+                  {t('labels.adminUser')}
                 </div>
                 <div style={{
                   color: '#8A92A6',
@@ -290,7 +290,7 @@ const SubscriptionSettings: React.FC = () => {
                   fontWeight: 400,
                   lineHeight: '16.90px'
                 }}>
-                  Founder
+                  {t('labels.hrManager')}
                 </div>
               </div>
             </div>

@@ -83,6 +83,11 @@ const allCompetencyKeys = ['customerFocus', 'uncertainty', 'ie', 'idik'] as cons
 
 const DashboardPage: React.FC = () => {
   const { language, t } = useLanguage();
+  const formatTemplate = (template: string, params: Record<string, string | number>) =>
+    Object.entries(params).reduce(
+      (text, [key, value]) => text.replace(new RegExp(`\\{${key}\\}`, 'g'), String(value)),
+      template
+    );
   const competencyLabelMap = useMemo(() => ({
     customerFocus: t('competency.customerFocus'),
     uncertainty: t('competency.uncertainty'),
@@ -480,7 +485,7 @@ const DashboardPage: React.FC = () => {
       const chartLayout = {
         title: { text: comp.name, font: { size: 14, weight: 600 } },
         xaxis: { title: 'Skor Aralığı', titlefont: { size: 11 }, tickfont: { size: 10 } },
-        yaxis: { title: 'Kişi Sayısı', titlefont: { size: 11 }, tickfont: { size: 10 } },
+        yaxis: { title: t('labels.peopleCount'), titlefont: { size: 11 }, tickfont: { size: 10 } },
         paper_bgcolor: '#FFFFFF',
         plot_bgcolor: '#f8f9fa',
         margin: { t: 60, r: 20, b: 60, l: 50 },
@@ -623,7 +628,7 @@ const DashboardPage: React.FC = () => {
       const formattedDate = `${date.getDate().toString().padStart(2, '0')}${(date.getMonth() + 1)
         .toString()
         .padStart(2, '0')}${date.getFullYear()}`;
-      const fileName = `ANDRON_Kisi_Sonuclari_${formattedDate}.xlsx`;
+      const fileName = formatTemplate(t('labels.dashboardExcelFileName'), { date: formattedDate });
 
       const a = document.createElement('a');
       a.href = url;
@@ -635,7 +640,7 @@ const DashboardPage: React.FC = () => {
 
       setShowDownloadPopup(false);
     } catch (error) {
-      console.error('Excel indirme hatası:', error);
+      console.error(t('errors.excelDownloadFailed'), error);
     }
   };
 
@@ -1401,7 +1406,7 @@ const DashboardPage: React.FC = () => {
                 fontWeight: 600,
                 color: '#232D42'
               }}>
-                Excel İndir
+                {t('labels.downloadExcel')}
               </div>
               <div
                 onClick={() => setShowDownloadPopup(false)}
@@ -1427,7 +1432,7 @@ const DashboardPage: React.FC = () => {
                   onChange={(event) => setDownloadOptions((prev) => ({ ...prev, generalEvaluation: event.target.checked }))}
                   style={{ width: '16px', height: '16px', accentColor: '#0286F7' }}
                 />
-                <span style={{ fontSize: '14px', color: '#232D42' }}>Tanım ve Genel Değerlendirme</span>
+                <span style={{ fontSize: '14px', color: '#232D42' }}>{t('labels.definitionGeneralEvaluation')}</span>
               </label>
               <label style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '10px 12px', borderRadius: '8px', border: '1px solid #E5E7EB', background: '#F9FAFB', marginBottom: '12px' }}>
                 <input
@@ -1437,7 +1442,7 @@ const DashboardPage: React.FC = () => {
                   onChange={(event) => setDownloadOptions((prev) => ({ ...prev, strengths: event.target.checked }))}
                   style={{ width: '16px', height: '16px', accentColor: '#0286F7' }}
                 />
-                <span style={{ fontSize: '14px', color: '#232D42' }}>Güçlü Yönler ve Gelişim Alanları</span>
+                <span style={{ fontSize: '14px', color: '#232D42' }}>{t('labels.strengthsDev')}</span>
               </label>
               <label style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '10px 12px', borderRadius: '8px', border: '1px solid #E5E7EB', background: '#F9FAFB', marginBottom: '12px' }}>
                 <input
@@ -1447,7 +1452,7 @@ const DashboardPage: React.FC = () => {
                   onChange={(event) => setDownloadOptions((prev) => ({ ...prev, interviewQuestions: event.target.checked }))}
                   style={{ width: '16px', height: '16px', accentColor: '#0286F7' }}
                 />
-                <span style={{ fontSize: '14px', color: '#232D42' }}>Mülakat Soruları</span>
+                <span style={{ fontSize: '14px', color: '#232D42' }}>{t('labels.interviewQuestions')}</span>
               </label>
               <label style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '10px 12px', borderRadius: '8px', border: '1px solid #E5E7EB', background: '#F9FAFB', marginBottom: '12px' }}>
                 <input
@@ -1457,7 +1462,7 @@ const DashboardPage: React.FC = () => {
                   onChange={(event) => setDownloadOptions((prev) => ({ ...prev, whyTheseQuestions: event.target.checked }))}
                   style={{ width: '16px', height: '16px', accentColor: '#0286F7' }}
                 />
-                <span style={{ fontSize: '14px', color: '#232D42' }}>Neden Bu Sorular?</span>
+                <span style={{ fontSize: '14px', color: '#232D42' }}>{t('labels.whyTheseQuestions')}</span>
               </label>
               <label style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '10px 12px', borderRadius: '8px', border: '1px solid #E5E7EB', background: '#F9FAFB', marginBottom: '12px' }}>
                 <input
@@ -1467,7 +1472,7 @@ const DashboardPage: React.FC = () => {
                   onChange={(event) => setDownloadOptions((prev) => ({ ...prev, developmentSuggestions: event.target.checked }))}
                   style={{ width: '16px', height: '16px', accentColor: '#0286F7' }}
                 />
-                <span style={{ fontSize: '14px', color: '#232D42' }}>Gelişim Planı</span>
+                <span style={{ fontSize: '14px', color: '#232D42' }}>{t('labels.developmentPlan')}</span>
               </label>
               <label style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '10px 12px', borderRadius: '8px', border: '1px solid #E5E7EB', background: '#F9FAFB' }}>
                 <input
@@ -1501,7 +1506,7 @@ const DashboardPage: React.FC = () => {
                   fontWeight: 500
                 }}
               >
-                Excel İndir
+                {t('labels.downloadExcel')}
               </button>
             </div>
           </div>
