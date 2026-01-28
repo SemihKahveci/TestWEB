@@ -743,7 +743,7 @@ const DashboardPage: React.FC = () => {
       padding: isMobile ? '16px' : '24px 32px 24px 10px',
       boxSizing: 'border-box',
       overflowX: 'hidden',
-      touchAction: 'pan-y'
+      touchAction: 'manipulation'
     }}>
       <div style={{
         width: '100%',
@@ -837,7 +837,7 @@ const DashboardPage: React.FC = () => {
             </button>
           </div>
         </div>
-        <div style={{ overflowX: isMobile ? 'visible' : 'auto', width: '100%', maxWidth: '100%' }}>
+        <div style={{ overflowX: isMobile ? 'visible' : 'auto', width: '100%', maxWidth: '100%', touchAction: 'manipulation' }}>
           <div style={{ display: 'flex', flexWrap: isMobile ? 'wrap' : 'nowrap', gap: '16px', width: '100%' }}>
             {allCompetencyKeys.map((key, index) => (
               <div
@@ -869,7 +869,7 @@ const DashboardPage: React.FC = () => {
           <div />
         </div>
 
-        <div style={{ overflowX: isMobile ? 'visible' : 'auto', width: '100%', maxWidth: '100%' }}>
+        <div style={{ overflowX: isMobile ? 'visible' : 'auto', width: '100%', maxWidth: '100%', touchAction: 'manipulation' }}>
           {isLoadingResults || (isFilterActive && isFullResultsLoading) ? (
             <div style={{ textAlign: 'center', padding: '24px', color: '#6B7280' }}>{t('labels.loadingResults')}</div>
           ) : filteredResults.length === 0 ? (
