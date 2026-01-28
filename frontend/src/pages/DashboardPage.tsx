@@ -139,7 +139,7 @@ const DashboardPage: React.FC = () => {
   const [isMobile, setIsMobile] = useState(false);
   const [forceCompact, setForceCompact] = useState(false);
   const plotlyLoadedRef = useRef(false);
-  const shouldCompact = isCompact || forceCompact;
+  const shouldCompact = isCompact || forceCompact || isMobile;
   const [selectedCompetencies, setSelectedCompetencies] = useState<string[]>([...allCompetencyKeys]);
   
   useEffect(() => {
