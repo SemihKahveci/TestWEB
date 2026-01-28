@@ -47,7 +47,7 @@ interface PDFOptions {
 
 const AdminPanel: React.FC = () => {
   const { user } = useAuth();
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   const [results, setResults] = useState<UserResult[]>([]);
   const [filteredResults, setFilteredResults] = useState<UserResult[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -83,6 +83,63 @@ const AdminPanel: React.FC = () => {
     whyTheseQuestions: true,
     developmentSuggestions: true
   });
+
+  const formatStatusLabel = (status: string) => {
+    if (language === 'tr') return status;
+    const normalized = status.toLowerCase().trim();
+    if (normalized === 'oyun devam ediyor') return t('status.inProgress');
+    if (normalized === 'beklemede') return t('status.pending');
+    if (normalized === 'tamamlandı') return t('status.completed');
+    if (normalized === 'süresi doldu' || normalized === 'süresi dolmuş') return t('status.expired');
+    return status;
+  };
+
+  const formatNoDataForCode = () => t('errors.noDataForCode');
+
+  const formatAnswersFetchFailed = (message: string) =>
+    language === 'en'
+      ? `An error occurred while fetching answers: ${message}`
+      : `Cevaplar getirilirken bir hata oluştu: ${message}`;
+
+  const formatExcelDownloadFailed = (message: string) =>
+    language === 'en'
+      ? `An error occurred while downloading Excel: ${message}`
+      : `Excel indirilirken bir hata oluştu: ${message}`;
+
+  const formatWordDownloadFailed = (message: string) =>
+    language === 'en'
+      ? `An error occurred while downloading Word: ${message}`
+      : `Word indirilirken bir hata oluştu: ${message}`;
+
+  const formatPdfPreviewFailed = (message: string) =>
+    language === 'en'
+      ? `An error occurred while previewing PDF: ${message}`
+      : `PDF önizlenirken bir hata oluştu: ${message}`;
+
+  const formatPdfDownloadFailed = (message: string) =>
+    language === 'en'
+      ? `An error occurred while downloading PDF: ${message}`
+      : `PDF indirilirken bir hata oluştu: ${message}`;
+
+  const formatDeleteFailed = (message: string) =>
+    language === 'en'
+      ? `An error occurred while deleting: ${message}`
+      : `Silme işlemi sırasında bir hata oluştu: ${message}`;
+
+  const formatBulkDeleteFailed = (message: string) =>
+    language === 'en'
+      ? `An error occurred while bulk deleting: ${message}`
+      : `Toplu silme işlemi sırasında bir hata oluştu: ${message}`;
+
+  const formatBulkDeleteSuccess = (count: number) =>
+    language === 'en'
+      ? `${count} evaluations deleted successfully.`
+      : `${count} değerlendirme başarıyla silindi.`;
+
+  const formatBulkDeleteConfirm = (count: number) =>
+    language === 'en'
+      ? `Are you sure you want to delete ${count} results?`
+      : `${count} adet sonucu silmek istediğinizden emin misiniz?`;
   
   const hasLoaded = useRef(false);
   
@@ -230,7 +287,7 @@ const AdminPanel: React.FC = () => {
         color: statusStyle.text,
         border: `1px solid ${statusStyle.border}`
       }}>
-        {status}
+        {formatStatusLabel(status)}
       </span>
     );
   };
@@ -331,12 +388,12 @@ const AdminPanel: React.FC = () => {
       });
       
       if (!response.ok) {
-        throw new Error('Cevaplar getirilemedi');
+        throw new Error(t('errors.answersFetchFailed'));
       }
       
       const data = await response.json();
       if (!data.success || !data.results || data.results.length === 0) {
-        showMessage('Hata', 'Bu kod için veri bulunamadı.', 'error');
+        showMessage(t('labels.error'), formatNoDataForCode(), 'error');
         return;
       }
       
@@ -345,7 +402,7 @@ const AdminPanel: React.FC = () => {
       setShowAnswersPopup(true);
     } catch (error) {
       console.error('Cevapları getirme hatası:', error);
-      showMessage('Hata', 'Cevaplar getirilirken bir hata oluştu: ' + (error as Error).message, 'error');
+      showMessage(t('labels.error'), formatAnswersFetchFailed((error as Error).message), 'error');
     }
   };
 
@@ -368,7 +425,7 @@ const AdminPanel: React.FC = () => {
     }
     
     if (!existingData) {
-      showMessage('Hata', 'Bu kod için veri bulunamadı.', 'error');
+      showMessage(t('labels.error'), formatNoDataForCode(), 'error');
       return;
     }
     setSelectedUser(existingData);
@@ -383,7 +440,7 @@ const AdminPanel: React.FC = () => {
       });
       
       if (!response.ok) {
-        throw new Error('Excel indirme işlemi başarısız oldu');
+        throw new Error(t('errors.excelDownloadFailed'));
       }
       
       const blob = await response.blob();
@@ -395,12 +452,12 @@ const AdminPanel: React.FC = () => {
       });
       const userData = await userResponse.json();
       
-      let fileName = `ANDRON_DeğerlendirmeRaporu_${code}.xlsx`;
+      let fileName = `${t('labels.evaluationReportFile')}_${code}.xlsx`;
       if (userData.success && userData.results && userData.results.length > 0) {
         const user = userData.results[0];
         const date = user.completionDate ? new Date(user.completionDate) : new Date();
         const formattedDate = `${date.getDate().toString().padStart(2, '0')}${(date.getMonth() + 1).toString().padStart(2, '0')}${date.getFullYear()}`;
-        fileName = `ANDRON_DeğerlendirmeRaporu_${user.name.replace(/\s+/g, '_')}_${formattedDate}.xlsx`;
+        fileName = `${t('labels.evaluationReportFile')}_${user.name.replace(/\s+/g, '_')}_${formattedDate}.xlsx`;
       }
       
       const a = document.createElement('a');
@@ -412,7 +469,7 @@ const AdminPanel: React.FC = () => {
       document.body.removeChild(a);
     } catch (error) {
       console.error('Excel indirme hatası:', error);
-      showMessage('Hata', 'Excel indirilirken bir hata oluştu: ' + (error as Error).message, 'error');
+      showMessage(t('labels.error'), formatExcelDownloadFailed((error as Error).message), 'error');
     }
   };
 
@@ -432,7 +489,7 @@ const AdminPanel: React.FC = () => {
       
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.message || 'Word indirme işlemi başarısız oldu');
+        throw new Error(errorData.message || t('errors.wordDownloadFailed'));
       }
       
       const blob = await response.blob();
@@ -444,12 +501,12 @@ const AdminPanel: React.FC = () => {
       });
       const userData = await userResponse.json();
       
-      let fileName = `ANDRON_DeğerlendirmeRaporu_${code}.docx`;
+      let fileName = `${t('labels.evaluationReportFile')}_${code}.docx`;
       if (userData.success && userData.results && userData.results.length > 0) {
         const user = userData.results[0];
         const date = user.completionDate ? new Date(user.completionDate) : new Date();
         const formattedDate = `${date.getDate().toString().padStart(2, '0')}${(date.getMonth() + 1).toString().padStart(2, '0')}${date.getFullYear()}`;
-        fileName = `ANDRON_DeğerlendirmeRaporu_${user.name.replace(/\s+/g, '_')}_${formattedDate}.docx`;
+        fileName = `${t('labels.evaluationReportFile')}_${user.name.replace(/\s+/g, '_')}_${formattedDate}.docx`;
       }
       
       const a = document.createElement('a');
@@ -461,7 +518,7 @@ const AdminPanel: React.FC = () => {
       document.body.removeChild(a);
     } catch (error) {
       console.error('Word indirme hatası:', error);
-      showMessage('Hata', 'Word indirilirken bir hata oluştu: ' + (error as Error).message, 'error');
+      showMessage(t('labels.error'), formatWordDownloadFailed((error as Error).message), 'error');
     }
   };
 
@@ -484,7 +541,7 @@ const AdminPanel: React.FC = () => {
     }
     
     if (!existingData) {
-      showMessage('Hata', 'Bu kod için veri bulunamadı.', 'error');
+      showMessage(t('labels.error'), formatNoDataForCode(), 'error');
       return;
     }
     setSelectedUser(existingData);
@@ -506,7 +563,7 @@ const AdminPanel: React.FC = () => {
       });
 
       if (!response.ok) {
-        throw new Error('Silme işlemi başarısız oldu');
+        throw new Error(t('errors.deleteFailed'));
       }
 
       // Başarılı silme sonrası
@@ -516,10 +573,10 @@ const AdminPanel: React.FC = () => {
       // Sadece veriyi yeniden yükle (sayfa yenilenmesin)
       await loadData();
       
-      showMessage('Başarılı', 'Değerlendirme başarıyla silindi.', 'success');
+      showMessage(t('labels.success'), t('messages.evaluationDeleted'), 'success');
     } catch (error) {
       console.error('Silme hatası:', error);
-      showMessage('Hata', 'Silme işlemi sırasında bir hata oluştu: ' + (error as Error).message, 'error');
+      showMessage(t('labels.error'), formatDeleteFailed((error as Error).message), 'error');
     }
   };
 
@@ -550,7 +607,7 @@ const AdminPanel: React.FC = () => {
 
   const handleBulkDelete = () => {
     if (selectedItems.length === 0) {
-      showMessage('Uyarı', 'Lütfen silmek istediğiniz kayıtları seçiniz!', 'warning');
+      showMessage(t('labels.warning'), t('warnings.selectRecordsToDelete'), 'warning');
       return;
     }
     setShowBulkDeletePopup(true);
@@ -577,7 +634,7 @@ const AdminPanel: React.FC = () => {
       // Tüm silme işlemlerinin başarılı olduğunu kontrol et
       const failedDeletes = responses.filter(response => !response.ok);
       if (failedDeletes.length > 0) {
-        throw new Error(`${failedDeletes.length} kayıt silinemedi`);
+        throw new Error(t('errors.deleteFailed'));
       }
 
       // Başarılı silme sonrası
@@ -587,10 +644,10 @@ const AdminPanel: React.FC = () => {
       // Veriyi yeniden yükle
       await loadData();
       
-      showMessage('Başarılı', `${selectedItems.length} değerlendirme başarıyla silindi.`, 'success');
+      showMessage(t('labels.success'), formatBulkDeleteSuccess(selectedItems.length), 'success');
     } catch (error) {
       console.error('Toplu silme hatası:', error);
-      showMessage('Hata', 'Toplu silme işlemi sırasında bir hata oluştu: ' + (error as Error).message, 'error');
+      showMessage(t('labels.error'), formatBulkDeleteFailed((error as Error).message), 'error');
     }
   };
 
@@ -693,7 +750,7 @@ const AdminPanel: React.FC = () => {
           }} />
           <input
             type="text"
-            placeholder="Tüm sütunlarda akıllı arama yapın..."
+            placeholder={t('placeholders.searchAllColumns')}
             value={searchTerm}
             onChange={(e) => {
               const value = e.target.value;
@@ -812,7 +869,7 @@ const AdminPanel: React.FC = () => {
               }}
             >
               <i className="fas fa-trash"></i>
-              Toplu Sil ({selectedItems.length})
+              {t('buttons.bulkDelete')} ({selectedItems.length})
             </button>
           )}
 
@@ -1005,7 +1062,7 @@ const AdminPanel: React.FC = () => {
                   color: '#232D42',
                   fontFamily: 'Inter',
                   borderRight: '1px solid #E9ECEF'
-                }}>Ad Soyad</th>
+                }}>{t('labels.nameSurname')}</th>
                 <th style={{
                   padding: '16px',
                   textAlign: 'center',
@@ -1014,7 +1071,7 @@ const AdminPanel: React.FC = () => {
                   color: '#232D42',
                   fontFamily: 'Inter',
                   borderRight: '1px solid #E9ECEF'
-                }}>Email</th>
+                }}>{t('labels.email')}</th>
                 <th style={{
                   padding: '16px',
                   textAlign: 'center',
@@ -1023,7 +1080,7 @@ const AdminPanel: React.FC = () => {
                   color: '#232D42',
                   fontFamily: 'Inter',
                   borderRight: '1px solid #E9ECEF'
-                }}>Statü</th>
+                }}>{t('labels.status')}</th>
                 <th style={{
                   padding: '16px',
                   textAlign: 'center',
@@ -1032,7 +1089,7 @@ const AdminPanel: React.FC = () => {
                   color: '#232D42',
                   fontFamily: 'Inter',
                   borderRight: '1px solid #E9ECEF'
-                }}>Gönderim Tarihi</th>
+                }}>{t('labels.sentDate')}</th>
                 <th style={{
                   padding: '16px',
                   textAlign: 'center',
@@ -1041,7 +1098,7 @@ const AdminPanel: React.FC = () => {
                   color: '#232D42',
                   fontFamily: 'Inter',
                   borderRight: '1px solid #E9ECEF'
-                }}>Tamamlama Tarihi</th>
+                }}>{t('labels.completionDate')}</th>
                 <th style={{
                   padding: '16px',
                   textAlign: 'center',
@@ -1050,7 +1107,7 @@ const AdminPanel: React.FC = () => {
                   color: '#232D42',
                   fontFamily: 'Inter',
                   borderRight: '1px solid #E9ECEF'
-                }}>Kod Geçerlilik Tarihi</th>
+                }}>{t('labels.codeExpiryDate')}</th>
                 <th style={{
                   padding: '16px',
                   textAlign: 'center',
@@ -1059,7 +1116,7 @@ const AdminPanel: React.FC = () => {
                   color: '#232D42',
                   fontFamily: 'Inter',
                   borderRight: '1px solid #E9ECEF'
-                }}>Rapor Geçerlilik Tarihi</th>
+                }}>{t('labels.reportExpiryDate')}</th>
                 <th style={{
                   padding: '16px',
                   textAlign: 'center',
@@ -1067,7 +1124,7 @@ const AdminPanel: React.FC = () => {
                   fontWeight: 600,
                   color: '#232D42',
                   fontFamily: 'Inter'
-                }}>İşlemler</th>
+                }}>{t('labels.actions')}</th>
               </tr>
             </thead>
             <tbody>
@@ -1167,7 +1224,7 @@ const AdminPanel: React.FC = () => {
                          marginLeft: '8px',
                          color: '#FF6B35',
                          fontSize: '14px'
-                       }} title="Oynanmamış oyun var">
+                       }} title={t('labels.hasUnplayedGame')}>
                          <i className="fas fa-exclamation-triangle"></i>
                        </span>
                      )}
@@ -1258,7 +1315,7 @@ const AdminPanel: React.FC = () => {
                             width: '24px',
                             height: '24px'
                           }}
-                          title="Cevapları Görüntüle"
+                          title={t('labels.viewAnswers')}
                         >
                           <i className="fas fa-info-circle"></i>
                         </div>
@@ -1276,7 +1333,7 @@ const AdminPanel: React.FC = () => {
                           width: '24px',
                           height: '24px'
                         }}
-                        title="PDF İndir"
+                        title={t('labels.downloadPdf')}
                       >
                         <i className="fas fa-file-pdf"></i>
                       </div>
@@ -1294,7 +1351,7 @@ const AdminPanel: React.FC = () => {
                             width: '24px',
                             height: '24px'
                           }}
-                          title="Excel İndir"
+                        title={t('labels.downloadExcel')}
                         >
                           <i className="fas fa-file-excel"></i>
                         </div>
@@ -1313,7 +1370,7 @@ const AdminPanel: React.FC = () => {
                             width: '24px',
                             height: '24px'
                           }}
-                          title="Word İndir"
+                        title={t('labels.downloadWord')}
                         >
                           <i className="fas fa-file-word"></i>
                         </div>
@@ -1330,7 +1387,7 @@ const AdminPanel: React.FC = () => {
                           width: '24px',
                           height: '24px'
                         }}
-                        title="Sil"
+                        title={t('buttons.delete')}
                       >
                         <i className="fas fa-trash"></i>
                       </div>
@@ -1559,7 +1616,7 @@ const AdminPanel: React.FC = () => {
                 fontWeight: 600,
                 color: '#232D42'
               }}>
-                PDF İndir
+                {t('labels.downloadReport')}
               </div>
               <div
                 onClick={() => setShowPDFPopup(false)}
@@ -1585,7 +1642,7 @@ const AdminPanel: React.FC = () => {
                   onChange={(e) => setPdfOptions(prev => ({ ...prev, generalEvaluation: e.target.checked }))}
                   style={{ width: '16px', height: '16px', accentColor: '#0286F7' }}
                 />
-                <span style={{ fontSize: '14px', color: '#232D42' }}>Tanım ve Genel Değerlendirme</span>
+                <span style={{ fontSize: '14px', color: '#232D42' }}>{t('labels.generalEvaluation')}</span>
               </label>
               <label style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '10px 12px', borderRadius: '8px', border: '1px solid #E5E7EB', background: '#F9FAFB', marginBottom: '12px' }}>
                 <input
@@ -1595,7 +1652,7 @@ const AdminPanel: React.FC = () => {
                   onChange={(e) => setPdfOptions(prev => ({ ...prev, strengths: e.target.checked }))}
                   style={{ width: '16px', height: '16px', accentColor: '#0286F7' }}
                 />
-                <span style={{ fontSize: '14px', color: '#232D42' }}>Güçlü Yönler ve Gelişim Alanları</span>
+                <span style={{ fontSize: '14px', color: '#232D42' }}>{t('labels.strengthsDev')}</span>
               </label>
               <label style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '10px 12px', borderRadius: '8px', border: '1px solid #E5E7EB', background: '#F9FAFB', marginBottom: '12px' }}>
                 <input
@@ -1605,7 +1662,7 @@ const AdminPanel: React.FC = () => {
                   onChange={(e) => setPdfOptions(prev => ({ ...prev, interviewQuestions: e.target.checked }))}
                   style={{ width: '16px', height: '16px', accentColor: '#0286F7' }}
                 />
-                <span style={{ fontSize: '14px', color: '#232D42' }}>Mülakat Soruları</span>
+                <span style={{ fontSize: '14px', color: '#232D42' }}>{t('labels.interviewQuestions')}</span>
               </label>
               <label style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '10px 12px', borderRadius: '8px', border: '1px solid #E5E7EB', background: '#F9FAFB', marginBottom: '12px' }}>
                 <input
@@ -1615,7 +1672,7 @@ const AdminPanel: React.FC = () => {
                   onChange={(e) => setPdfOptions(prev => ({ ...prev, whyTheseQuestions: e.target.checked }))}
                   style={{ width: '16px', height: '16px', accentColor: '#0286F7' }}
                 />
-                <span style={{ fontSize: '14px', color: '#232D42' }}>Neden Bu Sorular?</span>
+                <span style={{ fontSize: '14px', color: '#232D42' }}>{t('labels.whyTheseQuestions')}</span>
               </label>
               <label style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '10px 12px', borderRadius: '8px', border: '1px solid #E5E7EB', background: '#F9FAFB' }}>
                 <input
@@ -1625,7 +1682,7 @@ const AdminPanel: React.FC = () => {
                   onChange={(e) => setPdfOptions(prev => ({ ...prev, developmentSuggestions: e.target.checked }))}
                   style={{ width: '16px', height: '16px', accentColor: '#0286F7' }}
                 />
-                <span style={{ fontSize: '14px', color: '#232D42' }}>Gelişim Planı</span>
+                <span style={{ fontSize: '14px', color: '#232D42' }}>{t('labels.developmentPlan')}</span>
               </label>
             </div>
             <div style={{
@@ -1651,7 +1708,7 @@ const AdminPanel: React.FC = () => {
                     });
                     
                     if (!response.ok) {
-                      throw new Error('PDF oluşturulurken bir hata oluştu');
+                      throw new Error(t('errors.pdfCreateFailed'));
                     }
                     
                     const blob = await response.blob();
@@ -1670,7 +1727,7 @@ const AdminPanel: React.FC = () => {
                     }, 100);
                   } catch (error) {
                     console.error('PDF önizleme hatası:', error);
-                    showMessage('Hata', 'PDF önizlenirken bir hata oluştu: ' + (error as Error).message, 'error');
+                    showMessage(t('labels.error'), formatPdfPreviewFailed((error as Error).message), 'error');
                   }
                 }}
                 style={{
@@ -1685,7 +1742,7 @@ const AdminPanel: React.FC = () => {
                   fontWeight: 500
                 }}
               >
-                Önizleme
+                {t('labels.preview')}
               </button>
               <button
                 onClick={async () => {
@@ -1706,7 +1763,7 @@ const AdminPanel: React.FC = () => {
                     
                     if (!response.ok) {
                       const errorData = await response.json();
-                      throw new Error(errorData.message || 'PDF oluşturulurken bir hata oluştu');
+                      throw new Error(errorData.message || t('errors.pdfCreateFailed'));
                     }
                     
                     const blob = await response.blob();
@@ -1719,7 +1776,7 @@ const AdminPanel: React.FC = () => {
                     const userData = await userResponse.json();
                     
                     if (!userData.success || !userData.results || userData.results.length === 0) {
-                      throw new Error('Kullanıcı bilgileri alınamadı');
+                      throw new Error(t('errors.userInfoFetchFailed'));
                     }
                     
                     const user = userData.results[0];
@@ -1737,7 +1794,7 @@ const AdminPanel: React.FC = () => {
                     setShowPDFPopup(false);
                   } catch (error) {
                     console.error('PDF indirme hatası:', error);
-                    showMessage('Hata', 'PDF indirilirken bir hata oluştu: ' + (error as Error).message, 'error');
+                    showMessage(t('labels.error'), formatPdfDownloadFailed((error as Error).message), 'error');
                   }
                 }}
                 style={{
@@ -1752,7 +1809,7 @@ const AdminPanel: React.FC = () => {
                   fontWeight: 500
                 }}
               >
-                PDF İndir
+                {t('labels.downloadReport')}
               </button>
             </div>
           </div>
@@ -1796,7 +1853,7 @@ const AdminPanel: React.FC = () => {
                 fontWeight: 600,
                 color: '#232D42'
               }}>
-                Oyun Cevapları
+                {t('labels.gameAnswersTitle')}
               </div>
               <div
                 onClick={() => setShowAnswersPopup(false)}
@@ -1828,7 +1885,7 @@ const AdminPanel: React.FC = () => {
                   marginBottom: '8px',
                   fontSize: '14px'
                 }}>
-                  Oyun Bilgileri
+                  {t('labels.gameInfo')}
                 </div>
                 <div style={{
                   display: 'grid',
@@ -1836,13 +1893,13 @@ const AdminPanel: React.FC = () => {
                   gap: '12px',
                   fontSize: '14px'
                 }}>
-                  <div><strong>Kod:</strong> {selectedUser.code}</div>
-                  <div><strong>Ad Soyad:</strong> {selectedUser.name}</div>
-                  <div><strong>Email:</strong> {selectedUser.email}</div>
-                  <div><strong>Durum:</strong> {selectedUser.status}</div>
+                  <div><strong>{t('labels.code')}:</strong> {selectedUser.code}</div>
+                  <div><strong>{t('labels.nameSurname')}:</strong> {selectedUser.name}</div>
+                  <div><strong>{t('labels.email')}:</strong> {selectedUser.email}</div>
+                  <div><strong>{t('labels.status')}:</strong> {formatStatusLabel(selectedUser.status)}</div>
                   {selectedUser.reportId && (
                     <div style={{ gridColumn: '1 / -1' }}>
-                      <strong>Rapor ID:</strong> {selectedUser.reportId}
+                      <strong>{t('labels.reportId')}:</strong> {selectedUser.reportId}
                     </div>
                   )}
                 </div>
@@ -1869,7 +1926,7 @@ const AdminPanel: React.FC = () => {
                         marginBottom: '8px',
                         fontSize: '14px'
                       }}>
-                        Soru {index + 1} {answer.questionId ? `(${answer.questionId})` : ''}
+                        {t('labels.question')} {index + 1} {answer.questionId ? `(${answer.questionId})` : ''}
                       </div>
                       
                       {/* HTML'deki gibi 2 sütunlu yapı */}
@@ -1891,7 +1948,7 @@ const AdminPanel: React.FC = () => {
                             marginBottom: '4px',
                             fontSize: '12px'
                           }}>
-                            Seçilen Cevap 1:
+                            {t('labels.selectedAnswer1')}:
                           </div>
                           <div style={{
                             color: '#232D42',
@@ -1912,7 +1969,7 @@ const AdminPanel: React.FC = () => {
                             marginBottom: '4px',
                             fontSize: '12px'
                           }}>
-                            Seçilen Cevap 2:
+                            {t('labels.selectedAnswer2')}:
                           </div>
                           <div style={{
                             color: '#232D42',
@@ -1933,7 +1990,7 @@ const AdminPanel: React.FC = () => {
                             marginBottom: '4px',
                             fontSize: '12px'
                           }}>
-                            Alt Kategori:
+                            {t('labels.subCategory')}:
                           </div>
                           <div style={{
                             color: '#232D42',
@@ -1954,7 +2011,7 @@ const AdminPanel: React.FC = () => {
                             marginBottom: '4px',
                             fontSize: '12px'
                           }}>
-                            Gezegen:
+                            {t('labels.planet')}:
                           </div>
                           <div style={{
                             color: '#232D42',
@@ -2017,7 +2074,7 @@ const AdminPanel: React.FC = () => {
                 fontWeight: 600,
                 color: '#232D42'
               }}>
-                PDF Önizleme
+                {t('labels.pdfPreview')}
               </div>
               <div
                 onClick={() => setShowPDFPreview(false)}
@@ -2041,7 +2098,7 @@ const AdminPanel: React.FC = () => {
                 height="100%"
                 frameBorder="0"
                 style={{ border: 'none' }}
-                title="PDF Önizleme"
+                title={t('labels.pdfPreview')}
               />
             </div>
           </div>
@@ -2083,7 +2140,7 @@ const AdminPanel: React.FC = () => {
                 fontWeight: 600,
                 color: '#232D42'
               }}>
-                Sonucu Sil
+                {t('titles.deleteResult')}
               </div>
               <div
                 onClick={() => setShowDeletePopup(false)}
@@ -2102,10 +2159,10 @@ const AdminPanel: React.FC = () => {
               overflowY: 'auto'
             }}>
               <p style={{ fontSize: '14px', color: '#232D42', marginBottom: '8px' }}>
-                Bu sonucu silmek istediğinizden emin misiniz?
+                {t('labels.deleteResultConfirm')}
               </p>
               <p style={{ fontSize: '12px', color: '#DC2626', fontWeight: 500 }}>
-                Bu işlem geri alınamaz ve sonuç kalıcı olarak silinecektir.
+                {t('labels.deleteResultWarning')}
               </p>
             </div>
             <div style={{
@@ -2129,7 +2186,7 @@ const AdminPanel: React.FC = () => {
                   fontWeight: 500
                 }}
               >
-                Hayır
+                {t('buttons.no')}
               </button>
               <button
                 onClick={confirmDelete}
@@ -2145,7 +2202,7 @@ const AdminPanel: React.FC = () => {
                   fontWeight: 500
                 }}
               >
-                Evet, Sil
+                {t('buttons.confirmDelete')}
               </button>
             </div>
           </div>
@@ -2187,7 +2244,7 @@ const AdminPanel: React.FC = () => {
                 fontWeight: 600,
                 color: '#232D42'
               }}>
-                Toplu Silme
+                {t('titles.bulkDelete')}
               </div>
               <div
                 onClick={() => setShowBulkDeletePopup(false)}
@@ -2206,10 +2263,10 @@ const AdminPanel: React.FC = () => {
               overflowY: 'auto'
             }}>
               <p style={{ fontSize: '14px', color: '#232D42', marginBottom: '8px' }}>
-                {selectedItems.length} adet sonucu silmek istediğinizden emin misiniz?
+                {formatBulkDeleteConfirm(selectedItems.length)}
               </p>
               <p style={{ fontSize: '12px', color: '#DC2626', fontWeight: 500 }}>
-                Bu işlem geri alınamaz ve seçili sonuçlar kalıcı olarak silinecektir.
+                {t('labels.bulkDeleteWarning')}
               </p>
             </div>
             <div style={{
@@ -2233,7 +2290,7 @@ const AdminPanel: React.FC = () => {
                   fontWeight: 500
                 }}
               >
-                Hayır
+                {t('buttons.no')}
               </button>
               <button
                 onClick={confirmBulkDelete}
@@ -2249,7 +2306,7 @@ const AdminPanel: React.FC = () => {
                   fontWeight: 500
                 }}
               >
-                Evet, Sil
+                {t('buttons.confirmDelete')}
               </button>
             </div>
           </div>

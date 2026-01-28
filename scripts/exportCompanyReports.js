@@ -93,6 +93,8 @@ const exportToExcel = async (companyId, companyName) => {
                     'İnsanları Etkileme Skoru': ieScore,
                     'Güven Veren İşbirlikçi Skoru': idikScore,
                     'Ölçülen Yetkinlik': '-',
+                    'Yönetici özeti güçlü yönleri': '-',
+                    'Yönetici özeti geliştirme': '-',
                     'Genel Değerlendirme': '-',
                     'Güçlü Yönler': '-',
                     'Gelişim Alanları': '-',
@@ -146,12 +148,14 @@ const exportToExcel = async (companyId, companyName) => {
                                 'Güven Veren İşbirlikçi Skoru': idikScore,
                                 'Ölçülen Yetkinlik': yetkinlikAdi,
                                 'Yetkinlik Skoru': yetkinlikSkoru,
+                                'Yönetici özeti güçlü yönleri': evalResult.data['Yönetici özeti güçlü yönleri'] || '-',
+                                'Yönetici özeti geliştirme': evalResult.data['Yönetici özeti geliştirme'] || '-',
                                 'Genel Değerlendirme': evalResult.data['Genel Değerlendirme'] || '-',
                                 'Güçlü Yönler': evalResult.data['Güçlü Yönler'] || '-',
                                 'Gelişim Alanları': evalResult.data['Gelişim Alanları'] || '-',
                                 'Mülakat Soruları': evalResult.data['Mülakat Soruları'] || '-',
                                 'Neden Bu Sorular?': evalResult.data['Neden Bu Sorular?'] || '-',
-                                'Gelişim Planı': evalResult.data['Gelişim Önerileri -1'] || evalResult.data['Gelişim Önerileri -2'] || evalResult.data['Gelişim Önerileri - 3'] || '-'
+                                'Gelişim Planı': evalResult.data['Gelişim Önerileri -1'] || '-'
                             });
                         }
                     }
@@ -171,6 +175,8 @@ const exportToExcel = async (companyId, companyName) => {
                     'İnsanları Etkileme Skoru': ieScore,
                     'Güven Veren İşbirlikçi Skoru': idikScore,
                     'Ölçülen Yetkinlik': '-',
+                    'Yönetici özeti güçlü yönleri': '-',
+                    'Yönetici özeti geliştirme': '-',
                     'Genel Değerlendirme': '-',
                     'Güçlü Yönler': '-',
                     'Gelişim Alanları': '-',

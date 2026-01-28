@@ -5,9 +5,9 @@ const ScriptFiles: React.FC = () => {
   const { t } = useLanguage();
   const competencies = [
     { value: 'Müşteri Odaklılık', label: t('competency.customerFocus') },
-    { value: 'Uyumluluk ve Dayanıklılık', label: t('competency.adaptability') },
-    { value: 'İnsanları Etkileme', label: t('competency.influence') },
-    { value: 'Güven Veren İşbirliği ve Sinerji', label: t('competency.trust') }
+    { value: 'Uyumluluk ve Dayanıklılık', label: t('competency.uncertainty') },
+    { value: 'İnsanları Etkileme', label: t('competency.ie') },
+    { value: 'Güven Veren İşbirliği ve Sinerji', label: t('competency.idik') }
   ];
   const [selectedCompetency, setSelectedCompetency] = useState<string>('');
   const [selectedFile, setSelectedFile] = useState<File | null>(null);

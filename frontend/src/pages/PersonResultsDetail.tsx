@@ -28,6 +28,8 @@ type ReportDetail = {
   generalEvaluation?: string;
   strengths?: string;
   developmentAreas?: string;
+  executiveSummaryStrengths?: string;
+  executiveSummaryDevelopment?: string;
   interviewQuestions?: string;
   whyTheseQuestions?: string;
   developmentPlan?: string;
@@ -45,11 +47,7 @@ const PersonResultsDetail: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [hasExplicitUser, setHasExplicitUser] = useState(false);
   const [reportDetails, setReportDetails] = useState<Record<string, ReportDetail>>({});
-  const [openDevPlans, setOpenDevPlans] = useState<Record<string, boolean>>({
-    'dev-plan-1': false,
-    'dev-plan-2': false,
-    'dev-plan-3': false
-  });
+  const [openDevPlans, setOpenDevPlans] = useState<Record<string, boolean>>({});
 
   const competencyConfig = useMemo(() => ([
     {
@@ -146,7 +144,6 @@ const PersonResultsDetail: React.FC = () => {
     } | null;
     if (state?.competency) {
       setActiveCompetency(state.competency);
-      setActiveTab('competency-details');
     }
     const incomingUser = state?.latestUser || state?.selectedUser || null;
     if (incomingUser) {
@@ -384,60 +381,356 @@ const PersonResultsDetail: React.FC = () => {
       .filter(Boolean);
 
     const items: Array<{ title: string; description?: string }> = [];
-    let i = 0;
-    while (i < lines.length) {
-      const line = lines[i];
-      const separators = [':', ' - ', ' – ', ' — '];
-      const match = separators
-        .map((sep) => ({ sep, idx: line.indexOf(sep) }))
-        .find((item) => item.idx > 0);
-      if (match) {
+    const hasTitleMarkers = lines.some((line) => /^(başlık|baslik)\b/i.test(line));
+    const hasDetailMarkers = lines.some((line) => /^detay\b/i.test(line));
+
+    if (hasTitleMarkers || hasDetailMarkers) {
+      let mode: 'none' | 'title' | 'detail' = 'none';
+      let currentTitle = '';
+      let currentDetails: string[] = [];
+
+      const flush = () => {
+        if (!currentTitle && currentDetails.length === 0) return;
+        if (!currentTitle && currentDetails.length > 0) {
+          currentTitle = currentDetails.shift() || '';
+        }
         items.push({
-          title: line.slice(0, match.idx).trim(),
-          description: line.slice(match.idx + match.sep.length).trim()
+          title: currentTitle.trim(),
+          description: currentDetails.length > 0 ? currentDetails.join(' ').trim() : undefined
         });
+        currentTitle = '';
+        currentDetails = [];
+        mode = 'none';
+      };
+
+      lines.forEach((rawLine) => {
+        if (/^(başlık|baslik)\b/i.test(rawLine)) {
+          flush();
+          const titleText = rawLine.replace(/^(başlık|baslik)\b\s*[:\-–—]?\s*/i, '').trim();
+          currentTitle = titleText;
+          mode = 'title';
+          return;
+        }
+
+        if (/^detay\b/i.test(rawLine)) {
+          const detailText = rawLine.replace(/^detay\b\s*[:\-–—]?\s*/i, '').trim();
+          if (detailText) {
+            currentDetails.push(detailText);
+          }
+          mode = 'detail';
+          return;
+        }
+
+        if (mode === 'title') {
+          currentTitle = currentTitle ? `${currentTitle} ${rawLine}` : rawLine;
+          return;
+        }
+
+        if (mode === 'detail') {
+          currentDetails.push(rawLine);
+          return;
+        }
+      });
+
+      flush();
+    } else {
+      let i = 0;
+      while (i < lines.length) {
+        const line = lines[i];
+        const separators = [':', ' - ', ' – ', ' — '];
+        const match = separators
+          .map((sep) => ({ sep, idx: line.indexOf(sep) }))
+          .find((item) => item.idx > 0);
+        if (match) {
+          items.push({
+            title: line.slice(0, match.idx).trim(),
+            description: line.slice(match.idx + match.sep.length).trim()
+          });
+          i += 1;
+          continue;
+        }
+
+        const firstDot = line.indexOf('.');
+        if (firstDot > 0 && firstDot < line.length - 1) {
+          items.push({
+            title: line.slice(0, firstDot).trim(),
+            description: line.slice(firstDot + 1).trim()
+          });
+          i += 1;
+          continue;
+        }
+
+        const nextLine = lines[i + 1];
+        if (nextLine) {
+          items.push({ title: line, description: nextLine });
+          i += 2;
+          continue;
+        }
+
+        items.push({ title: line });
         i += 1;
-        continue;
       }
-
-      const firstDot = line.indexOf('.');
-      if (firstDot > 0 && firstDot < line.length - 1) {
-        items.push({
-          title: line.slice(0, firstDot).trim(),
-          description: line.slice(firstDot + 1).trim()
-        });
-        i += 1;
-        continue;
-      }
-
-      const nextLine = lines[i + 1];
-      if (nextLine) {
-        items.push({ title: line, description: nextLine });
-        i += 2;
-        continue;
-      }
-
-      items.push({ title: line });
-      i += 1;
     }
 
     return items.map((item, index) => (
       <div
         key={`${item.title}-${index}`}
-        className={cardClassName || 'rounded-xl p-5 flex items-start gap-4'}
+        className={
+          cardClassName
+            ? `${cardClassName} flex items-start gap-4`
+            : 'rounded-xl p-5 flex items-start gap-4'
+        }
       >
         <div className={`flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center text-white font-bold text-sm shadow-sm ${badgeColor || ''}`}>
           {index + 1}
         </div>
-        <div>
-          <h4 className="font-bold text-gray-900 text-sm mb-2">{item.title}</h4>
+        <div className="mt-1">
+          <h4 className="font-medium text-gray-900 text-base mb-2">{item.title}</h4>
           {item.description && (
-            <p className="text-sm text-gray-700 leading-relaxed">{item.description}</p>
+            <p className="text-base text-gray-700 leading-relaxed">{item.description}</p>
           )}
         </div>
       </div>
     ));
   };
+
+  const parseInterviewQuestions = (text?: string) => {
+    if (!text || text === '-') return [];
+    const lines = text
+      .split(/\r?\n+/)
+      .map((line) => line.trim())
+      .filter(Boolean);
+
+    const rows: Array<{
+      developmentArea?: string;
+      interviewQuestion?: string;
+      followUpQuestions: string[];
+    }> = [];
+
+    let current = { developmentArea: '', interviewQuestion: '', followUpQuestions: [] as string[] };
+    let mode: 'area' | 'question' | 'followup' | null = null;
+
+    const flush = () => {
+      if (
+        current.developmentArea ||
+        current.interviewQuestion ||
+        current.followUpQuestions.length > 0
+      ) {
+        rows.push({
+          developmentArea: current.developmentArea || undefined,
+          interviewQuestion: current.interviewQuestion || undefined,
+          followUpQuestions: current.followUpQuestions
+        });
+      }
+      current = { developmentArea: '', interviewQuestion: '', followUpQuestions: [] };
+      mode = null;
+    };
+
+    lines.forEach((line) => {
+      if (/^(başlık|baslik)\b/i.test(line)) {
+        const cleaned = line.replace(/^(başlık|baslik)\b\s*[:\-–—]?\s*/i, '').trim();
+        if (!cleaned) {
+          return;
+        }
+        line = cleaned;
+      }
+
+      const areaMatch = line.match(/^(gelişim alanı|gelisim alani)\b\s*[:\-–—]?\s*(.*)$/i);
+      if (areaMatch) {
+        if (current.developmentArea || current.interviewQuestion || current.followUpQuestions.length) {
+          flush();
+        }
+        current.developmentArea = areaMatch[2]?.trim() || '';
+        mode = 'area';
+        return;
+      }
+
+      const questionMatch = line.match(/^(mülakat sorusu|mulakat sorusu)\b\s*[:\-–—]?\s*(.*)$/i);
+      if (questionMatch) {
+        current.interviewQuestion = questionMatch[2]?.trim() || '';
+        mode = 'question';
+        return;
+      }
+
+      const followMatch = line.match(/^(devam sorusu|takip sorusu)\b\s*[:\-–—]?\s*(.*)$/i);
+      if (followMatch) {
+        const followText = followMatch[2]?.trim();
+        if (followText) {
+          current.followUpQuestions.push(followText);
+        }
+        mode = 'followup';
+        return;
+      }
+
+      if (mode === 'area') {
+        current.developmentArea = current.developmentArea
+          ? `${current.developmentArea} ${line}`
+          : line;
+        return;
+      }
+
+      if (mode === 'question') {
+        current.interviewQuestion = current.interviewQuestion
+          ? `${current.interviewQuestion} ${line}`
+          : line;
+        return;
+      }
+
+      if (mode === 'followup') {
+        current.followUpQuestions.push(line);
+        return;
+      }
+
+      if (!current.developmentArea) {
+        current.developmentArea = line;
+      } else if (!current.interviewQuestion) {
+        current.interviewQuestion = line;
+      } else {
+        current.followUpQuestions.push(line);
+      }
+    });
+
+    flush();
+    return rows;
+  };
+
+  const parseDevelopmentPlan = (text?: string) => {
+    if (!text || text === '-') return [];
+    const lines = text
+      .split(/\r?\n+/)
+      .map((line) => line.trim())
+      .filter(Boolean);
+
+    const sections: Array<{
+      title: string;
+      items: Array<{ title: string; content: string[] }>;
+    }> = [];
+
+    let currentSection: { title: string; items: Array<{ title: string; content: string[] }> } | null = null;
+    let currentItem: { title: string; content: string[] } | null = null;
+    let expectSectionTitle = false;
+    let expectItemTitle = false;
+
+    const isAltHeadingMarker = (value: string) => /^(alt başlık|alt baslik)\b/i.test(value);
+    const isSubHeading = (value: string) =>
+      /^(hedef|günlük kullanım|gunluk kullanim|günlük işlerde kullanım|gunluk islerde kullanim|eğitim önerileri|egitim onerileri|eğitimler|egitimler|podcast\s*&\s*tedx|podcast|uygulama)\b/i.test(value);
+    const isInlineContentMarker = (value: string) =>
+      /^(günlük soru|gunluk soru|aylık|aylik|çeyrek bazlı|ceyrek bazli)\b/i.test(value);
+
+    const normalizeSectionTitle = (value: string) => {
+      const withoutPrefix = value.replace(/^(gelişim planı|gelisim plani)\b\s*[:\-–—]?\s*/i, '');
+      return withoutPrefix.replace(/^\d+[\).\s\-–—:]*/g, '').trim();
+    };
+
+    const normalizeLine = (value: string) => value.replace(/^\uFEFF/, '').trim();
+
+    const flushItem = () => {
+      if (!currentSection || !currentItem) return;
+      if (currentItem.title || currentItem.content.length > 0) {
+        currentSection.items.push(currentItem);
+      }
+      currentItem = null;
+    };
+
+    const flushSection = () => {
+      flushItem();
+      if (currentSection && (currentSection.title || currentSection.items.length > 0)) {
+        sections.push(currentSection);
+      }
+      currentSection = null;
+    };
+
+    lines.forEach((rawLine) => {
+      const line = normalizeLine(rawLine);
+      const planMatch = line.match(/^(?:\d+[\).\s-]*)?(gelişim planı|gelisim plani)\b\s*[:\-–—]?\s*(.*)$/i);
+      if (planMatch) {
+        flushSection();
+        const rawTitle = planMatch[2]?.trim() || '';
+        const titleText = normalizeSectionTitle(rawTitle);
+        currentSection = { title: titleText, items: [] };
+        expectSectionTitle = !titleText;
+        return;
+      }
+
+      if (expectSectionTitle) {
+        const cleanedTitle = normalizeSectionTitle(line);
+        if (!currentSection) {
+          currentSection = { title: cleanedTitle, items: [] };
+        } else {
+          currentSection.title = cleanedTitle;
+        }
+        expectSectionTitle = false;
+        return;
+      }
+
+      if (expectItemTitle) {
+        if (!currentItem) {
+          currentItem = { title: rawLine, content: [] };
+        } else {
+          currentItem.title = rawLine;
+        }
+        expectItemTitle = false;
+        return;
+      }
+
+      const lineMatch = line.match(/^(.+?)\s*[:\-–—]\s*(.*)$/);
+      const headingCandidate = (lineMatch ? lineMatch[1] : line).trim();
+      const contentTail = lineMatch ? lineMatch[2]?.trim() : '';
+
+      if (isInlineContentMarker(headingCandidate)) {
+        if (!currentItem) {
+          currentItem = { title: '', content: [] };
+        }
+        const inlineText = contentTail ? `${headingCandidate}: ${contentTail}` : headingCandidate;
+        currentItem.content.push(inlineText);
+        return;
+      }
+
+      if (isAltHeadingMarker(headingCandidate)) {
+        flushItem();
+        if (!currentItem) {
+          currentItem = { title: contentTail, content: [] };
+        } else {
+          currentItem.title = contentTail;
+        }
+        if (!contentTail) {
+          expectItemTitle = true;
+        }
+        return;
+      }
+
+      if (isSubHeading(headingCandidate)) {
+        flushItem();
+        currentItem = { title: headingCandidate, content: [] };
+        if (contentTail) {
+          currentItem.content.push(contentTail);
+        }
+        return;
+      }
+
+      if (!currentSection) {
+        currentSection = { title: '', items: [] };
+      }
+
+      if (!currentItem) {
+        currentItem = { title: headingCandidate, content: [] };
+        if (contentTail && contentTail !== headingCandidate) {
+          currentItem.content.push(contentTail);
+        }
+        return;
+      }
+
+      currentItem.content.push(line);
+    });
+
+    flushSection();
+    return sections;
+  };
+
+  const developmentPlanSections = useMemo(
+    () => parseDevelopmentPlan(activeReport?.developmentPlan),
+    [activeReport?.developmentPlan]
+  );
 
   return (
     <div className="bg-gray-50 font-inter min-h-screen">
@@ -618,32 +911,17 @@ const PersonResultsDetail: React.FC = () => {
                     {t('labels.strengths')}
                   </h3>
                   <div className="space-y-4">
-                    {[
-                      {
-                        title: 'Strategic Vision & Long-term Planning',
-                        text: 'Günlük kararları uzun vadeli hedeflerle uyumlu biçimde yönlendirme kabiliyeti.'
-                      },
-                      {
-                        title: 'Complex Problem Resolution',
-                        text: 'Karmaşık problemlerde sistematik ve sonuç odaklı yaklaşım.'
-                      },
-                      {
-                        title: 'Leadership Presence & Influence',
-                        text: 'Ekipleri motive etme ve paydaşlar arasında güven inşa etme becerisi.'
-                      }
-                    ].map((item, idx) => (
-                      <div key={item.title} className="bg-green-50 border border-green-200 rounded-lg p-5">
-                        <div className="flex items-start">
-                          <div className="w-10 h-10 bg-green-600 text-white rounded-full flex items-center justify-center mr-4 flex-shrink-0 font-bold">
-                            {idx + 1}
-                          </div>
-                          <div>
-                            <h4 className="font-semibold text-gray-900 mb-2">{item.title}</h4>
-                            <p className="text-sm text-gray-700 leading-relaxed">{item.text}</p>
-                          </div>
-                        </div>
+                    {activeReport?.executiveSummaryStrengths ? (
+                      <div className="space-y-4">
+                        {renderNumberedLines(
+                          activeReport.executiveSummaryStrengths,
+                          'bg-green-600',
+                          'bg-green-50 border border-green-200 rounded-lg p-5'
+                        )}
                       </div>
-                    ))}
+                    ) : (
+                      <div className="text-gray-600">-</div>
+                    )}
                   </div>
                 </div>
 
@@ -653,32 +931,17 @@ const PersonResultsDetail: React.FC = () => {
                     {t('labels.developmentAreas')}
                   </h3>
                   <div className="space-y-4">
-                    {[
-                      {
-                        title: 'Adaptability Under Pressure',
-                        text: 'Hızlı değişen önceliklere uyum için yapılandırılmış yöntemler geliştirilmesi.'
-                      },
-                      {
-                        title: 'Delegation & Team Empowerment',
-                        text: 'Ekip içinde sorumluluk dağılımını artırarak yetkinlik geliştirme.'
-                      },
-                      {
-                        title: 'Technical Depth in Emerging Areas',
-                        text: 'Yeni teknolojilerde derinleşme ile stratejik yetkinliği güçlendirme.'
-                      }
-                    ].map((item, idx) => (
-                      <div key={item.title} className="bg-orange-50 border border-orange-200 rounded-lg p-5">
-                        <div className="flex items-start">
-                          <div className="w-10 h-10 bg-orange-600 text-white rounded-full flex items-center justify-center mr-4 flex-shrink-0 font-bold">
-                            {idx + 1}
-                          </div>
-                          <div>
-                            <h4 className="font-semibold text-gray-900 mb-2">{item.title}</h4>
-                            <p className="text-sm text-gray-700 leading-relaxed">{item.text}</p>
-                          </div>
-                        </div>
+                    {activeReport?.executiveSummaryDevelopment ? (
+                      <div className="space-y-4">
+                        {renderNumberedLines(
+                          activeReport.executiveSummaryDevelopment,
+                          'bg-orange-600',
+                          'bg-orange-50 border border-orange-200 rounded-lg p-5'
+                        )}
                       </div>
-                    ))}
+                    ) : (
+                      <div className="text-gray-600">-</div>
+                    )}
                   </div>
                 </div>
               </div>
@@ -823,70 +1086,59 @@ const PersonResultsDetail: React.FC = () => {
                       <div className="text-gray-700">-</div>
                     ) : (
                       <div className="space-y-6">
-                        {activeReport?.interviewQuestions ? (
-                          <div className="bg-white border border-gray-200 rounded-xl shadow-sm p-6 space-y-3">
-                            <h3 className="text-lg font-bold text-gray-900">{t('labels.interviewQuestions')}</h3>
-                            {renderLines(activeReport.interviewQuestions)}
-                          </div>
-                        ) : (
-                          <div className="overflow-hidden border border-gray-200 rounded-xl shadow-sm">
-                            <table className="min-w-full divide-y divide-gray-200">
-                              <thead className="bg-gray-100">
+                        <div className="overflow-hidden border border-gray-200 rounded-xl shadow-sm">
+                          <table className="min-w-full divide-y divide-gray-200">
+                            <thead className="bg-gray-100">
+                              <tr>
+                                <th
+                                  scope="col"
+                                  className="px-6 py-4 text-left text-sm font-bold text-gray-900 w-1/4 uppercase tracking-wider"
+                                >
+                                  {t('labels.developmentArea')}
+                                </th>
+                                <th
+                                  scope="col"
+                                  className="px-6 py-4 text-left text-sm font-bold text-gray-900 w-1/3 uppercase tracking-wider"
+                                >
+                                  {t('labels.interviewQuestion')}
+                                </th>
+                                <th
+                                  scope="col"
+                                  className="px-6 py-4 text-left text-sm font-bold text-gray-900 w-1/3 uppercase tracking-wider"
+                                >
+                                  {t('labels.followUpQuestion')}
+                                </th>
+                              </tr>
+                            </thead>
+                            <tbody className="bg-white divide-y divide-gray-200">
+                              {activeReport?.interviewQuestions ? (
+                                parseInterviewQuestions(activeReport.interviewQuestions).map((row, idx) => (
+                                  <tr key={`${row.developmentArea || 'row'}-${idx}`}>
+                                    <td className="px-6 py-5 text-sm text-gray-900 font-medium align-top">
+                                      {row.developmentArea || '-'}
+                                    </td>
+                                    <td className="px-6 py-5 text-sm text-gray-700 align-top leading-relaxed">
+                                      {row.interviewQuestion || '-'}
+                                    </td>
+                                    <td className="px-6 py-5 text-sm text-gray-600 align-top italic leading-relaxed space-y-2">
+                                      {row.followUpQuestions.length > 0 ? (
+                                        row.followUpQuestions.map((question, qIndex) => (
+                                          <p key={`${question}-${qIndex}`}>{question}</p>
+                                        ))
+                                      ) : (
+                                        '-'
+                                      )}
+                                    </td>
+                                  </tr>
+                                ))
+                              ) : (
                                 <tr>
-                                  <th
-                                    scope="col"
-                                    className="px-6 py-4 text-left text-sm font-bold text-gray-900 w-1/4 uppercase tracking-wider"
-                                  >
-                                    {t('labels.developmentArea')}
-                                  </th>
-                                  <th
-                                    scope="col"
-                                    className="px-6 py-4 text-left text-sm font-bold text-gray-900 w-1/3 uppercase tracking-wider"
-                                  >
-                                    {t('labels.interviewQuestion')}
-                                  </th>
-                                  <th
-                                    scope="col"
-                                    className="px-6 py-4 text-left text-sm font-bold text-gray-900 w-1/3 uppercase tracking-wider"
-                                  >
-                                    {t('labels.followUpQuestion')}
-                                  </th>
+                                  <td className="px-6 py-5 text-sm text-gray-700" colSpan={3}>-</td>
                                 </tr>
-                              </thead>
-                              <tbody className="bg-white divide-y divide-gray-200">
-                                <tr>
-                                  <td className="px-6 py-5 text-sm text-gray-900 font-medium align-top">
-                                    İlişkide Tutarlılık
-                                  </td>
-                                  <td className="px-6 py-5 text-sm text-gray-700 align-top leading-relaxed">
-                                    Sosyal ilişkilerde, kendinizi yanlış anlaşıldığınız veya gerçek niyetinizin
-                                    sorgulandığı bir durumu paylaşır mısınız? Bu durum nasıl gelişti ve siz nasıl
-                                    bir tutum sergilediniz?
-                                  </td>
-                                  <td className="px-6 py-5 text-sm text-gray-600 align-top italic leading-relaxed">
-                                    “Bu deneyimden ne öğrendiniz ve sonraki ilişkilerinizde bu öğrendiklerinizi
-                                    nasıl uyguladınız?”
-                                  </td>
-                                </tr>
-                                <tr>
-                                  <td className="px-6 py-5 text-sm text-gray-900 font-medium align-top">
-                                    Kriz Anında Proaktif Aksiyon Alma ve Güven Verme
-                                  </td>
-                                  <td className="px-6 py-5 text-sm text-gray-700 align-top leading-relaxed">
-                                    “Olayın içinde bulunduğun sırada daha çok inisiyatif alabileceğini fark
-                                    ettiğin bir örnek var mı?”
-                                  </td>
-                                  <td className="px-6 py-5 text-sm text-gray-600 align-top italic leading-relaxed space-y-2">
-                                    <p>“İlk anda neden beklemeyi tercih ettin?”</p>
-                                    <p>“Sonradan durumu nasıl yönlendirdin?”</p>
-                                    <p>“Bu davranışının ekibe nasıl yansıdığını düşünüyorsun?”</p>
-                                    <p>“Şimdi aynı duruma düşsen neyi farklı yapardın?”</p>
-                                  </td>
-                                </tr>
-                              </tbody>
-                            </table>
-                          </div>
-                        )}
+                              )}
+                            </tbody>
+                          </table>
+                        </div>
 
                         <div className="bg-gray-50 rounded-xl p-8 border border-gray-100 space-y-3">
                           <h3 className="text-xl font-bold text-gray-900">{t('labels.whyTheseQuestions')}</h3>
@@ -909,169 +1161,167 @@ const PersonResultsDetail: React.FC = () => {
                     !hasCompetencyScore ? (
                       <div className="text-gray-700">-</div>
                     ) : activeReport?.developmentPlan ? (
-                      <div className="bg-blue-50 border border-blue-100 rounded-xl p-6 space-y-3">
-                        <h3 className="text-lg font-bold text-gray-900">{t('labels.developmentPlan')}</h3>
-                        {renderLines(activeReport.developmentPlan)}
-                      </div>
-                    ) : (
-                    <div className="space-y-4">
-                      {[
-                        {
-                          key: 'dev-plan-1',
-                          badgeColor: 'bg-blue-100 text-blue-600',
-                          title: 'Müşteri Deneyimi Stratejisi Geliştirme',
-                          subtitle: 'Stratejik düşünme yetkinliğini müşteri odaklılıkla birleştirme',
-                          target:
-                            'Önümüzdeki 2 ay içinde 3 farklı müşteri temas noktasını analiz ederek süreç geliştirme önerileri oluşturmak ve 1 müşteri segmenti için 6 aylık stratejik değer önerisi modelini yöneticinle paylaşmak.',
-                          daily:
-                            'Günlük Soru: “Bugün geliştirdiğim çözüm müşterinin genel deneyiminde nasıl bir fark yaratır?”',
-                          trainings: [
-                            'Müşteri Yolculuğu Haritalama Eğitimi (Service Design Tools, UXPressia)',
-                            'Design Thinking Atölyesi (IDEO, Interaction Design Foundation)'
-                          ],
-                          podcasts: [
-                            'Experience Matters - “How to See Your Brand from the Customer’s Eyes”',
-                            'TEDx - “Designing for Simplicity” - John Maeda'
-                          ],
-                          practice: [
-                            {
-                              label: 'Aylık',
-                              text: 'Her hafta müşteriyle ilgili “stratejik fırsat” başlığı altında 1 yeni fikir geliştir ve haftalık planına not et.'
-                            },
-                            {
-                              label: 'Çeyrek Bazlı',
-                              text: '1 müşteri segmenti için 6 aylık değer önerisi modelini mentorunla değerlendir ve gerekirse ekip içinde sun.'
-                            }
-                          ]
-                        },
-                        {
-                          key: 'dev-plan-2',
-                          badgeColor: 'bg-purple-100 text-purple-600',
-                          title: 'Veri Odaklı Karar Alma Yetkinliği',
-                          subtitle: 'Analitik yetenekleri karar süreçlerine entegre etme',
-                          target:
-                            '6 ay içinde en az 2 stratejik karar sürecinde veri analizi kullanarak sonuç raporları hazırlamak ve ekip toplantılarında sunmak.',
-                          daily:
-                            'Günlük Soru: “Bu kararı destekleyen veriler neler ve hangi metrikleri takip etmeliyim?”',
-                          trainings: [
-                            'Data Analytics for Business (Coursera)',
-                            'Excel & Tableau İleri Seviye Eğitimi'
-                          ],
-                          podcasts: [
-                            'Harvard Business Review - “The Power of Data-Driven Decision Making”',
-                            'Podcast: Data Skeptic - Analytics in Practice'
-                          ],
-                          practice: [
-                            { label: 'Haftalık', text: 'Bir karar noktası belirle ve hangi verilere ihtiyaç duyduğunu listele.' },
-                            { label: 'Aylık', text: 'Bir veri setini analiz et ve bulgularını yöneticinle paylaş.' }
-                          ]
-                        },
-                        {
-                          key: 'dev-plan-3',
-                          badgeColor: 'bg-green-100 text-green-600',
-                          title: 'Paydaş Yönetimi ve İletişim',
-                          subtitle: 'Farklı seviyelerdeki paydaşlarla etkili iletişim kurma',
-                          target:
-                            '3 ay içinde en az 5 farklı paydaş grubuyla düzenli iletişim kanalları kurmak ve aylık geri bildirim toplantıları düzenlemek.',
-                          daily:
-                            'Günlük Soru: “Bu konuda kimlerin görüşünü almalıyım ve onlara nasıl ulaşabilirim?”',
-                          trainings: [
-                            'Stakeholder Management Workshop',
-                            'Etkili İletişim ve Sunum Becerileri Eğitimi'
-                          ],
-                          podcasts: [
-                            '“Crucial Conversations” - Kerry Patterson',
-                            'TED Talk - “How to Speak So That People Want to Listen”'
-                          ],
-                          practice: [
-                            { label: 'Haftalık', text: 'Her hafta en az 2 paydaşla görüşme planla ve notlarını tut.' },
-                            { label: 'Aylık', text: 'Paydaş haritası oluştur ve iletişim stratejini gözden geçir.' }
-                          ]
-                        }
-                      ].map((plan, idx) => (
-                        <div key={plan.key} className="border border-gray-200 rounded-xl overflow-hidden shadow-sm">
-                          <button
-                            className="w-full flex items-center justify-between p-5 bg-white hover:bg-gray-50 transition-colors text-left"
-                            onClick={() => toggleDevPlan(plan.key)}
-                          >
-                            <div className="flex items-center space-x-4">
-                              <div className={`${plan.badgeColor} w-10 h-10 rounded-lg flex items-center justify-center font-bold`}>
-                                {idx + 1}
-                              </div>
-                              <div>
-                                <h4 className="font-bold text-gray-900">{plan.title}</h4>
-                                <p className="text-sm text-gray-500">{plan.subtitle}</p>
-                              </div>
-                            </div>
-                            <i
-                              className={`fa-solid fa-chevron-down text-gray-400 transition-transform duration-300 ${
-                                openDevPlans[plan.key] ? 'rotate-180' : ''
-                              }`}
-                            />
-                          </button>
-
-                          {openDevPlans[plan.key] && (
-                            <div className="border-t border-gray-200 bg-gray-50 p-6">
-                              <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-                                <div className="lg:col-span-3 bg-white rounded-2xl border border-gray-200 p-6 shadow-sm flex flex-col">
-                                  <h5 className="text-base font-bold text-gray-900 mb-4 text-center">Hedef (SMART KPI)</h5>
-                                  <div className="flex-grow flex items-center">
-                                    <p className="text-sm text-gray-700 leading-relaxed text-center">{plan.target}</p>
-                                  </div>
-                                </div>
-
-                                <div className="lg:col-span-6 flex flex-col gap-6">
-                                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                    <div className="bg-white rounded-2xl border border-gray-200 p-6 shadow-sm h-full">
-                                      <h5 className="text-base font-bold text-gray-900 mb-4 text-center">Günlük İşlerde Kullanım</h5>
-                                      <p className="text-sm text-gray-700 leading-relaxed text-center">{plan.daily}</p>
+                      developmentPlanSections.length > 0 ? (
+                        <div className="space-y-4">
+                          {developmentPlanSections.map((section, idx) => {
+                            const sectionKey = `dev-plan-${idx + 1}`;
+                            const normalizeItemTitle = (value: string) => value.replace(/^\uFEFF/, '').trim();
+                            const isPlanTitle = (value: string) => {
+                              const normalized = normalizeItemTitle(value).toLowerCase();
+                              return normalized.startsWith('gelişim planı') || normalized.startsWith('gelisim plani');
+                            };
+                            const normalizePlanTitle = (value: string) =>
+                              value.replace(/^(gelişim planı|gelisim plani)\b\s*[:\-–—]?\s*/i, '').trim();
+                            const planTitleItem = section.items.find((item) => isPlanTitle(item.title));
+                            const sectionTitle =
+                              section.title ||
+                              planTitleItem?.content?.[0]?.trim() ||
+                              normalizePlanTitle(normalizeItemTitle(planTitleItem?.title || ''));
+                            const filteredItems = section.items.filter((item) => !isPlanTitle(item.title));
+                            return (
+                              <div key={sectionKey} className="border border-gray-200 rounded-xl overflow-hidden shadow-sm">
+                                <button
+                                  className="w-full flex items-center justify-between p-5 bg-white hover:bg-gray-50 transition-colors text-left"
+                                  onClick={() => toggleDevPlan(sectionKey)}
+                                >
+                                  <div className="flex items-center space-x-4">
+                                    <div className="bg-blue-100 text-blue-600 w-10 h-10 rounded-lg flex items-center justify-center font-bold">
+                                      {idx + 1}
                                     </div>
-
-                                    <div className="bg-white rounded-2xl border border-gray-200 p-6 shadow-sm h-full">
-                                      <h5 className="text-base font-bold text-gray-900 mb-4 text-center">Eğitim Önerileri</h5>
-                                      <ul className="text-sm text-gray-700 space-y-3">
-                                        {plan.trainings.map((item) => (
-                                          <li key={item} className="flex items-start">
-                                            <span className="mr-2">•</span>
-                                            <span>{item}</span>
-                                          </li>
-                                        ))}
-                                      </ul>
+                                    <div>
+                                      {sectionTitle && (
+                                        <h4 className="font-bold text-gray-900">{sectionTitle}</h4>
+                                      )}
                                     </div>
                                   </div>
+                                  <i
+                                    className={`fa-solid fa-chevron-down text-gray-400 transition-transform duration-300 ${
+                                      openDevPlans[sectionKey] ? 'rotate-180' : ''
+                                    }`}
+                                  />
+                                </button>
 
-                                  <div className="bg-white rounded-2xl border border-gray-200 p-6 shadow-sm flex-grow">
-                                    <div className="flex flex-col h-full justify-between">
-                                      <ul className="text-sm text-gray-700 space-y-3 mb-4">
-                                        {plan.podcasts.map((item) => (
-                                          <li key={item} className="flex items-start">
-                                            <span className="mr-2">•</span>
-                                            <span>{item}</span>
-                                          </li>
-                                        ))}
-                                      </ul>
-                                      <h5 className="text-base font-bold text-gray-900 text-center mt-2">Podcast/Okuma Önerileri</h5>
+                                {openDevPlans[sectionKey] && (
+                                  <div className="border-t border-gray-200 bg-gray-50 p-6">
+                                    <div className="border border-gray-200 rounded-2xl bg-gray-50/60 p-5 space-y-6">
+                                      {(() => {
+                                        const isPodcastCard = (value: string) => /podcast|okuma/i.test(value);
+                                        const isTrainingCard = (value: string) => /eğitim|egitim/i.test(value);
+                                        const isGoalCard = (value: string) => /hedef/i.test(value);
+                                        const isPracticeCard = (value: string) => /uygulama/i.test(value);
+
+                                        const podcastItems = filteredItems.filter((item) => isPodcastCard(item.title || ''));
+                                        const goalItem = filteredItems.find((item) => isGoalCard(item.title || ''));
+                                        const practiceItem = filteredItems.find((item) => isPracticeCard(item.title || ''));
+                                        const middleItems = filteredItems.filter(
+                                          (item) =>
+                                            !isPodcastCard(item.title || '') &&
+                                            !isGoalCard(item.title || '') &&
+                                            !isPracticeCard(item.title || '')
+                                        );
+
+                                        const renderCard = (item: typeof filteredItems[number], itemIndex: number, opts?: { isPodcast?: boolean }) => {
+                                          const title = item.title || '';
+                                          const lowerTitle = title.toLowerCase();
+                                          const shouldList = opts?.isPodcast || isTrainingCard(lowerTitle);
+                                          return (
+                                            <div
+                                              key={`${sectionKey}-${item.title}-${itemIndex}`}
+                                              className="bg-white rounded-2xl border border-gray-200 p-5 shadow-sm h-full flex flex-col"
+                                            >
+                                              {opts?.isPodcast ? (
+                                                <>
+                                                  <div className="flex-1">
+                                                    {item.content.length > 0 ? (
+                                                      <ul className="list-disc pl-4 space-y-2 text-sm text-gray-700 leading-relaxed">
+                                                        {item.content.map((line, lineIndex) => (
+                                                          <li key={`${sectionKey}-${itemIndex}-${lineIndex}`}>{line}</li>
+                                                        ))}
+                                                      </ul>
+                                                    ) : (
+                                                      <p className="text-sm text-gray-700 leading-relaxed">-</p>
+                                                    )}
+                                                  </div>
+                                                  {title && (
+                                                    <div className="mt-4 text-center text-sm font-semibold text-gray-900">
+                                                      {title}
+                                                    </div>
+                                                  )}
+                                                </>
+                                              ) : (
+                                                <>
+                                                  {title && (
+                                                    <h5 className="text-sm font-semibold text-gray-900 text-center mb-3">
+                                                      {title}
+                                                    </h5>
+                                                  )}
+                                                  <div className="flex-1">
+                                                    {item.content.length > 0 ? (
+                                                      shouldList ? (
+                                                        <ul className="list-disc pl-4 space-y-2 text-sm text-gray-700 leading-relaxed">
+                                                          {item.content.map((line, lineIndex) => (
+                                                            <li key={`${sectionKey}-${itemIndex}-${lineIndex}`}>{line}</li>
+                                                          ))}
+                                                        </ul>
+                                                      ) : (
+                                                        <div className="space-y-2 text-sm text-gray-700 leading-relaxed">
+                                                          {item.content.map((line, lineIndex) => (
+                                                            <p key={`${sectionKey}-${itemIndex}-${lineIndex}`}>{line}</p>
+                                                          ))}
+                                                        </div>
+                                                      )
+                                                    ) : (
+                                                      <p className="text-sm text-gray-700 leading-relaxed">-</p>
+                                                    )}
+                                                  </div>
+                                                </>
+                                              )}
+                                            </div>
+                                          );
+                                        };
+
+                                        return (
+                                          <>
+                                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 lg:grid-rows-2 gap-6 items-stretch">
+                                              {goalItem && (
+                                                <div className="lg:row-span-2">
+                                                  {renderCard(goalItem, 0)}
+                                                </div>
+                                              )}
+                                              {middleItems.slice(0, 2).map((item, itemIndex) => (
+                                                <div key={`${sectionKey}-middle-${itemIndex}`}>
+                                                  {renderCard(item, itemIndex + 1)}
+                                                </div>
+                                              ))}
+                                              {practiceItem && (
+                                                <div className="lg:row-span-2">
+                                                  {renderCard(practiceItem, 3)}
+                                                </div>
+                                              )}
+                                              {podcastItems[0] && (
+                                                <div className="lg:col-span-2">
+                                                  {renderCard(podcastItems[0], 4, { isPodcast: true })}
+                                                </div>
+                                              )}
+                                            </div>
+                                          </>
+                                        );
+                                      })()}
                                     </div>
                                   </div>
-                                </div>
-
-                                <div className="lg:col-span-3 bg-white rounded-2xl border border-gray-200 p-6 shadow-sm flex flex-col">
-                                  <h5 className="text-base font-bold text-gray-900 mb-4 text-center">Uygulama</h5>
-                                  <div className="space-y-4 text-sm text-gray-700 leading-relaxed">
-                                    {plan.practice.map((item) => (
-                                      <p key={item.label}>
-                                        <span className="font-semibold underline decoration-dotted">{item.label}:</span>{' '}
-                                        {item.text}
-                                      </p>
-                                    ))}
-                                  </div>
-                                </div>
+                                )}
                               </div>
-                            </div>
-                          )}
+                            );
+                          })}
                         </div>
-                      ))}
-                    </div>
+                      ) : (
+                        <div className="bg-blue-50 border border-blue-100 rounded-xl p-6 space-y-3">
+                          <h3 className="text-lg font-bold text-gray-900">{t('labels.developmentPlan')}</h3>
+                          {renderLines(activeReport.developmentPlan)}
+                        </div>
+                      )
+                    ) : (
+                      <div className="text-gray-700">-</div>
                     )
                   )}
                 </div>

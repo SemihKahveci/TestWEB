@@ -42,7 +42,7 @@ async function importData(competencyName, fileName) {
         fs.createReadStream(fileName)
             .pipe(csv({ 
                 separator: ';',
-                headers: ['ID', 'Genel Değerlendirme', 'Güçlü Yönler', 'Gelişim Alanları', 
+                headers: ['ID', 'Yönetici özeti güçlü yönleri', 'Yönetici özeti geliştirme', 'Genel Değerlendirme', 'Güçlü Yönler', 'Gelişim Alanları', 
                          'Mülakat Soruları', 'Neden Bu Sorular?', 'Gelişim Önerileri -1'],
                 skipLines: 1
             }))
@@ -51,6 +51,8 @@ async function importData(competencyName, fileName) {
                 if (data.ID && data.ID.trim() !== '') {
                     const cleanData = {
                         ID: data.ID,
+                        'Yönetici özeti güçlü yönleri': data['Yönetici özeti güçlü yönleri'] || '',
+                        'Yönetici özeti geliştirme': data['Yönetici özeti geliştirme'] || '',
                         'Genel Değerlendirme': data['Genel Değerlendirme'] || '',
                         'Güçlü Yönler': data['Güçlü Yönler'] || '',
                         'Gelişim Alanları': data['Gelişim Alanları'] || '',

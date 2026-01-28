@@ -268,6 +268,7 @@ const PersonResults: React.FC = () => {
     if (state?.selectedUser) {
       setLatestUser(state.selectedUser);
       setLatestHistory([state.selectedUser]);
+      sessionStorage.setItem('personResultsVisited', 'true');
       sessionStorage.setItem('latestUserResults', JSON.stringify({
         latestUser: state.selectedUser,
         latestHistory: [state.selectedUser]
@@ -303,34 +304,39 @@ const PersonResults: React.FC = () => {
       return;
     }
 
-    const cachedViewState = sessionStorage.getItem('personResultsState');
-    if (cachedViewState) {
-      try {
-        const parsed = JSON.parse(cachedViewState) as {
-          activeTab?: TabKey;
-          selectedCompetency?: string;
-          latestUser?: UserResult | null;
-          latestHistory?: UserResult[];
-        };
-        if (parsed.activeTab) setActiveTab(parsed.activeTab);
-        if (parsed.selectedCompetency) setSelectedCompetency(parsed.selectedCompetency);
-        if (parsed.latestUser) setLatestUser(parsed.latestUser);
-        if (parsed.latestHistory) setLatestHistory(parsed.latestHistory);
-        setHasRestoredState(true);
-        return;
-      } catch (error) {
-        sessionStorage.removeItem('personResultsState');
+    const hasVisited = sessionStorage.getItem('personResultsVisited') === 'true';
+    if (hasVisited) {
+      const cachedViewState = sessionStorage.getItem('personResultsState');
+      if (cachedViewState) {
+        try {
+          const parsed = JSON.parse(cachedViewState) as {
+            activeTab?: TabKey;
+            selectedCompetency?: string;
+            latestUser?: UserResult | null;
+            latestHistory?: UserResult[];
+          };
+          if (parsed.activeTab) setActiveTab(parsed.activeTab);
+          if (parsed.selectedCompetency) setSelectedCompetency(parsed.selectedCompetency);
+          if (parsed.latestUser) setLatestUser(parsed.latestUser);
+          if (parsed.latestHistory) setLatestHistory(parsed.latestHistory);
+          setHasRestoredState(true);
+          return;
+        } catch (error) {
+          sessionStorage.removeItem('personResultsState');
+        }
       }
-    }
 
-    const cached = sessionStorage.getItem('latestUserResults');
-    if (cached) {
-      try {
-        const parsed = JSON.parse(cached) as CachedUserResults;
-        setLatestUser(parsed.latestUser);
-        setLatestHistory(parsed.latestHistory || []);
-      } catch (error) {
-        sessionStorage.removeItem('latestUserResults');
+      const cached = sessionStorage.getItem('latestUserResults');
+      if (cached) {
+        try {
+          const parsed = JSON.parse(cached) as CachedUserResults;
+          setLatestUser(parsed.latestUser);
+          setLatestHistory(parsed.latestHistory || []);
+          setHasRestoredState(true);
+          return;
+        } catch (error) {
+          sessionStorage.removeItem('latestUserResults');
+        }
       }
     }
 
@@ -352,6 +358,7 @@ const PersonResults: React.FC = () => {
 
         setLatestUser(latest);
         setLatestHistory(historySafe);
+        sessionStorage.setItem('personResultsVisited', 'true');
         sessionStorage.setItem('latestUserResults', JSON.stringify({ latestUser: latest, latestHistory: historySafe }));
       } catch (error) {
         setLatestUser(null);
@@ -374,6 +381,7 @@ const PersonResults: React.FC = () => {
       latestUser,
       latestHistory
     }));
+    sessionStorage.setItem('personResultsVisited', 'true');
   }, [activeTab, selectedCompetency, latestUser, latestHistory]);
 
   const selectedUserFromState = (location.state as { selectedUser?: UserResult } | null)?.selectedUser;

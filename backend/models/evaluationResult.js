@@ -6,6 +6,12 @@ const evaluationResultSchema = new mongoose.Schema({
         required: true,
         unique: true
     },
+    'Yönetici özeti güçlü yönleri': {
+        type: String
+    },
+    'Yönetici özeti geliştirme': {
+        type: String
+    },
     'Genel Değerlendirme': {
         type: String
     },
@@ -24,13 +30,6 @@ const evaluationResultSchema = new mongoose.Schema({
     'Gelişim Önerileri -1': {
         type: String
     },
-    'Gelişim Önerileri -2': {
-        type: String
-    },
-    'Gelişim Önerileri - 3': {
-        type: String
-    },
-
     createdAt: {
         type: Date,
         default: Date.now

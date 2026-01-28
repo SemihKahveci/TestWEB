@@ -1000,6 +1000,16 @@ const adminController = {
                 seen.add(idKey);
 
                 reports[type] = {
+                    executiveSummaryStrengths: getValue(data, [
+                        'Yönetici özeti güçlü yönleri',
+                        'Yonetici ozeti guclu yonleri',
+                        'Yönetici Özeti Güçlü Yönleri'
+                    ]),
+                    executiveSummaryDevelopment: getValue(data, [
+                        'Yönetici özeti geliştirme',
+                        'Yonetici ozeti gelistirme',
+                        'Yönetici Özeti Geliştirme'
+                    ]),
                     generalEvaluation: getValue(data, ['Genel Değerlendirme', 'Genel Değerlendirme ']),
                     strengths: getValue(data, ['Güçlü Yönler', 'Guclu Yonler', 'Güçlü yönler']),
                     developmentAreas: getValue(data, ['Gelişim Alanları', 'Gelisim Alanlari', 'Gelişim alanları']),
@@ -1007,8 +1017,6 @@ const adminController = {
                     whyTheseQuestions: getValue(data, ['Neden Bu Sorular?', 'Neden Bu Sorular', 'Neden bu sorular?']),
                     developmentPlan: getValue(data, [
                         'Gelişim Önerileri -1',
-                        'Gelişim Önerileri -2',
-                        'Gelişim Önerileri - 3',
                         'Gelişim Önerileri',
                         'Gelisim Onerileri'
                     ])
@@ -1588,12 +1596,14 @@ const adminController = {
                                 'Ad Soyad': userCode.name,
                                 'Ölçülen Yetkinlik': yetkinlikAdi,
                                 'Yetkinlik Skoru': yetkinlikSkoru,
+                                'Yönetici özeti güçlü yönleri': evalResult.data['Yönetici özeti güçlü yönleri'] || '-',
+                                'Yönetici özeti geliştirme': evalResult.data['Yönetici özeti geliştirme'] || '-',
                                 'Genel Değerlendirme': evalResult.data['Genel Değerlendirme'] || '-',
                                 'Güçlü Yönler': evalResult.data['Güçlü Yönler'] || '-',
                                 'Gelişim Alanları': evalResult.data['Gelişim Alanları'] || '-',
                                 'Mülakat Soruları': evalResult.data['Mülakat Soruları'] || '-',
                                 'Neden Bu Sorular?': evalResult.data['Neden Bu Sorular?'] || '-',
-                                'Gelişim Planı': evalResult.data['Gelişim Önerileri -1'] || evalResult.data['Gelişim Önerileri -2'] || evalResult.data['Gelişim Önerileri - 3'] || '-'
+                                'Gelişim Planı': evalResult.data['Gelişim Önerileri -1'] || '-'
                             });
                         }
                     }
@@ -1671,8 +1681,6 @@ const adminController = {
 
             const getDevelopmentSuggestion = (data) =>
                 data['Gelişim Önerileri -1'] ||
-                data['Gelişim Önerileri -2'] ||
-                data['Gelişim Önerileri - 3'] ||
                 '-';
 
             const appendSection = (current, competencyName, value) => {
@@ -1696,12 +1704,14 @@ const adminController = {
                 const ieScore = (titanGame ? titanGame.ieScore : null) || user.ieScore || '-';
                 const idikScore = (titanGame ? titanGame.idikScore : null) || user.idikScore || '-';
 
-                let generalEvaluationText = '';
-                let strengthsText = '';
-                let developmentAreasText = '';
-                let interviewQuestionsText = '';
-                let whyTheseQuestionsText = '';
-                let developmentPlanText = '';
+            let generalEvaluationText = '';
+            let strengthsText = '';
+            let developmentAreasText = '';
+            let interviewQuestionsText = '';
+            let whyTheseQuestionsText = '';
+            let developmentPlanText = '';
+            let executiveSummaryStrengthsText = '';
+            let executiveSummaryDevelopmentText = '';
 
                 userGames.forEach((game) => {
                     if (game.evaluationResult && game.evaluationResult.length > 0) {
@@ -1714,6 +1724,16 @@ const adminController = {
                                     generalEvaluationText,
                                     competencyName,
                                     evalResult.data['Genel Değerlendirme'] || '-'
+                                );
+                                executiveSummaryStrengthsText = appendSection(
+                                    executiveSummaryStrengthsText,
+                                    competencyName,
+                                    evalResult.data['Yönetici özeti güçlü yönleri'] || '-'
+                                );
+                                executiveSummaryDevelopmentText = appendSection(
+                                    executiveSummaryDevelopmentText,
+                                    competencyName,
+                                    evalResult.data['Yönetici özeti geliştirme'] || '-'
                                 );
                             }
                             if (options.strengths) {
@@ -1765,6 +1785,8 @@ const adminController = {
                 }
                 if (options.generalEvaluation) {
                     row['Tanım ve Genel Değerlendirme'] = generalEvaluationText || '-';
+                    row['Yönetici özeti güçlü yönleri'] = executiveSummaryStrengthsText || '-';
+                    row['Yönetici özeti geliştirme'] = executiveSummaryDevelopmentText || '-';
                 }
                 if (options.strengths) {
                     row['Güçlü Yönler'] = strengthsText || '-';
