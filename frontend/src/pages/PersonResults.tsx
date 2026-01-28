@@ -256,7 +256,7 @@ const PersonResults: React.FC = () => {
 
   const scoreCards = [
     { title: t('competency.uncertainty'), icon: 'fa-chart-line', badge: '+12%', color: 'from-blue-500 to-blue-600', competency: 'uyumluluk' },
-    { title: t('competency.customerFocus'), icon: 'fa-trophy', badge: 'Top 15%', color: 'from-green-500 to-green-600', competency: 'musteri' },
+    { title: t('competency.customerFocus'), icon: 'fa-trophy', badge: t('labels.performanceTopPercent'), color: 'from-green-500 to-green-600', competency: 'musteri' },
     { title: t('competency.ie'), icon: 'fa-star', badge: '8/12', color: 'from-purple-500 to-purple-600', competency: 'etkileme' },
     { title: t('competency.idik'), icon: 'fa-arrow-trend-up', badge: '+3', color: 'from-orange-500 to-orange-600', competency: 'sinerji' }
   ];
@@ -389,48 +389,30 @@ const PersonResults: React.FC = () => {
 
   return (
     <div className="bg-gray-50 font-inter">
-      <div className="bg-white border-b border-gray-200 sticky top-0 z-30">
-        <div className="px-8 py-4">
-          <div className="flex justify-between items-center">
-            <div className="flex items-center space-x-4">
-              <button className="text-gray-500 hover:text-gray-700">
-                <i className="fa-solid fa-arrow-left" />
-              </button>
-              <div>
-                <div className="flex items-center space-x-2 text-sm text-gray-500 mb-1">
-                  <span className="hover:text-gray-700">{t('breadcrumbs.evaluations')}</span>
-                  <span>/</span>
-                  <span className="hover:text-gray-700">{t('breadcrumbs.personResults')}</span>
-                  <span>/</span>
-                  <span className="text-gray-900 font-medium">{latestUser?.name || '—'}</span>
-                </div>
-                <h1 className="text-2xl font-bold text-gray-900">{t('titles.personResults')}</h1>
-              </div>
-            </div>
-            <div className="flex items-center space-x-4">
-              <button className="text-gray-500 hover:text-gray-700 p-2 hover:bg-gray-100 rounded-lg transition-colors">
-                <i className="fa-solid fa-download" />
-              </button>
-              <button className="text-gray-500 hover:text-gray-700 p-2 hover:bg-gray-100 rounded-lg transition-colors">
-                <i className="fa-solid fa-share-nodes" />
-              </button>
-              <button className="text-gray-500 hover:text-gray-700 p-2 hover:bg-gray-100 rounded-lg transition-colors">
-                <i className="fa-solid fa-print" />
-              </button>
-              <div className="h-8 w-px bg-gray-300" />
-              <button className="flex items-center space-x-3 hover:bg-gray-50 rounded-lg p-2 transition-colors">
-                <img
-                  src="https://storage.googleapis.com/uxpilot-auth.appspot.com/avatars/avatar-5.jpg"
-                  alt="User"
-                  className="w-9 h-9 rounded-full object-cover"
-                />
-                <div className="text-left">
-                  <div className="text-sm font-medium text-gray-900">Admin User</div>
-                  <div className="text-xs text-gray-500">HR Manager</div>
-                </div>
-                <i className="fa-solid fa-chevron-down text-xs text-gray-400" />
-              </button>
-            </div>
+      <div style={{ padding: '24px 32px 0 10px' }}>
+        <div
+          style={{
+            width: '100%',
+            height: '75px',
+            background: 'radial-gradient(ellipse 150.93% 36.28% at 50.00% 50.00%, #3B8AFF 0%, #0048B2 100%)',
+            borderBottomRightRadius: '16px',
+            borderBottomLeftRadius: '16px',
+            display: 'flex',
+            justifyContent: 'flex-start',
+            alignItems: 'center',
+            padding: '0 32px',
+            marginBottom: '20px'
+          }}
+        >
+          <div
+            style={{
+              color: 'white',
+              fontSize: '30px',
+              fontFamily: 'Inter',
+              fontWeight: 700
+            }}
+          >
+            {t('titles.personResults')}
           </div>
         </div>
       </div>
@@ -444,7 +426,7 @@ const PersonResults: React.FC = () => {
                 <div className="flex items-center space-x-4 text-sm text-gray-600 mb-3">
                   <div className="flex items-center">
                     <i className="fa-solid fa-briefcase mr-2 text-gray-400" />
-                    <span>Senior Product Manager</span>
+                    <span>{t('labels.sampleRole')}</span>
                   </div>
                   <div className="flex items-center">
                     <i className="fa-solid fa-calendar mr-2 text-gray-400" />
@@ -558,11 +540,11 @@ const PersonResults: React.FC = () => {
                       <div className={`text-2xl font-bold ${isActive ? 'text-blue-600' : 'text-green-600'}`}>
                         {score10 ?? '-'}
                       </div>
-                      <div className="text-xs text-gray-500">out of 10</div>
+                      <div className="text-xs text-gray-500">{t('labels.outOf10')}</div>
                     </div>
                   </div>
                   <div className="space-y-2">
-                    {[{ label: 'Your Score', value: score10 ?? 0, color: 'bg-green-600' }].map((row) => (
+                    {[{ label: t('labels.yourScore'), value: score10 ?? 0, color: 'bg-green-600' }].map((row) => (
                         <div key={row.label} className="flex items-center justify-between text-sm">
                           <span className="text-gray-600">{row.label}</span>
                           <div className="flex items-center">
@@ -624,7 +606,7 @@ const PersonResults: React.FC = () => {
 
                 <div className="mb-8">
                   <div className="h-72 bg-gray-50 border border-gray-200 rounded-lg p-6">
-                    <div className="text-sm text-gray-500 mb-4">{selectedMeta.name} - Trend</div>
+                    <div className="text-sm text-gray-500 mb-4">{selectedMeta.name} - {t('labels.trendLabel')}</div>
                     <div className="h-48">
                       <svg viewBox="0 0 520 200" className="w-full h-full">
                         <defs>
@@ -738,16 +720,16 @@ const PersonResults: React.FC = () => {
                   <div className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-lg p-5 border border-blue-200">
                     <div className="flex items-center justify-between mb-3">
                       <i className="fa-solid fa-star text-2xl text-blue-600" />
-                      <span className="px-3 py-1 bg-blue-600 text-white text-xs font-bold rounded-full">EXCELLENT</span>
+                      <span className="px-3 py-1 bg-blue-600 text-white text-xs font-bold rounded-full">{t('labels.performanceExcellent')}</span>
                     </div>
                     <div className="text-3xl font-bold text-blue-900 mb-1">8.4/10</div>
-                    <div className="text-sm font-medium text-blue-800">Genel Performans</div>
+                    <div className="text-sm font-medium text-blue-800">{t('labels.overallPerformance')}</div>
                     <div className="text-xs text-blue-700 mt-2">{t('labels.previousPeriodChange')}</div>
                   </div>
                   <div className="bg-gradient-to-br from-green-50 to-green-100 rounded-lg p-5 border border-green-200">
                     <div className="flex items-center justify-between mb-3">
                       <i className="fa-solid fa-arrow-up text-2xl text-green-600" />
-                      <span className="px-3 py-1 bg-green-600 text-white text-xs font-bold rounded-full">GROWING</span>
+                      <span className="px-3 py-1 bg-green-600 text-white text-xs font-bold rounded-full">{t('labels.performanceGrowing')}</span>
                     </div>
                     <div className="text-3xl font-bold text-green-900 mb-1">9/12</div>
                     <div className="text-sm font-medium text-green-800">{t('labels.developingCompetency')}</div>
@@ -756,7 +738,7 @@ const PersonResults: React.FC = () => {
                   <div className="bg-gradient-to-br from-purple-50 to-purple-100 rounded-lg p-5 border border-purple-200">
                     <div className="flex items-center justify-between mb-3">
                       <i className="fa-solid fa-trophy text-2xl text-purple-600" />
-                      <span className="px-3 py-1 bg-purple-600 text-white text-xs font-bold rounded-full">TOP 15%</span>
+                      <span className="px-3 py-1 bg-purple-600 text-white text-xs font-bold rounded-full">{t('labels.performanceTopPercent')}</span>
                     </div>
                     <div className="text-3xl font-bold text-purple-900 mb-1">92</div>
                     <div className="text-sm font-medium text-purple-800">{t('labels.percentileRank')}</div>
@@ -787,7 +769,7 @@ const PersonResults: React.FC = () => {
                   <div className="inline-flex items-center justify-center w-20 h-20 bg-blue-100 rounded-full mb-6">
                     <i className="fa-solid fa-file-pdf text-blue-600 text-3xl" />
                   </div>
-                  <h4 className="text-xl font-bold text-gray-900 mb-2">Q4 2024 Raporu</h4>
+                  <h4 className="text-xl font-bold text-gray-900 mb-2">{t('labels.reportTitleQ4')}</h4>
                   <p className="text-gray-600 mb-8 max-w-md mx-auto">
                     {t('labels.fullReportSummary')}
                   </p>

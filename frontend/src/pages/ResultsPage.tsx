@@ -64,15 +64,10 @@ const ResultsPage: React.FC = () => {
   const hasLoaded = useRef(false);
   const lastSearchTerm = useRef<string>('');
 
-  const formatDateRangeError = () =>
-    language === 'en'
-      ? 'Start date cannot be after end date!'
-      : 'Başlangıç tarihi bitiş tarihinden sonra olamaz!';
+  const formatDateRangeError = () => t('errors.startAfterEnd');
 
   const formatMinMaxError = (label: string) =>
-    language === 'en'
-      ? `${label} score: Minimum must be less than maximum!`
-      : `${label} Skoru: Minimum değer maksimum değerden küçük olmalıdır!`;
+    `${label}: ${t('errors.minLessThanMax')}`;
 
   const formatRangeInfo = (start: number, end: number, total: number) =>
     language === 'en'

@@ -734,55 +734,40 @@ const PersonResultsDetail: React.FC = () => {
 
   return (
     <div className="bg-gray-50 font-inter min-h-screen">
-      <div className="bg-white border-b border-gray-200 sticky top-0 z-30">
-        <div className="px-8 py-4">
-          <div className="flex justify-between items-center">
-            <div className="flex items-center space-x-4">
-              <button
-                className="text-gray-500 hover:text-gray-700"
-                onClick={() => navigate('/person-results', { state: { selectedUser: latestUser } })}
-              >
-                <i className="fa-solid fa-arrow-left" />
-              </button>
-              <div>
-                <div className="flex items-center space-x-2 text-sm text-gray-500 mb-1">
-                  <span className="hover:text-gray-700">{t('breadcrumbs.evaluations')}</span>
-                  <span>/</span>
-                  <span className="hover:text-gray-700">{t('breadcrumbs.personResults')}</span>
-                  <span>/</span>
-                  <span className="text-gray-900 font-medium">{latestUser?.name || '—'}</span>
-                  <span>/</span>
-                  <span className="text-gray-900 font-medium">{t('breadcrumbs.reportDetails')}</span>
-                </div>
-                <h1 className="text-2xl font-bold text-gray-900">{t('titles.personReport')}</h1>
-              </div>
-            </div>
-            <div className="flex items-center space-x-4">
-              <button className="text-gray-500 hover:text-gray-700 p-2 hover:bg-gray-100 rounded-lg transition-colors">
-                <i className="fa-solid fa-download" />
-              </button>
-              <button className="text-gray-500 hover:text-gray-700 p-2 hover:bg-gray-100 rounded-lg transition-colors">
-                <i className="fa-solid fa-share-nodes" />
-              </button>
-              <button className="text-gray-500 hover:text-gray-700 p-2 hover:bg-gray-100 rounded-lg transition-colors">
-                <i className="fa-solid fa-print" />
-              </button>
-              <div className="h-8 w-px bg-gray-300" />
-              <button className="flex items-center space-x-3 hover:bg-gray-50 rounded-lg p-2 transition-colors">
-                <img
-                  src="https://storage.googleapis.com/uxpilot-auth.appspot.com/avatars/avatar-5.jpg"
-                  alt="User"
-                  className="w-9 h-9 rounded-full object-cover"
-                />
-                <div className="text-left">
-                  <div className="text-sm font-medium text-gray-900">Admin User</div>
-                  <div className="text-xs text-gray-500">HR Manager</div>
-                </div>
-                <i className="fa-solid fa-chevron-down text-xs text-gray-400" />
-              </button>
-            </div>
+      <div style={{ padding: '24px 32px 0 10px' }}>
+        <div
+          style={{
+            width: '100%',
+            height: '75px',
+            background: 'radial-gradient(ellipse 150.93% 36.28% at 50.00% 50.00%, #3B8AFF 0%, #0048B2 100%)',
+            borderBottomRightRadius: '16px',
+            borderBottomLeftRadius: '16px',
+            display: 'flex',
+            justifyContent: 'flex-start',
+            alignItems: 'center',
+            padding: '0 32px',
+            marginBottom: '12px'
+          }}
+        >
+          <div
+            style={{
+              color: 'white',
+              fontSize: '30px',
+              fontFamily: 'Inter',
+              fontWeight: 700
+            }}
+          >
+            {t('titles.personReport')}
           </div>
         </div>
+        <button
+          onClick={() => navigate('/person-results', { state: { selectedUser: latestUser } })}
+          aria-label={t('labels.goToPersonResults')}
+          className="inline-flex items-center gap-2 rounded-lg border border-blue-200 bg-white px-3 py-2 text-sm font-medium text-blue-600 shadow-sm hover:border-blue-300 hover:text-blue-700"
+        >
+          <i className="fa-solid fa-arrow-left" />
+          {t('labels.goToPersonResults')}
+        </button>
       </div>
 
       <div className="p-8">
@@ -826,7 +811,7 @@ const PersonResultsDetail: React.FC = () => {
                   onClick={() => {
                     if (isSelectable) {
                       setActiveCompetency(item.key as CompetencyKey);
-                      setActiveTab('competency-details');
+                      setActiveTab('executive-summary');
                     }
                   }}
                   onKeyDown={(event) => {
@@ -834,7 +819,7 @@ const PersonResultsDetail: React.FC = () => {
                     if (event.key === 'Enter' || event.key === ' ') {
                       event.preventDefault();
                       setActiveCompetency(item.key as CompetencyKey);
-                      setActiveTab('competency-details');
+                      setActiveTab('executive-summary');
                     }
                   }}
                 >
@@ -1356,15 +1341,15 @@ const PersonResultsDetail: React.FC = () => {
               </div>
 
               <div className="bg-gray-50 border border-gray-200 rounded-xl p-6 mb-6">
-                <h3 className="text-lg font-semibold text-gray-900 mb-4">Report Information</h3>
+                <h3 className="text-lg font-semibold text-gray-900 mb-4">{t('labels.reportInformationTitle')}</h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   {[
-                    { label: 'Report Type', value: 'Comprehensive Assessment' },
-                    { label: 'Assessment Period', value: 'Q4 2024' },
-                    { label: 'Completion Date', value: 'December 15, 2024' },
-                    { label: 'Report Pages', value: '24 pages' },
-                    { label: 'File Size', value: '2.4 MB' },
-                    { label: 'Last Modified', value: 'December 16, 2024' }
+                    { label: t('labels.reportTypeLabel'), value: t('labels.reportTypeValue') },
+                    { label: t('labels.assessmentPeriodLabel'), value: t('labels.assessmentPeriodValue') },
+                    { label: t('labels.completionDate'), value: formatDateLong(latestUser?.completionDate) },
+                    { label: t('labels.reportPagesLabel'), value: t('labels.reportPagesValue') },
+                    { label: t('labels.fileSizeLabel'), value: t('labels.fileSizeValue') },
+                    { label: t('labels.lastModifiedLabel'), value: t('labels.lastModifiedValue') }
                   ].map((item) => (
                     <div key={item.label}>
                       <div className="text-sm text-gray-500 mb-1">{item.label}</div>
@@ -1380,17 +1365,17 @@ const PersonResultsDetail: React.FC = () => {
                     <i className="fa-solid fa-info" />
                   </div>
                   <div>
-                    <h4 className="font-semibold text-gray-900 mb-2">Report Contents</h4>
+                    <h4 className="font-semibold text-gray-900 mb-2">{t('labels.reportContentsTitle')}</h4>
                     <p className="text-sm text-gray-700 mb-3">
-                      Rapor, 12 yetkinliğin detaylı analizini, benchmark karşılaştırmalarını ve gelişim önerilerini içerir.
+                      {t('labels.reportContentsSubtitle')}
                     </p>
                     <ul className="text-sm text-gray-700 space-y-1">
                       {[
-                        'Executive summary and key findings',
-                        'Detailed competency breakdowns',
-                        'Interview questions and talking points',
-                        'Personalized development plans',
-                        'Historical performance trends'
+                        t('labels.reportContentItem1'),
+                        t('labels.reportContentItem2'),
+                        t('labels.reportContentItem3'),
+                        t('labels.reportContentItem4'),
+                        t('labels.reportContentItem5')
                       ].map((item) => (
                         <li key={item} className="flex items-center">
                           <i className="fa-solid fa-check text-blue-600 mr-2" />
@@ -1414,7 +1399,7 @@ const PersonResultsDetail: React.FC = () => {
                   {t('labels.aiAssistantSoon')}
                 </h2>
                 <p className="text-gray-600 text-lg mb-8 max-w-2xl mx-auto">
-                  Assessment sonuçlarına özel içgörüler ve öneriler yakında eklenecek.
+                  {t('labels.aiAssistantSubtitle')}
                 </p>
                 <span className="inline-flex items-center px-6 py-3 bg-indigo-100 text-indigo-700 rounded-lg font-medium">
                   <i className="fa-solid fa-sparkles mr-2" />
