@@ -12,7 +12,7 @@ interface Admin {
 }
 
 const DefineCompanyAdmin: React.FC = () => {
-  const { language, t } = useLanguage();
+  const { t } = useLanguage();
   const [admins, setAdmins] = useState<Admin[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [showAddPopup, setShowAddPopup] = useState(false);
@@ -30,16 +30,18 @@ const DefineCompanyAdmin: React.FC = () => {
   const [filteredCompanies, setFilteredCompanies] = useState<any[]>([]);
   const [companySearchTerm, setCompanySearchTerm] = useState('');
   const [showCompanyDropdown, setShowCompanyDropdown] = useState(false);
+  const formatTemplate = (template: string, params: Record<string, string | number>) =>
+    Object.entries(params).reduce(
+      (text, [key, value]) => text.replace(new RegExp(`\\{${key}\\}`, 'g'), String(value)),
+      template
+    );
+
   const formatCompanyPlaceholder = (count: number) =>
-    language === 'en'
-      ? `${t('labels.companySelect')} (${count} available)`
-      : `${t('labels.companySelect')} (${count} firma mevcut)`;
+    formatTemplate(t('labels.companySelectAvailable'), { count });
 
   const formatNoResultsText = (term: string) => {
     if (term) {
-      return language === 'en'
-        ? `No results found for "${term}"`
-        : `"${term}" için arama sonucu bulunamadı`;
+      return formatTemplate(t('labels.noSearchResults'), { query: term });
     }
     return t('labels.companyNotFound');
   };
@@ -301,12 +303,12 @@ const DefineCompanyAdmin: React.FC = () => {
         loadAdmins();
       } else {
         console.error('❌ Admin ekleme hatası:', data.message);
-        showMessage('Hata', data.message, 'error');
+        showMessage(t('labels.error'), data.message, 'error');
       }
     } catch (error: any) {
       console.error('💥 Admin ekleme hatası:', error);
       const errorMessage = error.response?.data?.message || t('errors.adminAddError');
-      showMessage('Hata', errorMessage, 'error');
+      showMessage(t('labels.error'), errorMessage, 'error');
     }
   };
 
@@ -340,12 +342,12 @@ const DefineCompanyAdmin: React.FC = () => {
         loadAdmins();
       } else {
         console.error('❌ Admin güncelleme hatası:', data.message);
-        showMessage('Hata', data.message, 'error');
+        showMessage(t('labels.error'), data.message, 'error');
       }
     } catch (error: any) {
       console.error('💥 Admin güncelleme hatası:', error);
       const errorMessage = error.response?.data?.message || t('errors.adminUpdateError');
-      showMessage('Hata', errorMessage, 'error');
+      showMessage(t('labels.error'), errorMessage, 'error');
     }
   };
 
@@ -362,12 +364,12 @@ const DefineCompanyAdmin: React.FC = () => {
         loadAdmins();
       } else {
         console.error('❌ Admin silme hatası:', data.message);
-        showMessage('Hata', data.message, 'error');
+        showMessage(t('labels.error'), data.message, 'error');
       }
     } catch (error: any) {
       console.error('💥 Admin silme hatası:', error);
       const errorMessage = error.response?.data?.message || t('errors.adminDeleteError');
-      showMessage('Hata', errorMessage, 'error');
+      showMessage(t('labels.error'), errorMessage, 'error');
     }
   };
 
@@ -471,7 +473,7 @@ const DefineCompanyAdmin: React.FC = () => {
                   fontWeight: 400,
                   lineHeight: '28px'
                 }}>
-                  Andron Game
+                  {t('labels.adminUser')}
                 </div>
                 <div style={{
                   color: '#8A92A6',
@@ -480,7 +482,7 @@ const DefineCompanyAdmin: React.FC = () => {
                   fontWeight: 400,
                   lineHeight: '16.90px'
                 }}>
-                  Founder
+                  {t('labels.hrManager')}
                 </div>
               </div>
             </div>
@@ -1568,7 +1570,7 @@ const DefineCompanyAdmin: React.FC = () => {
                   color: 'white'
                 }}
               >
-                Tamam
+                {t('buttons.ok')}
               </button>
             </div>
           </div>

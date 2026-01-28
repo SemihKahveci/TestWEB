@@ -96,50 +96,38 @@ const AdminPanel: React.FC = () => {
 
   const formatNoDataForCode = () => t('errors.noDataForCode');
 
+  const formatTemplate = (template: string, params: Record<string, string | number>) =>
+    Object.entries(params).reduce(
+      (text, [key, value]) => text.replace(new RegExp(`\\{${key}\\}`, 'g'), String(value)),
+      template
+    );
+
   const formatAnswersFetchFailed = (message: string) =>
-    language === 'en'
-      ? `An error occurred while fetching answers: ${message}`
-      : `Cevaplar getirilirken bir hata oluştu: ${message}`;
+    `${t('errors.answersFetchFailed')}: ${message}`;
 
   const formatExcelDownloadFailed = (message: string) =>
-    language === 'en'
-      ? `An error occurred while downloading Excel: ${message}`
-      : `Excel indirilirken bir hata oluştu: ${message}`;
+    `${t('errors.excelDownloadFailed')}: ${message}`;
 
   const formatWordDownloadFailed = (message: string) =>
-    language === 'en'
-      ? `An error occurred while downloading Word: ${message}`
-      : `Word indirilirken bir hata oluştu: ${message}`;
+    `${t('errors.wordDownloadFailed')}: ${message}`;
 
   const formatPdfPreviewFailed = (message: string) =>
-    language === 'en'
-      ? `An error occurred while previewing PDF: ${message}`
-      : `PDF önizlenirken bir hata oluştu: ${message}`;
+    `${t('errors.pdfPreviewFailed')}: ${message}`;
 
   const formatPdfDownloadFailed = (message: string) =>
-    language === 'en'
-      ? `An error occurred while downloading PDF: ${message}`
-      : `PDF indirilirken bir hata oluştu: ${message}`;
+    `${t('errors.pdfDownloadFailed')}: ${message}`;
 
   const formatDeleteFailed = (message: string) =>
-    language === 'en'
-      ? `An error occurred while deleting: ${message}`
-      : `Silme işlemi sırasında bir hata oluştu: ${message}`;
+    `${t('errors.deleteFailed')}: ${message}`;
 
   const formatBulkDeleteFailed = (message: string) =>
-    language === 'en'
-      ? `An error occurred while bulk deleting: ${message}`
-      : `Toplu silme işlemi sırasında bir hata oluştu: ${message}`;
+    `${t('errors.bulkDeleteFailed')}: ${message}`;
 
   const formatBulkDeleteSuccess = (count: number) =>
-    language === 'en'
-      ? `${count} evaluations deleted successfully.`
-      : `${count} değerlendirme başarıyla silindi.`;
+    formatTemplate(t('messages.bulkDeleteSuccess'), { count });
 
   const formatBulkDeleteConfirm = (count: number) =>
-    language === 'en'
-      ? `Are you sure you want to delete ${count} results?`
-      : `${count} adet sonucu silmek istediğinizden emin misiniz?`;
+    formatTemplate(t('labels.bulkDeleteConfirm'), { count });
   
   const hasLoaded = useRef(false);
   
@@ -294,7 +282,8 @@ const AdminPanel: React.FC = () => {
 
   const formatDate = (dateString: string) => {
     if (!dateString) return '-';
-    return new Date(dateString).toLocaleDateString('tr-TR', {
+    const locale = language === 'en' ? 'en-US' : 'tr-TR';
+    return new Date(dateString).toLocaleDateString(locale, {
       year: 'numeric',
       month: 'long',
       day: 'numeric'
@@ -902,7 +891,7 @@ const AdminPanel: React.FC = () => {
               <path d="M23 20V14H17" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
               <path d="M20.49 9A9 9 0 0 0 5.64 5.64L1 10M23 14L18.36 18.36A9 9 0 0 1 3.51 15" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
             </svg>
-            Yenile
+            {t('buttons.refresh')}
           </button>
 
           {/* Switch */}
@@ -963,7 +952,7 @@ const AdminPanel: React.FC = () => {
               cursor: 'pointer',
               userSelect: 'none'
             }}>
-              Süresi Dolan Oyunları Göster
+              {t('labels.showExpiredGames')}
             </span>
           </label>
         </div>
@@ -1215,7 +1204,7 @@ const AdminPanel: React.FC = () => {
                            fontSize: '12px',
                            marginLeft: '8px'
                          }}>
-                           ({visibleGroupCount} sonuç)
+                          {formatTemplate(t('labels.resultsCount'), { count: visibleGroupCount })}
                          </span>
                        ) : null;
                      })()}
@@ -1417,7 +1406,11 @@ const AdminPanel: React.FC = () => {
             color: '#6B7280',
             fontFamily: 'Inter'
           }}>
-            {((currentPage - 1) * itemsPerPage) + 1}-{Math.min(currentPage * itemsPerPage, totalCount)} arası, toplam {totalCount} kayıt
+            {formatTemplate(t('labels.recordsRange'), {
+              start: ((currentPage - 1) * itemsPerPage) + 1,
+              end: Math.min(currentPage * itemsPerPage, totalCount),
+              total: totalCount
+            })}
           </div>
 
           {/* Pagination Controls */}
@@ -2030,7 +2023,7 @@ const AdminPanel: React.FC = () => {
                   color: '#6C757D',
                   padding: '40px'
                 }}>
-                  Bu oyun için cevap bulunamadı.
+                  {t('labels.noAnswersFound')}
                 </div>
               )}
             </div>
@@ -2403,7 +2396,7 @@ const AdminPanel: React.FC = () => {
                   color: 'white'
                 }}
               >
-                Tamam
+                {t('buttons.ok')}
               </button>
             </div>
           </div>

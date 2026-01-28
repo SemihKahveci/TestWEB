@@ -286,7 +286,7 @@ const ScriptFiles: React.FC = () => {
                     fontWeight: 400,
                     lineHeight: '28px'
                   }}>
-                    Andron Games
+                    {t('labels.adminUser')}
                   </div>
                   <div style={{
                     color: '#8A92A6',
@@ -295,7 +295,7 @@ const ScriptFiles: React.FC = () => {
                     fontWeight: 400,
                     lineHeight: '16.90px'
                   }}>
-                    Founder
+                    {t('labels.hrManager')}
                   </div>
                 </div>
               </div>

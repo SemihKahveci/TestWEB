@@ -81,74 +81,55 @@ const GameSendPage: React.FC = () => {
   });
   const [isMobile, setIsMobile] = useState(false);
 
+  const formatTemplate = (template: string, params: Record<string, string | number>) =>
+    Object.entries(params).reduce(
+      (text, [key, value]) => text.replace(new RegExp(`\\{${key}\\}`, 'g'), String(value)),
+      template
+    );
+
   const formatConfirmSend = (count: number) =>
-    language === 'en'
-      ? `${count} people will receive a game code. Do you want to continue?`
-      : `${count} kişiye oyun kodu gönderilecek. Devam etmek istiyor musunuz?`;
+    formatTemplate(t('labels.confirmSend'), { count });
 
   const formatInsufficientCredits = (remaining: number, needed: number) =>
-    language === 'en'
-      ? `Insufficient credits! Remaining: ${remaining}, Required: ${needed}`
-      : `Yetersiz kredi! Mevcut kredi: ${remaining}, Gerekli kredi: ${needed}`;
+    formatTemplate(t('errors.insufficientCredits'), { remaining, needed });
 
   const formatCodeSent = (creditCost: number) =>
-    language === 'en'
-      ? `Code sent successfully! (${creditCost} credits deducted)`
-      : `Kod başarıyla gönderildi! (${creditCost} kredi düşüldü)`;
+    formatTemplate(t('messages.codeSent'), { creditCost });
 
   const formatCreditDeductionFailed = (message: string) =>
-    language === 'en'
-      ? `Credit deduction failed: ${message}`
-      : `Kredi düşürülemedi: ${message}`;
+    formatTemplate(t('errors.creditDeductionFailed'), { message });
 
   const formatSendFailed = (message: string) =>
-    language === 'en'
-      ? `Send failed: ${message}`
-      : `Gönderilemedi: ${message}`;
+    formatTemplate(t('errors.sendFailed'), { message });
 
-  const formatSendErrorGeneric = () =>
-    language === 'en' ? 'Send failed: An error occurred' : 'Gönderilemedi: Bir hata oluştu';
+  const formatSendErrorGeneric = () => t('errors.sendFailedGeneric');
 
   const formatCreditSuccess = (successCount: number, totalCreditCost: number, superAdmin: boolean) =>
     superAdmin
-      ? (language === 'en'
-        ? `${successCount} people sent successfully!`
-        : `${successCount} kişiye başarıyla gönderildi!`)
-      : (language === 'en'
-        ? `${successCount} people sent successfully! (${totalCreditCost} credits deducted)`
-        : `${successCount} kişiye başarıyla gönderildi! (${totalCreditCost} kredi düşüldü)`);
+      ? formatTemplate(t('messages.sendSuccessNoCredit'), { count: successCount })
+      : formatTemplate(t('messages.sendSuccessWithCredit'), { count: successCount, creditCost: totalCreditCost });
 
   const formatPartialSuccess = (successCount: number, errorCount: number, totalCreditCost: number, superAdmin: boolean) =>
     superAdmin
-      ? (language === 'en'
-        ? `${successCount} people sent, ${errorCount} failed.`
-        : `${successCount} kişiye gönderildi, ${errorCount} kişiye gönderilemedi.`)
-      : (language === 'en'
-        ? `${successCount} people sent, ${errorCount} failed. (${totalCreditCost} credits deducted)`
-        : `${successCount} kişiye gönderildi, ${errorCount} kişiye gönderilemedi. (${totalCreditCost} kredi düşüldü)`);
+      ? formatTemplate(t('messages.sendPartialNoCredit'), { successCount, errorCount })
+      : formatTemplate(t('messages.sendPartialWithCredit'), { successCount, errorCount, creditCost: totalCreditCost });
 
-  const formatNoOneSent = () =>
-    language === 'en' ? 'No recipients could be sent!' : 'Hiçbir kişiye gönderilemedi!';
+  const formatNoOneSent = () => t('messages.sendNoRecipients');
 
   const formatPersonError = (name: string, message: string) =>
     `${name}: ${message}`;
 
-  const formatSendErrorLabel = () =>
-    language === 'en' ? 'Send error' : 'Gönderim hatası';
+  const formatSendErrorLabel = () => t('labels.sendError');
 
-  const formatCodeGenerationFailed = () =>
-    language === 'en' ? 'Code generation failed' : 'Kod üretim hatası';
+  const formatCodeGenerationFailed = () => t('errors.codeGenerationFailed');
 
-  const formatCodeGenerateMissing = () =>
-    language === 'en' ? 'Code could not be generated' : 'Kod üretilemedi';
+  const formatCodeGenerateMissing = () => t('errors.codeGenerateMissing');
 
   const formatServerError = (status: number) =>
-    language === 'en' ? `Server error (${status})` : `Sunucu hatası (${status})`;
+    formatTemplate(`${t('errors.serverError')} ({status})`, { status });
 
   const formatNoSearchResults = (query: string) =>
-    language === 'en'
-      ? `No results found for "${query}"`
-      : `"${query}" için arama sonucu bulunamadı`;
+    formatTemplate(t('labels.noSearchResults'), { query });
 
   // Available planets
   const availablePlanets: Planet[] = [
@@ -3238,7 +3219,7 @@ const GameSendPage: React.FC = () => {
                   color: 'white'
                 }}
               >
-                Tamam
+                {t('buttons.ok')}
               </button>
             </div>
           </div>
@@ -3344,7 +3325,7 @@ const GameSendPage: React.FC = () => {
                   color: 'white'
                 }}
               >
-                Evet
+                {t('buttons.yes')}
               </button>
             </div>
           </div>

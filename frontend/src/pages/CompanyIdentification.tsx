@@ -10,7 +10,7 @@ interface Company {
 }
 
 const CompanyIdentification: React.FC = () => {
-  const { language, t } = useLanguage();
+  const { t } = useLanguage();
   const [companies, setCompanies] = useState<Company[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [showAddPopup, setShowAddPopup] = useState(false);
@@ -24,10 +24,14 @@ const CompanyIdentification: React.FC = () => {
   });
   const [selectedCompany, setSelectedCompany] = useState<Company | null>(null);
   const [isMobile, setIsMobile] = useState(false);
+  const formatTemplate = (template: string, params: Record<string, string | number>) =>
+    Object.entries(params).reduce(
+      (text, [key, value]) => text.replace(new RegExp(`\\{${key}\\}`, 'g'), String(value)),
+      template
+    );
+
   const formatDeleteCompanyConfirm = (name: string) =>
-    language === 'en'
-      ? `Are you sure you want to delete "${name}"? This action cannot be undone.`
-      : `"${name}" firmasını silmek istediğinizden emin misiniz? Bu işlem geri alınamaz.`;
+    formatTemplate(t('labels.deleteCompanyConfirm'), { name });
   
   // Form states
   const [formData, setFormData] = useState({
@@ -259,7 +263,7 @@ const CompanyIdentification: React.FC = () => {
                   fontWeight: 400,
                   lineHeight: '28px'
                 }}>
-                  Andron Game
+                  {t('labels.adminUser')}
                 </div>
                 <div style={{
                   color: '#8A92A6',
@@ -268,7 +272,7 @@ const CompanyIdentification: React.FC = () => {
                   fontWeight: 400,
                   lineHeight: '16.90px'
                 }}>
-                  Founder
+                  {t('labels.hrManager')}
                 </div>
               </div>
             </div>
@@ -375,7 +379,7 @@ const CompanyIdentification: React.FC = () => {
               fontWeight: 700,
               borderBottom: '1px solid #E9ECEF'
             }}>
-              VKN
+              {t('labels.vkn')}
             </div>
             <div style={{
               padding: '16px',
@@ -539,7 +543,7 @@ const CompanyIdentification: React.FC = () => {
               fontSize: '18px',
               fontWeight: 600
             }}>
-              Yeni Firma Ekle
+              {t('titles.addCompany')}
             </h3>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
               <div>
@@ -551,13 +555,13 @@ const CompanyIdentification: React.FC = () => {
                   fontFamily: 'Inter',
                   fontSize: '14px'
                 }}>
-                  VKN
+                  {t('labels.vkn')}
                 </label>
                 <input
                   type="text"
                   value={formData.vkn}
                   onChange={(e) => setFormData({...formData, vkn: e.target.value})}
-                  placeholder="VKN giriniz"
+                  placeholder={t('placeholders.vkn')}
                   style={{
                     width: '100%',
                     padding: '12px',
@@ -605,7 +609,7 @@ const CompanyIdentification: React.FC = () => {
                   fontFamily: 'Inter',
                   fontSize: '14px'
                 }}>
-                  Firma E-posta
+                  {t('labels.companyEmail')}
                 </label>
                 <input
                   type="email"
@@ -709,7 +713,7 @@ const CompanyIdentification: React.FC = () => {
                   fontFamily: 'Inter',
                   fontSize: '14px'
                 }}>
-                  VKN
+                  {t('labels.vkn')}
                 </label>
                 <input
                   type="text"
@@ -764,7 +768,7 @@ const CompanyIdentification: React.FC = () => {
                   fontFamily: 'Inter',
                   fontSize: '14px'
                 }}>
-                  Firma E-posta
+                  {t('labels.companyEmail')}
                 </label>
                 <input
                   type="email"
@@ -854,7 +858,7 @@ const CompanyIdentification: React.FC = () => {
               fontSize: '18px',
               fontWeight: 600
             }}>
-              Firma Sil
+              {t('titles.deleteCompany')}
             </h3>
             <p style={{
               margin: '0 0 20px 0',
@@ -900,7 +904,7 @@ const CompanyIdentification: React.FC = () => {
                   cursor: 'pointer'
                 }}
               >
-                Sil
+                {t('buttons.delete')}
               </button>
             </div>
           </div>
@@ -997,7 +1001,7 @@ const CompanyIdentification: React.FC = () => {
                   color: 'white'
                 }}
               >
-                Tamam
+                {t('buttons.ok')}
               </button>
             </div>
           </div>

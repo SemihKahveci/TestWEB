@@ -34,7 +34,7 @@ interface Organization {
 }
 
 const CompetencySettings: React.FC = () => {
-  const { language, t } = useLanguage();
+  const { t } = useLanguage();
   const [competencies, setCompetencies] = useState<Competency[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
@@ -52,29 +52,27 @@ const CompetencySettings: React.FC = () => {
   const [isImporting, setIsImporting] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const formatTemplate = (template: string, params: Record<string, string | number>) =>
+    Object.entries(params).reduce(
+      (text, [key, value]) => text.replace(new RegExp(`\\{${key}\\}`, 'g'), String(value)),
+      template
+    );
+
   const formatPositionPlaceholder = (count: number) =>
-    language === 'en'
-      ? `${t('labels.selectPosition')} (${count} available)`
-      : `${t('labels.selectPosition')} (${count} pozisyon mevcut)`;
+    formatTemplate(t('labels.selectPositionAvailable'), { count });
 
   const formatNoResultsText = (term: string, emptyKey: string) => {
     if (term) {
-      return language === 'en'
-        ? `No results found for "${term}"`
-        : `"${term}" için arama sonucu bulunamadı`;
+      return formatTemplate(t('labels.noSearchResults'), { query: term });
     }
     return t(emptyKey);
   };
 
   const formatSearchResultsCount = (term: string, count: number) =>
-    language === 'en'
-      ? `${count} results found for "${term}"`
-      : `"${term}" için ${count} sonuç bulundu`;
+    formatTemplate(t('labels.searchResultsCount'), { term, count });
 
   const formatImportSuccess = (count: number) =>
-    language === 'en'
-      ? `${count} competencies imported successfully!`
-      : `Başarıyla ${count} yetkinlik import edildi!`;
+    formatTemplate(t('messages.competenciesImportSuccess'), { count });
   
   // Pagination states
   const [currentPage, setCurrentPage] = useState(1);
@@ -950,7 +948,7 @@ const CompetencySettings: React.FC = () => {
                     fontWeight: 400,
                     lineHeight: '28px'
                   }}>
-                    Andron Games
+                    {t('labels.adminUser')}
                   </div>
                   <div style={{
                     color: '#8A92A6',
@@ -959,7 +957,7 @@ const CompetencySettings: React.FC = () => {
                     fontWeight: 400,
                     lineHeight: '16.90px'
                   }}>
-                    Founder
+                    {t('labels.hrManager')}
                   </div>
                 </div>
               </div>

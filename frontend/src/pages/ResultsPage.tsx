@@ -69,23 +69,23 @@ const ResultsPage: React.FC = () => {
   const formatMinMaxError = (label: string) =>
     `${label}: ${t('errors.minLessThanMax')}`;
 
+  const formatTemplate = (template: string, params: Record<string, string | number>) =>
+    Object.entries(params).reduce(
+      (text, [key, value]) => text.replace(new RegExp(`\\{${key}\\}`, 'g'), String(value)),
+      template
+    );
+
   const formatRangeInfo = (start: number, end: number, total: number) =>
-    language === 'en'
-      ? `${start}-${end} of ${total} records`
-      : `${start}-${end} arası, toplam ${total} kayıt`;
+    formatTemplate(t('labels.recordsRange'), { start, end, total });
 
   const formatGroupCount = (count: number) =>
-    language === 'en' ? `(${count} results)` : `(${count} sonuç)`;
+    formatTemplate(t('labels.resultsCount'), { count });
 
   const formatNoSearchResults = (query: string) =>
-    language === 'en'
-      ? `No search results for "${query}"`
-      : `"${query}" için arama sonucu bulunamadı`;
+    formatTemplate(t('labels.noSearchResults'), { query });
 
   const formatExcelFileName = (dateStr: string, timeStr: string) =>
-    language === 'en'
-      ? `Andron_Competency_Results_${dateStr}_${timeStr}.xlsx`
-      : `Andron_Yetkinlik_Sonuçları_${dateStr}_${timeStr}.xlsx`;
+    formatTemplate(t('labels.excelFileName'), { date: dateStr, time: timeStr });
 
   const parseDateInput = (value: string) => {
     if (!value) return null;
@@ -254,7 +254,8 @@ const ResultsPage: React.FC = () => {
 
   const formatDate = (dateString: string) => {
     if (!dateString) return '-';
-    return new Date(dateString).toLocaleDateString('tr-TR', {
+    const locale = language === 'en' ? 'en-US' : 'tr-TR';
+    return new Date(dateString).toLocaleDateString(locale, {
       year: 'numeric',
       month: 'long',
       day: 'numeric'
@@ -1328,7 +1329,7 @@ const ResultsPage: React.FC = () => {
                 fontSize: '18px',
                 fontWeight: 600
               }}>
-                Filtrele
+                {t('titles.filtering')}
               </h3>
               <button
                 onClick={closeFilterPopup}
@@ -1367,7 +1368,7 @@ const ResultsPage: React.FC = () => {
                     <span style={{ fontSize: '12px', color: '#6B7280', fontWeight: 500 }}>{t('labels.startDate')}</span>
                     <input
                       type="text"
-                      placeholder={language === 'en' ? 'mm/dd/yyyy' : 'gg.aa.yyyy'}
+                      placeholder={t('placeholders.dateFormat')}
                       inputMode="numeric"
                       value={filters.startDate}
                       onChange={(e) => setFilters({...filters, startDate: e.target.value})}
@@ -1387,7 +1388,7 @@ const ResultsPage: React.FC = () => {
                     <span style={{ fontSize: '12px', color: '#6B7280', fontWeight: 500 }}>{t('labels.endDate')}</span>
                     <input
                       type="text"
-                      placeholder={language === 'en' ? 'mm/dd/yyyy' : 'gg.aa.yyyy'}
+                      placeholder={t('placeholders.dateFormat')}
                       inputMode="numeric"
                       value={filters.endDate}
                       onChange={(e) => setFilters({...filters, endDate: e.target.value})}

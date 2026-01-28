@@ -44,16 +44,18 @@ const GameManagement: React.FC = () => {
   // Error popup states
   const [showErrorPopup, setShowErrorPopup] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
+  const formatTemplate = (template: string, params: Record<string, string | number>) =>
+    Object.entries(params).reduce(
+      (text, [key, value]) => text.replace(new RegExp(`\\{${key}\\}`, 'g'), String(value)),
+      template
+    );
+
   const formatCompanyPlaceholder = (count: number) =>
-    language === 'en'
-      ? `${t('labels.companySelect')} (${count} available)`
-      : `${t('labels.companySelect')} (${count} firma mevcut)`;
+    formatTemplate(t('labels.companySelectAvailable'), { count });
 
   const formatNoResultsText = (term: string) => {
     if (term) {
-      return language === 'en'
-        ? `No results found for "${term}"`
-        : `"${term}" için arama sonucu bulunamadı`;
+      return formatTemplate(t('labels.noSearchResults'), { query: term });
     }
     return t('labels.companyNotFound');
   };
@@ -598,7 +600,7 @@ const GameManagement: React.FC = () => {
                   fontWeight: 400,
                   lineHeight: '28px'
                 }}>
-                  Andron Game
+                  {t('labels.adminUser')}
                 </div>
                 <div style={{
                   color: '#8A92A6',
@@ -607,7 +609,7 @@ const GameManagement: React.FC = () => {
                   fontWeight: 400,
                   lineHeight: '16.90px'
                 }}>
-                  Founder
+                  {t('labels.hrManager')}
                 </div>
               </div>
             </div>
@@ -1954,7 +1956,7 @@ const GameManagement: React.FC = () => {
                     cursor: 'pointer'
                   }}
                 >
-                  Tamam
+                  {t('buttons.ok')}
                 </button>
               </div>
             </div>
@@ -2041,7 +2043,7 @@ const GameManagement: React.FC = () => {
               onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#B91C1C'}
               onMouseOut={(e) => e.currentTarget.style.backgroundColor = '#DC2626'}
             >
-              Tamam
+              {t('buttons.ok')}
             </button>
           </div>
         </div>

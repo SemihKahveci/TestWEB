@@ -251,10 +251,14 @@ const LoginPage: React.FC = () => {
     reset: t('login.updatePassword')
   }[forgotPasswordStep];
 
+  const formatTemplate = (template: string, params: Record<string, string | number>) =>
+    Object.entries(params).reduce(
+      (text, [key, value]) => text.replace(new RegExp(`\\{${key}\\}`, 'g'), String(value)),
+      template
+    );
+
   const formatPasswordMinLength = (minLength: number) =>
-    language === 'en'
-      ? `Password must be at least ${minLength} characters`
-      : `Şifre en az ${minLength} karakter olmalıdır`;
+    formatTemplate(t('password.requirements.minLength'), { count: minLength });
 
   // Şifre validasyon fonksiyonu
   const validatePassword = (password: string) => {
