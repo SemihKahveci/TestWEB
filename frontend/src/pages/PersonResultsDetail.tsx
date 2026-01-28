@@ -820,7 +820,7 @@ const PersonResultsDetail: React.FC = () => {
                   key={`${item.title}-${item.key}`}
                   className={`bg-gradient-to-br ${item.color} rounded-xl shadow-sm p-6 text-white transition-all ${
                     isSelectable ? 'cursor-pointer hover:shadow-md' : ''
-                  } ${isActive ? 'ring-2 ring-white/70 ring-offset-2 ring-offset-gray-50' : ''}`}
+                  } ${isActive ? 'ring-2 ring-white/70 ring-offset-2 ring-offset-gray-50' : 'opacity-60'}`}
                   role={isSelectable ? 'button' : undefined}
                   tabIndex={isSelectable ? 0 : undefined}
                   onClick={() => {
