@@ -464,7 +464,7 @@ const AdminPanel: React.FC = () => {
 
   const handleWord = async (code: string) => {
     try {
-      const response = await fetch(`${API_BASE_URL}/api/evaluation/generateWord`, {
+      const response = await fetch(`${API_BASE_URL}/api/evaluation/generateWordFromTemplate`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
@@ -477,8 +477,21 @@ const AdminPanel: React.FC = () => {
       });
       
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || t('errors.wordDownloadFailed'));
+        let message = t('errors.wordDownloadFailed');
+        try {
+          const errorText = await response.text();
+          if (errorText) {
+            try {
+              const errorData = JSON.parse(errorText);
+              message = errorData?.message || message;
+            } catch {
+              message = errorText;
+            }
+          }
+        } catch {
+          // ignore parse errors
+        }
+        throw new Error(message);
       }
       
       const blob = await response.blob();
@@ -488,10 +501,10 @@ const AdminPanel: React.FC = () => {
       const userResponse = await fetch(`${API_BASE_URL}/api/user-results?code=${code}`, {
         credentials: 'include'
       });
-      const userData = await userResponse.json();
+      const userData = await userResponse.json().catch(() => ({}));
       
       let fileName = `${t('labels.evaluationReportFile')}_${code}.docx`;
-      if (userData.success && userData.results && userData.results.length > 0) {
+      if (userData?.success && Array.isArray(userData?.results) && userData.results.length > 0) {
         const user = userData.results[0];
         const date = user.completionDate ? new Date(user.completionDate) : new Date();
         const formattedDate = `${date.getDate().toString().padStart(2, '0')}${(date.getMonth() + 1).toString().padStart(2, '0')}${date.getFullYear()}`;

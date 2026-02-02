@@ -8,10 +8,470 @@ const Game = require('../models/game');
 const { Document, Packer, Paragraph, TextRun, HeadingLevel, AlignmentType, Footer, PageNumber, BorderStyle, Table, TableRow, TableCell, WidthType } = require('docx');
 const PizZip = require('pizzip');
 const Docxtemplater = require('docxtemplater');
+const ImageModule = require('docxtemplater-image-module-free');
+const sharp = require('sharp');
 const { safeLog, getSafeErrorMessage } = require('../utils/helpers');
 const { getCompanyFilter } = require('../middleware/auth');
+const expressionParser = require("docxtemplater/expressions.js");
+const parser = expressionParser.configure({});
 
-const DEFAULT_WORD_TEMPLATE_PATH = path.join(__dirname, '..', 'templates', 'Gelişim Planı Metin_2.docx');
+const DEFAULT_WORD_TEMPLATE_PATH = path.join(__dirname, '..', 'templates', 'Rapor_Taslak_v50_02_02_2025.docx');
+
+function clamp(value, min, max) {
+    return Math.max(min, Math.min(max, value));
+}
+
+function normalizeScore(score) {
+    const parsed = typeof score === 'number' ? score : parseFloat(score);
+    return Number.isFinite(parsed) ? parsed : 0;
+}
+
+function segmentColor(score) {
+    const colors = ['#ff9aa2', '#ffb78a', '#ffe08a', '#bfe9a8', '#79d7a1'];
+    const s = clamp(score, 0, 100);
+    const idx = Math.min(4, Math.floor(s / 20));
+    return colors[idx];
+}
+
+function makeGraphSvg(score, W = 71, H = 21) {
+    const colors = ['#ff9aa2', '#ffb78a', '#ffe08a', '#bfe9a8', '#79d7a1'];
+
+    const s = clamp(score, 0, 100);
+    const segW = W / 5;
+    const r = Math.max(5, Math.floor(H * 0.45));
+    const cx = clamp((s / 100) * W, r, W - r);
+    const cy = Math.floor(H / 2);
+    const cFill = segmentColor(s);
+    const fontSize = Math.max(7, Math.floor(H * 0.45));
+
+    const gap = 2;
+    const rects = colors
+        .map((c, i) => {
+            const x = i * segW;
+            return `<rect x="${x}" y="${Math.floor(H * 0.25)}" width="${segW - gap}" height="${Math.floor(H * 0.5)}" rx="0" fill="${c}"/>`;
+        })
+        .join('\n');
+
+    const circle = `
+        <circle cx="${cx}" cy="${cy}" r="${r}" fill="white" stroke="${cFill}" stroke-width="2"/>
+        <text x="${cx}" y="${cy + Math.floor(fontSize * 0.35)}"
+              text-anchor="middle"
+              font-family="Arial"
+              font-size="${fontSize}"
+              font-weight="700"
+              fill="${cFill}">${Math.round(s)}</text>
+    `;
+
+    return `
+    <svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}">
+        ${rects}
+        ${circle}
+    </svg>`;
+}
+
+async function graphPngBuffer(score, W = 71, H = 21) {
+    const svg = makeGraphSvg(score, W, H);
+    const density = 300;
+    const pngBuffer = await sharp(Buffer.from(svg), { density })
+        .png()
+        .toBuffer();
+    return pngBuffer;
+}
+
+function makeGaugeSvg(score, W = 260, H = 140) {
+    const colors = ['#ff9aa2', '#ffb78a', '#ffe08a', '#bfe9a8', '#79d7a1'];
+    const s = clamp(score, 0, 100);
+
+    const padding = Math.max(4, Math.floor(Math.min(W, H) * 0.06));
+    const topPadding = Math.max(padding, Math.floor(padding * 1.5));
+    const cx = Math.floor(W / 2);
+    const outerR = Math.max(
+        1,
+        Math.min(Math.floor((W - padding * 2) / 2), H - topPadding - padding)
+    );
+    const thickness = Math.max(8, Math.floor(outerR * 0.28));
+    const cy = H - padding - Math.max(4, Math.floor(thickness * 0.35));
+    const innerR = Math.max(outerR - thickness, 1);
+
+    const angleStart = Math.PI;
+    const angleEnd = 0;
+    const segmentAngle = (angleStart - angleEnd) / 5;
+    const gapAngle = Math.PI * 0.01;
+
+    const polar = (r, a) => ({
+        x: cx + r * Math.cos(a),
+        y: cy - r * Math.sin(a)
+    });
+
+    const midR = outerR - thickness / 2;
+    const segments = colors
+        .map((c, i) => {
+            const a0 = angleStart - segmentAngle * i;
+            const a1 = angleStart - segmentAngle * (i + 1);
+            const start = a0 - gapAngle;
+            const end = a1 + gapAngle;
+            const p1 = polar(midR, start);
+            const p2 = polar(midR, end);
+            const sweep = start > end ? 1 : 0;
+            return `<path d="M ${p1.x} ${p1.y} A ${midR} ${midR} 0 0 ${sweep} ${p2.x} ${p2.y}" stroke="${c}" stroke-width="${thickness}" fill="none" stroke-linecap="butt"/>`;
+        })
+        .join('\n');
+
+    const needleAngle = angleStart - (s / 100) * (angleStart - angleEnd);
+    const needleLen = Math.max(1, innerR - Math.floor(thickness * 0.35));
+    const nx = cx + needleLen * Math.cos(needleAngle);
+    const ny = cy - needleLen * Math.sin(needleAngle);
+    const baseRadius = Math.max(4, Math.floor(thickness * 0.35));
+    const baseOffset = Math.max(2, Math.floor(baseRadius * 0.6));
+    const bx = cx + baseOffset * Math.cos(needleAngle);
+    const by = cy - baseOffset * Math.sin(needleAngle);
+    const perpX = Math.cos(needleAngle + Math.PI / 2);
+    const perpY = -Math.sin(needleAngle + Math.PI / 2);
+    const halfWidth = Math.max(3, Math.floor(thickness * 0.2));
+    const p1x = bx + perpX * halfWidth;
+    const p1y = by + perpY * halfWidth;
+    const p2x = bx - perpX * halfWidth;
+    const p2y = by - perpY * halfWidth;
+    const needle = `
+        <polygon points="${p1x},${p1y} ${p2x},${p2y} ${nx},${ny}" fill="#9e9e9e" />
+        <circle cx="${cx}" cy="${cy}" r="${baseRadius}" fill="white" stroke="#9e9e9e" stroke-width="${Math.max(2, Math.floor(baseRadius * 0.35))}"/>
+    `;
+
+    return `
+    <svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}">
+        ${segments}
+        ${needle}
+    </svg>`;
+}
+
+async function gaugePngBuffer(score, W = 260, H = 140) {
+    const svg = makeGaugeSvg(score, W, H);
+    const density = 300;
+    const pngBuffer = await sharp(Buffer.from(svg), { density })
+        .png()
+        .toBuffer();
+    return pngBuffer;
+}
+
+function cmToPx(cm, dpi = 180) {
+    return Math.round((cm / 2.54) * dpi);
+}
+
+function normalizeTagKey(key = '') {
+    const normalized = String(key)
+        .replace(/[çÇ]/g, 'c')
+        .replace(/[ğĞ]/g, 'g')
+        .replace(/[ıİ]/g, 'i')
+        .replace(/[öÖ]/g, 'o')
+        .replace(/[şŞ]/g, 's')
+        .replace(/[üÜ]/g, 'u');
+    return normalized
+        .replace(/[^A-Za-z0-9_]+/g, '_')
+        .replace(/_{2,}/g, '_')
+        .replace(/^_+|_+$/g, '');
+}
+
+function addSafeKeys(source = {}, target = {}) {
+    Object.keys(source).forEach((key) => {
+        const safeKey = normalizeTagKey(key);
+        if (safeKey && safeKey !== key && !(safeKey in target)) {
+            target[safeKey] = source[key];
+        }
+    });
+    return target;
+}
+
+function parseInterviewQuestionsText(text = '') {
+    if (!text || text === '-') return [];
+    const lines = text
+        .split(/\r?\n+/)
+        .map((line) => line.trim())
+        .filter(Boolean);
+
+    const rows = [];
+    let current = { developmentArea: '', interviewQuestion: '', followUpQuestions: [] };
+    let mode = null;
+
+    const flush = () => {
+        if (current.developmentArea || current.interviewQuestion || current.followUpQuestions.length > 0) {
+            rows.push({
+                developmentArea: current.developmentArea || '',
+                interviewQuestion: current.interviewQuestion || '',
+                followUpQuestions: current.followUpQuestions
+            });
+        }
+        current = { developmentArea: '', interviewQuestion: '', followUpQuestions: [] };
+        mode = null;
+    };
+
+    lines.forEach((line) => {
+        if (/^(başlık|baslik)\b/i.test(line)) {
+            const cleaned = line.replace(/^(başlık|baslik)\b\s*[:\-–—]?\s*/i, '').trim();
+            if (!cleaned) return;
+            line = cleaned;
+        }
+
+        const areaMatch = line.match(/^(gelişim alanı|gelisim alani)\b\s*[:\-–—]?\s*(.*)$/i);
+        if (areaMatch) {
+            if (current.developmentArea || current.interviewQuestion || current.followUpQuestions.length) {
+                flush();
+            }
+            current.developmentArea = areaMatch[2]?.trim() || '';
+            mode = 'area';
+            return;
+        }
+
+        const questionMatch = line.match(/^(mülakat sorusu|mulakat sorusu)\b\s*[:\-–—]?\s*(.*)$/i);
+        if (questionMatch) {
+            current.interviewQuestion = questionMatch[2]?.trim() || '';
+            mode = 'question';
+            return;
+        }
+
+        const followMatch = line.match(/^(devam sorusu|takip sorusu)\b\s*[:\-–—]?\s*(.*)$/i);
+        if (followMatch) {
+            const followText = followMatch[2]?.trim();
+            if (followText) {
+                current.followUpQuestions.push(followText);
+            }
+            mode = 'followup';
+            return;
+        }
+
+        if (mode === 'area') {
+            current.developmentArea = current.developmentArea ? `${current.developmentArea} ${line}` : line;
+            return;
+        }
+
+        if (mode === 'question') {
+            current.interviewQuestion = current.interviewQuestion
+                ? `${current.interviewQuestion} ${line}`
+                : line;
+            return;
+        }
+
+        if (mode === 'followup') {
+            current.followUpQuestions.push(line);
+            return;
+        }
+
+        if (!current.developmentArea) {
+            current.developmentArea = line;
+        } else if (!current.interviewQuestion) {
+            current.interviewQuestion = line;
+        } else {
+            current.followUpQuestions.push(line);
+        }
+    });
+
+    flush();
+    return rows;
+}
+
+function buildInterviewColumnText(rows = [], accessor) {
+    return rows
+        .map((row) => {
+            const value = accessor(row);
+            return value ? String(value).trim() : '';
+        })
+        .filter(Boolean)
+        .join('\n');
+}
+
+function parseDevelopmentPlanText(text = '') {
+    if (!text || text === '-') return [];
+    const lines = text
+        .split(/\r?\n+/)
+        .map((line) => line.trim())
+        .filter(Boolean);
+
+    const sections = [];
+    let currentSection = null;
+    let currentItem = null;
+    let expectSectionTitle = false;
+    let expectItemTitle = false;
+
+    const isAltHeadingMarker = (value) => /^(alt başlık|alt baslik)\b/i.test(value);
+    const isSubHeading = (value) =>
+        /^(hedef|günlük kullanım|gunluk kullanim|günlük işlerde kullanım|gunluk islerde kullanim|eğitim önerileri|egitim onerileri|eğitimler|egitimler|podcast\s*&\s*tedx|podcast|uygulama)\b/i.test(value);
+    const isInlineContentMarker = (value) =>
+        /^(günlük soru|gunluk soru|aylık|aylik|çeyrek bazlı|ceyrek bazli)\b/i.test(value);
+
+    const normalizeSectionTitle = (value) => {
+        const withoutPrefix = value.replace(/^(gelişim planı|gelisim plani)\b\s*[:\-–—]?\s*/i, '');
+        return withoutPrefix.replace(/^\d+[\).\s\-–—:]*/g, '').trim();
+    };
+
+    const normalizeLine = (value) => value.replace(/^\uFEFF/, '').trim();
+
+    const flushItem = () => {
+        if (!currentSection || !currentItem) return;
+        if (currentItem.title || currentItem.content.length > 0) {
+            currentSection.items.push(currentItem);
+        }
+        currentItem = null;
+    };
+
+    const flushSection = () => {
+        flushItem();
+        if (currentSection && (currentSection.title || currentSection.items.length > 0)) {
+            sections.push(currentSection);
+        }
+        currentSection = null;
+    };
+
+    lines.forEach((rawLine) => {
+        const line = normalizeLine(rawLine);
+        const planMatch = line.match(/^(?:\d+[\).\s-]*)?(gelişim planı|gelisim plani)\b\s*[:\-–—]?\s*(.*)$/i);
+        if (planMatch) {
+            flushSection();
+            const rawTitle = planMatch[2]?.trim() || '';
+            const titleText = normalizeSectionTitle(rawTitle);
+            currentSection = { title: titleText, items: [] };
+            expectSectionTitle = !titleText;
+            return;
+        }
+
+        if (expectSectionTitle) {
+            const cleanedTitle = normalizeSectionTitle(line);
+            if (!currentSection) {
+                currentSection = { title: cleanedTitle, items: [] };
+            } else {
+                currentSection.title = cleanedTitle;
+            }
+            expectSectionTitle = false;
+            return;
+        }
+
+        if (expectItemTitle) {
+            if (!currentItem) {
+                currentItem = { title: rawLine, content: [] };
+            } else {
+                currentItem.title = rawLine;
+            }
+            expectItemTitle = false;
+            return;
+        }
+
+        const lineMatch = line.match(/^(.+?)\s*[:\-–—]\s*(.*)$/);
+        const headingCandidate = (lineMatch ? lineMatch[1] : line).trim();
+        const contentTail = lineMatch ? lineMatch[2]?.trim() : '';
+
+        if (isInlineContentMarker(headingCandidate)) {
+            if (!currentItem) {
+                currentItem = { title: '', content: [] };
+            }
+            const inlineText = contentTail ? `${headingCandidate}: ${contentTail}` : headingCandidate;
+            currentItem.content.push(inlineText);
+            return;
+        }
+
+        if (isAltHeadingMarker(headingCandidate)) {
+            flushItem();
+            if (!currentItem) {
+                currentItem = { title: contentTail, content: [] };
+            } else {
+                currentItem.title = contentTail;
+            }
+            if (!contentTail) {
+                expectItemTitle = true;
+            }
+            return;
+        }
+
+        if (isSubHeading(headingCandidate)) {
+            flushItem();
+            currentItem = { title: headingCandidate, content: [] };
+            if (contentTail) {
+                currentItem.content.push(contentTail);
+            }
+            return;
+        }
+
+        if (!currentSection) {
+            currentSection = { title: '', items: [] };
+        }
+
+        if (!currentItem) {
+            currentItem = { title: headingCandidate, content: [] };
+            if (contentTail && contentTail !== headingCandidate) {
+                currentItem.content.push(contentTail);
+            }
+            return;
+        }
+
+        currentItem.content.push(line);
+    });
+
+    flushSection();
+    return sections;
+}
+
+function buildDevelopmentPlanText(items = []) {
+    const lines = [];
+    items.forEach((item) => {
+        if (Array.isArray(item.content) && item.content.length > 0) {
+            item.content.forEach((line) => {
+                if (line) lines.push(line);
+            });
+            return;
+        }
+        if (item.title) {
+            lines.push(item.title);
+        }
+    });
+    return lines.join('\n');
+}
+
+function extractPlanTitleFromText(text = '') {
+    if (!text || typeof text !== 'string') return '';
+    const lines = text
+        .split(/\r?\n+/)
+        .map((line) => line.trim())
+        .filter(Boolean);
+    for (let i = 0; i < lines.length; i++) {
+        const line = lines[i];
+        const match = line.match(/(?:\d+[\).\s-]*)?(gelişim planı|gelisim plani)\b\s*[:\-–—]?\s*(.*)$/i);
+        if (!match) continue;
+        const inlineTitle = (match[2] || '').trim();
+        if (inlineTitle) {
+            const firstPart = inlineTitle.split('|')[0].trim();
+            return firstPart;
+        }
+        const nextLine = lines[i + 1];
+        if (nextLine) return nextLine.trim();
+        return '';
+    }
+    return '';
+}
+
+function buildDevelopmentPlanTitle(sections = [], rawText = '') {
+    const normalizePlanTitle = (value = '') =>
+        value.replace(/^(gelişim planı|gelisim plani)\b\s*[:\-–—]?\s*/i, '').trim();
+    if (Array.isArray(sections) && sections.length > 0) {
+        const firstSection = sections[0];
+        if (firstSection?.title) return firstSection.title;
+        const items = Array.isArray(firstSection?.items) ? firstSection.items : [];
+        const planTitleItem = items.find((item) => /^(gelişim planı|gelisim plani)\b/i.test(item.title || ''));
+        const fromContent = planTitleItem?.content?.[0]?.trim();
+        if (fromContent) return fromContent;
+        const fromTitle = normalizePlanTitle(planTitleItem?.title || '');
+        if (fromTitle) return fromTitle;
+    }
+    const fallback = extractPlanTitleFromText(rawText);
+    if (fallback) return fallback;
+    if (rawText && typeof rawText === 'string') {
+        const match = rawText.match(/gelişim planı\s*[:\-–—]\s*([^|\r\n]+)/i);
+        if (match && match[1]) {
+            return match[1].trim();
+        }
+    }
+    return '';
+}
+
+const FALLBACK_PNG_BASE64 =
+    'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO5n0WAAAAAASUVORK5CYII=';
+const FALLBACK_PNG_BUFFER = Buffer.from(FALLBACK_PNG_BASE64, 'base64');
 
 const evaluationController = {
     async getEvaluationById(req, res) {
@@ -197,9 +657,307 @@ const evaluationController = {
             const completionYear = completionDate && !Number.isNaN(completionDate.getTime())
                 ? completionDate.toLocaleDateString('tr-TR', { year: 'numeric' })
                 : '-';
+            const completionFullDate = completionDate && !Number.isNaN(completionDate.getTime())
+                ? completionDate.toLocaleDateString('tr-TR', { day: 'numeric', month: 'long', year: 'numeric' })
+                : '-';
+            const currentYear = new Date().getFullYear().toString();
             const gameDuration = formatDuration(userCodeData.sentDate, completionDate);
 
-            const templatePayload = {
+            const gamesForAverage = await Game.find({ playerCode: userCode, ...companyFilter }).lean();
+            const venusGame = (gamesForAverage || []).find((game) => game.section === '0' || game.section === 0);
+            const titanGame = (gamesForAverage || []).find((game) => game.section === '1' || game.section === 1);
+
+            const customerFocusScore = (venusGame ? venusGame.customerFocusScore : null) || userCodeData.customerFocusScore || '-';
+            const uncertaintyScore = (venusGame ? venusGame.uncertaintyScore : null) || userCodeData.uncertaintyScore || '-';
+            const ieScore = (titanGame ? titanGame.ieScore : null) || userCodeData.ieScore || '-';
+            const idikScore = (titanGame ? titanGame.idikScore : null) || userCodeData.idikScore || '-';
+
+            const scoreValues = [customerFocusScore, uncertaintyScore, ieScore, idikScore]
+                .map((score) => {
+                    const parsed = typeof score === 'number' ? score : parseFloat(score);
+                    return Number.isFinite(parsed) ? parsed : null;
+                })
+                .filter((value) => value !== null);
+            const averageScoreValue = scoreValues.length
+                ? Math.round(scoreValues.reduce((sum, value) => sum + value, 0) / scoreValues.length)
+                : null;
+            const averageScoreText = averageScoreValue !== null ? averageScoreValue.toString() : '-';
+
+            const graphWidthPx = cmToPx(6.0);
+            const graphHeightPx = cmToPx(0.45);
+            const gaugeWidthPx = cmToPx(6.0);
+            const gaugeHeightPx = cmToPx(3.0);
+
+            const [g1Buffer, g2Buffer, g3Buffer, g4Buffer, avrGaugeBuffer] = await Promise.all([
+                graphPngBuffer(normalizeScore(customerFocusScore), graphWidthPx, graphHeightPx),
+                graphPngBuffer(normalizeScore(uncertaintyScore), graphWidthPx, graphHeightPx),
+                graphPngBuffer(normalizeScore(ieScore), graphWidthPx, graphHeightPx),
+                graphPngBuffer(normalizeScore(idikScore), graphWidthPx, graphHeightPx),
+                gaugePngBuffer(averageScoreValue !== null ? averageScoreValue : 0, gaugeWidthPx, gaugeHeightPx)
+            ]);
+
+            const competencyConfigs = [
+                { key: 'Yetkinlik_1', name: 'Uyumluluk ve Dayanıklılık', type: 'BY' },
+                { key: 'Yetkinlik_2', name: 'Müşteri Odaklılık', type: 'MO' },
+                { key: 'Yetkinlik_3', name: 'İnsanları Etkileme', type: 'IE' },
+                { key: 'Yetkinlik_4', name: 'Güven Veren İşbirliği ve Sinerji', type: 'IDIK' }
+            ];
+
+            const getResultByType = (type) =>
+                evaluationResults.find((result) => result?.type === type || result?.data?.type === type);
+            const getExecutiveSummaryStrengths = (result) =>
+                result?.data && typeof result.data === 'object'
+                    ? result.data['Yönetici özeti güçlü yönleri'] || ''
+                    : '';
+            const getExecutiveSummaryDevelopment = (result) =>
+                result?.data && typeof result.data === 'object'
+                    ? result.data['Yönetici özeti geliştirme'] || ''
+                    : '';
+            const getGeneralEvaluation = (result) =>
+                result?.data && typeof result.data === 'object'
+                    ? result.data['Genel Değerlendirme'] || ''
+                    : '';
+            const getStrengths = (result) =>
+                result?.data && typeof result.data === 'object'
+                    ? result.data['Güçlü Yönler'] || ''
+                    : '';
+            const getDevelopmentAreas = (result) =>
+                result?.data && typeof result.data === 'object'
+                    ? result.data['Gelişim Alanları'] || ''
+                    : '';
+            const getInterviewQuestions = (result) =>
+                result?.data && typeof result.data === 'object'
+                    ? result.data['Mülakat Soruları'] || ''
+                    : '';
+            const getWhyTheseQuestions = (result) =>
+                result?.data && typeof result.data === 'object'
+                    ? result.data['Neden Bu Sorular?'] || ''
+                    : '';
+            const getDevelopmentPlan = (result) =>
+                result?.data && typeof result.data === 'object'
+                    ? result.data['Gelişim Önerileri -1'] ||
+                      result.data['Gelişim Önerileri'] ||
+                      result.data['Gelisim Onerileri'] ||
+                      result.data['Gelişim Planı'] ||
+                      result.data['Gelisim Plani'] ||
+                      ''
+                    : '';
+
+            const competencyPayload = {};
+            competencyConfigs.forEach((config) => {
+                const result = getResultByType(config.type);
+                competencyPayload[config.key] = config.name;
+                competencyPayload[config.key.toLowerCase()] = config.name;
+                competencyPayload[`${config.key}_executive_summary_strenghts`] = getExecutiveSummaryStrengths(result);
+                competencyPayload[`${config.key}_executive_summary_development`] = getExecutiveSummaryDevelopment(result);
+                competencyPayload[`${config.key.toLowerCase()}_executive_summary_strenghts`] =
+                    getExecutiveSummaryStrengths(result);
+                competencyPayload[`${config.key.toLowerCase()}_executive_summary_development`] =
+                    getExecutiveSummaryDevelopment(result);
+            });
+
+            const competencyItems = competencyConfigs
+                .map((config) => {
+                    const result = getResultByType(config.type);
+                    if (!result) return null;
+                    return {
+                        name: config.name,
+                        generalEvaluation: getGeneralEvaluation(result)
+                    };
+                })
+                .filter(Boolean);
+
+            const developmentItems = competencyConfigs
+                .map((config) => {
+                    const result = getResultByType(config.type);
+                    if (!result) return null;
+                    return {
+                        name: config.name,
+                        strengths: getStrengths(result),
+                        development: getDevelopmentAreas(result)
+                    };
+                })
+                .filter(Boolean);
+
+            const interviewItems = competencyConfigs
+                .map((config) => {
+                    const result = getResultByType(config.type);
+                    if (!result) return null;
+                    return {
+                        name: config.name,
+                        interviewQuestions: getInterviewQuestions(result),
+                        whyTheseQuestions: getWhyTheseQuestions(result)
+                    };
+                })
+                .filter(Boolean);
+
+            const developmentPlanItems = competencyConfigs
+                .map((config) => {
+                    const result = getResultByType(config.type);
+                    if (!result) return null;
+                    return {
+                        name: config.name,
+                        planText: getDevelopmentPlan(result)
+                    };
+                })
+                .filter(Boolean);
+            safeLog('info', 'development_plan_source debug', developmentPlanItems.map((item) => ({
+                competency_name: item.name,
+                planText: (item.planText || '').slice(0, 60)
+            })));
+
+            const competencyPages = [];
+            for (let i = 0; i < competencyItems.length; i += 2) {
+                const pageIndex = Math.floor(i / 2);
+                const totalPages = Math.ceil(competencyItems.length / 2);
+                const leftItem = competencyItems[i] || { name: '', generalEvaluation: '' };
+                const rightItem = competencyItems[i + 1] || { name: '', generalEvaluation: '' };
+                competencyPages.push({
+                    left: leftItem,
+                    right: rightItem,
+                    left_name: leftItem.name,
+                    left_generalEvaluation: leftItem.generalEvaluation,
+                    right_name: rightItem.name,
+                    right_generalEvaluation: rightItem.generalEvaluation,
+                    pageBreak: pageIndex < totalPages - 1
+                  });
+            }
+
+            const developmentPages = developmentItems.map((item, index) => {
+                const totalPages = developmentItems.length;
+                return {
+                    competency_name: item.name,
+                    left: {
+                        strengths: item.strengths,
+                        development: item.development
+                    },
+                    right: {
+                        development: item.development
+                    },
+                    right_development: item.development,
+                    pageBreak: index < totalPages - 1
+                };
+            });
+            safeLog('info', 'development_pages debug', developmentPages.map((page) => ({
+                competency_name: page.competency_name,
+                left_strengths: (page.left?.strengths || '').slice(0, 40),
+                left_development: (page.left?.development || '').slice(0, 40),
+                right_development: (page.right?.development || '').slice(0, 40),
+                pageBreak: page.pageBreak
+            })));
+
+            const questionPages = interviewItems.map((item, index) => {
+                const totalPages = interviewItems.length;
+                const rows = parseInterviewQuestionsText(item.interviewQuestions);
+                const baslik = buildInterviewColumnText(rows, (row) => row.developmentArea);
+                const mulakat = buildInterviewColumnText(rows, (row) => row.interviewQuestion);
+                const devam = buildInterviewColumnText(rows, (row) => row.followUpQuestions.join(' / '));
+                return {
+                    competency_name: item.name,
+                    interviewQuestions_baslik: baslik,
+                    interviewQuestions_mulakat_sorusu: mulakat,
+                    interviewQuestions_devam_sorusu: devam,
+                    followupQuestions: item.whyTheseQuestions || '',
+                    pageBreak: index < totalPages - 1
+                };
+            });
+            const questionFlat = {};
+            questionPages.forEach((page, index) => {
+                const idx = index + 1;
+                questionFlat[`yetkinlik${idx}_interviewQuestions_baslik`] =
+                    page.interviewQuestions_baslik || '';
+                questionFlat[`yetkinlik${idx}_interviewQuestions_mulakat_sorusu`] =
+                    page.interviewQuestions_mulakat_sorusu || '';
+                questionFlat[`yetkinlik${idx}_interviewQuestions_devam_sorusu`] =
+                    page.interviewQuestions_devam_sorusu || '';
+                questionFlat[`yetkinlik${idx}_followupQuestions`] = page.followupQuestions || '';
+                questionFlat[`yetkinlik${idx}_competency_name`] = page.competency_name || '';
+            });
+            safeLog('info', 'question_pages debug', questionPages.map((page) => ({
+                competency_name: page.competency_name,
+                baslik: (page.interviewQuestions_baslik || '').slice(0, 40),
+                mulakat: (page.interviewQuestions_mulakat_sorusu || '').slice(0, 40),
+                devam: (page.interviewQuestions_devam_sorusu || '').slice(0, 40),
+                followup: (page.followupQuestions || '').slice(0, 40),
+                pageBreak: page.pageBreak
+            })));
+
+            const developmentPlanPages = developmentPlanItems.map((item, index) => {
+                const totalPages = developmentPlanItems.length;
+                const sections = parseDevelopmentPlanText(item.planText || '');
+                const allItems = sections.flatMap((section) => section.items || []);
+                const planTitle = buildDevelopmentPlanTitle(sections, item.planText || '');
+                const planTitleSource = planTitle
+                    ? 'computed'
+                    : (item.planText || '').split(/\r?\n+/).slice(0, 3).join(' | ');
+
+                const isTraining = (value) => /eğitim|egitim/i.test(value);
+                const isDaily = (value) =>
+                    /günlük kullanım|gunluk kullanim|günlük işlerde kullanım|gunluk islerde kullanim/i.test(value);
+                const isPodcast = (value) => /podcast|tedx/i.test(value);
+                const isGoal = (value) => /hedef/i.test(value);
+                const isPractice = (value) => /uygulama/i.test(value);
+
+                const trainingItems = allItems.filter((row) => isTraining(row.title || ''));
+                const dailyItems = allItems.filter((row) => isDaily(row.title || ''));
+                const podcastItems = allItems.filter((row) => isPodcast(row.title || ''));
+                const goalItems = allItems.filter((row) => isGoal(row.title || ''));
+                const practiceItems = allItems.filter((row) => isPractice(row.title || ''));
+
+                const page = {
+                    competency_name: item.name,
+                    gelisim_plani: planTitle || '',
+                    Egitimler: buildDevelopmentPlanText(trainingItems),
+                    GünlükKullanim: buildDevelopmentPlanText(dailyItems),
+                    Podcast_TEDx: buildDevelopmentPlanText(podcastItems),
+                    Hedef_SMARTKP: buildDevelopmentPlanText(goalItems),
+                    Uygulama: buildDevelopmentPlanText(practiceItems),
+                    _planTitleSource: planTitleSource,
+                    pageBreak: index < totalPages - 1
+                };
+                addSafeKeys(page, page);
+                if (!page.GunlukKullanim && page['GünlükKullanim']) {
+                    page.GunlukKullanim = page['GünlükKullanim'];
+                }
+                return page;
+            });
+            safeLog('info', 'development_plan_pages debug', developmentPlanPages.map((page) => ({
+                competency_name: page.competency_name,
+                gelisim_plani: (page.gelisim_plani || '').slice(0, 40),
+                planTitleSource: (page._planTitleSource || '').slice(0, 80),
+                Egitimler: (page.Egitimler || '').slice(0, 40),
+                GünlükKullanim: (page.GünlükKullanim || '').slice(0, 40),
+                Podcast_TEDx: (page.Podcast_TEDx || '').slice(0, 40),
+                Hedef_SMARTKP: (page.Hedef_SMARTKP || '').slice(0, 40),
+                Uygulama: (page.Uygulama || '').slice(0, 40),
+                pageBreak: page.pageBreak
+            })));
+            const firstPage = competencyPages[0] || {
+                left: { name: '', generalEvaluation: '' },
+                right: { name: '', generalEvaluation: '' },
+                left_name: '',
+                right_name: '',
+                left_generalEvaluation: '',
+                right_generalEvaluation: ''
+            };
+            safeLog('info', 'yetkinlik_pages debug', competencyPages.map((page) => ({
+                left: page.left?.name || '',
+                right: page.right?.name || '',
+                pageBreak: page.pageBreak
+            })));
+
+            const baseTemplatePayload = {
+                ...competencyPayload,
+                'ortalama_puan': averageScoreText,
+                'kullanıcı_adı': userCodeData.name || '-',
+                'pozisyon': '',
+                'oyun_tamamlanma_tarih': completionFullDate,
+                'yıl': currentYear,
+                'g1': g1Buffer,
+                'g2': g2Buffer,
+                'g3': g3Buffer,
+                'g4': g4Buffer,
+                'avrScoreTable': avrGaugeBuffer,
                 'Kullanıcı Adı Soyadı': userCodeData.name || '-',
                 'Kullanıcı Pozisyon': '',
                 'Kullanıcı Pozisyon ': '',
@@ -211,9 +969,29 @@ const evaluationController = {
                 'Podcast': developmentSections.Podcast || '',
                 'Eğitim_Önerileri': developmentSections.Eğitim_Önerileri || '',
                 'Uygulama': developmentSections.Uygulama || '',
-                'Hedef': developmentSections.Hedef || '',
-                ...templateData
+                'Hedef': developmentSections.Hedef || ''
             };
+
+            const templatePayload = {
+                ...baseTemplatePayload,
+                'kullanici_adi': baseTemplatePayload['kullanıcı_adı'],
+                'yil': baseTemplatePayload['yıl'],
+                ...templateData,
+                ...questionFlat,
+                'g1': 'g1',
+                'g2': 'g2',
+                'g3': 'g3',
+                'g4': 'g4',
+                'avrScoreTable': 'avrScoreTable',
+                'yetkinlik_pages': competencyPages,
+                'development_pages': developmentPages,
+                'question_pages': questionPages,
+                'questions_pages': questionPages,
+                'development_plan_pages': developmentPlanPages
+            };
+
+            addSafeKeys(baseTemplatePayload, templatePayload);
+            addSafeKeys(templateData, templatePayload);
 
             const resolvedTemplatePath = templatePath || process.env.WORD_TEMPLATE_PATH || DEFAULT_WORD_TEMPLATE_PATH;
             if (!fs.existsSync(resolvedTemplatePath)) {
@@ -222,18 +1000,91 @@ const evaluationController = {
                     templatePath: resolvedTemplatePath
                 });
             }
+            safeLog('info', `Word template path: ${resolvedTemplatePath}`);
+
+            const graphBuffers = {
+                g1: g1Buffer,
+                g2: g2Buffer,
+                g3: g3Buffer,
+                g4: g4Buffer,
+                avrScoreTable: avrGaugeBuffer
+            };
+            console.error('Word image debug init', {
+                graphWidthPx,
+                graphHeightPx,
+                gaugeWidthPx,
+                gaugeHeightPx,
+                g1: Buffer.isBuffer(g1Buffer) ? g1Buffer.length : 0,
+                g2: Buffer.isBuffer(g2Buffer) ? g2Buffer.length : 0,
+                g3: Buffer.isBuffer(g3Buffer) ? g3Buffer.length : 0,
+                g4: Buffer.isBuffer(g4Buffer) ? g4Buffer.length : 0,
+                avrScoreTable: Buffer.isBuffer(avrGaugeBuffer) ? avrGaugeBuffer.length : 0
+            });
+            const imageModule = new ImageModule({
+                centered: false,
+                fileType: 'docx',
+                getImage: (tagValue, tagName) => {
+                    console.error('Word image debug (getImage)', {
+                        tagName,
+                        tagValue: String(tagValue),
+                        isBuffer: Buffer.isBuffer(tagValue)
+                    });
+                    
+                    let resolved = tagValue;
+                    if (!Buffer.isBuffer(resolved)) {
+                        const valueKey = typeof tagValue === 'string' ? tagValue.trim() : '';
+                        const nameKey = typeof tagName === 'string' ? tagName.trim() : '';
+                        const lastToken = nameKey ? nameKey.split(/\s+/).pop() : '';
+                        resolved =
+                            graphBuffers[valueKey] ||
+                            graphBuffers[nameKey] ||
+                            graphBuffers[lastToken] ||
+                            null;
+                    }
+                    if (!Buffer.isBuffer(resolved)) {
+                        resolved = FALLBACK_PNG_BUFFER;
+                    }
+                    const size = Buffer.isBuffer(resolved) ? resolved.length : 0;
+                    console.error('Word image debug (resolved)', {
+                        tagName,
+                        tagValue: String(tagValue),
+                        bufferSize: size
+                    });
+                    return resolved;
+                },
+                getSize: (img, tagValue, tagName) => {
+                    const key =
+                        (typeof tagValue === 'string' ? tagValue.trim() : '') ||
+                        (typeof tagName === 'string' ? tagName.trim() : '');
+                    const size =
+                        key === 'avrScoreTable' ? [gaugeWidthPx, gaugeHeightPx] : [graphWidthPx, graphHeightPx];
+                    console.error('Word image debug (getSize)', {
+                        tagName,
+                        tagValue: String(tagValue),
+                        size
+                    });
+                    return size;
+                }
+            });
 
             const content = fs.readFileSync(resolvedTemplatePath, 'binary');
             const zip = new PizZip(content);
             const doc = new Docxtemplater(zip, {
                 paragraphLoop: true,
                 linebreaks: true,
+                modules: [imageModule],
                 delimiters: { start: '{{', end: '}}' },
-                nullGetter: () => ''
+                nullGetter: () => "",
+                parser,
             });
+            const templateText = doc.getFullText ? doc.getFullText() : '';
+            if (templateText) {
+                safeLog('info', `Word template g1 tag found: ${templateText.includes('g1')}`);
+            }
 
             doc.setData(templatePayload);
             doc.render();
+            safeLog('info', 'Word render success');
 
             const buffer = doc.getZip().generate({ type: 'nodebuffer' });
 
@@ -242,8 +1093,20 @@ const evaluationController = {
             res.send(buffer);
         } catch (error) {
             safeLog('error', 'Word template oluşturma hatası', error);
-            const message = getSafeErrorMessage ? getSafeErrorMessage(error) : 'Word oluşturulurken bir hata oluştu';
-            res.status(500).json({ message });
+            const defaultMessage = 'Word oluşturulurken bir hata oluştu';
+            let detailedMessage = getSafeErrorMessage ? getSafeErrorMessage(error, defaultMessage) : defaultMessage;
+
+            if (error && error.properties && Array.isArray(error.properties.errors)) {
+                safeLog('error', 'Word template errors', error.properties.errors);
+                const docxErrors = error.properties.errors
+                    .map((err) => err.properties && err.properties.explanation ? err.properties.explanation : err.message)
+                    .filter(Boolean);
+                if (docxErrors.length > 0) {
+                    detailedMessage = docxErrors.join(' | ');
+                }
+            }
+
+            res.status(500).json({ message: detailedMessage });
         }
     },
 
