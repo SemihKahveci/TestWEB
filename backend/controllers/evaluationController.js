@@ -15,7 +15,7 @@ const { getCompanyFilter } = require('../middleware/auth');
 const expressionParser = require("docxtemplater/expressions.js");
 const parser = expressionParser.configure({});
 
-const DEFAULT_WORD_TEMPLATE_PATH = path.join(__dirname, '..', 'templates', 'Degerlendirme_Merkez_Raporu_v18.docx');
+const DEFAULT_WORD_TEMPLATE_PATH = path.join(__dirname, '..', 'templates', 'Degerlendirme_Merkez_Raporu_v19.docx');
 
 function clamp(value, min, max) {
     return Math.max(min, Math.min(max, value));
@@ -276,6 +276,25 @@ function buildInterviewColumnText(rows = [], accessor) {
         })
         .filter(Boolean)
         .join('\n');
+}
+
+function stripTitleDetailLabels(text = '') {
+    if (!text || text === '-') return text;
+    const lines = text
+        .split(/\r?\n+/)
+        .map((line) => line.trim())
+        .filter(Boolean);
+    const cleaned = [];
+    lines.forEach((line) => {
+        const match = line.match(/^(başlık|baslik|detay)\b\s*[:\-–—]?\s*(.*)$/i);
+        if (match) {
+            const rest = (match[2] || '').trim();
+            if (rest) cleaned.push(rest);
+            return;
+        }
+        cleaned.push(line);
+    });
+    return cleaned.join('\n');
 }
 
 function parseDevelopmentPlanText(text = '') {
@@ -781,7 +800,7 @@ const evaluationController = {
                     if (!result) return null;
                     return {
                         name: config.name,
-                        strengths: getStrengths(result),
+                        strengths: stripTitleDetailLabels(getStrengths(result)),
                         development: getDevelopmentAreas(result),
                         score: getScoreByType(config.type)
                     };
