@@ -580,75 +580,6 @@ const evaluationController = {
         }
     },
 
-    async generateWord(req, res) {
-        try {
-            const { userCode, selectedOptions } = req.body;
-          
-            // Seçenekleri kontrol et
-            const options = {
-                generalEvaluation: selectedOptions.generalEvaluation === true || selectedOptions.generalEvaluation === 'true',
-                strengths: selectedOptions.strengths === true || selectedOptions.strengths === 'true',
-                development: selectedOptions.development === true || selectedOptions.development === 'true',
-                interviewQuestions: selectedOptions.interviewQuestions === true || selectedOptions.interviewQuestions === 'true',
-                whyTheseQuestions: selectedOptions.whyTheseQuestions === true || selectedOptions.whyTheseQuestions === 'true',
-                developmentSuggestions: selectedOptions.developmentSuggestions === true || selectedOptions.developmentSuggestions === 'true'
-            };
-
-            // Multi-tenant: companyId kontrolü yap
-            const companyFilter = getCompanyFilter(req);
-            const companyId = companyFilter.companyId || null;
-            // Tüm oyunları bul (2 gezegen için 2 farklı Game kaydı olabilir)
-            const games = await Game.find({ playerCode: userCode, ...companyFilter });
-            if (!games || games.length === 0) {
-                // Game bulunamazsa EvaluationResult koleksiyonunda ara
-                const evaluation = await EvaluationResult.findOne({ ID: userCode, ...companyFilter });
-                if (!evaluation) {
-                    return res.status(404).json({ message: 'Değerlendirme bulunamadı' });
-                }
-                return generateAndSendWord(evaluation, options, res, userCode, companyId);
-            }
-            
-            // Tüm oyunlardaki evaluationResult'ları birleştir
-            let allEvaluationResults = [];
-            for (const game of games) {
-                if (game.evaluationResult) {
-                    // Eğer evaluationResult bir dizi ise (çoklu rapor)
-                    if (Array.isArray(game.evaluationResult)) {
-                        allEvaluationResults = allEvaluationResults.concat(game.evaluationResult);
-                    } else {
-                        // Eğer tek rapor ise diziye çevir
-                        allEvaluationResults.push(game.evaluationResult);
-                    }
-                }
-            }
-
-            // Eğer hiç evaluationResult bulunamadıysa, EvaluationResult koleksiyonunda ara
-            if (allEvaluationResults.length === 0) {
-                const evaluation = await EvaluationResult.findOne({ ID: userCode, ...companyFilter });
-                if (!evaluation) {
-                    return res.status(404).json({ message: 'Değerlendirme bulunamadı' });
-                }
-                return generateAndSendWord(evaluation, options, res, userCode, companyId);
-            }
-
-            // Benzersiz raporları filtrele (aynı ID'li raporları tekrarlama)
-            const uniqueResults = [];
-            const seenIds = new Set();
-            
-            for (const result of allEvaluationResults) {
-                if (result.data && result.data.ID && !seenIds.has(result.data.ID)) {
-                    seenIds.add(result.data.ID);
-                    uniqueResults.push(result);
-                }
-            }
-
-            return generateAndSendWord(uniqueResults, options, res, userCode, companyId);
-        } catch (error) {
-            safeLog('error', 'Word oluşturma hatası', error);
-            res.status(500).json({ message: 'Word oluşturulurken bir hata oluştu' });
-        }
-    },
-
     async generateWordFromTemplate(req, res) {
         try {
             const { userCode, templateData = {}, templatePath } = req.body;
@@ -801,7 +732,7 @@ const evaluationController = {
                     return {
                         name: config.name,
                         strengths: stripTitleDetailLabels(getStrengths(result)),
-                        development: getDevelopmentAreas(result),
+                        development: stripTitleDetailLabels(getDevelopmentAreas(result)),
                         score: getScoreByType(config.type)
                     };
                 })
