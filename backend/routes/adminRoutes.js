@@ -52,8 +52,8 @@ router.get('/:id', isSuperAdmin, adminController.getAdminById);
 router.post('/evaluations', adminController.createEvaluation);
 router.delete('/evaluations/:id', adminController.deleteEvaluation);
 
-// PDF oluşturma ve gönderme
-router.post('/generate-pdf', adminController.generateAndSendPDF);
+// PDF oluşturma ve gönderme (Word -> PDF)
+router.post('/generate-pdf', evaluationController.generatePDF);
 
 // Kod gönderme
 router.post('/send-code', adminController.sendCode);
