@@ -31,6 +31,7 @@ const PersonResults: React.FC = () => {
   const [showPDFPreview, setShowPDFPreview] = useState(false);
   const [pdfPreviewUrl, setPdfPreviewUrl] = useState<string | null>(null);
   const [isPdfLoading, setIsPdfLoading] = useState(false);
+  const [pdfProgress, setPdfProgress] = useState(0);
   const [hasRestoredState, setHasRestoredState] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
@@ -253,6 +254,21 @@ const PersonResults: React.FC = () => {
       setIsPdfLoading(false);
     }
   };
+
+  useEffect(() => {
+    if (!isPdfLoading) {
+      setPdfProgress(0);
+      return;
+    }
+    setPdfProgress(5);
+    const interval = setInterval(() => {
+      setPdfProgress((prev) => {
+        const next = prev + Math.floor(Math.random() * 8) + 3;
+        return next >= 95 ? 95 : next;
+      });
+    }, 500);
+    return () => clearInterval(interval);
+  }, [isPdfLoading]);
 
   const scoreCards = [
     { title: t('competency.uncertainty'), icon: 'fa-chart-line', badge: '+12%', color: 'from-blue-500 to-blue-600', competency: 'uyumluluk' },
@@ -786,7 +802,7 @@ const PersonResults: React.FC = () => {
                       onClick={handleDownloadPdf}
                       disabled={isPdfLoading || !latestUser}
                     >
-                      <i className="fa-solid fa-download mr-2" /> {t('buttons.downloadPdf')}
+                      <i className="fa-solid fa-download mr-2" /> {isPdfLoading ? t('labels.pdfLoading') : t('buttons.downloadPdf')}
                     </button>
                     <button className="px-6 py-3 bg-white border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors flex items-center font-medium">
                       <i className="fa-solid fa-share-nodes mr-2" /> {t('buttons.share')}
@@ -829,6 +845,26 @@ const PersonResults: React.FC = () => {
                 </div>
               )}
             </div>
+          </div>
+        </div>
+      )}
+
+      {isPdfLoading && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/50">
+          <div className="bg-white rounded-xl shadow-xl w-[90%] max-w-[420px] p-6 text-center">
+            <div className="text-base font-semibold text-gray-900 mb-2">
+              {t('labels.pdfLoading')}
+            </div>
+            <div className="text-sm text-gray-500 mb-4">
+              PDF oluşturuluyor ve indiriliyor, lütfen bekleyin.
+            </div>
+            <div className="w-full h-2 bg-gray-200 rounded-full overflow-hidden">
+              <div
+                className="h-full bg-blue-500 transition-all duration-300"
+                style={{ width: `${pdfProgress}%` }}
+              />
+            </div>
+            <div className="mt-2 text-xs text-gray-500">{pdfProgress}%</div>
           </div>
         </div>
       )}

@@ -51,6 +51,8 @@ const AdminPanel: React.FC = () => {
   const [results, setResults] = useState<UserResult[]>([]);
   const [filteredResults, setFilteredResults] = useState<UserResult[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isPdfDownloading, setIsPdfDownloading] = useState(false);
+  const [pdfProgress, setPdfProgress] = useState(0);
   const [isSearching, setIsSearching] = useState(false); // Backend arama için ayrı loading
   const [searchTerm, setSearchTerm] = useState('');
   const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('');
@@ -249,6 +251,21 @@ const AdminPanel: React.FC = () => {
     // Search/filter değiştiğinde sayfayı 1'e resetle
     setCurrentPage(1);
   }, [debouncedSearchTerm, statusFilter, showExpiredWarning]);
+
+  useEffect(() => {
+    if (!isPdfDownloading) {
+      setPdfProgress(0);
+      return;
+    }
+    setPdfProgress(5);
+    const interval = setInterval(() => {
+      setPdfProgress((prev) => {
+        const next = prev + Math.floor(Math.random() * 8) + 3;
+        return next >= 95 ? 95 : next;
+      });
+    }, 500);
+    return () => clearInterval(interval);
+  }, [isPdfDownloading]);
 
   // Sayfa değiştiğinde seçimleri temizle
   useEffect(() => {
@@ -1703,6 +1720,7 @@ const AdminPanel: React.FC = () => {
                   if (!selectedUser) return;
                   
                   try {
+                    setIsPdfDownloading(true);
                     // PDFOptions'ı URLSearchParams için uygun formata çevir
                     const pdfParams = new URLSearchParams();
                     Object.entries(pdfOptions).forEach(([key, value]) => {
@@ -1734,8 +1752,11 @@ const AdminPanel: React.FC = () => {
                   } catch (error) {
                     console.error('PDF önizleme hatası:', error);
                     showMessage(t('labels.error'), formatPdfPreviewFailed((error as Error).message), 'error');
+                  } finally {
+                    setIsPdfDownloading(false);
                   }
                 }}
+                disabled={isPdfDownloading}
                 style={{
                   padding: '8px 16px',
                   background: '#10B981',
@@ -1755,6 +1776,7 @@ const AdminPanel: React.FC = () => {
                   if (!selectedUser) return;
                   
                   try {
+                    setIsPdfDownloading(true);
                     const response = await fetch(`${API_BASE_URL}/api/evaluation/generatePDF`, {
                       method: 'POST',
                       headers: {
@@ -1801,6 +1823,8 @@ const AdminPanel: React.FC = () => {
                   } catch (error) {
                     console.error('PDF indirme hatası:', error);
                     showMessage(t('labels.error'), formatPdfDownloadFailed((error as Error).message), 'error');
+                  } finally {
+                    setIsPdfDownloading(false);
                   }
                 }}
                 style={{
@@ -1815,7 +1839,7 @@ const AdminPanel: React.FC = () => {
                   fontWeight: 500
                 }}
               >
-                {t('labels.downloadReport')}
+                {isPdfDownloading ? t('labels.pdfLoading') : t('labels.downloadReport')}
               </button>
             </div>
           </div>
@@ -2039,6 +2063,52 @@ const AdminPanel: React.FC = () => {
                   {t('labels.noAnswersFound')}
                 </div>
               )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {isPdfDownloading && (
+        <div style={{
+          position: 'fixed',
+          inset: 0,
+          background: 'rgba(0, 0, 0, 0.5)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 2000
+        }}>
+          <div style={{
+            width: '90%',
+            maxWidth: '420px',
+            background: 'white',
+            borderRadius: '12px',
+            padding: '24px',
+            boxShadow: '0 10px 30px rgba(0, 0, 0, 0.2)',
+            textAlign: 'center'
+          }}>
+            <div style={{ fontSize: '16px', fontWeight: 600, marginBottom: '8px' }}>
+              {t('labels.pdfLoading')}
+            </div>
+            <div style={{ fontSize: '13px', color: '#6B7280', marginBottom: '16px' }}>
+              PDF oluşturuluyor ve indiriliyor, lütfen bekleyin.
+            </div>
+            <div style={{
+              width: '100%',
+              height: '8px',
+              background: '#E5E7EB',
+              borderRadius: '999px',
+              overflow: 'hidden'
+            }}>
+              <div style={{
+                width: `${pdfProgress}%`,
+                height: '100%',
+                background: '#3B82F6',
+                transition: 'width 0.4s ease'
+              }} />
+            </div>
+            <div style={{ marginTop: '10px', fontSize: '12px', color: '#6B7280' }}>
+              {pdfProgress}%
             </div>
           </div>
         </div>
