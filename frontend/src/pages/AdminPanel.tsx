@@ -1657,6 +1657,7 @@ const AdminPanel: React.FC = () => {
               padding: '20px',
               overflowY: 'auto'
             }}>
+              {/*
               <label style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '10px 12px', borderRadius: '8px', border: '1px solid #E5E7EB', background: '#F9FAFB', marginBottom: '12px' }}>
                 <input
                   type="checkbox"
@@ -1707,14 +1708,12 @@ const AdminPanel: React.FC = () => {
                 />
                 <span style={{ fontSize: '14px', color: '#232D42' }}>{t('labels.developmentPlan')}</span>
               </label>
-            </div>
-            <div style={{
-              padding: '20px',
-              borderTop: '1px solid #E9ECEF',
-              display: 'flex',
-              gap: '12px',
-              justifyContent: 'flex-end'
-            }}>
+              */}
+              <div style={{
+                display: 'flex',
+                gap: '12px',
+                justifyContent: 'center'
+              }}>
               <button
                 onClick={async () => {
                   if (!selectedUser) return;
@@ -1841,6 +1840,7 @@ const AdminPanel: React.FC = () => {
               >
                 {isPdfDownloading ? t('labels.pdfLoading') : t('labels.downloadReport')}
               </button>
+              </div>
             </div>
           </div>
         </div>
