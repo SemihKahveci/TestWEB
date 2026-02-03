@@ -15,7 +15,7 @@ const { getCompanyFilter } = require('../middleware/auth');
 const expressionParser = require("docxtemplater/expressions.js");
 const parser = expressionParser.configure({});
 
-const DEFAULT_WORD_TEMPLATE_PATH = path.join(__dirname, '..', 'templates', 'Rapor_Taslak_v50_02_02_2025.docx');
+const DEFAULT_WORD_TEMPLATE_PATH = path.join(__dirname, '..', 'templates', 'Degerlendirme_Merkez_Raporu_v16.docx');
 
 function clamp(value, min, max) {
     return Math.max(min, Math.min(max, value));
@@ -689,8 +689,8 @@ const evaluationController = {
             const gaugeHeightPx = cmToPx(3.0);
 
             const [g1Buffer, g2Buffer, g3Buffer, g4Buffer, avrGaugeBuffer] = await Promise.all([
-                graphPngBuffer(normalizeScore(customerFocusScore), graphWidthPx, graphHeightPx),
                 graphPngBuffer(normalizeScore(uncertaintyScore), graphWidthPx, graphHeightPx),
+                graphPngBuffer(normalizeScore(customerFocusScore), graphWidthPx, graphHeightPx),
                 graphPngBuffer(normalizeScore(ieScore), graphWidthPx, graphHeightPx),
                 graphPngBuffer(normalizeScore(idikScore), graphWidthPx, graphHeightPx),
                 gaugePngBuffer(averageScoreValue !== null ? averageScoreValue : 0, gaugeWidthPx, gaugeHeightPx)
@@ -756,13 +756,21 @@ const evaluationController = {
                     getExecutiveSummaryDevelopment(result);
             });
 
+            const getScoreByType = (type) => {
+                if (type === 'BY') return uncertaintyScore;
+                if (type === 'MO') return customerFocusScore;
+                if (type === 'IE') return ieScore;
+                if (type === 'IDIK') return idikScore;
+                return null;
+            };
             const competencyItems = competencyConfigs
                 .map((config) => {
                     const result = getResultByType(config.type);
                     if (!result) return null;
                     return {
                         name: config.name,
-                        generalEvaluation: getGeneralEvaluation(result)
+                        generalEvaluation: getGeneralEvaluation(result),
+                        score: getScoreByType(config.type)
                     };
                 })
                 .filter(Boolean);
@@ -813,8 +821,8 @@ const evaluationController = {
                 const leftItem = competencyItems[i] || { name: '', generalEvaluation: '' };
                 const rightItem = competencyItems[i + 1] || { name: '', generalEvaluation: '' };
                 competencyPages.push({
-                    left: leftItem,
-                    right: rightItem,
+                    left: { ...leftItem },
+                    right: { ...rightItem },
                     left_name: leftItem.name,
                     left_generalEvaluation: leftItem.generalEvaluation,
                     right_name: rightItem.name,
@@ -822,6 +830,42 @@ const evaluationController = {
                     pageBreak: pageIndex < totalPages - 1
                   });
             }
+            const pageGraphPromises = [];
+            const pageGraphKeys = [];
+            competencyPages.forEach((page, pageIndex) => {
+                if (page.left && page.left.score !== null && page.left.score !== undefined) {
+                    const key = `left_t1_${pageIndex}`;
+                    page.left.t1 = key;
+                    pageGraphKeys.push(key);
+                    pageGraphPromises.push(
+                        graphPngBuffer(normalizeScore(page.left.score), graphWidthPx, graphHeightPx).then((buf) => ({
+                            key,
+                            buf
+                        }))
+                    );
+                } else if (page.left) {
+                    page.left.t1 = '';
+                }
+
+                if (page.right && page.right.score !== null && page.right.score !== undefined) {
+                    const key = `right_t1_${pageIndex}`;
+                    page.right.t1 = key;
+                    pageGraphKeys.push(key);
+                    pageGraphPromises.push(
+                        graphPngBuffer(normalizeScore(page.right.score), graphWidthPx, graphHeightPx).then((buf) => ({
+                            key,
+                            buf
+                        }))
+                    );
+                } else if (page.right) {
+                    page.right.t1 = '';
+                }
+            });
+            const pageGraphResults = await Promise.all(pageGraphPromises);
+            const pageGraphBuffers = pageGraphResults.reduce((acc, item) => {
+                acc[item.key] = item.buf;
+                return acc;
+            }, {});
 
             const developmentPages = developmentItems.map((item, index) => {
                 const totalPages = developmentItems.length;
@@ -1007,7 +1051,8 @@ const evaluationController = {
                 g2: g2Buffer,
                 g3: g3Buffer,
                 g4: g4Buffer,
-                avrScoreTable: avrGaugeBuffer
+                avrScoreTable: avrGaugeBuffer,
+                ...pageGraphBuffers
             };
             console.error('Word image debug init', {
                 graphWidthPx,
