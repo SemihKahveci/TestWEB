@@ -10,6 +10,8 @@ const PizZip = require('pizzip');
 const Docxtemplater = require('docxtemplater');
 const ImageModule = require('docxtemplater-image-module-free');
 const sharp = require('sharp');
+const libreofficeConvert = require('libreoffice-convert');
+const util = require('util');
 const { safeLog, getSafeErrorMessage } = require('../utils/helpers');
 const { getCompanyFilter } = require('../middleware/auth');
 const expressionParser = require("docxtemplater/expressions.js");
@@ -513,67 +515,49 @@ const evaluationController = {
 
     async generatePDF(req, res) {
         try {
-            const { userCode, selectedOptions } = req.body;
-          
-            // Seçenekleri kontrol et
-            const options = {
-                generalEvaluation: selectedOptions.generalEvaluation === true || selectedOptions.generalEvaluation === 'true',
-                strengths: selectedOptions.strengths === true || selectedOptions.strengths === 'true',
-                development: selectedOptions.development === true || selectedOptions.development === 'true',
-                interviewQuestions: selectedOptions.interviewQuestions === true || selectedOptions.interviewQuestions === 'true',
-                whyTheseQuestions: selectedOptions.whyTheseQuestions === true || selectedOptions.whyTheseQuestions === 'true',
-                developmentSuggestions: selectedOptions.developmentSuggestions === true || selectedOptions.developmentSuggestions === 'true'
+            const { userCode, templateData = {}, templatePath } = req.body;
+
+            if (!userCode) {
+                return res.status(400).json({ message: 'userCode alanı zorunludur' });
+            }
+
+            const convertAsync = util.promisify(libreofficeConvert.convert);
+            const originalBody = req.body;
+            const mockRes = {
+                statusCode: 200,
+                buffer: null,
+                errorPayload: null,
+                setHeader: () => {},
+                status(code) {
+                    this.statusCode = code;
+                    return this;
+                },
+                json(payload) {
+                    this.errorPayload = payload;
+                    return payload;
+                },
+                send(data) {
+                    this.buffer = data;
+                    return data;
+                }
             };
 
-            // Multi-tenant: companyId kontrolü yap
-            const companyFilter = getCompanyFilter(req);
-            const companyId = companyFilter.companyId || null;
-            // Tüm oyunları bul (2 gezegen için 2 farklı Game kaydı olabilir)
-            const games = await Game.find({ playerCode: userCode, ...companyFilter });
-            if (!games || games.length === 0) {
-                // Game bulunamazsa EvaluationResult koleksiyonunda ara
-                const evaluation = await EvaluationResult.findOne({ ID: userCode, ...companyFilter });
-                if (!evaluation) {
-                    return res.status(404).json({ message: 'Değerlendirme bulunamadı' });
-                }
-                return generateAndSendPDF(evaluation, options, res, userCode, companyId);
-            }
-            
-            // Tüm oyunlardaki evaluationResult'ları birleştir
-            let allEvaluationResults = [];
-            for (const game of games) {
-                if (game.evaluationResult) {
-                    // Eğer evaluationResult bir dizi ise (çoklu rapor)
-                    if (Array.isArray(game.evaluationResult)) {
-                        allEvaluationResults = allEvaluationResults.concat(game.evaluationResult);
-                    } else {
-                        // Eğer tek rapor ise diziye çevir
-                        allEvaluationResults.push(game.evaluationResult);
-                    }
-                }
+            try {
+                req.body = { userCode, templateData, templatePath };
+                await evaluationController.generateWordFromTemplate(req, mockRes);
+            } finally {
+                req.body = originalBody;
             }
 
-            // Eğer hiç evaluationResult bulunamadıysa, EvaluationResult koleksiyonunda ara
-            if (allEvaluationResults.length === 0) {
-                const evaluation = await EvaluationResult.findOne({ ID: userCode, ...companyFilter });
-                if (!evaluation) {
-                    return res.status(404).json({ message: 'Değerlendirme bulunamadı' });
-                }
-                return generateAndSendPDF(evaluation, options, res, userCode, companyId);
+            if (!mockRes.buffer) {
+                const message = mockRes.errorPayload?.message || 'Word oluşturulurken bir hata oluştu';
+                return res.status(mockRes.statusCode || 500).json({ message });
             }
 
-            // Benzersiz raporları filtrele (aynı ID'li raporları tekrarlama)
-            const uniqueResults = [];
-            const seenIds = new Set();
-            
-            for (const result of allEvaluationResults) {
-                if (result.data && result.data.ID && !seenIds.has(result.data.ID)) {
-                    seenIds.add(result.data.ID);
-                    uniqueResults.push(result);
-                }
-            }
-
-            return generateAndSendPDF(uniqueResults, options, res, userCode, companyId);
+            const pdfBuffer = await convertAsync(mockRes.buffer, '.pdf', undefined);
+            res.setHeader('Content-Type', 'application/pdf');
+            res.setHeader('Content-Disposition', `attachment; filename=evaluation_${userCode}_template.pdf`);
+            res.send(pdfBuffer);
         } catch (error) {
             safeLog('error', 'PDF oluşturma hatası', error);
             res.status(500).json({ message: 'PDF oluşturulurken bir hata oluştu' });
