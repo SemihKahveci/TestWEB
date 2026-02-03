@@ -15,7 +15,7 @@ const { getCompanyFilter } = require('../middleware/auth');
 const expressionParser = require("docxtemplater/expressions.js");
 const parser = expressionParser.configure({});
 
-const DEFAULT_WORD_TEMPLATE_PATH = path.join(__dirname, '..', 'templates', 'Degerlendirme_Merkez_Raporu_v16.docx');
+const DEFAULT_WORD_TEMPLATE_PATH = path.join(__dirname, '..', 'templates', 'Degerlendirme_Merkez_Raporu_v18.docx');
 
 function clamp(value, min, max) {
     return Math.max(min, Math.min(max, value));
@@ -782,7 +782,8 @@ const evaluationController = {
                     return {
                         name: config.name,
                         strengths: getStrengths(result),
-                        development: getDevelopmentAreas(result)
+                        development: getDevelopmentAreas(result),
+                        score: getScoreByType(config.type)
                     };
                 })
                 .filter(Boolean);
@@ -794,7 +795,8 @@ const evaluationController = {
                     return {
                         name: config.name,
                         interviewQuestions: getInterviewQuestions(result),
-                        whyTheseQuestions: getWhyTheseQuestions(result)
+                        whyTheseQuestions: getWhyTheseQuestions(result),
+                        score: getScoreByType(config.type)
                     };
                 })
                 .filter(Boolean);
@@ -805,7 +807,8 @@ const evaluationController = {
                     if (!result) return null;
                     return {
                         name: config.name,
-                        planText: getDevelopmentPlan(result)
+                        planText: getDevelopmentPlan(result),
+                        score: getScoreByType(config.type)
                     };
                 })
                 .filter(Boolean);
@@ -831,12 +834,10 @@ const evaluationController = {
                   });
             }
             const pageGraphPromises = [];
-            const pageGraphKeys = [];
             competencyPages.forEach((page, pageIndex) => {
                 if (page.left && page.left.score !== null && page.left.score !== undefined) {
                     const key = `left_t1_${pageIndex}`;
                     page.left.t1 = key;
-                    pageGraphKeys.push(key);
                     pageGraphPromises.push(
                         graphPngBuffer(normalizeScore(page.left.score), graphWidthPx, graphHeightPx).then((buf) => ({
                             key,
@@ -850,7 +851,6 @@ const evaluationController = {
                 if (page.right && page.right.score !== null && page.right.score !== undefined) {
                     const key = `right_t1_${pageIndex}`;
                     page.right.t1 = key;
-                    pageGraphKeys.push(key);
                     pageGraphPromises.push(
                         graphPngBuffer(normalizeScore(page.right.score), graphWidthPx, graphHeightPx).then((buf) => ({
                             key,
@@ -861,15 +861,10 @@ const evaluationController = {
                     page.right.t1 = '';
                 }
             });
-            const pageGraphResults = await Promise.all(pageGraphPromises);
-            const pageGraphBuffers = pageGraphResults.reduce((acc, item) => {
-                acc[item.key] = item.buf;
-                return acc;
-            }, {});
 
             const developmentPages = developmentItems.map((item, index) => {
                 const totalPages = developmentItems.length;
-                return {
+                const page = {
                     competency_name: item.name,
                     left: {
                         strengths: item.strengths,
@@ -881,6 +876,21 @@ const evaluationController = {
                     right_development: item.development,
                     pageBreak: index < totalPages - 1
                 };
+                if (item.score !== null && item.score !== undefined) {
+                    const key = `development_t1_${index}`;
+                    page.t1 = key;
+                    page.left.t1 = key;
+                    pageGraphPromises.push(
+                        graphPngBuffer(normalizeScore(item.score), graphWidthPx, graphHeightPx).then((buf) => ({
+                            key,
+                            buf
+                        }))
+                    );
+                } else {
+                    page.t1 = '';
+                    page.left.t1 = '';
+                }
+                return page;
             });
             safeLog('info', 'development_pages debug', developmentPages.map((page) => ({
                 competency_name: page.competency_name,
@@ -904,6 +914,23 @@ const evaluationController = {
                     followupQuestions: item.whyTheseQuestions || '',
                     pageBreak: index < totalPages - 1
                 };
+            });
+            questionPages.forEach((page, index) => {
+                const item = interviewItems[index];
+                if (item && item.score !== null && item.score !== undefined) {
+                    const key = `question_t1_${index}`;
+                    page.t1 = key;
+                    page.left = { ...(page.left || {}), t1: key };
+                    pageGraphPromises.push(
+                        graphPngBuffer(normalizeScore(item.score), graphWidthPx, graphHeightPx).then((buf) => ({
+                            key,
+                            buf
+                        }))
+                    );
+                } else {
+                    page.t1 = '';
+                    page.left = { ...(page.left || {}), t1: '' };
+                }
             });
             const questionFlat = {};
             questionPages.forEach((page, index) => {
@@ -963,8 +990,27 @@ const evaluationController = {
                 if (!page.GunlukKullanim && page['GünlükKullanim']) {
                     page.GunlukKullanim = page['GünlükKullanim'];
                 }
+                if (item.score !== null && item.score !== undefined) {
+                    const key = `devplan_t1_${index}`;
+                    page.t1 = key;
+                    page.left = { ...(page.left || {}), t1: key };
+                    pageGraphPromises.push(
+                        graphPngBuffer(normalizeScore(item.score), graphWidthPx, graphHeightPx).then((buf) => ({
+                            key,
+                            buf
+                        }))
+                    );
+                } else {
+                    page.t1 = '';
+                    page.left = { ...(page.left || {}), t1: '' };
+                }
                 return page;
             });
+            const pageGraphResults = await Promise.all(pageGraphPromises);
+            const pageGraphBuffers = pageGraphResults.reduce((acc, item) => {
+                acc[item.key] = item.buf;
+                return acc;
+            }, {});
             safeLog('info', 'development_plan_pages debug', developmentPlanPages.map((page) => ({
                 competency_name: page.competency_name,
                 gelisim_plani: (page.gelisim_plani || '').slice(0, 40),
