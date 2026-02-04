@@ -45,6 +45,10 @@ const PersonResultsDetail: React.FC = () => {
   const [latestUser, setLatestUser] = useState<UserResult | null>(null);
   const [latestHistory, setLatestHistory] = useState<UserResult[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [isPdfLoading, setIsPdfLoading] = useState(false);
+  const [pdfProgress, setPdfProgress] = useState(0);
+  const [pdfSizeLabel, setPdfSizeLabel] = useState<string | null>(null);
+  const [pdfPageCountLabel, setPdfPageCountLabel] = useState<string | null>(null);
   const [hasExplicitUser, setHasExplicitUser] = useState(false);
   const [reportDetails, setReportDetails] = useState<Record<string, ReportDetail>>({});
   const [openDevPlans, setOpenDevPlans] = useState<Record<string, boolean>>({});
@@ -112,12 +116,29 @@ const PersonResultsDetail: React.FC = () => {
     return `Q${quarter} ${date.getFullYear()}`;
   };
 
+  const formatFileSize = (bytes?: number | null) => {
+    if (!bytes || bytes <= 0) return '-';
+    const kb = bytes / 1024;
+    if (kb < 1024) return `${Math.round(kb)} KB`;
+    const mb = kb / 1024;
+    return `${mb.toFixed(1).replace('.', ',')} MB`;
+  };
+
   const competencyOptions = useMemo(() => ([
     { value: 'uyumluluk', label: `${t('competency.uncertainty')} (${formatScoreRaw(latestUser?.uncertaintyScore)})` },
     { value: 'musteri', label: `${t('competency.customerFocus')} (${formatScoreRaw(latestUser?.customerFocusScore)})` },
     { value: 'etkileme', label: `${t('competency.ie')} (${formatScoreRaw(latestUser?.ieScore)})` },
     { value: 'sinerji', label: `${t('competency.idik')} (${formatScoreRaw(latestUser?.idikScore)})` }
   ]), [latestUser, t]);
+
+  const defaultPdfOptions = useMemo(() => ({
+    generalEvaluation: true,
+    strengths: true,
+    interviewQuestions: true,
+    whyTheseQuestions: true,
+    developmentSuggestions: true,
+    competencyScore: true
+  }), []);
 
   const competencyTypeMap = useMemo(() => ({
     uyumluluk: 'BY',
@@ -134,6 +155,95 @@ const PersonResultsDetail: React.FC = () => {
       'dev-plan-3': false
     });
   }, [activeCompetency]);
+
+  const handlePreviewPdf = async () => {
+    if (!latestUser?.code) return;
+    try {
+      setIsPdfLoading(true);
+      const pdfParams = new URLSearchParams();
+      Object.entries(defaultPdfOptions).forEach(([key, value]) => {
+        pdfParams.append(key, value.toString());
+      });
+      const response = await fetch(`/api/preview-pdf?code=${encodeURIComponent(latestUser.code)}&${pdfParams.toString()}`, {
+        credentials: 'include'
+      });
+      if (!response.ok) {
+        throw new Error(t('errors.pdfCreateFailed'));
+      }
+      const headerPages = response.headers.get('x-pdf-pages');
+      const blob = await response.blob();
+      setPdfSizeLabel(formatFileSize(blob.size));
+      if (headerPages && Number.isFinite(Number(headerPages))) {
+        setPdfPageCountLabel(`${Number(headerPages)} ${language === 'tr' ? 'sayfa' : 'pages'}`);
+      }
+      const url = URL.createObjectURL(blob);
+      window.open(url, '_blank', 'noopener,noreferrer');
+      setTimeout(() => URL.revokeObjectURL(url), 60000);
+    } catch (error) {
+      console.error('PDF preview error:', error);
+    } finally {
+      setIsPdfLoading(false);
+    }
+  };
+
+  const handleDownloadPdf = async () => {
+    if (!latestUser?.code) return;
+    try {
+      setIsPdfLoading(true);
+      const response = await fetch('/api/evaluation/generatePDF', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        credentials: 'include',
+        body: JSON.stringify({
+          userCode: latestUser.code,
+          selectedOptions: defaultPdfOptions
+        })
+      });
+      if (!response.ok) {
+        throw new Error(t('errors.pdfCreateFailed'));
+      }
+      const headerPages = response.headers.get('x-pdf-pages');
+      const blob = await response.blob();
+      setPdfSizeLabel(formatFileSize(blob.size));
+      if (headerPages && Number.isFinite(Number(headerPages))) {
+        setPdfPageCountLabel(`${Number(headerPages)} ${language === 'tr' ? 'sayfa' : 'pages'}`);
+      }
+      const url = URL.createObjectURL(blob);
+      const date = latestUser.completionDate ? new Date(latestUser.completionDate) : new Date();
+      const formattedDate = `${date.getDate().toString().padStart(2, '0')}${(date.getMonth() + 1)
+        .toString()
+        .padStart(2, '0')}${date.getFullYear()}`;
+      const safeName = (latestUser.name || t('labels.user')).replace(/\s+/g, '_');
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `ANDRON_${t('labels.assessmentReport')}_${safeName}_${formattedDate}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+    } catch (error) {
+      console.error('PDF download error:', error);
+    } finally {
+      setIsPdfLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (!isPdfLoading) {
+      setPdfProgress(0);
+      return;
+    }
+    setPdfProgress(5);
+    const interval = setInterval(() => {
+      setPdfProgress((prev) => {
+        const next = prev + Math.floor(Math.random() * 8) + 3;
+        return next >= 95 ? 95 : next;
+      });
+    }, 500);
+    return () => clearInterval(interval);
+  }, [isPdfLoading]);
 
   useEffect(() => {
     const state = location.state as {
@@ -1323,14 +1433,19 @@ const PersonResultsDetail: React.FC = () => {
 
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
                 {[
-                  { title: t('labels.viewOnline'), desc: t('labels.viewOnlineDesc'), color: 'bg-blue-600 hover:bg-blue-700', icon: 'fa-eye' },
-                  { title: t('labels.downloadReport'), desc: t('labels.downloadPdfDesc'), color: 'bg-green-600 hover:bg-green-700', icon: 'fa-download' },
-                  { title: t('labels.shareReport'), desc: t('labels.shareReportDesc'), color: 'bg-purple-600 hover:bg-purple-700', icon: 'fa-share-nodes' }
+                  { title: t('labels.viewOnline'), desc: t('labels.viewOnlineDesc'), color: 'bg-blue-600 hover:bg-blue-700', icon: 'fa-eye', iconColor: 'text-blue-600', action: handlePreviewPdf },
+                  { title: t('labels.downloadReport'), desc: t('labels.downloadPdfDesc'), color: 'bg-green-600 hover:bg-green-700', icon: 'fa-download', iconColor: 'text-green-600', action: handleDownloadPdf },
+                  { title: t('labels.shareReport'), desc: t('labels.shareReportDesc'), color: 'bg-purple-600 hover:bg-purple-700', icon: 'fa-share-nodes', iconColor: 'text-purple-600' }
                 ].map((card) => (
-                  <button key={card.title} className={`${card.color} text-white rounded-xl p-6 text-left transition-colors group`}>
+                  <button
+                    key={card.title}
+                    className={`${card.color} text-white rounded-xl p-6 text-left transition-colors group ${card.action ? 'disabled:opacity-60 disabled:cursor-not-allowed' : ''}`}
+                    onClick={card.action}
+                    disabled={!!card.action && (isPdfLoading || !latestUser)}
+                  >
                     <div className="flex items-center justify-between mb-4">
-                      <div className="w-12 h-12 bg-white bg-opacity-20 rounded-lg flex items-center justify-center">
-                        <i className={`fa-solid ${card.icon} text-2xl`} />
+                      <div className="w-12 h-12 bg-white rounded-lg flex items-center justify-center shadow-sm">
+                        <i className={`fa-solid ${card.icon} text-2xl ${card.iconColor || 'text-white'}`} />
                       </div>
                       <i className="fa-solid fa-arrow-right text-xl opacity-0 group-hover:opacity-100 transition-opacity" />
                     </div>
@@ -1345,10 +1460,10 @@ const PersonResultsDetail: React.FC = () => {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   {[
                     { label: t('labels.reportTypeLabel'), value: t('labels.reportTypeValue') },
-                    { label: t('labels.assessmentPeriodLabel'), value: t('labels.assessmentPeriodValue') },
+                    { label: t('labels.assessmentPeriodLabel'), value: formatQuarterLabel(latestUser?.completionDate || latestUser?.sentDate) },
                     { label: t('labels.completionDate'), value: formatDateLong(latestUser?.completionDate) },
-                    { label: t('labels.reportPagesLabel'), value: t('labels.reportPagesValue') },
-                    { label: t('labels.fileSizeLabel'), value: t('labels.fileSizeValue') },
+                    { label: t('labels.reportPagesLabel'), value: pdfPageCountLabel || '-' },
+                    { label: t('labels.fileSizeLabel'), value: pdfSizeLabel || '-' },
                     { label: t('labels.lastModifiedLabel'), value: t('labels.lastModifiedValue') }
                   ].map((item) => (
                     <div key={item.label}>
@@ -1410,6 +1525,26 @@ const PersonResultsDetail: React.FC = () => {
           )}
         </div>
       </div>
+
+      {isPdfLoading && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/50">
+          <div className="bg-white rounded-xl shadow-xl w-[90%] max-w-[420px] p-6 text-center">
+            <div className="text-base font-semibold text-gray-900 mb-2">
+              {t('labels.pdfLoading')}
+            </div>
+            <div className="text-sm text-gray-500 mb-4">
+              PDF oluşturuluyor ve indiriliyor, lütfen bekleyin.
+            </div>
+            <div className="w-full h-2 bg-gray-200 rounded-full overflow-hidden">
+              <div
+                className="h-full bg-blue-500 transition-all duration-300"
+                style={{ width: `${pdfProgress}%` }}
+              />
+            </div>
+            <div className="mt-2 text-xs text-gray-500">{pdfProgress}%</div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
