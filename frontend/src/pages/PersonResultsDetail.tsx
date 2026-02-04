@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useLanguage } from '../contexts/LanguageContext';
 
@@ -49,6 +49,9 @@ const PersonResultsDetail: React.FC = () => {
   const [pdfProgress, setPdfProgress] = useState(0);
   const [pdfSizeLabel, setPdfSizeLabel] = useState<string | null>(null);
   const [pdfPageCountLabel, setPdfPageCountLabel] = useState<string | null>(null);
+  const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const [toastType, setToastType] = useState<'success' | 'error' | 'info'>('info');
+  const toastTimerRef = useRef<number | null>(null);
   const [hasExplicitUser, setHasExplicitUser] = useState(false);
   const [reportDetails, setReportDetails] = useState<Record<string, ReportDetail>>({});
   const [openDevPlans, setOpenDevPlans] = useState<Record<string, boolean>>({});
@@ -122,6 +125,17 @@ const PersonResultsDetail: React.FC = () => {
     if (kb < 1024) return `${Math.round(kb)} KB`;
     const mb = kb / 1024;
     return `${mb.toFixed(1).replace('.', ',')} MB`;
+  };
+
+  const showToast = (message: string, type: 'success' | 'error' | 'info' = 'info') => {
+    if (toastTimerRef.current) {
+      window.clearTimeout(toastTimerRef.current);
+    }
+    setToastMessage(message);
+    setToastType(type);
+    toastTimerRef.current = window.setTimeout(() => {
+      setToastMessage(null);
+    }, 2500);
   };
 
   const competencyOptions = useMemo(() => ([
@@ -255,12 +269,14 @@ const PersonResultsDetail: React.FC = () => {
       }
       if (navigator.clipboard?.writeText) {
         await navigator.clipboard.writeText(shareUrl);
-        window.alert('Paylaşım linki kopyalandı.');
+        showToast('Paylaşım linki kopyalandı.', 'success');
       } else {
         window.prompt('Paylaşım linki', shareUrl);
+        showToast('Paylaşım linki oluşturuldu.', 'info');
       }
     } catch (error) {
       console.error('PDF share error:', error);
+      showToast('Paylaşım linki oluşturulamadı.', 'error');
     } finally {
       setIsPdfLoading(false);
     }
@@ -280,6 +296,14 @@ const PersonResultsDetail: React.FC = () => {
     }, 500);
     return () => clearInterval(interval);
   }, [isPdfLoading]);
+
+  useEffect(() => {
+    return () => {
+      if (toastTimerRef.current) {
+        window.clearTimeout(toastTimerRef.current);
+      }
+    };
+  }, []);
 
   useEffect(() => {
     const state = location.state as {
@@ -1578,6 +1602,22 @@ const PersonResultsDetail: React.FC = () => {
               />
             </div>
             <div className="mt-2 text-xs text-gray-500">{pdfProgress}%</div>
+          </div>
+        </div>
+      )}
+
+      {toastMessage && (
+        <div className="fixed top-6 right-6 z-[70]">
+          <div
+            className={`px-4 py-3 rounded-lg shadow-lg text-sm text-white ${
+              toastType === 'success'
+                ? 'bg-green-600'
+                : toastType === 'error'
+                ? 'bg-red-600'
+                : 'bg-blue-600'
+            }`}
+          >
+            {toastMessage}
           </div>
         </div>
       )}
