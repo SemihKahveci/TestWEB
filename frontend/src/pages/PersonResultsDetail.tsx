@@ -230,6 +230,42 @@ const PersonResultsDetail: React.FC = () => {
     }
   };
 
+  const handleSharePdf = async () => {
+    if (!latestUser?.code) return;
+    try {
+      setIsPdfLoading(true);
+      const response = await fetch('/api/evaluation/share-pdf', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        credentials: 'include',
+        body: JSON.stringify({
+          userCode: latestUser.code,
+          selectedOptions: defaultPdfOptions
+        })
+      });
+      if (!response.ok) {
+        throw new Error(t('errors.pdfCreateFailed'));
+      }
+      const data = await response.json();
+      const shareUrl = data?.url;
+      if (!shareUrl) {
+        throw new Error('Paylaşım linki oluşturulamadı');
+      }
+      if (navigator.clipboard?.writeText) {
+        await navigator.clipboard.writeText(shareUrl);
+        window.alert('Paylaşım linki kopyalandı.');
+      } else {
+        window.prompt('Paylaşım linki', shareUrl);
+      }
+    } catch (error) {
+      console.error('PDF share error:', error);
+    } finally {
+      setIsPdfLoading(false);
+    }
+  };
+
   useEffect(() => {
     if (!isPdfLoading) {
       setPdfProgress(0);
@@ -1435,13 +1471,13 @@ const PersonResultsDetail: React.FC = () => {
                 {[
                   { title: t('labels.viewOnline'), desc: t('labels.viewOnlineDesc'), color: 'bg-blue-600 hover:bg-blue-700', icon: 'fa-eye', iconColor: 'text-blue-600', action: handlePreviewPdf },
                   { title: t('labels.downloadReport'), desc: t('labels.downloadPdfDesc'), color: 'bg-green-600 hover:bg-green-700', icon: 'fa-download', iconColor: 'text-green-600', action: handleDownloadPdf },
-                  { title: t('labels.shareReport'), desc: t('labels.shareReportDesc'), color: 'bg-purple-600 hover:bg-purple-700', icon: 'fa-share-nodes', iconColor: 'text-purple-600' }
+                  { title: t('labels.shareReport'), desc: t('labels.shareReportDesc'), color: 'bg-purple-600 hover:bg-purple-700', icon: 'fa-share-nodes', iconColor: 'text-purple-600', action: handleSharePdf }
                 ].map((card) => (
                   <button
                     key={card.title}
-                    className={`${card.color} text-white rounded-xl p-6 text-left transition-colors group ${card.action ? 'disabled:opacity-60 disabled:cursor-not-allowed' : ''}`}
+                    className={`${card.color} text-white rounded-xl p-6 text-left transition-colors group disabled:opacity-60 disabled:cursor-not-allowed`}
                     onClick={card.action}
-                    disabled={!!card.action && (isPdfLoading || !latestUser)}
+                    disabled={isPdfLoading || !latestUser}
                   >
                     <div className="flex items-center justify-between mb-4">
                       <div className="w-12 h-12 bg-white rounded-lg flex items-center justify-center shadow-sm">

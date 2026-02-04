@@ -201,9 +201,11 @@ apiRouter.get('/evaluation/results', evaluationController.getAllEvaluations);
 apiRouter.get('/evaluation/:id', evaluationController.getEvaluationById);
 apiRouter.post('/evaluation/generatePDF', evaluationController.generatePDF);
 apiRouter.post('/evaluation/generateWordFromTemplate', evaluationController.generateWordFromTemplate);
+apiRouter.post('/evaluation/share-pdf', authenticateAdmin, evaluationController.sharePDF);
 
 // PDF işlemleri
 apiRouter.get('/preview-pdf', evaluationController.previewPDF);
+apiRouter.get('/shared-pdf/:token', evaluationController.getSharedPDF);
 
 // Admin işlemleri
 apiRouter.use('/admin', adminRoutes);

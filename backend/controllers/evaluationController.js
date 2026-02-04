@@ -10,13 +10,24 @@ const Docxtemplater = require('docxtemplater');
 const ImageModule = require('docxtemplater-image-module-free');
 const sharp = require('sharp');
 const libreofficeConvert = require('libreoffice-convert');
-const util = require('util');
+const { PDFDocument } = require('pdf-lib');
+const crypto = require('crypto');
 const { safeLog, getSafeErrorMessage } = require('../utils/helpers');
 const { getCompanyFilter } = require('../middleware/auth');
 const expressionParser = require("docxtemplater/expressions.js");
 const parser = expressionParser.configure({});
 
 const DEFAULT_WORD_TEMPLATE_PATH = path.join(__dirname, '..', 'templates', 'Degerlendirme_Merkez_Raporu_v19.docx');
+const SHARED_PDF_DIR = path.join(__dirname, '..', 'tmp', 'shared-pdfs');
+const SHARED_PDF_TTL_MS = Number(process.env.SHARE_PDF_TTL_MS || 60 * 60 * 1000);
+
+const sharedPdfStore = new Map();
+
+try {
+    fs.mkdirSync(SHARED_PDF_DIR, { recursive: true });
+} catch (error) {
+    // klasör oluşturulamazsa paylaşım endpoint'i hata verir
+}
 
 function clamp(value, min, max) {
     return Math.max(min, Math.min(max, value));
@@ -25,6 +36,116 @@ function clamp(value, min, max) {
 function normalizeScore(score) {
     const parsed = typeof score === 'number' ? score : parseFloat(score);
     return Number.isFinite(parsed) ? parsed : 0;
+}
+
+async function getPdfPageCount(buffer) {
+    try {
+        const doc = await PDFDocument.load(buffer);
+        return doc.getPageCount();
+    } catch (error) {
+        return null;
+    }
+}
+
+function cleanupSharedPdfs() {
+    const now = Date.now();
+    for (const [token, entry] of sharedPdfStore.entries()) {
+        if (!entry || entry.expiresAt <= now) {
+            if (entry?.filePath) {
+                try {
+                    fs.unlinkSync(entry.filePath);
+                } catch (error) {
+                    // yoksa geç
+                }
+            }
+            sharedPdfStore.delete(token);
+        }
+    }
+}
+
+setInterval(cleanupSharedPdfs, 10 * 60 * 1000);
+
+async function buildPdfBufferFromTemplate(req, userCode, templateData = {}, templatePath) {
+    const originalBody = req.body;
+    const mockRes = {
+        statusCode: 200,
+        buffer: null,
+        errorPayload: null,
+        setHeader: () => {},
+        status(code) {
+            this.statusCode = code;
+            return this;
+        },
+        json(payload) {
+            this.errorPayload = payload;
+            return payload;
+        },
+        send(data) {
+            this.buffer = data;
+            return data;
+        }
+    };
+
+    try {
+        req.body = { userCode, templateData, templatePath };
+        await evaluationController.generateWordFromTemplate(req, mockRes);
+    } finally {
+        req.body = originalBody;
+    }
+
+    if (!mockRes.buffer) {
+        const message = mockRes.errorPayload?.message || 'Word oluşturulurken bir hata oluştu';
+        const error = new Error(message);
+        error.statusCode = mockRes.statusCode || 500;
+        throw error;
+    }
+
+    const docxBuffer = Buffer.isBuffer(mockRes.buffer)
+        ? mockRes.buffer
+        : Buffer.from(mockRes.buffer);
+    const sofficeCandidates = [
+        process.env.LIBRE_OFFICE_EXE || '',
+        'C:/Program Files/LibreOffice/program/soffice.com',
+        'C:/Program Files/LibreOffice/program/soffice.exe',
+        'C:/Program Files (x86)/LibreOffice/program/soffice.com',
+        'C:/Program Files (x86)/LibreOffice/program/soffice.exe'
+    ].filter(Boolean);
+    const resolvedSoffice = sofficeCandidates.find((filePath) => fs.existsSync(filePath));
+    const sofficePaths = resolvedSoffice ? [resolvedSoffice] : sofficeCandidates;
+    const sofficeDir = resolvedSoffice ? path.dirname(resolvedSoffice) : '';
+    const sofficeEnv = sofficeDir
+        ? {
+            ...process.env,
+            PATH: `${sofficeDir};${process.env.PATH || ''}`,
+            UNO_PATH: sofficeDir,
+            URE_BOOTSTRAP: `vnd.sun.star.pathname:${path
+                .join(sofficeDir, 'fundamental.ini')
+                .replace(/\\/g, '/')}`
+        }
+        : process.env;
+    const pdfBuffer = await new Promise((resolve, reject) => {
+        libreofficeConvert.convertWithOptions(
+            docxBuffer,
+            '.pdf',
+            undefined,
+            {
+                sofficeBinaryPaths: sofficePaths,
+                fileName: 'source.docx',
+                execOptions: { env: sofficeEnv, cwd: sofficeDir || undefined }
+            },
+            (err, result) => (err ? reject(err) : resolve(result))
+        );
+    });
+
+    return Buffer.isBuffer(pdfBuffer) ? pdfBuffer : Buffer.from(pdfBuffer);
+}
+
+function getBaseUrl(req) {
+    const forwarded = req.headers['x-forwarded-proto'];
+    const proto = Array.isArray(forwarded)
+        ? forwarded[0]
+        : (forwarded ? forwarded.split(',')[0] : req.protocol);
+    return `${proto}://${req.get('host')}`;
 }
 
 function segmentColor(score) {
@@ -520,50 +641,21 @@ const evaluationController = {
                 return res.status(400).json({ message: 'userCode alanı zorunludur' });
             }
 
-            const sofficePaths = [
-                process.env.LIBRE_OFFICE_EXE || '',
-                'C:/Program Files/LibreOffice/program/soffice.exe',
-                'C:/Program Files (x86)/LibreOffice/program/soffice.exe'
-            ].filter(Boolean);
-            const convertAsync = util.promisify(libreofficeConvert.convertWithOptions);
-            const originalBody = req.body;
-            const mockRes = {
-                statusCode: 200,
-                buffer: null,
-                errorPayload: null,
-                setHeader: () => {},
-                status(code) {
-                    this.statusCode = code;
-                    return this;
-                },
-                json(payload) {
-                    this.errorPayload = payload;
-                    return payload;
-                },
-                send(data) {
-                    this.buffer = data;
-                    return data;
-                }
-            };
-
+            let pdfBufferData;
             try {
-                req.body = { userCode, templateData, templatePath };
-                await evaluationController.generateWordFromTemplate(req, mockRes);
-            } finally {
-                req.body = originalBody;
+                pdfBufferData = await buildPdfBufferFromTemplate(req, userCode, templateData, templatePath);
+            } catch (error) {
+                const statusCode = error?.statusCode || 500;
+                return res.status(statusCode).json({ message: error.message || 'Word oluşturulurken bir hata oluştu' });
             }
 
-            if (!mockRes.buffer) {
-                const message = mockRes.errorPayload?.message || 'Word oluşturulurken bir hata oluştu';
-                return res.status(mockRes.statusCode || 500).json({ message });
+            const pageCount = await getPdfPageCount(pdfBufferData);
+            if (pageCount) {
+                res.setHeader('x-pdf-pages', String(pageCount));
             }
-
-            const pdfBuffer = await convertAsync(mockRes.buffer, '.pdf', undefined, {
-                sofficeBinaryPaths: sofficePaths
-            });
             res.setHeader('Content-Type', 'application/pdf');
             res.setHeader('Content-Disposition', `attachment; filename=evaluation_${userCode}_template.pdf`);
-            res.send(pdfBuffer);
+            res.send(pdfBufferData);
         } catch (error) {
             safeLog('error', 'PDF oluşturma hatası', error);
             res.status(500).json({ message: 'PDF oluşturulurken bir hata oluştu' });
@@ -1148,81 +1240,72 @@ const evaluationController = {
                 return res.status(400).json({ message: 'code alanı zorunludur' });
             }
 
-            const originalBody = req.body;
-            const mockRes = {
-                statusCode: 200,
-                buffer: null,
-                errorPayload: null,
-                setHeader: () => {},
-                status(code) {
-                    this.statusCode = code;
-                    return this;
-                },
-                json(payload) {
-                    this.errorPayload = payload;
-                    return payload;
-                },
-                send(data) {
-                    this.buffer = data;
-                    return data;
-                }
-            };
-
+            let pdfBufferData;
             try {
-                req.body = { userCode: code, templateData: {}, templatePath: req.query.templatePath };
-                await evaluationController.generateWordFromTemplate(req, mockRes);
-            } finally {
-                req.body = originalBody;
+                pdfBufferData = await buildPdfBufferFromTemplate(req, code, {}, req.query.templatePath);
+            } catch (error) {
+                const statusCode = error?.statusCode || 500;
+                return res.status(statusCode).json({ message: error.message || 'Word oluşturulurken bir hata oluştu' });
             }
-
-            if (!mockRes.buffer) {
-                const message = mockRes.errorPayload?.message || 'Word oluşturulurken bir hata oluştu';
-                return res.status(mockRes.statusCode || 500).json({ message });
+            const pageCount = await getPdfPageCount(pdfBufferData);
+            if (pageCount) {
+                res.setHeader('x-pdf-pages', String(pageCount));
             }
-
-            const docxBuffer = Buffer.isBuffer(mockRes.buffer)
-                ? mockRes.buffer
-                : Buffer.from(mockRes.buffer);
-            const sofficeCandidates = [
-                process.env.LIBRE_OFFICE_EXE || '',
-                'C:/Program Files/LibreOffice/program/soffice.com',
-                'C:/Program Files/LibreOffice/program/soffice.exe',
-                'C:/Program Files (x86)/LibreOffice/program/soffice.com',
-                'C:/Program Files (x86)/LibreOffice/program/soffice.exe'
-            ].filter(Boolean);
-            const resolvedSoffice = sofficeCandidates.find((filePath) => fs.existsSync(filePath));
-            const sofficePaths = resolvedSoffice ? [resolvedSoffice] : sofficeCandidates;
-            const sofficeDir = resolvedSoffice ? path.dirname(resolvedSoffice) : '';
-            const sofficeEnv = sofficeDir
-                ? {
-                    ...process.env,
-                    PATH: `${sofficeDir};${process.env.PATH || ''}`,
-                    UNO_PATH: sofficeDir,
-                    URE_BOOTSTRAP: `vnd.sun.star.pathname:${path
-                        .join(sofficeDir, 'fundamental.ini')
-                        .replace(/\\/g, '/')}`
-                }
-                : process.env;
-            const pdfBuffer = await new Promise((resolve, reject) => {
-                libreofficeConvert.convertWithOptions(
-                    docxBuffer,
-                    '.pdf',
-                    undefined,
-                    {
-                        sofficeBinaryPaths: sofficePaths,
-                        fileName: 'source.docx',
-                        execOptions: { env: sofficeEnv, cwd: sofficeDir || undefined }
-                    },
-                    (err, result) => (err ? reject(err) : resolve(result))
-                );
-            });
 
             res.setHeader('Content-Type', 'application/pdf');
             res.setHeader('Content-Disposition', `inline; filename=evaluation_${code}_template.pdf`);
-            res.send(pdfBuffer);
+            res.send(pdfBufferData);
         } catch (error) {
             safeLog('error', 'PDF önizleme hatası', error);
             res.status(500).json({ message: 'PDF oluşturulurken bir hata oluştu' });
+        }
+    },
+
+    sharePDF: async (req, res) => {
+        try {
+            const { userCode, templateData = {}, templatePath } = req.body;
+            if (!userCode) {
+                return res.status(400).json({ message: 'userCode alanı zorunludur' });
+            }
+
+            const pdfBuffer = await buildPdfBufferFromTemplate(req, userCode, templateData, templatePath);
+            const token = crypto.randomBytes(16).toString('hex');
+            const filePath = path.join(SHARED_PDF_DIR, `${token}.pdf`);
+            await fs.promises.writeFile(filePath, pdfBuffer);
+
+            const expiresAt = Date.now() + SHARED_PDF_TTL_MS;
+            sharedPdfStore.set(token, { filePath, expiresAt });
+
+            res.json({
+                url: `${getBaseUrl(req)}/api/shared-pdf/${token}`,
+                expiresAt
+            });
+        } catch (error) {
+            safeLog('error', 'PDF paylaşım hatası', error);
+            res.status(500).json({ message: 'Paylaşım linki oluşturulurken bir hata oluştu' });
+        }
+    },
+
+    getSharedPDF: async (req, res) => {
+        try {
+            const { token } = req.params;
+            if (!token) {
+                return res.status(400).json({ message: 'token alanı zorunludur' });
+            }
+            const entry = sharedPdfStore.get(token);
+            if (!entry || entry.expiresAt <= Date.now()) {
+                return res.status(404).json({ message: 'Paylaşım linki süresi dolmuş' });
+            }
+            if (!fs.existsSync(entry.filePath)) {
+                sharedPdfStore.delete(token);
+                return res.status(404).json({ message: 'Paylaşılan dosya bulunamadı' });
+            }
+            res.setHeader('Content-Type', 'application/pdf');
+            res.setHeader('Content-Disposition', `inline; filename=shared_${token}.pdf`);
+            res.sendFile(entry.filePath);
+        } catch (error) {
+            safeLog('error', 'Paylaşılan PDF getirme hatası', error);
+            res.status(500).json({ message: 'Paylaşılan PDF alınamadı' });
         }
     },
 
