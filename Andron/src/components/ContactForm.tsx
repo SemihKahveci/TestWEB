@@ -54,7 +54,17 @@ const ContactForm = ({ isContactPage = false }) => {
 
     try {
       const fullPhone = `${selectedCountry.code} ${formData.phone}`;
-      const apiUrl = '/api/contact';
+            // Production'da basePath '/home' olduğu için API path'ini dinamik olarak belirle
+      // window.location.pathname'i kontrol ederek basePath'i belirle
+      const getBasePath = () => {
+        if (typeof window !== 'undefined') {
+          // Eğer pathname '/home' ile başlıyorsa basePath var
+          return window.location.pathname.startsWith('/home') ? '/home' : '';
+        }
+        return '';
+      };
+      const basePath = getBasePath();
+      const apiUrl = `${basePath}/api/contact`;
       
       console.log('API URL:', apiUrl);
       
