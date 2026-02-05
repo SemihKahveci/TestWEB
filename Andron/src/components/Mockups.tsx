@@ -7,7 +7,7 @@ export default function Mockups() {
     <section
       className="relative w-full py-15 md:py-25 text-center overflow-hidden"
       style={{
-        backgroundImage: `url('${process.env.NODE_ENV === 'production' ? '/home' : ''}/assets/images/mockup/mockups-bg.png')`,
+        backgroundImage: `url('/assets/images/mockup/mockups-bg.png')`,
         backgroundSize: "cover",
         backgroundPosition: "center",
         backgroundRepeat: "no-repeat",
