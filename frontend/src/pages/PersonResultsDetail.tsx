@@ -36,6 +36,9 @@ type ReportDetail = {
 };
 
 const PersonResultsDetail: React.FC = () => {
+  const AI_SUMMARY_BASE_URL =
+    (import.meta as any).env?.VITE_AI_SUMMARY_URL ??
+    ((import.meta as any).env?.DEV ? 'http://localhost:3000' : '');
   const location = useLocation();
   const navigate = useNavigate();
   const { language, t } = useLanguage();
@@ -52,6 +55,13 @@ const PersonResultsDetail: React.FC = () => {
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [toastType, setToastType] = useState<'success' | 'error' | 'info'>('info');
   const toastTimerRef = useRef<number | null>(null);
+  const [aiSessionId, setAiSessionId] = useState<string | null>(null);
+  const [aiFileName, setAiFileName] = useState<string | null>(null);
+  const [aiMessages, setAiMessages] = useState<{ role: 'user' | 'assistant'; text: string }[]>([]);
+  const [aiInput, setAiInput] = useState('');
+  const [aiFile, setAiFile] = useState<File | null>(null);
+  const [isAiLoading, setIsAiLoading] = useState(false);
+  const [aiError, setAiError] = useState<string | null>(null);
   const [hasExplicitUser, setHasExplicitUser] = useState(false);
   const [reportDetails, setReportDetails] = useState<Record<string, ReportDetail>>({});
   const [openDevPlans, setOpenDevPlans] = useState<Record<string, boolean>>({});
@@ -137,6 +147,17 @@ const PersonResultsDetail: React.FC = () => {
       setToastMessage(null);
     }, 2500);
   };
+
+  const aiSuggestions = useMemo(
+    () => [
+      'Bu raporu tek sayfada özetle',
+      'Güçlü yönleri maddeler halinde çıkar',
+      'Gelişim alanlarına göre 3 aksiyon öner',
+      'Mülakat soruları üret',
+      'Bu sonuçlar ne demek?'
+    ],
+    []
+  );
 
   const competencyOptions = useMemo(() => ([
     { value: 'uyumluluk', label: `${t('competency.uncertainty')} (${formatScoreRaw(latestUser?.uncertaintyScore)})` },
@@ -280,6 +301,101 @@ const PersonResultsDetail: React.FC = () => {
     } finally {
       setIsPdfLoading(false);
     }
+  };
+
+  const handleAiUpload = async () => {
+    if (!aiFile) {
+      setAiError('Lütfen bir PDF dosyası seçin.');
+      return;
+    }
+    if (!AI_SUMMARY_BASE_URL) {
+      setAiError('AI Summary servisi bulunamadı.');
+      return;
+    }
+    try {
+      setIsAiLoading(true);
+      setAiError(null);
+      const formData = new FormData();
+      formData.append('file', aiFile);
+      formData.append('language', language === 'en' ? 'en' : 'tr');
+      const response = await fetch(`${AI_SUMMARY_BASE_URL}/api/chat/init`, {
+        method: 'POST',
+        body: formData
+      });
+      if (!response.ok) {
+        throw new Error('Dosya yüklenemedi');
+      }
+      const data = await response.json();
+      setAiSessionId(data?.sessionId ?? null);
+      setAiFileName(data?.fileName ?? aiFile.name);
+      setAiMessages([
+        {
+          role: 'assistant',
+          text: 'Dosya yüklendi. Sorularını yazabilirsin.'
+        }
+      ]);
+      setAiInput('');
+      showToast('PDF yüklendi.', 'success');
+    } catch (error) {
+      console.error('AI upload error:', error);
+      setAiError('Dosya yüklenirken hata oluştu.');
+      showToast('Dosya yüklenemedi.', 'error');
+    } finally {
+      setIsAiLoading(false);
+    }
+  };
+
+  const handleAiSend = async () => {
+    const question = aiInput.trim();
+    if (!question) return;
+    if (!aiSessionId) {
+      setAiError('Önce PDF yüklemelisin.');
+      return;
+    }
+    if (!AI_SUMMARY_BASE_URL) {
+      setAiError('AI Summary servisi bulunamadı.');
+      return;
+    }
+    try {
+      setIsAiLoading(true);
+      setAiError(null);
+      setAiMessages((prev) => [...prev, { role: 'user', text: question }]);
+      setAiInput('');
+      const response = await fetch(`${AI_SUMMARY_BASE_URL}/api/chat/message`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          sessionId: aiSessionId,
+          message: question,
+          language: language === 'en' ? 'en' : 'tr'
+        })
+      });
+      if (!response.ok) {
+        throw new Error('Yanıt alınamadı');
+      }
+      const data = await response.json();
+      const answerText = data?.answer ?? 'Yanıt alınamadı.';
+      setAiMessages((prev) => [...prev, { role: 'assistant', text: answerText }]);
+    } catch (error) {
+      console.error('AI chat error:', error);
+      setAiMessages((prev) => [
+        ...prev,
+        { role: 'assistant', text: 'Şu anda cevap oluşturulamıyor.' }
+      ]);
+    } finally {
+      setIsAiLoading(false);
+    }
+  };
+
+  const handleAiReset = () => {
+    setAiSessionId(null);
+    setAiFileName(null);
+    setAiMessages([]);
+    setAiInput('');
+    setAiFile(null);
+    setAiError(null);
   };
 
   useEffect(() => {
@@ -1566,20 +1682,118 @@ const PersonResultsDetail: React.FC = () => {
 
           {activeTab === 'ai-assistant' && (
             <div className="p-8">
-              <div className="bg-gradient-to-r from-indigo-50 to-purple-50 border-2 border-dashed border-indigo-300 rounded-xl p-12 text-center">
-                <div className="w-20 h-20 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-2xl flex items-center justify-center mx-auto mb-6">
-                  <i className="fa-solid fa-robot text-white text-4xl" />
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <div className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm space-y-4">
+                  <div>
+                    <h3 className="text-lg font-semibold text-gray-900">PDF Yükle</h3>
+                    <p className="text-sm text-gray-500">
+                      Rapor PDF’ini yükleyip sorularını sorabilirsin.
+                    </p>
+                  </div>
+                  <input
+                    type="file"
+                    accept=".pdf"
+                    onChange={(event) => setAiFile(event.target.files?.[0] ?? null)}
+                    className="block w-full text-sm text-gray-600 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-gray-100 file:text-gray-700 hover:file:bg-gray-200"
+                  />
+                  {aiFileName && (
+                    <div className="text-sm text-gray-700">
+                      Yüklü dosya: <span className="font-semibold">{aiFileName}</span>
+                    </div>
+                  )}
+                  {aiError && (
+                    <div className="text-sm text-red-600">{aiError}</div>
+                  )}
+                  <div className="flex gap-2">
+                    <button
+                      onClick={handleAiUpload}
+                      disabled={isAiLoading || !aiFile}
+                      className="px-4 py-2 rounded-lg bg-blue-600 text-white text-sm font-semibold disabled:opacity-60"
+                    >
+                      {isAiLoading ? 'Yükleniyor...' : 'Yükle'}
+                    </button>
+                    <button
+                      onClick={handleAiReset}
+                      disabled={isAiLoading}
+                      className="px-4 py-2 rounded-lg border border-gray-300 text-gray-700 text-sm font-semibold disabled:opacity-60"
+                    >
+                      Sıfırla
+                    </button>
+                  </div>
+                  <div>
+                    <div className="text-sm font-semibold text-gray-900 mb-2">Örnek Komutlar</div>
+                    <div className="flex flex-wrap gap-2">
+                      {aiSuggestions.map((item) => (
+                        <button
+                          key={item}
+                          type="button"
+                          onClick={() => setAiInput(item)}
+                          className="px-3 py-1.5 rounded-full bg-indigo-50 text-indigo-700 text-xs font-medium hover:bg-indigo-100"
+                        >
+                          {item}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
                 </div>
-                <h2 className="text-3xl font-bold text-gray-900 mb-3">
-                  {t('labels.aiAssistantSoon')}
-                </h2>
-                <p className="text-gray-600 text-lg mb-8 max-w-2xl mx-auto">
-                  {t('labels.aiAssistantSubtitle')}
-                </p>
-                <span className="inline-flex items-center px-6 py-3 bg-indigo-100 text-indigo-700 rounded-lg font-medium">
-                  <i className="fa-solid fa-sparkles mr-2" />
-                  Geliştirme Aşamasında
-                </span>
+
+                <div className="lg:col-span-2 bg-white border border-gray-200 rounded-xl shadow-sm flex flex-col h-[520px]">
+                  <div className="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
+                    <div className="font-semibold text-gray-900">AI Asistan</div>
+                    <div className="text-xs text-gray-500">
+                      {aiSessionId ? 'Oturum aktif' : 'PDF yükleyin'}
+                    </div>
+                  </div>
+                  <div className="flex-1 overflow-y-auto p-6 space-y-3">
+                    {aiMessages.length === 0 ? (
+                      <div className="text-sm text-gray-500">
+                        PDF yükledikten sonra sorularını yazabilirsin.
+                      </div>
+                    ) : (
+                      aiMessages.map((msg, index) => (
+                        <div
+                          key={`${msg.role}-${index}`}
+                          className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
+                        >
+                          <div
+                            className={`max-w-[80%] rounded-xl px-4 py-2 text-sm whitespace-pre-wrap ${
+                              msg.role === 'user'
+                                ? 'bg-blue-600 text-white'
+                                : 'bg-gray-100 text-gray-900'
+                            }`}
+                          >
+                            {msg.text}
+                          </div>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                  <div className="border-t border-gray-200 p-4">
+                    <div className="flex gap-3">
+                      <input
+                        type="text"
+                        value={aiInput}
+                        onChange={(event) => setAiInput(event.target.value)}
+                        onKeyDown={(event) => {
+                          if (event.key === 'Enter') {
+                            event.preventDefault();
+                            handleAiSend();
+                          }
+                        }}
+                        placeholder="Sorunuzu yazın..."
+                        className="flex-1 rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        disabled={isAiLoading}
+                      />
+                      <button
+                        onClick={handleAiSend}
+                        disabled={isAiLoading || !aiInput.trim() || !aiSessionId}
+                        className="px-4 py-2 rounded-lg bg-indigo-600 text-white text-sm font-semibold disabled:opacity-60"
+                      >
+                        {isAiLoading ? '...' : 'Gönder'}
+                      </button>
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
           )}

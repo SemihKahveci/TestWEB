@@ -42,7 +42,7 @@ async function getPdfPageCount(buffer) {
     try {
         const doc = await PDFDocument.load(buffer);
         return doc.getPageCount();
-    } catch (error) {
+        } catch (error) {
         return null;
     }
 }
@@ -477,7 +477,7 @@ function parseDevelopmentPlanText(text = '') {
             const cleanedTitle = normalizeSectionTitle(line);
             if (!currentSection) {
                 currentSection = { title: cleanedTitle, items: [] };
-            } else {
+                    } else {
                 currentSection.title = cleanedTitle;
             }
             expectSectionTitle = false;
@@ -623,7 +623,7 @@ const evaluationController = {
             const companyFilter = getCompanyFilter(req);
             const evaluation = await EvaluationResult.findOne({ ID: id, ...companyFilter });
           
-            if (!evaluation) {
+                if (!evaluation) {
                 return res.status(404).json({ error: 'Değerlendirme bulunamadı' });
             }
 
