@@ -323,7 +323,10 @@ const PersonResultsDetail: React.FC = () => {
         body: formData
       });
       if (!response.ok) {
-        throw new Error('Dosya yüklenemedi');
+        const errorPayload = await response.json().catch(() => null);
+        const detail =
+          errorPayload?.details || errorPayload?.error || 'Dosya yüklenemedi';
+        throw new Error(detail);
       }
       const data = await response.json();
       setAiSessionId(data?.sessionId ?? null);
@@ -338,7 +341,7 @@ const PersonResultsDetail: React.FC = () => {
       showToast('PDF yüklendi.', 'success');
     } catch (error) {
       console.error('AI upload error:', error);
-      setAiError('Dosya yüklenirken hata oluştu.');
+      setAiError((error as Error).message || 'Dosya yüklenirken hata oluştu.');
       showToast('Dosya yüklenemedi.', 'error');
     } finally {
       setIsAiLoading(false);

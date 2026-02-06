@@ -17,10 +17,14 @@ const organizationRoutes = require('./routes/organizationRoutes');
 const groupRoutes = require('./routes/groupRoutes');
 const authorizationRoutes = require('./routes/authorizationRoutes');
 const cookieParser = require("cookie-parser");
+const { createProxyMiddleware } = require('http-proxy-middleware');
 const authRoutes = require('./routes/authRoutes');
 const rateLimit = require('express-rate-limit');
 
 const app = express();
+
+// Reverse proxy arkasında doğru IP almak için
+app.set('trust proxy', 1);
 
 const port = process.env.PORT || 5000;
 app.disable('x-powered-by');
@@ -74,6 +78,19 @@ app.use(express.json({ limit: '100mb' }));
 app.use(express.urlencoded({ limit: '100mb', extended: true }));
 // Public klasörünü root'tan serve et
 app.use(express.static(path.join(__dirname, 'public')));
+
+// AI Summary proxy (lokal servis / live reverse proxy)
+const aiSummaryTarget = process.env.AI_SUMMARY_TARGET || 'http://localhost:5055';
+app.use(
+    '/aisummary',
+    createProxyMiddleware({
+        target: aiSummaryTarget,
+        changeOrigin: true,
+        pathRewrite: {
+            '^/aisummary': ''
+        }
+    })
+);
 
 app.use('/api/auth', authRoutes);
 
