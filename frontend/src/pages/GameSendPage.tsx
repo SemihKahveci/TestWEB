@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import * as XLSX from 'xlsx';
 import { useLanguage } from '../contexts/LanguageContext';
 import { creditAPI, organizationAPI } from '../services/api';
 import { safeLog } from '../utils/logger';
@@ -27,6 +28,16 @@ interface Person {
   planets: string[];
 }
 
+interface BulkPerson {
+  name: string;
+  email: string;
+  personType: string;
+  unvan: string;
+  pozisyon: string;
+  departman: string;
+  planets: string[];
+}
+
 interface OrganizationItem {
   _id: string;
   grupLiderligi?: string;
@@ -37,7 +48,7 @@ interface OrganizationItem {
 const GameSendPage: React.FC = () => {
   const { language, t } = useLanguage();
   // State management
-  const [activeTab, setActiveTab] = useState<'person' | 'group' | 'title'>('person');
+  const [activeTab, setActiveTab] = useState<'person' | 'group' | 'title' | 'bulk'>('person');
   const [isLoading, setIsLoading] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [remainingCredits, setRemainingCredits] = useState(0);
@@ -56,6 +67,14 @@ const GameSendPage: React.FC = () => {
   const [selectedPlanets, setSelectedPlanets] = useState<string[]>([]);
   const [showPlanetDropdown, setShowPlanetDropdown] = useState(false);
   const [planetSearchTerm, setPlanetSearchTerm] = useState('');
+
+  // Bulk (Excel) tab states
+  const [bulkFile, setBulkFile] = useState<File | null>(null);
+  const [bulkRows, setBulkRows] = useState<BulkPerson[]>([]);
+  const [bulkErrors, setBulkErrors] = useState<string[]>([]);
+  const [bulkFileMeta, setBulkFileMeta] = useState<{ name: string; sizeLabel: string; rowCount: number } | null>(null);
+  const [isBulkSending, setIsBulkSending] = useState(false);
+  const [isBulkDragging, setIsBulkDragging] = useState(false);
   
   // Group tab states
   const [groups, setGroups] = useState<Group[]>([]);
@@ -187,9 +206,9 @@ const GameSendPage: React.FC = () => {
     }
   }, [activeTab, titles.length]);
 
-  // Load organizations for person tab comboboxes
+  // Load organizations for person/bulk tab comboboxes
   useEffect(() => {
-    if (activeTab === 'person' && organizations.length === 0) {
+    if ((activeTab === 'person' || activeTab === 'bulk') && organizations.length === 0) {
       loadOrganizations();
     }
   }, [activeTab, organizations.length]);
@@ -414,7 +433,7 @@ const GameSendPage: React.FC = () => {
   };
 
   // Tab switching
-  const switchTab = (tabName: 'person' | 'group' | 'title') => {
+  const switchTab = (tabName: 'person' | 'group' | 'title' | 'bulk') => {
     setActiveTab(tabName);
   };
 
@@ -743,7 +762,7 @@ const GameSendPage: React.FC = () => {
     const result: string[] = [];
     values.forEach((value) => {
       const trimmed = (value || '').trim();
-      if (!trimmed) return;
+      if (!trimmed || trimmed === '-' || trimmed === '—' || trimmed === '–') return;
       const key = trimmed.toLowerCase();
       if (seen.has(key)) return;
       seen.add(key);
@@ -766,6 +785,371 @@ const GameSendPage: React.FC = () => {
       )
       .map(org => org.pozisyon)
   );
+
+  const normalizeText = (value: string) =>
+    value
+      .toString()
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .trim()
+      .toLowerCase()
+      .replace(/i̇/g, 'i')
+      .replace(/ı/g, 'i')
+      .replace(/ğ/g, 'g')
+      .replace(/ü/g, 'u')
+      .replace(/ş/g, 's')
+      .replace(/ö/g, 'o')
+      .replace(/ç/g, 'c')
+      .replace(/\s+/g, ' ');
+
+  const parsePersonType = (value: string) => {
+    const normalized = normalizeText(value);
+    if (normalized.includes('aday') || normalized.includes('candidate')) return 'Aday';
+    if (normalized.includes('calisan') || normalized.includes('employee')) return 'Çalışan';
+    return '';
+  };
+
+  const parsePlanets = (value: string) => {
+    const tokens = value
+      .split(/[,;|/]/)
+      .map((item) => item.trim())
+      .filter(Boolean);
+
+    const result: string[] = [];
+    tokens.forEach((token) => {
+      const normalized = normalizeText(token);
+      if (normalized === '0' || normalized.includes('venus') || normalized.includes('venis') || normalized.includes('venus')) {
+        result.push('venus');
+        return;
+      }
+      if (normalized === '1' || normalized.includes('titan')) {
+        result.push('titan');
+        return;
+      }
+    });
+
+    return Array.from(new Set(result));
+  };
+
+  const parseExcelFile = async (file: File) => {
+    const buffer = await file.arrayBuffer();
+    const workbook = XLSX.read(buffer, { type: 'array' });
+    const sheetName = workbook.SheetNames[0];
+    const worksheet = workbook.Sheets[sheetName];
+    const rows = XLSX.utils.sheet_to_json(worksheet, { header: 1 }) as Array<Array<any>>;
+
+    if (!rows.length) {
+      return { validRows: [] as BulkPerson[], errors: [t('errors.invalidExcelFormat')] };
+    }
+
+    const header = rows[0].map((cell) => normalizeText(String(cell || '')));
+    const findIndex = (keys: string[]) => header.findIndex((item) => keys.some((key) => item.includes(key)));
+
+    const idxEmail = findIndex(['email', 'e-posta', 'eposta', 'mail']);
+    const idxName = findIndex(['adsoyad', 'ad soyad', 'isim', 'ad']);
+    const idxType = findIndex(['kisitipi', 'kisi tipi', 'kisitypi', 'kisitype', 'kisitip', 'persontype', 'person type']);
+    const idxTitle = findIndex(['unvan', 'title']);
+    const idxPosition = findIndex(['pozisyon', 'position']);
+    const idxDepartment = findIndex(['departman', 'department']);
+    const idxPlanets = findIndex(['gezegen', 'gezegenler', 'planet', 'planets']);
+
+    const errors: string[] = [];
+    const validRows: BulkPerson[] = [];
+
+    const departmentSet = new Set(availableDepartments.map((item) => normalizeText(item)));
+    const titleSet = new Set(getUniqueOptions(organizations.map(org => org.unvan)).map((item) => normalizeText(item)));
+    const positionSet = new Set(getUniqueOptions(organizations.map(org => org.pozisyon)).map((item) => normalizeText(item)));
+
+    for (let i = 1; i < rows.length; i += 1) {
+      const row = rows[i];
+      if (!row || row.every((cell) => !cell || String(cell).trim() === '')) {
+        continue;
+      }
+
+      const rowNumber = i + 1;
+      const email = idxEmail >= 0 ? String(row[idxEmail] || '').trim() : '';
+      const name = idxName >= 0 ? String(row[idxName] || '').trim() : '';
+      const personTypeRaw = idxType >= 0 ? String(row[idxType] || '').trim() : '';
+      const unvan = idxTitle >= 0 ? String(row[idxTitle] || '').trim() : '';
+      const pozisyon = idxPosition >= 0 ? String(row[idxPosition] || '').trim() : '';
+      const departman = idxDepartment >= 0 ? String(row[idxDepartment] || '').trim() : '';
+      const planetsRaw = idxPlanets >= 0 ? String(row[idxPlanets] || '').trim() : '';
+
+      if (!email || !name || !personTypeRaw || !unvan || !pozisyon || !departman || !planetsRaw) {
+        const missingFields: string[] = [];
+        if (!email) missingFields.push('Email');
+        if (!name) missingFields.push('Ad Soyad');
+        if (!personTypeRaw) missingFields.push('Kişi Tipi');
+        if (!unvan) missingFields.push('Unvan');
+        if (!pozisyon) missingFields.push('Pozisyon');
+        if (!departman) missingFields.push('Departman');
+        if (!planetsRaw) missingFields.push('Gezegen');
+        errors.push(`Satır ${rowNumber}: Zorunlu alanlar eksik. (${missingFields.join(', ')})`);
+        continue;
+      }
+
+      const personTypeValue = parsePersonType(personTypeRaw);
+      if (!personTypeValue) {
+        errors.push(`Satır ${rowNumber}: Kişi tipi sadece Aday veya Çalışan olmalıdır.`);
+        continue;
+      }
+
+      if (departmentSet.size > 0 && !departmentSet.has(normalizeText(departman))) {
+        errors.push(`Satır ${rowNumber}: Departman bulunamadı.`);
+        continue;
+      }
+
+      if (titleSet.size > 0 && !titleSet.has(normalizeText(unvan))) {
+        errors.push(`Satır ${rowNumber}: Unvan bulunamadı.`);
+        continue;
+      }
+
+      if (positionSet.size > 0 && !positionSet.has(normalizeText(pozisyon))) {
+        errors.push(`Satır ${rowNumber}: Pozisyon bulunamadı.`);
+        continue;
+      }
+
+      const planets = parsePlanets(planetsRaw);
+      if (planets.length === 0) {
+        errors.push(`Satır ${rowNumber}: Gezegen bilgisi geçersiz.`);
+        continue;
+      }
+
+      validRows.push({
+        name,
+        email,
+        personType: personTypeValue,
+        unvan,
+        pozisyon,
+        departman,
+        planets
+      });
+    }
+
+    return { validRows, errors };
+  };
+
+  const handleBulkFileSelect = async (file: File | null) => {
+    if (!file) return;
+    if (!file.name.endsWith('.xlsx') && !file.name.endsWith('.xls')) {
+      showMessage(t('labels.error'), t('errors.onlyExcelAllowed'), 'error');
+      return;
+    }
+
+    setBulkFile(file);
+    setBulkErrors([]);
+    try {
+      const { validRows, errors } = await parseExcelFile(file);
+      setBulkRows(validRows);
+      setBulkErrors(errors);
+      const sizeKB = Math.round(file.size / 1024);
+      setBulkFileMeta({
+        name: file.name,
+        sizeLabel: `${sizeKB} KB`,
+        rowCount: validRows.length
+      });
+    } catch (error) {
+      safeLog('error', 'Excel parse hatası', error);
+      showMessage(t('labels.error'), t('errors.invalidExcelFormat'), 'error');
+      setBulkRows([]);
+    }
+  };
+
+  const handleBulkFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0] || null;
+    handleBulkFileSelect(file);
+  };
+
+  const removeBulkFile = () => {
+    setBulkFile(null);
+    setBulkRows([]);
+    setBulkErrors([]);
+    setBulkFileMeta(null);
+    const input = document.getElementById('bulkExcelInput') as HTMLInputElement | null;
+    if (input) {
+      input.value = '';
+    }
+  };
+
+  const handleBulkDrop = (event: React.DragEvent<HTMLDivElement>) => {
+    event.preventDefault();
+    setIsBulkDragging(false);
+    const file = event.dataTransfer.files[0];
+    handleBulkFileSelect(file || null);
+  };
+
+  const downloadBulkTemplate = () => {
+    const headers = ['Email', 'Ad Soyad', 'Kişi Tipi', 'Unvan', 'Pozisyon', 'Departman', 'Gezegenler'];
+    const exampleRow = ['ornek@email.com', 'Ad Soyad', 'Çalışan', 'Uzman', 'Yazılım Geliştirici', 'Bilgi Teknolojileri', 'venus, titan'];
+    const worksheet = XLSX.utils.aoa_to_sheet([headers, exampleRow]);
+    worksheet['!cols'] = [{ wch: 26 }, { wch: 22 }, { wch: 12 }, { wch: 20 }, { wch: 22 }, { wch: 22 }, { wch: 18 }];
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'TopluGonderim');
+    XLSX.writeFile(workbook, 'toplu_gonderim_sablon.xlsx');
+  };
+
+  const sendBulkCodes = async (persons: BulkPerson[]) => {
+    try {
+      setIsBulkSending(true);
+      let successCount = 0;
+      let errorCount = 0;
+      const errors: string[] = [];
+      let totalCreditCost = 0;
+
+      for (const person of persons) {
+        try {
+          const planets = person.planets.length > 0 ? person.planets : ['venus'];
+          const codeResponse = await fetch('/api/generate-code', {
+            method: 'POST',
+            credentials: 'include',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              name: person.name,
+              email: person.email,
+              planet: planets[0],
+              allPlanets: planets,
+              personType: person.personType,
+              unvan: person.unvan,
+              pozisyon: person.pozisyon,
+              departman: person.departman
+            })
+          });
+
+          if (codeResponse.ok) {
+            const codeData = await codeResponse.json();
+            if (codeData.success && codeData.code) {
+              const sendResponse = await fetch('/api/send-code', {
+                method: 'POST',
+                credentials: 'include',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  code: codeData.code,
+                  name: person.name,
+                  email: person.email,
+                  planet: planets[0],
+                  allPlanets: planets,
+                  personType: person.personType,
+                  unvan: person.unvan,
+                  pozisyon: person.pozisyon,
+                  departman: person.departman
+                })
+              });
+
+              if (sendResponse.ok) {
+                const sendData = await sendResponse.json();
+                if (sendData.success) {
+                  successCount += 1;
+                  totalCreditCost += planets.length;
+                } else {
+                  errorCount += 1;
+                  errors.push(formatPersonError(person.name, sendData.message || formatSendErrorLabel()));
+                }
+              } else {
+                let errorMessage = formatSendErrorLabel();
+                try {
+                  const errorData = await sendResponse.json();
+                  errorMessage = errorData.message || errorMessage;
+                } catch {
+                  errorMessage = formatServerError(sendResponse.status);
+                }
+                errorCount += 1;
+                errors.push(formatPersonError(person.name, errorMessage));
+              }
+            } else {
+              errorCount += 1;
+              errors.push(formatPersonError(person.name, formatCodeGenerateMissing()));
+            }
+          } else {
+            errorCount += 1;
+            errors.push(formatPersonError(person.name, formatCodeGenerationFailed()));
+          }
+        } catch (error) {
+          errorCount += 1;
+          errors.push(formatPersonError(person.name, error instanceof Error ? error.message : t('labels.unknownError')));
+        }
+      }
+
+      if (successCount > 0 && errorCount === 0) {
+        const creditMessage = formatCreditSuccess(successCount, totalCreditCost, isSuperAdmin);
+        showMessage(t('labels.success'), creditMessage, 'success');
+        if (!isSuperAdmin) {
+          try {
+            const deductResponse = await creditAPI.deductCredits({
+              amount: totalCreditCost,
+              type: 'game_send',
+              description: `${t('labels.personSend')}: ${successCount} ${t('labels.person')} (${totalCreditCost} ${t('labels.credits')})`
+            });
+
+            if (deductResponse.data.success) {
+              const { totalCredits, usedCredits, remainingCredits } = deductResponse.data.credit;
+              localStorage.setItem('remainingCredits', remainingCredits.toString());
+              localStorage.setItem('usedCredits', usedCredits.toString());
+              localStorage.setItem('totalCredits', totalCredits.toString());
+              setRemainingCredits(remainingCredits);
+            }
+          } catch (error) {
+            showMessage(t('labels.error'), formatCreditDeductionFailed(error.response?.data?.message || error.message), 'error');
+          }
+        }
+      } else if (successCount > 0 && errorCount > 0) {
+        const creditMessage = formatPartialSuccess(successCount, errorCount, totalCreditCost, isSuperAdmin);
+        showMessage(t('labels.warning'), creditMessage, 'warning', errors);
+        if (!isSuperAdmin) {
+          try {
+            const deductResponse = await creditAPI.deductCredits({
+              amount: totalCreditCost,
+              type: 'game_send',
+              description: `${t('labels.personSend')}: ${successCount} ${t('labels.person')} (${totalCreditCost} ${t('labels.credits')})`
+            });
+
+            if (deductResponse.data.success) {
+              const { totalCredits, usedCredits, remainingCredits } = deductResponse.data.credit;
+              localStorage.setItem('remainingCredits', remainingCredits.toString());
+              localStorage.setItem('usedCredits', usedCredits.toString());
+              localStorage.setItem('totalCredits', totalCredits.toString());
+              setRemainingCredits(remainingCredits);
+            }
+          } catch (error) {
+            showMessage(t('labels.error'), formatCreditDeductionFailed(error.response?.data?.message || error.message), 'error');
+          }
+        }
+      } else {
+        showMessage(t('labels.error'), formatNoOneSent(), 'error', errors);
+      }
+
+      setBulkFile(null);
+      setBulkRows([]);
+      setBulkFileMeta(null);
+      setBulkErrors([]);
+    } catch (error) {
+      safeLog('error', 'Toplu gönderim hatası', error);
+      showMessage(t('labels.error'), t('errors.sendDuring'), 'error');
+    } finally {
+      setIsBulkSending(false);
+    }
+  };
+
+  const handleBulkSend = () => {
+    if (!bulkFile || bulkRows.length === 0) {
+      showMessage(t('labels.error'), t('errors.selectExcelFirst'), 'error');
+      return;
+    }
+
+    if (!isSuperAdmin) {
+      const totalCreditCost = bulkRows.reduce((sum, row) => sum + row.planets.length, 0);
+      if (remainingCredits < totalCreditCost) {
+        showMessage(t('labels.error'), formatInsufficientCredits(remainingCredits, totalCreditCost), 'error');
+        return;
+      }
+    }
+
+    const confirmMessage = formatConfirmSend(bulkRows.length);
+    showConfirm(t('labels.confirm'), confirmMessage, (result) => {
+      if (result) {
+        sendBulkCodes(bulkRows);
+      }
+    });
+  };
 
   // Send person interview
   const sendPersonInterview = async () => {
@@ -1536,74 +1920,6 @@ const GameSendPage: React.FC = () => {
         overflowX: 'auto',
         WebkitOverflowScrolling: 'touch'
       }}>
-        {/* Kredi Bilgi Notu */}
-        <div style={{
-          background: 'linear-gradient(135deg, #E3F2FD 0%, #F3E5F5 100%)',
-          border: '1px solid #BBDEFB',
-          borderRadius: '8px',
-          padding: '16px 20px',
-          marginBottom: '12px',
-          display: 'flex',
-          alignItems: 'center',
-          gap: '12px',
-          boxShadow: '0 2px 8px rgba(0,0,0,0.05)'
-        }}>
-          <div style={{
-            width: '24px',
-            height: '24px',
-            borderRadius: '50%',
-            background: '#3A57E8',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            flexShrink: 0
-          }}>
-            <i className="fas fa-info" style={{ color: 'white', fontSize: '12px' }}></i>
-          </div>
-          <div style={{
-            color: '#1976D2',
-            fontSize: '14px',
-            fontWeight: 500,
-            lineHeight: '1.4'
-          }}>
-            <strong>{t('labels.creditInfoTitle')}</strong> {t('labels.creditInfoText')}
-          </div>
-        </div>
-
-        {/* Uyarı Notu */}
-        <div style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: '12px',
-          padding: '12px 16px',
-          background: 'rgba(255, 193, 7, 0.1)',
-          border: '1px solid rgba(255, 193, 7, 0.3)',
-          borderRadius: '6px',
-          marginBottom: '20px',
-          boxShadow: '0 2px 8px rgba(0,0,0,0.05)'
-        }}>
-          <div style={{
-            width: '20px',
-            height: '20px',
-            borderRadius: '50%',
-            background: '#FFC107',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            flexShrink: 0
-          }}>
-            <i className="fas fa-exclamation-triangle" style={{ color: 'white', fontSize: '10px' }}></i>
-          </div>
-          <div style={{
-            color: '#856404',
-            fontSize: '13px',
-            fontWeight: 500,
-            lineHeight: '1.4'
-          }}>
-            <strong>{t('labels.autoRefundTitle')}</strong> {t('labels.autoRefundText')}
-          </div>
-        </div>
-
         {/* Tab Container */}
         <div style={{
           display: 'flex',
@@ -1675,6 +1991,27 @@ const GameSendPage: React.FC = () => {
             }}
           >
             {t('labels.title')}
+          </button>
+          <button
+            onClick={() => switchTab('bulk')}
+            style={{
+              flex: 1,
+              padding: '12px 24px',
+              textAlign: 'center',
+              background: activeTab === 'bulk'
+                ? 'linear-gradient(90deg, #2563EB 0%, #3B82F6 100%)'
+                : 'transparent',
+              border: 'none',
+              borderRadius: '6px',
+              cursor: 'pointer',
+              fontSize: '14px',
+              fontWeight: 600,
+              color: activeTab === 'bulk' ? 'white' : '#8A92A6',
+              transition: 'all 0.3s ease',
+              boxShadow: activeTab === 'bulk' ? '0 2px 6px rgba(37, 99, 235, 0.35)' : 'none'
+            }}
+          >
+            {t('labels.bulkSendTab')}
           </button>
         </div>
 
@@ -2970,6 +3307,286 @@ const GameSendPage: React.FC = () => {
             </button>
           </div>
         )}
+
+        {/* Bulk (Excel) Tab Content */}
+        {activeTab === 'bulk' && (
+          <div style={{
+            background: 'white',
+            borderRadius: '16px',
+            border: '1px solid #E5E7EB',
+            padding: '32px'
+          }}>
+            <div
+              onClick={() => document.getElementById('bulkExcelInput')?.click()}
+              onDragOver={(e) => {
+                e.preventDefault();
+                setIsBulkDragging(true);
+              }}
+              onDragLeave={() => setIsBulkDragging(false)}
+              onDrop={handleBulkDrop}
+              style={{
+                border: '2px dashed',
+                borderColor: isBulkDragging ? '#2563EB' : '#D1D5DB',
+                borderRadius: '16px',
+                padding: '28px',
+                textAlign: 'center',
+                cursor: 'pointer',
+                background: isBulkDragging ? '#EFF6FF' : '#F9FAFB',
+                transition: 'all 0.2s ease'
+              }}
+            >
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '12px' }}>
+                <div style={{
+                  width: '64px',
+                  height: '64px',
+                  borderRadius: '16px',
+                  background: 'linear-gradient(135deg, #DCFCE7 0%, #D1FAE5 100%)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center'
+                }}>
+                  <i className="fas fa-file-excel" style={{ color: '#16A34A', fontSize: '22px' }} />
+                </div>
+                <div>
+                  <div style={{ fontSize: '16px', fontWeight: 700, color: '#111827', marginBottom: '6px' }}>
+                    {t('labels.uploadExcelFile')}
+                  </div>
+                  <div style={{ fontSize: '13px', color: '#6B7280', maxWidth: '360px' }}>
+                    {t('labels.selectOrDropExcel')}
+                  </div>
+                </div>
+                <button
+                  style={{
+                    marginTop: '6px',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '8px',
+                    padding: '10px 18px',
+                    background: 'linear-gradient(90deg, #16A34A 0%, #10B981 100%)',
+                    border: 'none',
+                    borderRadius: '12px',
+                    color: 'white',
+                    fontWeight: 600,
+                    cursor: 'pointer'
+                  }}
+                >
+                  <i className="fas fa-upload" />
+                  {t('buttons.upload')}
+                </button>
+                <div style={{ fontSize: '12px', color: '#9CA3AF' }}>
+                  {t('labels.supportedFormats')}
+                </div>
+              </div>
+            </div>
+
+            <input
+              type="file"
+              id="bulkExcelInput"
+              accept=".xlsx,.xls"
+              onChange={handleBulkFileChange}
+              style={{ display: 'none' }}
+            />
+
+            {bulkFileMeta && (
+              <div style={{
+                marginTop: '16px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                padding: '12px 16px',
+                background: 'linear-gradient(90deg, #DCFCE7 0%, #ECFDF3 100%)',
+                border: '1px solid #A7F3D0',
+                borderRadius: '12px'
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                  <div style={{
+                    width: '36px',
+                    height: '36px',
+                    borderRadius: '10px',
+                    background: 'white',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center'
+                  }}>
+                    <i className="fas fa-file-excel" style={{ color: '#16A34A' }} />
+                  </div>
+                  <div>
+                    <div style={{ fontSize: '14px', fontWeight: 700, color: '#111827' }}>{bulkFileMeta.name}</div>
+                    <div style={{ fontSize: '12px', color: '#6B7280' }}>
+                      {bulkFileMeta.sizeLabel} • {bulkFileMeta.rowCount} kayıt
+                    </div>
+                  </div>
+                </div>
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    removeBulkFile();
+                  }}
+                  style={{
+                    width: '32px',
+                    height: '32px',
+                    borderRadius: '8px',
+                    border: 'none',
+                    background: '#FEE2E2',
+                    color: '#B91C1C',
+                    cursor: 'pointer'
+                  }}
+                >
+                  <i className="fas fa-xmark" />
+                </button>
+              </div>
+            )}
+
+            {bulkErrors.length > 0 && (
+              <div style={{
+                marginTop: '14px',
+                padding: '12px 16px',
+                background: '#FEF3C7',
+                border: '1px solid #FDE68A',
+                borderRadius: '12px',
+                fontSize: '12px',
+                color: '#92400E',
+                whiteSpace: 'pre-line'
+              }}>
+                {bulkErrors.slice(0, 6).map((err, idx) => (
+                  <div key={idx}>• {err}</div>
+                ))}
+                {bulkErrors.length > 6 && <div>… ({bulkErrors.length - 6} hata daha)</div>}
+              </div>
+            )}
+
+            <div style={{
+              marginTop: '18px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              padding: '12px 16px',
+              background: 'linear-gradient(90deg, #DBEAFE 0%, #E0F2FE 100%)',
+              border: '1px solid #BFDBFE',
+              borderRadius: '12px'
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                <div style={{
+                  width: '36px',
+                  height: '36px',
+                  borderRadius: '10px',
+                  background: 'white',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center'
+                }}>
+                  <i className="fas fa-download" style={{ color: '#2563EB' }} />
+                </div>
+                <div>
+                  <div style={{ fontSize: '14px', fontWeight: 700, color: '#1E3A8A' }}>
+                    {t('labels.bulkUploadTemplateTitle')}
+                  </div>
+                  <div style={{ fontSize: '12px', color: '#1D4ED8' }}>
+                    {t('labels.bulkUploadTemplateDesc')}
+                  </div>
+                </div>
+              </div>
+              <button
+                onClick={downloadBulkTemplate}
+                style={{
+                  padding: '8px 14px',
+                  borderRadius: '10px',
+                  border: '1px solid #2563EB',
+                  background: 'transparent',
+                  color: '#2563EB',
+                  fontWeight: 600,
+                  cursor: 'pointer'
+                }}
+              >
+                {t('buttons.downloadTemplate')}
+              </button>
+            </div>
+
+            <div style={{ display: 'flex', justifyContent: 'center', marginTop: '18px' }}>
+              <button
+                onClick={handleBulkSend}
+                disabled={isBulkSending || bulkRows.length === 0}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '10px',
+                  padding: '12px 22px',
+                  borderRadius: '12px',
+                  border: 'none',
+                  background: isBulkSending || bulkRows.length === 0
+                    ? '#9CA3AF'
+                    : 'linear-gradient(90deg, #2563EB 0%, #3B82F6 100%)',
+                  color: 'white',
+                  fontWeight: 600,
+                  cursor: isBulkSending || bulkRows.length === 0 ? 'not-allowed' : 'pointer'
+                }}
+              >
+                <i className="fas fa-paper-plane" />
+                {isBulkSending ? t('statuses.sending') : t('buttons.send')}
+              </button>
+            </div>
+
+          </div>
+        )}
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr',
+          gap: '12px',
+          marginTop: '20px'
+        }}>
+          <div style={{
+            display: 'flex',
+            gap: '12px',
+            padding: '12px 16px',
+            borderRadius: '12px',
+            background: 'linear-gradient(135deg, #DBEAFE 0%, #EFF6FF 100%)',
+            border: '1px solid #BFDBFE'
+          }}>
+            <div style={{
+              width: '32px',
+              height: '32px',
+              borderRadius: '999px',
+              background: 'linear-gradient(135deg, #2563EB 0%, #3B82F6 100%)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              color: 'white',
+              fontSize: '12px'
+            }}>
+              <i className="fas fa-coins" />
+            </div>
+            <div style={{ fontSize: '12px', color: '#1E3A8A' }}>
+              <div style={{ fontWeight: 700, marginBottom: '4px' }}>{t('labels.creditInfoTitle')}</div>
+              <div>{t('labels.creditInfoText')}</div>
+            </div>
+          </div>
+          <div style={{
+            display: 'flex',
+            gap: '12px',
+            padding: '12px 16px',
+            borderRadius: '12px',
+            background: 'linear-gradient(135deg, #FEF3C7 0%, #FFFBEB 100%)',
+            border: '1px solid #FDE68A'
+          }}>
+            <div style={{
+              width: '32px',
+              height: '32px',
+              borderRadius: '999px',
+              background: 'linear-gradient(135deg, #F59E0B 0%, #F97316 100%)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              color: 'white',
+              fontSize: '12px'
+            }}>
+              <i className="fas fa-circle-exclamation" />
+            </div>
+            <div style={{ fontSize: '12px', color: '#92400E' }}>
+              <div style={{ fontWeight: 700, marginBottom: '4px' }}>{t('labels.autoRefundTitle')}</div>
+              <div>{t('labels.autoRefundText')}</div>
+            </div>
+          </div>
+        </div>
       </div>
 
       {/* Group Details Modal */}

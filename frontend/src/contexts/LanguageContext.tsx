@@ -160,6 +160,7 @@ const translations: Record<Language, Record<string, string>> = {
     'labels.planetNotFound': 'Gezegen bulunamadı',
     'labels.bulkDelete': 'Toplu Sil',
     'labels.bulkDeleteWithCount': 'Toplu Sil ({count})',
+    'labels.bulkSendTab': 'Toplu Gönderim',
     'labels.groupsEmpty': 'Henüz grup bulunmuyor',
     'labels.groupsNotFound': 'Arama kriterlerinize uygun grup bulunamadı',
     'labels.groupDetailsSubtitle': 'Grup bilgilerini güncelleyin ve organizasyonları, kişileri ve gezegenleri düzenleyin',
@@ -179,10 +180,12 @@ const translations: Record<Language, Record<string, string>> = {
     'labels.companyEmail': 'Firma Maili',
     'labels.vkn': 'VKN',
     'labels.remainingGameCount': 'Kalan Oyun Sayısı',
-    'labels.creditInfoTitle': 'Kredi Bilgisi:',
-    'labels.creditInfoText': 'Kişi ve gezegen başına 1 kredi düşülür. Örnek: 2 kişiye 2 gezegen gönderilirse 4 kredi düşer.',
-    'labels.autoRefundTitle': 'Otomatik İade:',
+    'labels.creditInfoTitle': 'Kredi Bilgisi',
+    'labels.creditInfoText': 'Kişi ve gezegen başına 1 kredi düşülür. Toplu gönderimde toplam kredi hesaplanır.',
+    'labels.autoRefundTitle': 'Önemli Not',
     'labels.autoRefundText': 'Hiç başlanmayıp süresi dolan oyunların kredisi otomatik olarak iade edilir.',
+    'labels.bulkUploadTemplateTitle': 'Yükleme Şablonu',
+    'labels.bulkUploadTemplateDesc': 'Doğru format için şablonu indirin ve doldurun',
     'labels.person': 'Kişi',
     'labels.group': 'Grup',
     'labels.planetSelection': 'Gezegen Seçimi',
@@ -827,6 +830,7 @@ const translations: Record<Language, Record<string, string>> = {
     'labels.planetNotFound': 'Planet not found',
     'labels.bulkDelete': 'Bulk Delete',
     'labels.bulkDeleteWithCount': 'Bulk Delete ({count})',
+    'labels.bulkSendTab': 'Bulk Send',
     'labels.groupsEmpty': 'No groups yet',
     'labels.groupsNotFound': 'No groups match your search criteria',
     'labels.groupDetailsSubtitle': 'Update group info and manage organizations, people, and planets',
@@ -846,10 +850,12 @@ const translations: Record<Language, Record<string, string>> = {
     'labels.companyEmail': 'Company Email',
     'labels.vkn': 'Tax ID',
     'labels.remainingGameCount': 'Remaining Game Count',
-    'labels.creditInfoTitle': 'Credit Info:',
-    'labels.creditInfoText': '1 credit is deducted per person and per planet. Example: 2 people and 2 planets cost 4 credits.',
-    'labels.autoRefundTitle': 'Auto Refund:',
+    'labels.creditInfoTitle': 'Credit Info',
+    'labels.creditInfoText': '1 credit is deducted per person and per planet. Total credits are calculated in bulk sends.',
+    'labels.autoRefundTitle': 'Important Note',
     'labels.autoRefundText': 'Credits for games that were never started and expired are automatically refunded.',
+    'labels.bulkUploadTemplateTitle': 'Upload Template',
+    'labels.bulkUploadTemplateDesc': 'Download the template and fill it with the correct format',
     'labels.person': 'Person',
     'labels.group': 'Group',
     'labels.planetSelection': 'Planet Selection',
@@ -1347,6 +1353,13 @@ const translations: Record<Language, Record<string, string>> = {
 
 const LanguageContext = createContext<LanguageContextValue | undefined>(undefined);
 
+const fallbackLanguageContext: LanguageContextValue = {
+  language: 'tr',
+  setLanguage: () => undefined,
+  toggleLanguage: () => undefined,
+  t: (key: string) => translations.tr[key] || key
+};
+
 export const LanguageProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [language, setLanguage] = useState<Language>(() => {
     const stored = localStorage.getItem('appLanguage');
@@ -1373,7 +1386,7 @@ export const LanguageProvider: React.FC<{ children: React.ReactNode }> = ({ chil
 export const useLanguage = () => {
   const context = useContext(LanguageContext);
   if (!context) {
-    throw new Error('useLanguage must be used within a LanguageProvider');
+    return fallbackLanguageContext;
   }
   return context;
 };
