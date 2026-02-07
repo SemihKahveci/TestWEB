@@ -1,18 +1,15 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useLanguage } from '../contexts/LanguageContext';
-import { evaluationAPI } from '../services/api';
-import * as XLSX from 'xlsx';
-
-// Dinamik API base URL - hem local hem live'da çalışır
-const API_BASE_URL = (import.meta as any).env?.DEV 
-  ? `${window.location.protocol}//${window.location.hostname}:5000`  // Development
-  : '';  // Production (aynı domain'de serve edilir
+import { evaluationAPI, adminAPI, organizationAPI } from '../services/api';
 
 interface UserResult {
   code: string;
   name: string;
   email: string;
   status: string;
+  unvan?: string;
+  pozisyon?: string;
   sentDate: string;
   completionDate: string;
   expiryDate: string;
@@ -25,8 +22,17 @@ interface UserResult {
   allGroupItems?: UserResult[];
 }
 
+const allCompetencyKeys = ['customerFocus', 'uncertainty', 'ie', 'idik'] as const;
+
 const ResultsPage: React.FC = () => {
   const { t, language } = useLanguage();
+  const navigate = useNavigate();
+  const competencyLabelMap = useMemo(() => ({
+    customerFocus: t('competency.customerFocus'),
+    uncertainty: t('competency.uncertainty'),
+    ie: t('competency.ie'),
+    idik: t('competency.idik')
+  }), [t]);
   const [results, setResults] = useState<UserResult[]>([]);
   const [filteredResults, setFilteredResults] = useState<UserResult[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -37,37 +43,36 @@ const ResultsPage: React.FC = () => {
   const [itemsPerPage] = useState(10);
   const [totalCount, setTotalCount] = useState(0);
   const [totalPages, setTotalPages] = useState(0);
-  const [originalTotalCount, setOriginalTotalCount] = useState(0); // Filtreleme öncesi toplam kayıt sayısı
   
   // Popup states
-  const [showFilterPopup, setShowFilterPopup] = useState(false);
-  const [selectedUser, setSelectedUser] = useState<UserResult | null>(null);
+  const [isFilterModalOpen, setIsFilterModalOpen] = useState(false);
+  const [showDownloadPopup, setShowDownloadPopup] = useState(false);
   const [showErrorPopup, setShowErrorPopup] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
   
-  // Filter states
-  const [filters, setFilters] = useState({
-    customerFocusMin: 5 as number | string,
-    customerFocusMax: 95 as number | string,
-    uncertaintyMin: 5 as number | string,
-    uncertaintyMax: 95 as number | string,
-    ieMin: 5 as number | string,
-    ieMax: 95 as number | string,
-    idikMin: 5 as number | string,
-    idikMax: 95 as number | string,
-    startDate: '',
-    endDate: ''
+  // Filter states (dashboard ile aynı)
+  const [selectedCompetencies, setSelectedCompetencies] = useState<string[]>([...allCompetencyKeys]);
+  const [tempSelectedCompetencies, setTempSelectedCompetencies] = useState<string[]>([]);
+  const [selectedTitles, setSelectedTitles] = useState<string[]>([]);
+  const [selectedPositions, setSelectedPositions] = useState<string[]>([]);
+  const [tempSelectedTitles, setTempSelectedTitles] = useState<string[]>([]);
+  const [tempSelectedPositions, setTempSelectedPositions] = useState<string[]>([]);
+  const [titleOptions, setTitleOptions] = useState<string[]>([]);
+  const [positionOptions, setPositionOptions] = useState<string[]>([]);
+  const [fullResults, setFullResults] = useState<UserResult[]>([]);
+  const [isFullResultsLoading, setIsFullResultsLoading] = useState(false);
+  const [downloadOptions, setDownloadOptions] = useState({
+    generalEvaluation: true,
+    strengths: true,
+    interviewQuestions: true,
+    whyTheseQuestions: true,
+    developmentSuggestions: true,
+    competencyScore: true
   });
-  const [filtersApplied, setFiltersApplied] = useState(false); // Filtreleme yapıldı mı?
   const [isMobile, setIsMobile] = useState(false);
   
   const hasLoaded = useRef(false);
   const lastSearchTerm = useRef<string>('');
-
-  const formatDateRangeError = () => t('errors.startAfterEnd');
-
-  const formatMinMaxError = (label: string) =>
-    `${label}: ${t('errors.minLessThanMax')}`;
 
   const formatTemplate = (template: string, params: Record<string, string | number>) =>
     Object.entries(params).reduce(
@@ -84,34 +89,6 @@ const ResultsPage: React.FC = () => {
   const formatNoSearchResults = (query: string) =>
     formatTemplate(t('labels.noSearchResults'), { query });
 
-  const formatExcelFileName = (dateStr: string, timeStr: string) =>
-    formatTemplate(t('labels.excelFileName'), { date: dateStr, time: timeStr });
-
-  const parseDateInput = (value: string) => {
-    if (!value) return null;
-    const normalized = value.trim();
-    if (!normalized) return null;
-
-    if (language === 'en') {
-      const match = normalized.match(/^(\d{1,2})[\/.-](\d{1,2})[\/.-](\d{4})$/);
-      if (!match) return null;
-      const month = Number(match[1]);
-      const day = Number(match[2]);
-      const year = Number(match[3]);
-      const date = new Date(year, month - 1, day);
-      if (date.getFullYear() !== year || date.getMonth() !== month - 1 || date.getDate() !== day) return null;
-      return date;
-    }
-
-    const match = normalized.match(/^(\d{1,2})[\/.-](\d{1,2})[\/.-](\d{4})$/);
-    if (!match) return null;
-    const day = Number(match[1]);
-    const month = Number(match[2]);
-    const year = Number(match[3]);
-    const date = new Date(year, month - 1, day);
-    if (date.getFullYear() !== year || date.getMonth() !== month - 1 || date.getDate() !== day) return null;
-    return date;
-  };
 
   const loadData = useCallback(async (showLoading = true, page?: number, search?: string) => {
     try {
@@ -137,11 +114,9 @@ const ResultsPage: React.FC = () => {
       );
       
       if (response.data.success && response.data.results) {
-        // Pagination bilgilerini kaydet (sadece filtreleme yapılmamışsa)
-        if (response.data.pagination && !filtersApplied) {
+        if (response.data.pagination) {
           setTotalCount(response.data.pagination.total);
           setTotalPages(response.data.pagination.totalPages);
-          setOriginalTotalCount(response.data.pagination.total);
         }
         
         // Gruplama yok, tüm veriler güncelliğe göre sıralanmış şekilde geliyor
@@ -152,29 +127,21 @@ const ResultsPage: React.FC = () => {
         }));
         
         setResults(formattedResults);
-        // Eğer filtreleme yapılmamışsa filteredResults'ı güncelle
-        // Filtreleme yapılmışsa, filtreleme sonuçlarını koru
-        if (!filtersApplied) {
-          setFilteredResults(formattedResults);
-        }
+        setFilteredResults(formattedResults);
       } else {
         console.error('❌ API başarısız:', response.data.message);
         setResults([]);
-        if (!filtersApplied) {
-          setFilteredResults([]);
-        }
+        setFilteredResults([]);
       }
     } catch (error) {
       console.error('❌ Results veri yükleme hatası:', error);
       setResults([]);
-      if (!filtersApplied) {
-        setFilteredResults([]);
-      }
+      setFilteredResults([]);
     } finally {
       setIsLoading(false);
       setIsSearching(false);
     }
-  }, [currentPage, itemsPerPage, debouncedSearchTerm, filtersApplied]);
+  }, [currentPage, itemsPerPage, debouncedSearchTerm]);
 
   // Responsive kontrolü
   useEffect(() => {
@@ -194,6 +161,27 @@ const ResultsPage: React.FC = () => {
     };
   }, []);
 
+  useEffect(() => {
+    const loadOrganizationOptions = async () => {
+      try {
+        const response = await organizationAPI.getAll();
+        if (response.data?.success && response.data.organizations) {
+          const organizations: any[] = response.data.organizations || [];
+          const isValidOption = (value: unknown): value is string =>
+            typeof value === 'string' && value.trim().length > 0;
+          const titles = Array.from(new Set(organizations.map((item: any) => item.unvan).filter(isValidOption))).sort();
+          const positions = Array.from(new Set(organizations.map((item: any) => item.pozisyon).filter(isValidOption))).sort();
+          setTitleOptions(titles);
+          setPositionOptions(positions);
+        }
+      } catch (error) {
+        console.error('Unvan/pozisyon yükleme hatası:', error);
+      }
+    };
+
+    loadOrganizationOptions();
+  }, []);
+
   // Debounce search term - kullanıcı yazmayı bitirdikten 500ms sonra arama yap
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -204,26 +192,16 @@ const ResultsPage: React.FC = () => {
   }, [searchTerm]);
 
   // Frontend'de anlık filtreleme (akıllı arama)
-  // Eğer filtreleme yapılmışsa, filtreleme sonuçları üzerinde arama yap
   useEffect(() => {
-    if (filtersApplied) {
-      // Filtreleme yapılmışsa, filtreleme sonuçlarını koru ve sadece arama yap
-      // Bu useEffect filtreleme sonuçlarını bozmaz
-      return;
-    }
-    
-    // Filtreleme yapılmamışsa normal arama yap
     if (searchTerm) {
-      // Frontend'de anlık filtreleme yap
       const filtered = results.filter(result =>
         result.name && result.name.toLowerCase().includes(searchTerm.toLowerCase())
       );
       setFilteredResults(filtered);
     } else {
-      // Arama yoksa tüm sonuçları göster
       setFilteredResults(results);
     }
-  }, [searchTerm, results, filtersApplied]);
+  }, [searchTerm, results]);
 
   // Debounced search term değiştiğinde sayfayı 1'e resetle ve veri çek
   useEffect(() => {
@@ -252,6 +230,7 @@ const ResultsPage: React.FC = () => {
     }
   }, [currentPage, loadData, debouncedSearchTerm]);
 
+
   const formatDate = (dateString: string) => {
     if (!dateString) return '-';
     const locale = language === 'en' ? 'en-US' : 'tr-TR';
@@ -274,6 +253,167 @@ const ResultsPage: React.FC = () => {
     if (numScore <= 65) return 'yellow';
     if (numScore <= 89.99999999999) return 'green';
     return 'red';
+  };
+
+  const openFilterModal = () => {
+    setTempSelectedCompetencies(selectedCompetencies);
+    setTempSelectedTitles(selectedTitles);
+    setTempSelectedPositions(selectedPositions);
+    setIsFilterModalOpen(true);
+  };
+
+  const closeFilterModal = () => {
+    setIsFilterModalOpen(false);
+  };
+
+  const saveFilterModal = () => {
+    if (tempSelectedCompetencies.length === 0) {
+      return;
+    }
+    setSelectedCompetencies(tempSelectedCompetencies);
+    setSelectedTitles(tempSelectedTitles);
+    setSelectedPositions(tempSelectedPositions);
+    setIsFilterModalOpen(false);
+    setCurrentPage(1);
+  };
+
+  const resetFilterModal = () => {
+    setTempSelectedCompetencies([...allCompetencyKeys]);
+    setTempSelectedTitles([]);
+    setTempSelectedPositions([]);
+    setSelectedCompetencies([...allCompetencyKeys]);
+    setSelectedTitles([]);
+    setSelectedPositions([]);
+    setIsFilterModalOpen(false);
+    setCurrentPage(1);
+  };
+
+  const toggleTempCompetency = (competency: string) => {
+    setTempSelectedCompetencies((prev) => {
+      if (prev.includes(competency)) {
+        return prev.filter((item) => item !== competency);
+      }
+      return [...prev, competency];
+    });
+  };
+
+  const toggleTempTitle = (title: string) => {
+    setTempSelectedTitles((prev) => {
+      if (prev.includes(title)) {
+        return prev.filter((item) => item !== title);
+      }
+      return [...prev, title];
+    });
+  };
+
+  const toggleTempPosition = (position: string) => {
+    setTempSelectedPositions((prev) => {
+      if (prev.includes(position)) {
+        return prev.filter((item) => item !== position);
+      }
+      return [...prev, position];
+    });
+  };
+
+  const hasScoreValue = (score: number | string) =>
+    score !== null && score !== undefined && score !== '-' && score !== 0 && score !== '0';
+
+  const getScoreByCompetency = (item: UserResult, competency: string) => {
+    switch (competency) {
+      case 'customerFocus':
+        return item.customerFocusScore;
+      case 'uncertainty':
+        return item.uncertaintyScore;
+      case 'ie':
+        return item.ieScore;
+      case 'idik':
+        return item.idikScore;
+      default:
+        return null;
+    }
+  };
+
+  const isFilterActive =
+    selectedTitles.length > 0 ||
+    selectedPositions.length > 0 ||
+    (selectedCompetencies.length > 0 && selectedCompetencies.length < allCompetencyKeys.length);
+
+  const applyResultFilters = (items: UserResult[]) =>
+    items.filter((item) => {
+      const matchesTitle =
+        selectedTitles.length === 0 ||
+        selectedTitles.includes((item.unvan || '').trim());
+      const matchesPosition =
+        selectedPositions.length === 0 ||
+        selectedPositions.includes((item.pozisyon || '').trim());
+      const matchesCompetency =
+        selectedCompetencies.length === 0 ||
+        selectedCompetencies.some((comp) => hasScoreValue(getScoreByCompetency(item, comp) as number | string));
+      return matchesTitle && matchesPosition && matchesCompetency;
+    });
+
+  useEffect(() => {
+    if (!isFilterActive) {
+      return;
+    }
+
+    const loadFullResults = async () => {
+      try {
+        setIsFullResultsLoading(true);
+        const response = await evaluationAPI.getAll(undefined, undefined, '', 'Tamamlandı', true);
+        if (response.data?.success && response.data.results) {
+          setFullResults(response.data.results);
+        } else {
+          setFullResults([]);
+        }
+      } catch (error) {
+        console.error('Tüm sonuçları yükleme hatası:', error);
+        setFullResults([]);
+      } finally {
+        setIsFullResultsLoading(false);
+      }
+    };
+
+    loadFullResults();
+  }, [isFilterActive]);
+
+  const handleExcelDownload = async () => {
+    if (effectiveResults.length === 0) {
+      setErrorMessage(t('errors.noDataToDownload'));
+      setShowErrorPopup(true);
+      return;
+    }
+
+    try {
+      const response = await adminAPI.exportExcelBulk({
+        codes: effectiveResults.map((item) => item.code),
+        selectedOptions: downloadOptions
+      });
+
+      const blob = new Blob([response.data], {
+        type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+      });
+      const url = window.URL.createObjectURL(blob);
+      const date = new Date();
+      const formattedDate = `${date.getDate().toString().padStart(2, '0')}${(date.getMonth() + 1)
+        .toString()
+        .padStart(2, '0')}${date.getFullYear()}`;
+      const fileName = formatTemplate(t('labels.dashboardExcelFileName'), { date: formattedDate });
+
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = fileName;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+
+      setShowDownloadPopup(false);
+    } catch (error) {
+      console.error(t('errors.excelDownloadFailed'), error);
+      setErrorMessage(t('errors.excelDownloadFailed'));
+      setShowErrorPopup(true);
+    }
   };
 
   // HTML'deki gibi e-posta adresine göre gruplama
@@ -324,199 +464,6 @@ const ResultsPage: React.FC = () => {
   };
 
 
-  // Filtreleme fonksiyonu
-  const applyFilters = async () => {
-    try {
-
-      // Tarih kontrolü
-      if (filters.startDate || filters.endDate) {
-        const startDate = parseDateInput(filters.startDate);
-        const endDate = parseDateInput(filters.endDate);
-        if ((filters.startDate && !startDate) || (filters.endDate && !endDate)) {
-          setErrorMessage(t('errors.invalidDate'));
-          setShowErrorPopup(true);
-          return;
-        }
-        if (startDate && endDate && startDate > endDate) {
-          setErrorMessage(formatDateRangeError());
-          setShowErrorPopup(true);
-          return;
-        }
-      }
-
-      // Minimum ve maksimum değer kontrolü
-      const customerFocusMin = typeof filters.customerFocusMin === 'string' ? 5 : filters.customerFocusMin;
-      const customerFocusMax = typeof filters.customerFocusMax === 'string' ? 95 : filters.customerFocusMax;
-      if (customerFocusMin >= customerFocusMax) {
-        setErrorMessage(formatMinMaxError(t('labels.customerFocusScore')));
-        setShowErrorPopup(true);
-        return;
-      }
-      
-      const uncertaintyMin = typeof filters.uncertaintyMin === 'string' ? 5 : filters.uncertaintyMin;
-      const uncertaintyMax = typeof filters.uncertaintyMax === 'string' ? 95 : filters.uncertaintyMax;
-      if (uncertaintyMin >= uncertaintyMax) {
-        setErrorMessage(formatMinMaxError(t('labels.adaptabilityScore')));
-        setShowErrorPopup(true);
-        return;
-      }
-      
-      const ieMin = typeof filters.ieMin === 'string' ? 5 : filters.ieMin;
-      const ieMax = typeof filters.ieMax === 'string' ? 95 : filters.ieMax;
-      if (ieMin >= ieMax) {
-        setErrorMessage(formatMinMaxError(t('labels.influenceScore')));
-        setShowErrorPopup(true);
-        return;
-      }
-      
-      const idikMin = typeof filters.idikMin === 'string' ? 5 : filters.idikMin;
-      const idikMax = typeof filters.idikMax === 'string' ? 95 : filters.idikMax;
-      if (idikMin >= idikMax) {
-        setErrorMessage(formatMinMaxError(t('labels.trustScore')));
-        setShowErrorPopup(true);
-        return;
-      }
-
-      // Filtreleme yapmadan önce backend'den TÜM verileri çek
-      setIsSearching(true);
-      const response = await evaluationAPI.getAll(
-        undefined, // page: undefined (tüm sayfalar)
-        undefined, // limit: undefined (limit yok, tüm veriler)
-        debouncedSearchTerm || '', // searchTerm korunuyor
-        'Tamamlandı', // Sadece tamamlanan sonuçlar
-        true // showExpiredWarning
-      );
-
-      if (!response.data.success || !response.data.results) {
-        setErrorMessage(t('errors.dataLoadFailed'));
-        setShowErrorPopup(true);
-        setIsSearching(false);
-        return;
-      }
-
-      // Tüm sonuçları al
-      const allResults = response.data.results.map((result: any) => ({
-        ...result,
-        isGrouped: false,
-        groupCount: 1
-      }));
-
-      // Tüm veriler üzerinde filtreleme yap
-      const filteredItems = allResults.filter(item => {
-        try {
-          if (!item || !item.name) {
-            return false;
-          }
-
-          const itemName = item.name.toString().toLowerCase();
-          const customerFocusScore = item.customerFocusScore === '-' ? null : parseFloat(item.customerFocusScore.toString());
-          const uncertaintyScore = item.uncertaintyScore === '-' ? null : parseFloat(item.uncertaintyScore.toString());
-          const ieScore = item.ieScore === '-' ? null : parseFloat(item.ieScore.toString());
-          const idikScore = item.idikScore === '-' ? null : parseFloat(item.idikScore.toString());
-
-          // İsim araması (kaldırıldı - sadece üstteki arama kutusu kullanılıyor)
-          let nameMatch = true;
-
-          // Müşteri Odaklılık Skoru filtresi
-          let customerFocusMatch = true;
-          if (customerFocusScore !== null) {
-            const min = typeof filters.customerFocusMin === 'string' ? 5 : filters.customerFocusMin;
-            const max = typeof filters.customerFocusMax === 'string' ? 95 : filters.customerFocusMax;
-            customerFocusMatch = customerFocusScore >= min && customerFocusScore <= max;
-          }
-
-          // Belirsizlik Yönetimi Skoru filtresi
-          let uncertaintyMatch = true;
-          if (uncertaintyScore !== null) {
-            const min = typeof filters.uncertaintyMin === 'string' ? 5 : filters.uncertaintyMin;
-            const max = typeof filters.uncertaintyMax === 'string' ? 95 : filters.uncertaintyMax;
-            uncertaintyMatch = uncertaintyScore >= min && uncertaintyScore <= max;
-          }
-
-          // IE Skoru filtresi
-          let ieMatch = true;
-          if (ieScore !== null) {
-            const min = typeof filters.ieMin === 'string' ? 5 : filters.ieMin;
-            const max = typeof filters.ieMax === 'string' ? 95 : filters.ieMax;
-            ieMatch = ieScore >= min && ieScore <= max;
-          }
-
-          // IDIK Skoru filtresi
-          let idikMatch = true;
-          if (idikScore !== null) {
-            const min = typeof filters.idikMin === 'string' ? 5 : filters.idikMin;
-            const max = typeof filters.idikMax === 'string' ? 95 : filters.idikMax;
-            idikMatch = idikScore >= min && idikScore <= max;
-          }
-
-          // Tarih filtresi
-          let dateMatch = true;
-          if (filters.startDate || filters.endDate) {
-            const completionDate = new Date(item.completionDate);
-            const startDate = parseDateInput(filters.startDate);
-            const endDate = parseDateInput(filters.endDate);
-            if (startDate) {
-              dateMatch = dateMatch && completionDate >= startDate;
-            }
-            if (endDate) {
-              endDate.setHours(23, 59, 59, 999); // Günün sonuna kadar
-              dateMatch = dateMatch && completionDate <= endDate;
-            }
-          }
-
-          return nameMatch && customerFocusMatch && uncertaintyMatch && ieMatch && idikMatch && dateMatch;
-        } catch (error) {
-          console.error('Öğe filtreleme hatası:', error, item);
-          return false;
-        }
-      });
-
-      // Gruplama yok, sadece filtreleme yap
-      setFilteredResults(filteredItems);
-      setFiltersApplied(true); // Filtreleme yapıldığını işaretle
-      
-      // Filtreleme sonuçlarına göre sayfalama bilgilerini güncelle
-      const filteredCount = filteredItems.length;
-      setTotalCount(filteredCount);
-      setTotalPages(Math.ceil(filteredCount / itemsPerPage));
-      setCurrentPage(1);
-
-      setIsSearching(false);
-      setShowFilterPopup(false);
-    } catch (error) {
-      console.error('Filtreleme hatası:', error);
-      setIsSearching(false);
-      setErrorMessage(t('errors.filterFailed'));
-      setShowErrorPopup(true);
-    }
-  };
-
-  // Filtreleri temizle
-  const clearFilters = () => {
-    setFilters({
-      customerFocusMin: 5,
-      customerFocusMax: 95,
-      uncertaintyMin: 5,
-      uncertaintyMax: 95,
-      ieMin: 5,
-      ieMax: 95,
-      idikMin: 5,
-      idikMax: 95,
-      startDate: '',
-      endDate: ''
-    });
-    setFiltersApplied(false); // Filtreleme temizlendiğini işaretle
-    
-    // Backend'den tekrar veri çek (pagination ile)
-    setCurrentPage(1);
-    loadData(true); // Loading göster
-  };
-
-  // Filtre popup'ını kapat
-  const closeFilterPopup = () => {
-    setShowFilterPopup(false);
-  };
-
   // Hata popup'ını kapat
   const closeErrorPopup = () => {
     setShowErrorPopup(false);
@@ -524,110 +471,21 @@ const ResultsPage: React.FC = () => {
   };
 
 
-  const handleDownloadExcel = async () => {
-    try {
-      // Loading gösterme - arka planda çalışsın
-      
-      // Skor değerini formatla - 0 ise "-" göster
-      const formatScoreForExcel = (score: number | string) => {
-        if (score === null || score === undefined || score === '-' || score === 0 || score === '0') return '-';
-        return typeof score === 'number' ? score.toFixed(1) : score;
-      };
 
-      let dataToExport: any[] = [];
-
-      // Eğer filtreleme yapılmışsa, sadece filtreli sonuçları kullan
-      if (filtersApplied) {
-        // Filtreli sonuçları kullan
-        dataToExport = filteredResults
-          .filter(item => item.status === 'Tamamlandı')
-          .map(item => ({
-            [t('labels.nameSurname')]: item.name || '-',
-            [t('labels.email')]: item.email || '-',
-            [t('labels.completionDate')]: formatDate(item.completionDate) || '-',
-            [t('labels.customerFocusScore')]: formatScoreForExcel(item.customerFocusScore),
-            [t('labels.adaptabilityScore')]: formatScoreForExcel(item.uncertaintyScore),
-            [t('labels.influenceScore')]: formatScoreForExcel(item.ieScore),
-            [t('labels.trustScore')]: formatScoreForExcel(item.idikScore)
-          }));
-      } else {
-        // Filtreleme yapılmamışsa, backend'den tüm verileri çek
-        const response = await evaluationAPI.getAll(
-          undefined, // page: undefined (tüm sayfalar)
-          undefined, // limit: undefined (limit yok, tüm veriler)
-          debouncedSearchTerm || '', // searchTerm korunuyor
-          'Tamamlandı', // Sadece tamamlanan sonuçlar
-          true // showExpiredWarning
-        );
-
-        if (!response.data.success || !response.data.results) {
-          setErrorMessage(t('errors.dataLoadFailed'));
-          setShowErrorPopup(true);
-          return;
-        }
-
-        // Tüm sonuçları al
-        const allResults = response.data.results;
-
-        // Excel için veriyi formatla
-        dataToExport = allResults
-          .filter(item => item.status === 'Tamamlandı')
-          .map(item => ({
-            [t('labels.nameSurname')]: item.name || '-',
-            [t('labels.email')]: item.email || '-',
-            [t('labels.completionDate')]: formatDate(item.completionDate) || '-',
-            [t('labels.customerFocusScore')]: formatScoreForExcel(item.customerFocusScore),
-            [t('labels.adaptabilityScore')]: formatScoreForExcel(item.uncertaintyScore),
-            [t('labels.influenceScore')]: formatScoreForExcel(item.ieScore),
-            [t('labels.trustScore')]: formatScoreForExcel(item.idikScore)
-          }));
-      }
-
-      if (dataToExport.length === 0) {
-        setErrorMessage(t('errors.noDataToDownload'));
-        setShowErrorPopup(true);
-        return;
-      }
-
-      // Excel workbook oluştur
-      const workbook = XLSX.utils.book_new();
-      const worksheet = XLSX.utils.json_to_sheet(dataToExport);
-
-      // Sütun genişliklerini ayarla
-      const columnWidths = [
-        { wch: 20 }, // Ad Soyad
-        { wch: 25 }, // E-posta
-        { wch: 18 }, // Tamamlanma Tarihi
-        { wch: 25 }, // Müşteri Odaklılık
-        { wch: 25 }, // Belirsizlik Yönetimi
-        { wch: 25 }, // İnsanları Etkileme
-        { wch: 35 }  // Güven Veren İşbirliği
-      ];
-      worksheet['!cols'] = columnWidths;
-
-      // Worksheet'i workbook'a ekle
-      XLSX.utils.book_append_sheet(workbook, worksheet, t('labels.personScoresSheet'));
-
-      // Dosya adını oluştur
-      const now = new Date();
-      const dateStr = now.toISOString().split('T')[0];
-      const timeStr = now.toTimeString().split(' ')[0].replace(/:/g, '-');
-      const fileName = formatExcelFileName(dateStr, timeStr);
-
-      // Excel dosyasını indir
-      XLSX.writeFile(workbook, fileName);
-
-    } catch (error) {
-      console.error('Excel indirme hatası:', error);
-      setErrorMessage(t('errors.excelDownloadFailed'));
-      setShowErrorPopup(true);
-    }
-  };
+  const baseResults = isFilterActive ? fullResults : filteredResults;
+  const searchFilteredResults = searchTerm
+    ? baseResults.filter(result =>
+        result.name && result.name.toLowerCase().includes(searchTerm.toLowerCase())
+      )
+    : baseResults;
+  const effectiveResults = isFilterActive ? applyResultFilters(searchFilteredResults) : searchFilteredResults;
+  const effectiveTotalCount = isFilterActive ? effectiveResults.length : totalCount;
+  const effectiveTotalPages = isFilterActive ? Math.ceil(effectiveResults.length / itemsPerPage) : totalPages;
 
   // Pagination: Eğer filtreleme yapılmışsa frontend'de sayfalama yap, yoksa backend'den gelen sayfalanmış veriyi kullan
-  const paginatedResults = filtersApplied 
-    ? filteredResults.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage)
-    : filteredResults;
+  const paginatedResults = isFilterActive
+    ? effectiveResults.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage)
+    : effectiveResults;
 
   if (isLoading) {
     return (
@@ -842,7 +700,7 @@ const ResultsPage: React.FC = () => {
 
           {/* Filter Button */}
           <button
-            onClick={() => setShowFilterPopup(true)}
+            onClick={openFilterModal}
             style={{
               background: '#0286F7',
               color: 'white',
@@ -870,7 +728,7 @@ const ResultsPage: React.FC = () => {
 
           {/* Download Button */}
           <button
-            onClick={handleDownloadExcel}
+            onClick={() => setShowDownloadPopup(true)}
             style={{
               background: '#1D6F42',
               color: 'white',
@@ -989,7 +847,15 @@ const ResultsPage: React.FC = () => {
                       textAlign: 'left',
                       borderRight: '1px solid #E9ECEF'
                     }}>
-                      {result.name}
+                      <span
+                        onClick={() => navigate('/person-results', { state: { selectedUser: result } })}
+                        style={{
+                          cursor: 'pointer',
+                          textDecoration: 'underline'
+                        }}
+                      >
+                        {result.name}
+                      </span>
                       {result.isGrouped && result.groupCount && result.groupCount > 1 && (
                         <span style={{
                           color: '#666',
@@ -1106,7 +972,7 @@ const ResultsPage: React.FC = () => {
       </div>
 
       {/* Pagination */}
-      {totalPages > 1 && (
+      {effectiveTotalPages > 1 && (
         <div style={{
           display: 'flex',
           flexDirection: 'column',
@@ -1123,8 +989,8 @@ const ResultsPage: React.FC = () => {
           }}>
             {formatRangeInfo(
               ((currentPage - 1) * itemsPerPage) + 1,
-              Math.min(currentPage * itemsPerPage, totalCount),
-              totalCount
+              Math.min(currentPage * itemsPerPage, effectiveTotalCount),
+              effectiveTotalCount
             )}
           </div>
 
@@ -1180,7 +1046,7 @@ const ResultsPage: React.FC = () => {
             {(() => {
               const maxVisiblePages = 5;
               let startPage = Math.max(1, currentPage - Math.floor(maxVisiblePages / 2));
-              let endPage = Math.min(totalPages, startPage + maxVisiblePages - 1);
+              let endPage = Math.min(effectiveTotalPages, startPage + maxVisiblePages - 1);
               
               if (endPage - startPage + 1 < maxVisiblePages) {
                 startPage = Math.max(1, endPage - maxVisiblePages + 1);
@@ -1228,15 +1094,15 @@ const ResultsPage: React.FC = () => {
               }
 
               // Sonda ellipsis
-              if (endPage < totalPages) {
-                if (endPage < totalPages - 1) {
+              if (endPage < effectiveTotalPages) {
+                if (endPage < effectiveTotalPages - 1) {
                   pages.push(
                     <span key="ellipsis2" style={{ padding: '0 8px', color: '#9CA3AF', fontSize: '14px' }}>...</span>
                   );
                 }
                 pages.push(
-                  <button key={totalPages} onClick={() => setCurrentPage(totalPages)} style={pageButtonStyle(false)}>
-                    {totalPages}
+                  <button key={effectiveTotalPages} onClick={() => setCurrentPage(effectiveTotalPages)} style={pageButtonStyle(false)}>
+                    {effectiveTotalPages}
                   </button>
                 );
               }
@@ -1246,19 +1112,19 @@ const ResultsPage: React.FC = () => {
 
             {/* Sonraki sayfa */}
             <button
-              onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
-              disabled={currentPage === totalPages}
+              onClick={() => setCurrentPage(prev => Math.min(prev + 1, effectiveTotalPages))}
+              disabled={currentPage === effectiveTotalPages}
               style={{
                 width: '32px',
                 height: '32px',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                background: currentPage === totalPages ? '#F3F4F6' : 'white',
-                color: currentPage === totalPages ? '#9CA3AF' : '#374151',
+                background: currentPage === effectiveTotalPages ? '#F3F4F6' : 'white',
+                color: currentPage === effectiveTotalPages ? '#9CA3AF' : '#374151',
                 border: '1px solid #E5E7EB',
                 borderRadius: '4px',
-                cursor: currentPage === totalPages ? 'not-allowed' : 'pointer',
+                cursor: currentPage === effectiveTotalPages ? 'not-allowed' : 'pointer',
                 fontSize: '12px'
               }}
             >
@@ -1267,19 +1133,19 @@ const ResultsPage: React.FC = () => {
 
             {/* Son sayfa */}
             <button
-              onClick={() => setCurrentPage(totalPages)}
-              disabled={currentPage === totalPages}
+              onClick={() => setCurrentPage(effectiveTotalPages)}
+              disabled={currentPage === effectiveTotalPages}
               style={{
                 width: '32px',
                 height: '32px',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                background: currentPage === totalPages ? '#F3F4F6' : 'white',
-                color: currentPage === totalPages ? '#9CA3AF' : '#374151',
+                background: currentPage === effectiveTotalPages ? '#F3F4F6' : 'white',
+                color: currentPage === effectiveTotalPages ? '#9CA3AF' : '#374151',
                 border: '1px solid #E5E7EB',
                 borderRadius: '4px',
-                cursor: currentPage === totalPages ? 'not-allowed' : 'pointer',
+                cursor: currentPage === effectiveTotalPages ? 'not-allowed' : 'pointer',
                 fontSize: '12px'
               }}
             >
@@ -1290,8 +1156,230 @@ const ResultsPage: React.FC = () => {
       )}
 
       {/* CSS Animation */}
-      {/* Filter Popup */}
-      {showFilterPopup && (
+      {isFilterModalOpen && (
+        <div
+          onClick={closeFilterModal}
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            width: '100%',
+            height: '100%',
+            background: 'rgba(0, 0, 0, 0.5)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: '16px',
+            zIndex: 1000
+          }}
+        >
+          <div
+            onClick={(event) => event.stopPropagation()}
+            style={{
+              background: 'white',
+              borderRadius: '12px',
+              width: '100%',
+              maxWidth: '560px',
+              boxShadow: '0 20px 25px -5px rgba(0,0,0,0.1), 0 10px 10px -5px rgba(0,0,0,0.04)',
+              overflow: 'hidden'
+            }}
+          >
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              padding: '20px 24px',
+              borderBottom: '1px solid #E5E7EB'
+            }}>
+              <h3 style={{ margin: 0, fontSize: '20px', fontWeight: 700, color: '#111827' }}>{t('titles.filtering')}</h3>
+              <button
+                onClick={closeFilterModal}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  fontSize: '22px',
+                  color: '#6B7280',
+                  cursor: 'pointer'
+                }}
+              >
+                ✕
+              </button>
+            </div>
+            <div style={{ padding: '20px 24px', maxHeight: '60vh', overflowY: 'auto' }}>
+              <div style={{ marginBottom: '16px', fontSize: '14px', fontWeight: 600, color: '#374151' }}>
+                {t('labels.competencySelection')}
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', background: '#F9FAFB', borderRadius: '10px', padding: '16px' }}>
+                {allCompetencyKeys.map((competency) => (
+                  <label key={competency} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px' }}>
+                    <span style={{ fontSize: '13px', color: '#111827' }}>{competencyLabelMap[competency]}</span>
+                    <label style={{ position: 'relative', display: 'inline-flex', alignItems: 'center', cursor: 'pointer' }}>
+                      <input
+                        type="checkbox"
+                        checked={tempSelectedCompetencies.includes(competency)}
+                        onChange={() => toggleTempCompetency(competency)}
+                        style={{ position: 'absolute', opacity: 0, width: 0, height: 0 }}
+                      />
+                      <span style={{
+                        width: '42px',
+                        height: '24px',
+                        background: tempSelectedCompetencies.includes(competency) ? '#2563EB' : '#D1D5DB',
+                        borderRadius: '999px',
+                        position: 'relative',
+                        transition: 'all 0.2s'
+                      }}>
+                        <span style={{
+                          position: 'absolute',
+                          top: '2px',
+                          left: tempSelectedCompetencies.includes(competency) ? '20px' : '2px',
+                          width: '20px',
+                          height: '20px',
+                          borderRadius: '50%',
+                          background: 'white',
+                          transition: 'all 0.2s'
+                        }} />
+                      </span>
+                    </label>
+                  </label>
+                ))}
+              </div>
+
+              <div style={{ marginTop: '20px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                <div>
+                  <div style={{ marginBottom: '8px', fontSize: '14px', fontWeight: 600, color: '#374151' }}>{t('labels.title')}</div>
+                  <div style={{ border: '1px solid #E5E7EB', borderRadius: '8px', padding: '10px', maxHeight: '160px', overflowY: 'auto' }}>
+                    {titleOptions.length === 0 ? (
+                      <div style={{ fontSize: '12px', color: '#9CA3AF' }}>{t('labels.noRecords')}</div>
+                    ) : (
+                      titleOptions.map((title) => (
+                        <label key={title} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '10px', gap: '12px' }}>
+                          <span style={{ fontSize: '13px', color: '#111827' }}>{title}</span>
+                          <label style={{ position: 'relative', display: 'inline-flex', alignItems: 'center', cursor: 'pointer' }}>
+                            <input
+                              type="checkbox"
+                              checked={tempSelectedTitles.includes(title)}
+                              onChange={() => toggleTempTitle(title)}
+                              style={{ position: 'absolute', opacity: 0, width: 0, height: 0 }}
+                            />
+                            <span style={{
+                              width: '42px',
+                              height: '24px',
+                              background: tempSelectedTitles.includes(title) ? '#2563EB' : '#D1D5DB',
+                              borderRadius: '999px',
+                              position: 'relative',
+                              transition: 'all 0.2s'
+                            }}>
+                              <span style={{
+                                position: 'absolute',
+                                top: '2px',
+                                left: tempSelectedTitles.includes(title) ? '20px' : '2px',
+                                width: '20px',
+                                height: '20px',
+                                borderRadius: '50%',
+                                background: 'white',
+                                transition: 'all 0.2s'
+                              }} />
+                            </span>
+                          </label>
+                        </label>
+                      ))
+                    )}
+                  </div>
+                </div>
+                <div>
+                  <div style={{ marginBottom: '8px', fontSize: '14px', fontWeight: 600, color: '#374151' }}>{t('labels.position')}</div>
+                  <div style={{ border: '1px solid #E5E7EB', borderRadius: '8px', padding: '10px', maxHeight: '160px', overflowY: 'auto' }}>
+                    {positionOptions.length === 0 ? (
+                      <div style={{ fontSize: '12px', color: '#9CA3AF' }}>{t('labels.noRecords')}</div>
+                    ) : (
+                      positionOptions.map((position) => (
+                        <label key={position} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '10px', gap: '12px' }}>
+                          <span style={{ fontSize: '13px', color: '#111827' }}>{position}</span>
+                          <label style={{ position: 'relative', display: 'inline-flex', alignItems: 'center', cursor: 'pointer' }}>
+                            <input
+                              type="checkbox"
+                              checked={tempSelectedPositions.includes(position)}
+                              onChange={() => toggleTempPosition(position)}
+                              style={{ position: 'absolute', opacity: 0, width: 0, height: 0 }}
+                            />
+                            <span style={{
+                              width: '42px',
+                              height: '24px',
+                              background: tempSelectedPositions.includes(position) ? '#2563EB' : '#D1D5DB',
+                              borderRadius: '999px',
+                              position: 'relative',
+                              transition: 'all 0.2s'
+                            }}>
+                              <span style={{
+                                position: 'absolute',
+                                top: '2px',
+                                left: tempSelectedPositions.includes(position) ? '20px' : '2px',
+                                width: '20px',
+                                height: '20px',
+                                borderRadius: '50%',
+                                background: 'white',
+                                transition: 'all 0.2s'
+                              }} />
+                            </span>
+                          </label>
+                        </label>
+                      ))
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', gap: '12px', padding: '16px 24px', borderTop: '1px solid #E5E7EB' }}>
+              <button
+                onClick={resetFilterModal}
+                style={{
+                  padding: '10px 16px',
+                  borderRadius: '8px',
+                  border: '1px solid #D1D5DB',
+                  background: '#F9FAFB',
+                  color: '#374151',
+                  fontWeight: 600,
+                  cursor: 'pointer'
+                }}
+              >
+                {t('buttons.clearFilters')}
+              </button>
+              <div style={{ display: 'flex', gap: '12px' }}>
+                <button
+                  onClick={closeFilterModal}
+                  style={{
+                    padding: '10px 16px',
+                    borderRadius: '8px',
+                    border: '1px solid #D1D5DB',
+                    background: 'white',
+                    color: '#374151',
+                    fontWeight: 600,
+                    cursor: 'pointer'
+                  }}
+                >
+                  {t('buttons.cancel')}
+                </button>
+                <button
+                  onClick={saveFilterModal}
+                  style={{
+                    padding: '10px 16px',
+                    borderRadius: '8px',
+                    border: 'none',
+                    background: '#2563EB',
+                    color: 'white',
+                    fontWeight: 600,
+                    cursor: 'pointer'
+                  }}
+                >
+                  {t('buttons.applyFilters')}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showDownloadPopup && (
         <div style={{
           position: 'fixed',
           top: 0,
@@ -1305,639 +1393,143 @@ const ResultsPage: React.FC = () => {
           zIndex: 1000
         }}>
           <div style={{
+            width: isMobile ? '90%' : '400px',
             background: 'white',
-            borderRadius: '8px',
-            padding: '0',
-            maxWidth: '600px',
-            width: '90%',
-            maxHeight: '80vh',
-            overflow: 'auto',
-            boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)'
+            borderRadius: '10px',
+            display: 'flex',
+            flexDirection: 'column',
+            overflow: 'hidden'
           }}>
-            {/* Header */}
             <div style={{
-              padding: '20px 24px',
-              borderBottom: '1px solid #E5E7EB',
+              padding: '20px',
+              borderBottom: '1px solid #E9ECEF',
               display: 'flex',
               justifyContent: 'space-between',
-              alignItems: 'center'
+              alignItems: 'center',
+              background: '#F8F9FA'
             }}>
-              <h3 style={{
-                margin: 0,
-                color: '#232D42',
-                fontFamily: 'Inter',
+              <div style={{
                 fontSize: '18px',
-                fontWeight: 600
+                fontWeight: 600,
+                color: '#232D42'
               }}>
-                {t('titles.filtering')}
-              </h3>
-              <button
-                onClick={closeFilterPopup}
+                {t('labels.downloadExcel')}
+              </div>
+              <div
+                onClick={() => setShowDownloadPopup(false)}
                 style={{
-                  background: 'none',
-                  border: 'none',
-                  fontSize: '24px',
-                  color: '#6B7280',
                   cursor: 'pointer',
-                  padding: '4px',
-                  lineHeight: 1
+                  fontSize: '24px',
+                  color: '#666'
                 }}
               >
                 ×
-              </button>
+              </div>
             </div>
-
-            {/* Body */}
             <div style={{
-              padding: '24px'
+              flex: 1,
+              padding: '20px',
+              overflowY: 'auto'
             }}>
-              {/* Tarih Filtresi */}
-              <div style={{ marginBottom: '24px' }}>
-                <label style={{
-                  display: 'block',
-                  marginBottom: '8px',
-                  color: '#232D42',
-                  fontWeight: 500,
-                  fontFamily: 'Inter',
-                  fontSize: '14px'
-                }}>
-                  {t('labels.completionDate')}
-                </label>
-                <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', flex: 1 }}>
-                    <span style={{ fontSize: '12px', color: '#6B7280', fontWeight: 500 }}>{t('labels.startDate')}</span>
-                    <input
-                      type="text"
-                      placeholder={t('placeholders.dateFormat')}
-                      inputMode="numeric"
-                      value={filters.startDate}
-                      onChange={(e) => setFilters({...filters, startDate: e.target.value})}
-                      style={{
-                        padding: '8px 12px',
-                        border: '1px solid #D1D5DB',
-                        borderRadius: '6px',
-                        fontSize: '14px',
-                        fontFamily: 'Inter',
-                        outline: 'none',
-                        width: '100%'
-                      }}
-                    />
-                  </div>
-                  <span style={{ fontSize: '14px', color: '#6B7280', marginTop: '20px' }}>-</span>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', flex: 1 }}>
-                    <span style={{ fontSize: '12px', color: '#6B7280', fontWeight: 500 }}>{t('labels.endDate')}</span>
-                    <input
-                      type="text"
-                      placeholder={t('placeholders.dateFormat')}
-                      inputMode="numeric"
-                      value={filters.endDate}
-                      onChange={(e) => setFilters({...filters, endDate: e.target.value})}
-                      style={{
-                        padding: '8px 12px',
-                        border: '1px solid #D1D5DB',
-                        borderRadius: '6px',
-                        fontSize: '14px',
-                        fontFamily: 'Inter',
-                        outline: 'none',
-                        width: '100%'
-                      }}
-                    />
-                  </div>
-                </div>
-              </div>
-
-              {/* Müşteri Odaklılık Skoru */}
-              <div style={{ marginBottom: '24px' }}>
-                <label style={{
-                  display: 'block',
-                  marginBottom: '8px',
-                  color: '#232D42',
-                  fontWeight: 500,
-                  fontFamily: 'Inter',
-                  fontSize: '14px'
-                }}>
-                  {t('labels.customerFocusScore')}
-                </label>
-                <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
-                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px', flex: 1 }}>
-                    <span style={{ fontSize: '12px', color: '#6B7280', fontWeight: 500 }}>{t('labels.minimum')}</span>
-                    <input
-                      type="range"
-                      min="5"
-                      max="95"
-                      value={filters.customerFocusMin}
-                      onChange={(e) => setFilters({...filters, customerFocusMin: parseInt(e.target.value)})}
-                      style={{ width: '100%' }}
-                    />
-                    <input
-                      type="number"
-                      min="5"
-                      max="95"
-                      value={filters.customerFocusMin}
-                      onChange={(e) => {
-                        const value = e.target.value;
-                        if (value === '') {
-                          setFilters({...filters, customerFocusMin: '' as any});
-                        } else {
-                          const numValue = parseInt(value);
-                          if (!isNaN(numValue)) {
-                            setFilters({...filters, customerFocusMin: numValue});
-                          } else {
-                            setFilters({...filters, customerFocusMin: value as any});
-                          }
-                        }
-                      }}
-                      onBlur={(e) => {
-                        const value = e.target.value;
-                        if (value !== '') {
-                          const numValue = parseInt(value);
-                          if (!isNaN(numValue)) {
-                            setFilters({...filters, customerFocusMin: Math.min(Math.max(numValue, 5), 95)});
-                          } else {
-                            setFilters({...filters, customerFocusMin: 5});
-                          }
-                        }
-                      }}
-                      style={{
-                        width: '50px',
-                        padding: '4px 6px',
-                        border: '1px solid #D1D5DB',
-                        borderRadius: '4px',
-                        fontSize: '14px',
-                        fontWeight: 600,
-                        textAlign: 'center',
-                        outline: 'none'
-                      }}
-                    />
-                  </div>
-                  <span style={{ fontSize: '14px', color: '#6B7280', marginTop: '20px' }}>-</span>
-                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px', flex: 1 }}>
-                    <span style={{ fontSize: '12px', color: '#6B7280', fontWeight: 500 }}>{t('labels.maximum')}</span>
-                    <input
-                      type="range"
-                      min="5"
-                      max="95"
-                      value={filters.customerFocusMax}
-                      onChange={(e) => setFilters({...filters, customerFocusMax: parseInt(e.target.value)})}
-                      style={{ width: '100%' }}
-                    />
-                    <input
-                      type="number"
-                      min="5"
-                      max="95"
-                      value={filters.customerFocusMax}
-                      onChange={(e) => {
-                        const value = e.target.value;
-                        if (value === '') {
-                          setFilters({...filters, customerFocusMax: '' as any});
-                        } else {
-                          const numValue = parseInt(value);
-                          if (!isNaN(numValue)) {
-                            setFilters({...filters, customerFocusMax: numValue});
-                          } else {
-                            setFilters({...filters, customerFocusMax: value as any});
-                          }
-                        }
-                      }}
-                      onBlur={(e) => {
-                        const value = e.target.value;
-                        if (value !== '') {
-                          const numValue = parseInt(value);
-                          if (!isNaN(numValue)) {
-                            setFilters({...filters, customerFocusMax: Math.min(Math.max(numValue, 5), 95)});
-                          } else {
-                            setFilters({...filters, customerFocusMax: 95});
-                          }
-                        }
-                      }}
-                      style={{
-                        width: '50px',
-                        padding: '4px 6px',
-                        border: '1px solid #D1D5DB',
-                        borderRadius: '4px',
-                        fontSize: '14px',
-                        fontWeight: 600,
-                        textAlign: 'center',
-                        outline: 'none'
-                      }}
-                    />
-                  </div>
-                </div>
-              </div>
-
-              {/* Belirsizlik Yönetimi Skoru */}
-              <div style={{ marginBottom: '24px' }}>
-                <label style={{
-                  display: 'block',
-                  marginBottom: '8px',
-                  color: '#232D42',
-                  fontWeight: 500,
-                  fontFamily: 'Inter',
-                  fontSize: '14px'
-                }}>
-                  {t('labels.adaptabilityScore')}
-                </label>
-                <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
-                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px', flex: 1 }}>
-                    <span style={{ fontSize: '12px', color: '#6B7280', fontWeight: 500 }}>{t('labels.minimum')}</span>
-                    <input
-                      type="range"
-                      min="5"
-                      max="95"
-                      value={filters.uncertaintyMin}
-                      onChange={(e) => setFilters({...filters, uncertaintyMin: parseInt(e.target.value)})}
-                      style={{ width: '100%' }}
-                    />
-                    <input
-                      type="number"
-                      min="5"
-                      max="95"
-                      value={filters.uncertaintyMin}
-                      onChange={(e) => {
-                        const value = e.target.value;
-                        if (value === '') {
-                          setFilters({...filters, uncertaintyMin: '' as any});
-                        } else {
-                          const numValue = parseInt(value);
-                          if (!isNaN(numValue)) {
-                            setFilters({...filters, uncertaintyMin: numValue});
-                          } else {
-                            setFilters({...filters, uncertaintyMin: value as any});
-                          }
-                        }
-                      }}
-                      onBlur={(e) => {
-                        const value = e.target.value;
-                        if (value !== '') {
-                          const numValue = parseInt(value);
-                          if (!isNaN(numValue)) {
-                            setFilters({...filters, uncertaintyMin: Math.min(Math.max(numValue, 5), 95)});
-                          } else {
-                            setFilters({...filters, uncertaintyMin: 5});
-                          }
-                        }
-                      }}
-                      style={{
-                        width: '50px',
-                        padding: '4px 6px',
-                        border: '1px solid #D1D5DB',
-                        borderRadius: '4px',
-                        fontSize: '14px',
-                        fontWeight: 600,
-                        textAlign: 'center',
-                        outline: 'none'
-                      }}
-                    />
-                  </div>
-                  <span style={{ fontSize: '14px', color: '#6B7280', marginTop: '20px' }}>-</span>
-                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px', flex: 1 }}>
-                    <span style={{ fontSize: '12px', color: '#6B7280', fontWeight: 500 }}>{t('labels.maximum')}</span>
-                    <input
-                      type="range"
-                      min="5"
-                      max="95"
-                      value={filters.uncertaintyMax}
-                      onChange={(e) => setFilters({...filters, uncertaintyMax: parseInt(e.target.value)})}
-                      style={{ width: '100%' }}
-                    />
-                    <input
-                      type="number"
-                      min="5"
-                      max="95"
-                      value={filters.uncertaintyMax}
-                      onChange={(e) => {
-                        const value = e.target.value;
-                        if (value === '') {
-                          setFilters({...filters, uncertaintyMax: '' as any});
-                        } else {
-                          const numValue = parseInt(value);
-                          if (!isNaN(numValue)) {
-                            setFilters({...filters, uncertaintyMax: numValue});
-                          } else {
-                            setFilters({...filters, uncertaintyMax: value as any});
-                          }
-                        }
-                      }}
-                      onBlur={(e) => {
-                        const value = e.target.value;
-                        if (value !== '') {
-                          const numValue = parseInt(value);
-                          if (!isNaN(numValue)) {
-                            setFilters({...filters, uncertaintyMax: Math.min(Math.max(numValue, 5), 95)});
-                          } else {
-                            setFilters({...filters, uncertaintyMax: 95});
-                          }
-                        }
-                      }}
-                      style={{
-                        width: '50px',
-                        padding: '4px 6px',
-                        border: '1px solid #D1D5DB',
-                        borderRadius: '4px',
-                        fontSize: '14px',
-                        fontWeight: 600,
-                        textAlign: 'center',
-                        outline: 'none'
-                      }}
-                    />
-                  </div>
-                </div>
-              </div>
-
-              {/* IE Skoru */}
-              <div style={{ marginBottom: '24px' }}>
-                <label style={{
-                  display: 'block',
-                  marginBottom: '8px',
-                  color: '#232D42',
-                  fontWeight: 500,
-                  fontFamily: 'Inter',
-                  fontSize: '14px'
-                }}>
-                  {t('labels.influenceScore')}
-                </label>
-                <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
-                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px', flex: 1 }}>
-                    <span style={{ fontSize: '12px', color: '#6B7280', fontWeight: 500 }}>{t('labels.minimum')}</span>
-                    <input
-                      type="range"
-                      min="5"
-                      max="95"
-                      value={filters.ieMin}
-                      onChange={(e) => setFilters({...filters, ieMin: parseInt(e.target.value)})}
-                      style={{ width: '100%' }}
-                    />
-                    <input
-                      type="number"
-                      min="5"
-                      max="95"
-                      value={filters.ieMin}
-                      onChange={(e) => {
-                        const value = e.target.value;
-                        if (value === '') {
-                          setFilters({...filters, ieMin: '' as any});
-                        } else {
-                          const numValue = parseInt(value);
-                          if (!isNaN(numValue)) {
-                            setFilters({...filters, ieMin: numValue});
-                          } else {
-                            setFilters({...filters, ieMin: value as any});
-                          }
-                        }
-                      }}
-                      onBlur={(e) => {
-                        const value = e.target.value;
-                        if (value !== '') {
-                          const numValue = parseInt(value);
-                          if (!isNaN(numValue)) {
-                            setFilters({...filters, ieMin: Math.min(Math.max(numValue, 5), 95)});
-                          } else {
-                            setFilters({...filters, ieMin: 5});
-                          }
-                        }
-                      }}
-                      style={{
-                        width: '50px',
-                        padding: '4px 6px',
-                        border: '1px solid #D1D5DB',
-                        borderRadius: '4px',
-                        fontSize: '14px',
-                        fontWeight: 600,
-                        textAlign: 'center',
-                        outline: 'none'
-                      }}
-                    />
-                  </div>
-                  <span style={{ fontSize: '14px', color: '#6B7280', marginTop: '20px' }}>-</span>
-                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px', flex: 1 }}>
-                    <span style={{ fontSize: '12px', color: '#6B7280', fontWeight: 500 }}>{t('labels.maximum')}</span>
-                    <input
-                      type="range"
-                      min="5"
-                      max="95"
-                      value={filters.ieMax}
-                      onChange={(e) => setFilters({...filters, ieMax: parseInt(e.target.value)})}
-                      style={{ width: '100%' }}
-                    />
-                    <input
-                      type="number"
-                      min="5"
-                      max="95"
-                      value={filters.ieMax}
-                      onChange={(e) => {
-                        const value = e.target.value;
-                        if (value === '') {
-                          setFilters({...filters, ieMax: '' as any});
-                        } else {
-                          const numValue = parseInt(value);
-                          if (!isNaN(numValue)) {
-                            setFilters({...filters, ieMax: numValue});
-                          } else {
-                            setFilters({...filters, ieMax: value as any});
-                          }
-                        }
-                      }}
-                      onBlur={(e) => {
-                        const value = e.target.value;
-                        if (value !== '') {
-                          const numValue = parseInt(value);
-                          if (!isNaN(numValue)) {
-                            setFilters({...filters, ieMax: Math.min(Math.max(numValue, 5), 95)});
-                          } else {
-                            setFilters({...filters, ieMax: 95});
-                          }
-                        }
-                      }}
-                      style={{
-                        width: '50px',
-                        padding: '4px 6px',
-                        border: '1px solid #D1D5DB',
-                        borderRadius: '4px',
-                        fontSize: '14px',
-                        fontWeight: 600,
-                        textAlign: 'center',
-                        outline: 'none'
-                      }}
-                    />
-                  </div>
-                </div>
-              </div>
-
-              {/* IDIK Skoru */}
-              <div style={{ marginBottom: '24px' }}>
-                <label style={{
-                  display: 'block',
-                  marginBottom: '8px',
-                  color: '#232D42',
-                  fontWeight: 500,
-                  fontFamily: 'Inter',
-                  fontSize: '14px'
-                }}>
-                  {t('labels.trustScore')}
-                </label>
-                <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
-                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px', flex: 1 }}>
-                    <span style={{ fontSize: '12px', color: '#6B7280', fontWeight: 500 }}>{t('labels.minimum')}</span>
-                    <input
-                      type="range"
-                      min="5"
-                      max="95"
-                      value={filters.idikMin}
-                      onChange={(e) => setFilters({...filters, idikMin: parseInt(e.target.value)})}
-                      style={{ width: '100%' }}
-                    />
-                    <input
-                      type="number"
-                      min="5"
-                      max="95"
-                      value={filters.idikMin}
-                      onChange={(e) => {
-                        const value = e.target.value;
-                        if (value === '') {
-                          setFilters({...filters, idikMin: '' as any});
-                        } else {
-                          const numValue = parseInt(value);
-                          if (!isNaN(numValue)) {
-                            setFilters({...filters, idikMin: numValue});
-                          } else {
-                            setFilters({...filters, idikMin: value as any});
-                          }
-                        }
-                      }}
-                      onBlur={(e) => {
-                        const value = e.target.value;
-                        if (value !== '') {
-                          const numValue = parseInt(value);
-                          if (!isNaN(numValue)) {
-                            setFilters({...filters, idikMin: Math.min(Math.max(numValue, 5), 95)});
-                          } else {
-                            setFilters({...filters, idikMin: 5});
-                          }
-                        }
-                      }}
-                      style={{
-                        width: '50px',
-                        padding: '4px 6px',
-                        border: '1px solid #D1D5DB',
-                        borderRadius: '4px',
-                        fontSize: '14px',
-                        fontWeight: 600,
-                        textAlign: 'center',
-                        outline: 'none'
-                      }}
-                    />
-                  </div>
-                  <span style={{ fontSize: '14px', color: '#6B7280', marginTop: '20px' }}>-</span>
-                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px', flex: 1 }}>
-                    <span style={{ fontSize: '12px', color: '#6B7280', fontWeight: 500 }}>{t('labels.maximum')}</span>
-                    <input
-                      type="range"
-                      min="5"
-                      max="95"
-                      value={filters.idikMax}
-                      onChange={(e) => setFilters({...filters, idikMax: parseInt(e.target.value)})}
-                      style={{ width: '100%' }}
-                    />
-                    <input
-                      type="number"
-                      min="5"
-                      max="95"
-                      value={filters.idikMax}
-                      onChange={(e) => {
-                        const value = e.target.value;
-                        if (value === '') {
-                          setFilters({...filters, idikMax: '' as any});
-                        } else {
-                          const numValue = parseInt(value);
-                          if (!isNaN(numValue)) {
-                            setFilters({...filters, idikMax: numValue});
-                          } else {
-                            setFilters({...filters, idikMax: value as any});
-                          }
-                        }
-                      }}
-                      onBlur={(e) => {
-                        const value = e.target.value;
-                        if (value !== '') {
-                          const numValue = parseInt(value);
-                          if (!isNaN(numValue)) {
-                            setFilters({...filters, idikMax: Math.min(Math.max(numValue, 5), 95)});
-                          } else {
-                            setFilters({...filters, idikMax: 95});
-                          }
-                        }
-                      }}
-                      style={{
-                        width: '50px',
-                        padding: '4px 6px',
-                        border: '1px solid #D1D5DB',
-                        borderRadius: '4px',
-                        fontSize: '14px',
-                        fontWeight: 600,
-                        textAlign: 'center',
-                        outline: 'none'
-                      }}
-                    />
-                  </div>
-                </div>
-              </div>
+              <label style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '10px 12px', borderRadius: '8px', border: '1px solid #E5E7EB', background: '#F9FAFB', marginBottom: '12px' }}>
+                <input
+                  type="checkbox"
+                  id="generalEvaluation"
+                  checked={downloadOptions.generalEvaluation}
+                  onChange={(e) => setDownloadOptions(prev => ({ ...prev, generalEvaluation: e.target.checked }))}
+                  style={{ width: '16px', height: '16px', accentColor: '#0286F7' }}
+                />
+                <span style={{ fontSize: '14px', color: '#232D42' }}>{t('labels.generalEvaluation')}</span>
+              </label>
+              <label style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '10px 12px', borderRadius: '8px', border: '1px solid #E5E7EB', background: '#F9FAFB', marginBottom: '12px' }}>
+                <input
+                  type="checkbox"
+                  id="strengths"
+                  checked={downloadOptions.strengths}
+                  onChange={(e) => setDownloadOptions(prev => ({ ...prev, strengths: e.target.checked }))}
+                  style={{ width: '16px', height: '16px', accentColor: '#0286F7' }}
+                />
+                <span style={{ fontSize: '14px', color: '#232D42' }}>{t('labels.strengthsDev')}</span>
+              </label>
+              <label style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '10px 12px', borderRadius: '8px', border: '1px solid #E5E7EB', background: '#F9FAFB', marginBottom: '12px' }}>
+                <input
+                  type="checkbox"
+                  id="interviewQuestions"
+                  checked={downloadOptions.interviewQuestions}
+                  onChange={(e) => setDownloadOptions(prev => ({ ...prev, interviewQuestions: e.target.checked }))}
+                  style={{ width: '16px', height: '16px', accentColor: '#0286F7' }}
+                />
+                <span style={{ fontSize: '14px', color: '#232D42' }}>{t('labels.interviewQuestions')}</span>
+              </label>
+              <label style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '10px 12px', borderRadius: '8px', border: '1px solid #E5E7EB', background: '#F9FAFB', marginBottom: '12px' }}>
+                <input
+                  type="checkbox"
+                  id="whyTheseQuestions"
+                  checked={downloadOptions.whyTheseQuestions}
+                  onChange={(e) => setDownloadOptions(prev => ({ ...prev, whyTheseQuestions: e.target.checked }))}
+                  style={{ width: '16px', height: '16px', accentColor: '#0286F7' }}
+                />
+                <span style={{ fontSize: '14px', color: '#232D42' }}>{t('labels.whyTheseQuestions')}</span>
+              </label>
+              <label style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '10px 12px', borderRadius: '8px', border: '1px solid #E5E7EB', background: '#F9FAFB', marginBottom: '12px' }}>
+                <input
+                  type="checkbox"
+                  id="developmentSuggestions"
+                  checked={downloadOptions.developmentSuggestions}
+                  onChange={(e) => setDownloadOptions(prev => ({ ...prev, developmentSuggestions: e.target.checked }))}
+                  style={{ width: '16px', height: '16px', accentColor: '#0286F7' }}
+                />
+                <span style={{ fontSize: '14px', color: '#232D42' }}>{t('labels.developmentPlan')}</span>
+              </label>
+              <label style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '10px 12px', borderRadius: '8px', border: '1px solid #E5E7EB', background: '#F9FAFB' }}>
+                <input
+                  type="checkbox"
+                  id="competencyScore"
+                  checked={downloadOptions.competencyScore}
+                  onChange={(e) => setDownloadOptions(prev => ({ ...prev, competencyScore: e.target.checked }))}
+                  style={{ width: '16px', height: '16px', accentColor: '#0286F7' }}
+                />
+                <span style={{ fontSize: '14px', color: '#232D42' }}>{t('labels.competencyScore')}</span>
+              </label>
             </div>
-
-            {/* Footer */}
             <div style={{
-              padding: '20px 24px',
-              borderTop: '1px solid #E5E7EB',
+              padding: '20px',
+              borderTop: '1px solid #E9ECEF',
               display: 'flex',
-              justifyContent: 'flex-end',
-              gap: '12px'
+              gap: '12px',
+              justifyContent: 'flex-end'
             }}>
               <button
-                onClick={closeFilterPopup}
+                onClick={() => setShowDownloadPopup(false)}
                 style={{
                   padding: '8px 16px',
-                  border: '1px solid #E5E7EB',
-                  borderRadius: '6px',
-                  background: 'white',
-                  color: '#6B7280',
-                  fontFamily: 'Inter',
+                  background: '#F3F4F6',
+                  color: '#374151',
+                  border: 'none',
+                  borderRadius: '4px',
+                  cursor: 'pointer',
                   fontSize: '14px',
-                  fontWeight: 500,
-                  cursor: 'pointer'
+                  fontFamily: 'Inter',
+                  fontWeight: 500
                 }}
               >
                 {t('buttons.cancel')}
               </button>
               <button
-                onClick={clearFilters}
+                onClick={handleExcelDownload}
                 style={{
                   padding: '8px 16px',
-                  border: '1px solid #E5E7EB',
-                  borderRadius: '6px',
-                  background: 'white',
-                  color: '#6B7280',
-                  fontFamily: 'Inter',
-                  fontSize: '14px',
-                  fontWeight: 500,
-                  cursor: 'pointer'
-                }}
-              >
-                {t('buttons.clearFilters')}
-              </button>
-              <button
-                onClick={applyFilters}
-                style={{
-                  padding: '8px 16px',
-                  border: 'none',
-                  borderRadius: '6px',
-                  background: '#2563EB',
+                  background: '#16A34A',
                   color: 'white',
-                  fontFamily: 'Inter',
+                  border: 'none',
+                  borderRadius: '4px',
+                  cursor: 'pointer',
                   fontSize: '14px',
-                  fontWeight: 500,
-                  cursor: 'pointer'
+                  fontFamily: 'Inter',
+                  fontWeight: 500
                 }}
               >
-                {t('buttons.applyFilters')}
+                {t('labels.downloadExcel')}
               </button>
             </div>
           </div>

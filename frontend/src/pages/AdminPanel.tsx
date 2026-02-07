@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { evaluationAPI, creditAPI } from '../services/api';
 import { useAuth } from '../contexts/AuthContext';
 import { useLanguage } from '../contexts/LanguageContext';
@@ -46,6 +47,7 @@ interface PDFOptions {
 }
 
 const AdminPanel: React.FC = () => {
+  const navigate = useNavigate();
   const { user } = useAuth();
   const { t, language } = useLanguage();
   const [results, setResults] = useState<UserResult[]>([]);
@@ -1219,7 +1221,15 @@ const AdminPanel: React.FC = () => {
                     borderRight: '1px solid #E9ECEF',
                     textAlign: 'left'
                   }}>
-                    {result.name}
+                    <span
+                      onClick={() => navigate('/person-results', { state: { selectedUser: result } })}
+                      style={{
+                        cursor: 'pointer',
+                        textDecoration: 'underline'
+                      }}
+                    >
+                      {result.name}
+                    </span>
                      {result.isGrouped && result.groupCount && result.groupCount > 1 && (() => {
                        // HTML'deki gibi görünür grup sayısını hesapla
                        let visibleGroupCount = 1;
