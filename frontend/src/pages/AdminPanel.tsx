@@ -14,6 +14,7 @@ interface UserResult {
   name: string;
   email: string;
   status: string;
+  personType?: string;
   sentDate: string;
   completionDate: string;
   expiryDate: string;
@@ -69,6 +70,7 @@ const AdminPanel: React.FC = () => {
   const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
   const [showExpiredWarning, setShowExpiredWarning] = useState(false);
+  const [activePersonTab, setActivePersonTab] = useState<'all' | 'candidate' | 'employee'>('all');
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage] = useState(10);
   const [totalCount, setTotalCount] = useState(0);
@@ -206,6 +208,14 @@ const AdminPanel: React.FC = () => {
   };
   
   const hasLoaded = useRef(false);
+  const requestIdRef = useRef(0);
+  const resultsCache = useRef(new Map<string, {
+    results: UserResult[];
+    filteredResults: UserResult[];
+    totalCount: number;
+    totalPages: number;
+    fetchedAt: number;
+  }>());
   
   // Super admin kontrolü
   const isSuperAdmin = user?.role === 'superadmin';
@@ -228,7 +238,8 @@ const AdminPanel: React.FC = () => {
     };
   }, []);
 
-  const loadData = useCallback(async (showLoading = true) => {
+  const loadData = useCallback(async (showLoading = true, forceFetch = false) => {
+    const requestId = ++requestIdRef.current;
     try {
       // Sadece ilk yüklemede veya sayfa değiştiğinde loading göster
       // Arama için loading gösterme (arka planda çalışsın)
@@ -238,17 +249,46 @@ const AdminPanel: React.FC = () => {
         setIsSearching(true);
       }
       
+      const cacheKey = JSON.stringify({
+        page: currentPage,
+        limit: itemsPerPage,
+        searchTerm: debouncedSearchTerm,
+        statusFilter,
+        showExpiredWarning,
+        personType: activePersonTab
+      });
+
+      if (!forceFetch) {
+        const cached = resultsCache.current.get(cacheKey);
+        if (cached && Date.now() - cached.fetchedAt < 60000) {
+          if (requestId !== requestIdRef.current) {
+            return;
+          }
+          setResults(cached.results);
+          setFilteredResults(cached.filteredResults);
+          setTotalCount(cached.totalCount);
+          setTotalPages(cached.totalPages);
+          setIsLoading(false);
+          setIsSearching(false);
+          return;
+        }
+      }
+
       // Pagination ile veri çek (filtreleme parametrelerini de gönder)
       const response = await evaluationAPI.getAll(
         currentPage, 
         itemsPerPage, 
         debouncedSearchTerm, // Debounced search term kullan
         statusFilter, 
-        showExpiredWarning
+        showExpiredWarning,
+        activePersonTab === 'all' ? undefined : activePersonTab
       );
       
       
       if (response.data.success) {
+        if (requestId !== requestIdRef.current) {
+          return;
+        }
         // Pagination bilgilerini kaydet
         if (response.data.pagination) {
           setTotalCount(response.data.pagination.total);
@@ -265,6 +305,14 @@ const AdminPanel: React.FC = () => {
         
         setResults(formattedResults);
         setFilteredResults(formattedResults);
+
+        resultsCache.current.set(cacheKey, {
+          results: formattedResults,
+          filteredResults: formattedResults,
+          totalCount: response.data.pagination?.total || formattedResults.length,
+          totalPages: response.data.pagination?.totalPages || 1,
+          fetchedAt: Date.now()
+        });
       } else {
         console.error('❌ API hatası:', response.data.message);
         console.error('❌ Tam yanıt:', response.data);
@@ -274,10 +322,12 @@ const AdminPanel: React.FC = () => {
       console.error('💥 Hata detayı:', error.response?.data);
       console.error('💥 Hata status:', error.response?.status);
     } finally {
-      setIsLoading(false);
-      setIsSearching(false);
+      if (requestId === requestIdRef.current) {
+        setIsLoading(false);
+        setIsSearching(false);
+      }
     }
-  }, [currentPage, itemsPerPage, debouncedSearchTerm, statusFilter, showExpiredWarning]);
+  }, [currentPage, itemsPerPage, debouncedSearchTerm, statusFilter, showExpiredWarning, activePersonTab]);
 
   // Debounce search term - kullanıcı yazmayı bitirdikten 500ms sonra arama yap
   useEffect(() => {
@@ -312,7 +362,12 @@ const AdminPanel: React.FC = () => {
     } else {
       loadData(false); // Sonraki yüklemelerde loading gösterme
     }
-  }, [currentPage, statusFilter, showExpiredWarning]);
+  }, [currentPage, statusFilter, showExpiredWarning, activePersonTab]);
+
+  useEffect(() => {
+    setCurrentPage(1);
+    setSelectedItems([]);
+  }, [activePersonTab]);
 
   // Debounced search term değiştiğinde backend'den veri çek (arka planda)
   useEffect(() => {
@@ -966,9 +1021,49 @@ const AdminPanel: React.FC = () => {
             </button>
           )}
 
+          {/* Person Type Tabs */}
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            padding: '6px',
+            background: '#F3F4F6',
+            borderRadius: '12px',
+            boxShadow: 'inset 0 1px 2px rgba(0,0,0,0.06)',
+            border: '1px solid #E5E7EB'
+          }}>
+            {[
+              { id: 'all', label: 'Tümü' },
+              { id: 'candidate', label: 'Adaylar' },
+              { id: 'employee', label: 'Çalışanlar' }
+            ].map((tab) => {
+              const isActive = activePersonTab === tab.id;
+              return (
+                <button
+                  key={tab.id}
+                  type="button"
+                  onClick={() => setActivePersonTab(tab.id as 'all' | 'candidate' | 'employee')}
+                  style={{
+                    padding: '8px 18px',
+                    fontSize: '13px',
+                    fontWeight: isActive ? 700 : 600,
+                    color: isActive ? 'white' : '#6B7280',
+                    background: isActive ? '#9f8fbe' : 'transparent',
+                    border: 'none',
+                    borderRadius: '10px',
+                    cursor: 'pointer',
+                    transition: 'all 0.2s ease',
+                    boxShadow: isActive ? '0 4px 10px rgba(159, 143, 190, 0.25)' : 'none'
+                  }}
+                >
+                  {tab.label}
+                </button>
+              );
+            })}
+          </div>
+
           {/* Refresh Button */}
           <button
-            onClick={() => loadData(true)}
+            onClick={() => loadData(true, true)}
             style={{
               background: '#0286F7',
               color: 'white',

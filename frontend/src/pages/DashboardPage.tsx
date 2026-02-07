@@ -5,6 +5,22 @@ import { adminAPI } from '../services/api';
 type StatusCounts = { completed: number; inProgress: number; expired: number; pending: number };
 type ScoreDistributions = { customerFocus: number[]; uncertainty: number[]; ie: number[]; idik: number[] };
 type TitleCounts = Record<string, number>;
+type DashboardStatsSet = {
+  totalSentGames: number;
+  statusCounts: StatusCounts;
+  scoreDistributions: ScoreDistributions;
+  completedCandidateCount: number;
+  completedEmployeeCount: number;
+  titleCounts: TitleCounts;
+};
+type DashboardStatsResponse = {
+  titleOptions: string[];
+  byPersonType?: {
+    all: DashboardStatsSet;
+    candidate: DashboardStatsSet;
+    employee: DashboardStatsSet;
+  };
+};
 
 const DEFAULT_TITLE_OPTIONS = [
   'Direktör',
@@ -22,14 +38,22 @@ const initScoreDistributions = (): ScoreDistributions => ({
   idik: new Array(10).fill(0)
 });
 
-const statsCache = {
+const initStatsSet = (): DashboardStatsSet => ({
   totalSentGames: 0,
   statusCounts: { completed: 0, inProgress: 0, expired: 0, pending: 0 },
   scoreDistributions: initScoreDistributions(),
   completedCandidateCount: 0,
   completedEmployeeCount: 0,
+  titleCounts: {}
+});
+
+const statsCache = {
   titleOptions: DEFAULT_TITLE_OPTIONS,
-  titleCounts: {} as TitleCounts,
+  statsByType: {
+    all: initStatsSet(),
+    candidate: initStatsSet(),
+    employee: initStatsSet()
+  },
   fetchedAt: 0,
   initialized: false
 };
@@ -86,18 +110,9 @@ const getAverageBucketIndex = (buckets: number[]) => {
 
 const DashboardPage: React.FC = () => {
   const { t } = useLanguage();
-  const [totalSentGames, setTotalSentGames] = useState(0);
-  const [statusCounts, setStatusCounts] = useState({
-    completed: 0,
-    inProgress: 0,
-    expired: 0,
-    pending: 0
-  });
-  const [scoreDistributions, setScoreDistributions] = useState<ScoreDistributions>(initScoreDistributions());
-  const [completedCandidateCount, setCompletedCandidateCount] = useState(0);
-  const [completedEmployeeCount, setCompletedEmployeeCount] = useState(0);
+  const [statsByType, setStatsByType] = useState(statsCache.statsByType);
   const [titleOptions, setTitleOptions] = useState<string[]>(DEFAULT_TITLE_OPTIONS);
-  const [titleCounts, setTitleCounts] = useState<TitleCounts>({});
+  const [activeTab, setActiveTab] = useState<'all' | 'candidate' | 'employee'>('all');
   const [isVisualLoading, setIsVisualLoading] = useState(true);
 
   useEffect(() => {
@@ -116,13 +131,8 @@ const DashboardPage: React.FC = () => {
     };
 
     if (statsCache.initialized) {
-      setTotalSentGames(statsCache.totalSentGames);
-      setStatusCounts(statsCache.statusCounts);
-      setScoreDistributions(statsCache.scoreDistributions || initScoreDistributions());
-      setCompletedCandidateCount(statsCache.completedCandidateCount || 0);
-      setCompletedEmployeeCount(statsCache.completedEmployeeCount || 0);
+      setStatsByType(statsCache.statsByType);
       setTitleOptions(statsCache.titleOptions || DEFAULT_TITLE_OPTIONS);
-      setTitleCounts(statsCache.titleCounts || {});
     }
 
     const loadStats = async () => {
@@ -136,65 +146,56 @@ const DashboardPage: React.FC = () => {
         }
         const response = await adminAPI.getDashboardStats();
         if (response.data?.success && response.data.stats) {
-          const stats = response.data.stats;
-          const nextScoreDistributions: ScoreDistributions = {
-            customerFocus: stats.scoreDistributions?.customerFocus || new Array(10).fill(0),
-            uncertainty: stats.scoreDistributions?.uncertainty || new Array(10).fill(0),
-            ie: stats.scoreDistributions?.ie || new Array(10).fill(0),
-            idik: stats.scoreDistributions?.idik || new Array(10).fill(0)
-          };
+          const stats: DashboardStatsResponse = response.data.stats;
           const nextTitleOptions = Array.isArray(stats.titleOptions) && stats.titleOptions.length > 0
             ? stats.titleOptions
             : DEFAULT_TITLE_OPTIONS;
-          const nextTitleCounts = stats.titleCounts || {};
+          const nextStatsByType = stats.byPersonType || {
+            all: initStatsSet(),
+            candidate: initStatsSet(),
+            employee: initStatsSet()
+          };
 
           const shouldUpdate =
             !statsCache.initialized ||
-            statsCache.totalSentGames !== stats.totalSentGames ||
-            !statusCountsEqual(statsCache.statusCounts, stats.statusCounts) ||
-            !scoreDistributionsEqual(statsCache.scoreDistributions, nextScoreDistributions) ||
-            statsCache.completedCandidateCount !== (stats.completedCandidateCount || 0) ||
-            statsCache.completedEmployeeCount !== (stats.completedEmployeeCount || 0) ||
+            !statusCountsEqual(statsCache.statsByType.all.statusCounts, nextStatsByType.all.statusCounts) ||
+            !scoreDistributionsEqual(statsCache.statsByType.all.scoreDistributions, nextStatsByType.all.scoreDistributions) ||
+            statsCache.statsByType.all.completedCandidateCount !== nextStatsByType.all.completedCandidateCount ||
+            statsCache.statsByType.all.completedEmployeeCount !== nextStatsByType.all.completedEmployeeCount ||
             !titleOptionsEqual(statsCache.titleOptions, nextTitleOptions) ||
-            !titleCountsEqual(statsCache.titleCounts, nextTitleCounts);
+            !titleCountsEqual(statsCache.statsByType.all.titleCounts, nextStatsByType.all.titleCounts) ||
+            !statusCountsEqual(statsCache.statsByType.candidate.statusCounts, nextStatsByType.candidate.statusCounts) ||
+            !scoreDistributionsEqual(statsCache.statsByType.candidate.scoreDistributions, nextStatsByType.candidate.scoreDistributions) ||
+            !titleCountsEqual(statsCache.statsByType.candidate.titleCounts, nextStatsByType.candidate.titleCounts) ||
+            !statusCountsEqual(statsCache.statsByType.employee.statusCounts, nextStatsByType.employee.statusCounts) ||
+            !scoreDistributionsEqual(statsCache.statsByType.employee.scoreDistributions, nextStatsByType.employee.scoreDistributions) ||
+            !titleCountsEqual(statsCache.statsByType.employee.titleCounts, nextStatsByType.employee.titleCounts);
 
-          statsCache.totalSentGames = stats.totalSentGames;
-          statsCache.statusCounts = stats.statusCounts;
-          statsCache.scoreDistributions = nextScoreDistributions;
-          statsCache.completedCandidateCount = stats.completedCandidateCount || 0;
-          statsCache.completedEmployeeCount = stats.completedEmployeeCount || 0;
+          statsCache.statsByType = nextStatsByType;
           statsCache.titleOptions = nextTitleOptions;
-          statsCache.titleCounts = nextTitleCounts;
           statsCache.fetchedAt = now;
           statsCache.initialized = true;
 
           if (shouldUpdate) {
-            setTotalSentGames(stats.totalSentGames);
-            setStatusCounts(stats.statusCounts);
-            setScoreDistributions(nextScoreDistributions);
-            setCompletedCandidateCount(stats.completedCandidateCount || 0);
-            setCompletedEmployeeCount(stats.completedEmployeeCount || 0);
+            setStatsByType(nextStatsByType);
             setTitleOptions(nextTitleOptions);
-            setTitleCounts(nextTitleCounts);
           }
         } else {
-          setTotalSentGames(0);
-          setStatusCounts({ completed: 0, inProgress: 0, expired: 0, pending: 0 });
-          setScoreDistributions(initScoreDistributions());
-          setCompletedCandidateCount(0);
-          setCompletedEmployeeCount(0);
+          setStatsByType({
+            all: initStatsSet(),
+            candidate: initStatsSet(),
+            employee: initStatsSet()
+          });
           setTitleOptions(DEFAULT_TITLE_OPTIONS);
-          setTitleCounts({});
         }
       } catch (error) {
         console.error('Dashboard istatistik yükleme hatası:', error);
-        setTotalSentGames(0);
-        setStatusCounts({ completed: 0, inProgress: 0, expired: 0, pending: 0 });
-        setScoreDistributions(initScoreDistributions());
-        setCompletedCandidateCount(0);
-        setCompletedEmployeeCount(0);
+        setStatsByType({
+          all: initStatsSet(),
+          candidate: initStatsSet(),
+          employee: initStatsSet()
+        });
         setTitleOptions(DEFAULT_TITLE_OPTIONS);
-        setTitleCounts({});
       } finally {
         finishLoadingWithDelay(startedAt);
       }
@@ -209,27 +210,38 @@ const DashboardPage: React.FC = () => {
     };
   }, []);
 
+  useEffect(() => {
+    if (isVisualLoading) return;
+    const tabTimer = window.setTimeout(() => {
+      setIsVisualLoading(false);
+    }, 1200);
+    setIsVisualLoading(true);
+    return () => window.clearTimeout(tabTimer);
+  }, [activeTab]);
+
+  const currentStats = useMemo(() => statsByType[activeTab] || initStatsSet(), [statsByType, activeTab]);
+
   const statusSummary = useMemo(() => {
-    const inProgressTotal = statusCounts.inProgress + statusCounts.pending;
-    const total = statusCounts.completed + inProgressTotal + statusCounts.expired;
-    const completedPercent = total ? Math.round((statusCounts.completed / total) * 100) : 0;
+    const inProgressTotal = currentStats.statusCounts.inProgress + currentStats.statusCounts.pending;
+    const total = currentStats.statusCounts.completed + inProgressTotal + currentStats.statusCounts.expired;
+    const completedPercent = total ? Math.round((currentStats.statusCounts.completed / total) * 100) : 0;
     return {
       total,
       completedPercent,
       items: [
-        { label: t('status.completed'), value: statusCounts.completed, color: '#22c55e' },
+        { label: t('status.completed'), value: currentStats.statusCounts.completed, color: '#22c55e' },
         { label: t('status.inProgress'), value: inProgressTotal, color: '#3b82f6' },
-        { label: t('status.expired'), value: statusCounts.expired, color: '#d1d5db' }
+        { label: t('status.expired'), value: currentStats.statusCounts.expired, color: '#d1d5db' }
       ]
     };
-  }, [statusCounts, t]);
+  }, [currentStats, t]);
 
   const titleItems = useMemo(() => {
     const colors = ['#7fd3e6', '#9f8fbe', '#ff751f', '#ff625f', '#7fd3e6', '#9f8fbe'];
     const icons = ['fa-user-tie', 'fa-users', 'fa-user', 'fa-graduation-cap', 'fa-crown', 'fa-briefcase'];
     const normalizedCounts: TitleCounts = {};
-    Object.keys(titleCounts).forEach((key) => {
-      normalizedCounts[normalizeKey(key)] = titleCounts[key];
+    Object.keys(currentStats.titleCounts || {}).forEach((key) => {
+      normalizedCounts[normalizeKey(key)] = currentStats.titleCounts[key];
     });
 
     const items = titleOptions.map((title, index) => {
@@ -247,7 +259,7 @@ const DashboardPage: React.FC = () => {
       ...item,
       widthPercent: Math.max(10, Math.round((item.count / maxCount) * 100))
     }));
-  }, [titleCounts, titleOptions]);
+  }, [currentStats, titleOptions]);
 
   const titleColumns = useMemo(() => {
     const midIndex = Math.ceil(titleItems.length / 2);
@@ -343,7 +355,7 @@ const DashboardPage: React.FC = () => {
           </div>
           <div className="relative z-10">
             <h3 className="text-base font-medium text-white text-opacity-90 mb-1">{t('labels.totalGamesSent')}</h3>
-            <div className="text-4xl font-bold">{totalSentGames}</div>
+            <div className="text-4xl font-bold">{currentStats.totalSentGames}</div>
           </div>
         </div>
         <div className="rounded-2xl p-6 text-white shadow-lg relative overflow-hidden" style={{ background: '#9f8fbe' }}>
@@ -352,7 +364,7 @@ const DashboardPage: React.FC = () => {
           </div>
           <div className="relative z-10">
             <h3 className="text-base font-medium text-white text-opacity-90 mb-1">Tamamlanan Değerlendirme/ Aday</h3>
-            <div className="text-4xl font-bold">{completedCandidateCount}</div>
+            <div className="text-4xl font-bold">{currentStats.completedCandidateCount}</div>
           </div>
         </div>
         <div className="rounded-2xl p-6 text-white shadow-lg relative overflow-hidden" style={{ background: '#ff751f' }}>
@@ -361,7 +373,7 @@ const DashboardPage: React.FC = () => {
           </div>
           <div className="relative z-10">
             <h3 className="text-base font-medium text-white text-opacity-90 mb-1">Tamamlanan Değerlendirme/ Çalışan</h3>
-            <div className="text-4xl font-bold">{completedEmployeeCount}</div>
+            <div className="text-4xl font-bold">{currentStats.completedEmployeeCount}</div>
           </div>
         </div>
         <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 relative overflow-hidden">
@@ -370,18 +382,46 @@ const DashboardPage: React.FC = () => {
           </div>
           <div className="relative z-10">
             <h3 className="text-base font-medium text-gray-500 mb-1">Tamamlanan Değerlendirme (Çalışan + Aday)</h3>
-            <div className="text-4xl font-bold text-gray-800">{statusCounts.completed}</div>
+            <div className="text-4xl font-bold text-gray-800">{currentStats.statusCounts.completed}</div>
           </div>
         </div>
       </section>
 
       <section className="flex flex-col gap-5 mb-6">
         <div className="flex items-center gap-2">
-          <button className="px-5 py-1.5 bg-white text-gray-600 font-medium rounded-lg shadow-sm hover:bg-gray-50 transition-colors text-xs border border-gray-100">Tümü</button>
-          <button className="px-5 py-1.5 bg-white text-gray-600 font-medium rounded-lg shadow-sm hover:bg-gray-50 transition-colors text-xs border border-gray-100">Adaylar</button>
           <button
-            className="px-5 py-1.5 text-white font-medium rounded-lg shadow-md transition-colors text-xs border"
-            style={{ background: '#9f8fbe', borderColor: '#9f8fbe' }}
+            type="button"
+            onClick={() => setActiveTab('all')}
+            className="px-5 py-1.5 font-medium rounded-lg shadow-sm transition-colors text-xs border"
+            style={{
+              background: activeTab === 'all' ? '#9f8fbe' : '#ffffff',
+              borderColor: activeTab === 'all' ? '#9f8fbe' : '#f3f4f6',
+              color: activeTab === 'all' ? '#ffffff' : '#4b5563'
+            }}
+          >
+            Tümü
+          </button>
+          <button
+            type="button"
+            onClick={() => setActiveTab('candidate')}
+            className="px-5 py-1.5 font-medium rounded-lg shadow-sm transition-colors text-xs border"
+            style={{
+              background: activeTab === 'candidate' ? '#9f8fbe' : '#ffffff',
+              borderColor: activeTab === 'candidate' ? '#9f8fbe' : '#f3f4f6',
+              color: activeTab === 'candidate' ? '#ffffff' : '#4b5563'
+            }}
+          >
+            Adaylar
+          </button>
+          <button
+            type="button"
+            onClick={() => setActiveTab('employee')}
+            className="px-5 py-1.5 font-medium rounded-lg shadow-sm transition-colors text-xs border"
+            style={{
+              background: activeTab === 'employee' ? '#9f8fbe' : '#ffffff',
+              borderColor: activeTab === 'employee' ? '#9f8fbe' : '#f3f4f6',
+              color: activeTab === 'employee' ? '#ffffff' : '#4b5563'
+            }}
           >
             Çalışanlar
           </button>
@@ -508,7 +548,7 @@ const DashboardPage: React.FC = () => {
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
           {competencyCards.map((card) => {
-            const buckets = scoreDistributions[card.key as keyof ScoreDistributions] || [];
+            const buckets = currentStats.scoreDistributions[card.key as keyof ScoreDistributions] || [];
             const maxCount = Math.max(1, ...buckets);
             const highlightIndex = getAverageBucketIndex(buckets);
             return (

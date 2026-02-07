@@ -443,7 +443,7 @@ const adminController = {
     // Kullanıcı sonuçlarını getir
     getUserResults: async (req, res) => {
         try {
-            const { code, page, limit, searchTerm, statusFilter, showExpiredWarning } = req.query;
+            const { code, page, limit, searchTerm, statusFilter, showExpiredWarning, personType } = req.query;
             
             // Pagination parametreleri (page ve limit undefined ise tüm verileri getir)
             const pageNum = page ? parseInt(page) : undefined;
@@ -466,6 +466,12 @@ const adminController = {
             let results;
             let totalCount;
             let query = { ...companyFilter };
+            const normalizePersonType = (value) => {
+                const normalized = (value || '').toString().toLowerCase().trim();
+                if (normalized.includes('aday') || normalized.includes('candidate')) return 'candidate';
+                if (normalized.includes('calisan') || normalized.includes('çalışan') || normalized.includes('employee')) return 'employee';
+                return '';
+            };
             
             if (code) {
                 // Tek kod için pagination yok
@@ -494,6 +500,14 @@ const adminController = {
                     ];
                 }
                 
+                // Person type filtresi
+                const normalizedPersonType = normalizePersonType(personType);
+                if (normalizedPersonType === 'candidate') {
+                    query.personType = { $in: [/aday/i, /candidate/i] };
+                } else if (normalizedPersonType === 'employee') {
+                    query.personType = { $in: [/calisan/i, /çalışan/i, /employee/i] };
+                }
+
                 // Toplam sayıyı hesapla (filtrelemeden sonra)
                 totalCount = await UserCode.countDocuments(query);
                 
@@ -937,6 +951,20 @@ const adminController = {
             }
 
             const initBuckets = () => new Array(10).fill(0);
+            const initStatsSet = () => ({
+                totalSentGames: 0,
+                statusCounts: { completed: 0, inProgress: 0, expired: 0, pending: 0 },
+                scoreDistributions: {
+                    customerFocus: initBuckets(),
+                    uncertainty: initBuckets(),
+                    ie: initBuckets(),
+                    idik: initBuckets()
+                },
+                completedCandidateCount: 0,
+                completedEmployeeCount: 0,
+                titleCounts: {}
+            });
+
             const addScoreToBuckets = (buckets, score) => {
                 if (score === null || score === undefined || score === '-' || score === 0 || score === '0') {
                     return;
@@ -981,46 +1009,32 @@ const adminController = {
                 .lean();
 
             const normalizeStatus = (status) => status.toLowerCase().replace(/\s+/g, ' ').trim();
-            const statusCounts = { completed: 0, inProgress: 0, expired: 0, pending: 0 };
-            let totalSentGames = 0;
             let uniquePeopleCount = 0;
-            const competencyCounts = { customerFocus: 0, uncertainty: 0, ie: 0, idik: 0 };
-            const scoreDistributions = {
-                customerFocus: initBuckets(),
-                uncertainty: initBuckets(),
-                ie: initBuckets(),
-                idik: initBuckets()
-            };
-            const completedCounts = { candidate: 0, employee: 0 };
-            const titleCounts = {};
+            const statsAll = initStatsSet();
+            const statsCandidate = initStatsSet();
+            const statsEmployee = initStatsSet();
             const uniqueKeys = new Set();
 
-            userCodes.forEach((item) => {
+            const applyItemToStats = (statsSet, item, personType) => {
                 const normalized = normalizeStatus(item.status || '');
                 if (normalized === 'tamamlandı' || normalized === 'tamamlandi') {
-                    statusCounts.completed += 1;
-                    const personType = normalizePersonType(item.personType);
+                    statsSet.statusCounts.completed += 1;
                     if (personType === 'candidate') {
-                        completedCounts.candidate += 1;
+                        statsSet.completedCandidateCount += 1;
                     } else if (personType === 'employee') {
-                        completedCounts.employee += 1;
+                        statsSet.completedEmployeeCount += 1;
                     }
 
                     const titleKey = normalizeText(item.unvan);
                     if (titleKey) {
-                        titleCounts[titleKey] = (titleCounts[titleKey] || 0) + 1;
+                        statsSet.titleCounts[titleKey] = (statsSet.titleCounts[titleKey] || 0) + 1;
                     }
                 } else if (normalized.includes('devam') || (normalized.includes('oyun') && normalized.includes('ediyor'))) {
-                    statusCounts.inProgress += 1;
+                    statsSet.statusCounts.inProgress += 1;
                 } else if (normalized.includes('süresi doldu') || normalized.includes('suresi doldu')) {
-                    statusCounts.expired += 1;
+                    statsSet.statusCounts.expired += 1;
                 } else if (normalized === 'beklemede') {
-                    statusCounts.pending += 1;
-                }
-
-                const uniqueKey = (item.email || item.name || '').trim().toLowerCase();
-                if (uniqueKey) {
-                    uniqueKeys.add(uniqueKey);
+                    statsSet.statusCounts.pending += 1;
                 }
 
                 const rawPlanets = Array.isArray(item.allPlanets) && item.allPlanets.length > 0
@@ -1030,35 +1044,47 @@ const adminController = {
                     .filter(Boolean)
                     .map((planet) => planet.toString().toLowerCase());
 
-                totalSentGames += normalizedPlanets.length;
+                statsSet.totalSentGames += normalizedPlanets.length;
 
-                if (normalizedPlanets.includes('venus')) {
-                    competencyCounts.customerFocus += 1;
-                    competencyCounts.uncertainty += 1;
-                }
-                if (normalizedPlanets.includes('titan')) {
-                    competencyCounts.ie += 1;
-                    competencyCounts.idik += 1;
+                addScoreToBuckets(statsSet.scoreDistributions.customerFocus, item.customerFocusScore);
+                addScoreToBuckets(statsSet.scoreDistributions.uncertainty, item.uncertaintyScore);
+                addScoreToBuckets(statsSet.scoreDistributions.ie, item.ieScore);
+                addScoreToBuckets(statsSet.scoreDistributions.idik, item.idikScore);
+            };
+
+            userCodes.forEach((item) => {
+                const uniqueKey = (item.email || item.name || '').trim().toLowerCase();
+                if (uniqueKey) {
+                    uniqueKeys.add(uniqueKey);
                 }
 
-                addScoreToBuckets(scoreDistributions.customerFocus, item.customerFocusScore);
-                addScoreToBuckets(scoreDistributions.uncertainty, item.uncertaintyScore);
-                addScoreToBuckets(scoreDistributions.ie, item.ieScore);
-                addScoreToBuckets(scoreDistributions.idik, item.idikScore);
+                const personType = normalizePersonType(item.personType);
+                applyItemToStats(statsAll, item, personType);
+
+                if (personType === 'candidate') {
+                    applyItemToStats(statsCandidate, item, personType);
+                }
+                if (personType === 'employee') {
+                    applyItemToStats(statsEmployee, item, personType);
+                }
             });
 
             uniquePeopleCount = uniqueKeys.size;
 
             const stats = {
-                totalSentGames,
+                totalSentGames: statsAll.totalSentGames,
                 uniquePeopleCount,
-                statusCounts,
-                competencyCounts,
-                scoreDistributions,
-                completedCandidateCount: completedCounts.candidate,
-                completedEmployeeCount: completedCounts.employee,
+                statusCounts: statsAll.statusCounts,
+                scoreDistributions: statsAll.scoreDistributions,
+                completedCandidateCount: statsAll.completedCandidateCount,
+                completedEmployeeCount: statsAll.completedEmployeeCount,
                 titleOptions,
-                titleCounts
+                titleCounts: statsAll.titleCounts,
+                byPersonType: {
+                    all: statsAll,
+                    candidate: statsCandidate,
+                    employee: statsEmployee
+                }
             };
 
             dashboardStatsCache.set(cacheKey, { fetchedAt: now, data: stats });
