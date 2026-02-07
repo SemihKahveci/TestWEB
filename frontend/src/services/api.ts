@@ -90,6 +90,12 @@ export const authorizationAPI = {
 export const organizationAPI = {
   getAll: () =>
     api.get('/organization'),
+
+  getTitleOptions: () =>
+    api.get('/organization/title-options'),
+
+  updateTitleOptions: (titleOptions: string[], companyId?: string) =>
+    api.put('/organization/title-options', { titleOptions, companyId }),
   
   getById: (id: string) =>
     api.get(`/organization/${id}`),

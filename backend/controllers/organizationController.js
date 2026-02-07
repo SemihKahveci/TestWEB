@@ -1,6 +1,82 @@
 const Organization = require('../models/Organization');
+const CompanyManagement = require('../models/companyManagement');
+const Admin = require('../models/Admin');
 const { safeLog, getSafeErrorMessage } = require('../utils/helpers');
 const { getCompanyFilter, addCompanyIdToData } = require('../middleware/auth');
+
+const DEFAULT_TITLE_OPTIONS = [
+    'Direktör',
+    'Müdür/Yönetici',
+    'Kıdemli Uzman',
+    'Uzman',
+    'Uzman Yardımcısı',
+    'MT/Stajyer'
+];
+
+const normalizeTitleOptions = (list) =>
+    list
+        .map((item) => (typeof item === 'string' ? item.trim() : ''))
+        .filter((item) => item !== '');
+
+const validateTitleOptions = (list) => {
+    if (!Array.isArray(list)) {
+        return { valid: false, message: 'Unvan listesi geçersiz.' };
+    }
+
+    const normalized = normalizeTitleOptions(list);
+    if (normalized.length === 0) {
+        return { valid: false, message: 'Unvan listesi boş olamaz.' };
+    }
+
+    if (normalized.length < 3 || normalized.length > 6) {
+        return { valid: false, message: 'Unvan sayısı 3 ile 6 arasında olmalıdır.' };
+    }
+
+    const seen = new Set();
+    for (const item of normalized) {
+        const key = item.toLowerCase();
+        if (seen.has(key)) {
+            return { valid: false, message: 'Unvan listesinde tekrar eden değerler var.' };
+        }
+        seen.add(key);
+    }
+
+    return { valid: true, normalized };
+};
+
+const resolveCompanyIdForTitles = (req, companyIdOverride) => {
+    if (req.admin && req.admin.role === 'superadmin') {
+        return companyIdOverride || null;
+    }
+    return req.admin?.companyId || null;
+};
+
+const getCompanyTitleOptions = async (req, companyIdOverride) => {
+    const companyId = resolveCompanyIdForTitles(req, companyIdOverride);
+
+    if (req.admin?.role === 'superadmin' && !companyId) {
+        const admin = await Admin.findById(req.admin._id);
+        const list = Array.isArray(admin?.titleOptions) && admin.titleOptions.length > 0
+            ? admin.titleOptions
+            : DEFAULT_TITLE_OPTIONS;
+        return { titleOptions: list, companyId: null, company: null };
+    }
+
+    if (!companyId) {
+        return { titleOptions: DEFAULT_TITLE_OPTIONS, companyId: null, company: null };
+    }
+
+    const company = await CompanyManagement.findById(companyId);
+    if (!company) {
+        return { titleOptions: DEFAULT_TITLE_OPTIONS, companyId, company: null };
+    }
+
+    const list = Array.isArray(company.titleOptions) && company.titleOptions.length > 0
+        ? company.titleOptions
+        : DEFAULT_TITLE_OPTIONS;
+
+    return { titleOptions: list, companyId, company };
+};
 
 // Tüm organizasyonları getir
 const getAllOrganizations = async (req, res) => {
@@ -22,6 +98,121 @@ const getAllOrganizations = async (req, res) => {
     }
 };
 
+const getTitleOptions = async (req, res) => {
+    try {
+        const companyIdOverride = req.admin?.role === 'superadmin' ? req.query.companyId : null;
+
+        if (req.admin?.role === 'superadmin' && !companyIdOverride) {
+            const admin = await Admin.findById(req.admin._id);
+            const list = Array.isArray(admin?.titleOptions) && admin.titleOptions.length > 0
+                ? admin.titleOptions
+                : DEFAULT_TITLE_OPTIONS;
+            return res.json({
+                success: true,
+                titleOptions: list,
+                requiresCompanyId: true
+            });
+        }
+
+        const companyId = resolveCompanyIdForTitles(req, companyIdOverride);
+        if (!companyId) {
+            return res.status(400).json({
+                success: false,
+                message: 'Company ID bulunamadı. Lütfen sistem yöneticinizle iletişime geçin.'
+            });
+        }
+
+        const company = await CompanyManagement.findById(companyId);
+        if (!company) {
+            return res.status(404).json({
+                success: false,
+                message: 'Firma bulunamadı.'
+            });
+        }
+
+        const titleOptions = Array.isArray(company.titleOptions) && company.titleOptions.length > 0
+            ? company.titleOptions
+            : DEFAULT_TITLE_OPTIONS;
+
+        res.json({ success: true, titleOptions });
+    } catch (error) {
+        safeLog('error', 'Unvan listesi getirme hatası', error);
+        res.status(500).json({
+            success: false,
+            message: 'Unvan listesi alınamadı'
+        });
+    }
+};
+
+const updateTitleOptions = async (req, res) => {
+    try {
+        const { titleOptions, companyId } = req.body || {};
+        const companyIdOverride = req.admin?.role === 'superadmin' ? companyId : null;
+
+        const validation = validateTitleOptions(titleOptions);
+        if (!validation.valid) {
+            return res.status(400).json({
+                success: false,
+                message: validation.message
+            });
+        }
+
+        if (req.admin?.role === 'superadmin' && !companyIdOverride) {
+            const updatedAdmin = await Admin.findByIdAndUpdate(
+                req.admin._id,
+                { titleOptions: validation.normalized },
+                { new: true }
+            );
+
+            if (!updatedAdmin) {
+                return res.status(404).json({
+                    success: false,
+                    message: 'Admin bulunamadı.'
+                });
+            }
+
+            return res.json({
+                success: true,
+                message: 'Unvan listesi güncellendi',
+                titleOptions: updatedAdmin.titleOptions
+            });
+        }
+
+        const resolvedCompanyId = resolveCompanyIdForTitles(req, companyIdOverride);
+        if (!resolvedCompanyId) {
+            return res.status(400).json({
+                success: false,
+                message: 'Company ID bulunamadı. Lütfen sistem yöneticinizle iletişime geçin.'
+            });
+        }
+
+        const updatedCompany = await CompanyManagement.findByIdAndUpdate(
+            resolvedCompanyId,
+            { titleOptions: validation.normalized },
+            { new: true }
+        );
+
+        if (!updatedCompany) {
+            return res.status(404).json({
+                success: false,
+                message: 'Firma bulunamadı.'
+            });
+        }
+
+        res.json({
+            success: true,
+            message: 'Unvan listesi güncellendi',
+            titleOptions: updatedCompany.titleOptions
+        });
+    } catch (error) {
+        safeLog('error', 'Unvan listesi güncelleme hatası', error);
+        res.status(500).json({
+            success: false,
+            message: 'Unvan listesi güncellenemedi'
+        });
+    }
+};
+
 // Yeni organizasyon ekle
 const createOrganization = async (req, res) => {
     try {
@@ -34,7 +225,7 @@ const createOrganization = async (req, res) => {
             pozisyon
         } = req.body;
 
-        // Gerekli alanları kontrol et - Pozisyon ve Unvan zorunlu
+        // Gerekli alanları kontrol et - Pozisyon, Unvan ve Departman zorunlu
         if (!pozisyon || pozisyon.trim() === '') {
             return res.status(400).json({
                 success: false,
@@ -49,13 +240,29 @@ const createOrganization = async (req, res) => {
             });
         }
 
+        if (!grupLiderligi || grupLiderligi.trim() === '') {
+            return res.status(400).json({
+                success: false,
+                message: 'Departman alanı boş olamaz'
+            });
+        }
+
+        const normalizedUnvan = unvan.trim();
+        const { titleOptions } = await getCompanyTitleOptions(req, req.body?.companyId);
+        if (!titleOptions.includes(normalizedUnvan)) {
+            return res.status(400).json({
+                success: false,
+                message: `Unvan alanı geçersiz. Değer şu seçeneklerden biri olmalıdır: ${titleOptions.join(', ')}.`
+            });
+        }
+
         // Diğer alanları temizle - boş olanları "-" yap, "-" olanları olduğu gibi bırak
         const cleanedData = {
             genelMudurYardimciligi: genelMudurYardimciligi && genelMudurYardimciligi.trim() !== '' ? genelMudurYardimciligi.trim() : '-',
             direktörlük: direktörlük && direktörlük.trim() !== '' ? direktörlük.trim() : '-',
             müdürlük: müdürlük && müdürlük.trim() !== '' ? müdürlük.trim() : '-',
-            grupLiderligi: grupLiderligi && grupLiderligi.trim() !== '' ? grupLiderligi.trim() : '-',
-            unvan: unvan && unvan.trim() !== '' ? unvan.trim() : '-',
+            grupLiderligi: grupLiderligi.trim(),
+            unvan: normalizedUnvan,
             pozisyon: pozisyon.trim()
         };
 
@@ -113,7 +320,7 @@ const updateOrganization = async (req, res) => {
             pozisyon
         } = req.body;
 
-        // Gerekli alanları kontrol et - Pozisyon ve Unvan zorunlu
+        // Gerekli alanları kontrol et - Pozisyon, Unvan ve Departman zorunlu
         if (!pozisyon || pozisyon.trim() === '') {
             return res.status(400).json({
                 success: false,
@@ -128,13 +335,29 @@ const updateOrganization = async (req, res) => {
             });
         }
 
+        if (!grupLiderligi || grupLiderligi.trim() === '') {
+            return res.status(400).json({
+                success: false,
+                message: 'Departman alanı boş olamaz'
+            });
+        }
+
+        const normalizedUnvan = unvan.trim();
+        const { titleOptions } = await getCompanyTitleOptions(req, req.body?.companyId);
+        if (!titleOptions.includes(normalizedUnvan)) {
+            return res.status(400).json({
+                success: false,
+                message: `Unvan alanı geçersiz. Değer şu seçeneklerden biri olmalıdır: ${titleOptions.join(', ')}.`
+            });
+        }
+
         // Diğer alanları temizle - boş olanları "-" yap, "-" olanları olduğu gibi bırak
         const cleanedData = {
             genelMudurYardimciligi: genelMudurYardimciligi && genelMudurYardimciligi.trim() !== '' ? genelMudurYardimciligi.trim() : '-',
             direktörlük: direktörlük && direktörlük.trim() !== '' ? direktörlük.trim() : '-',
             müdürlük: müdürlük && müdürlük.trim() !== '' ? müdürlük.trim() : '-',
-            grupLiderligi: grupLiderligi && grupLiderligi.trim() !== '' ? grupLiderligi.trim() : '-',
-            unvan: unvan && unvan.trim() !== '' ? unvan.trim() : '-',
+            grupLiderligi: grupLiderligi.trim(),
+            unvan: normalizedUnvan,
             pozisyon: pozisyon.trim()
         };
 
@@ -295,6 +518,9 @@ const bulkCreateOrganizations = async (req, res) => {
             });
         }
 
+        const { titleOptions } = await getCompanyTitleOptions(req, req.query?.companyId);
+        const allowedTitles = new Set(titleOptions);
+
         const organizations = [];
         const errors = [];
 
@@ -320,7 +546,8 @@ const bulkCreateOrganizations = async (req, res) => {
 
                 const [genelMudurYardimciligi, direktörlük, müdürlük, grupLiderligi, unvan, pozisyon] = row;
 
-                // Zorunlu alan kontrolü: Pozisyon ve Unvan zorunlu
+
+                // Zorunlu alan kontrolü: Pozisyon, Unvan ve Departman zorunlu
                 const isEmpty = (value) => !value || value.toString().trim() === '';
                 
                 if (isEmpty(pozisyon)) {
@@ -339,13 +566,30 @@ const bulkCreateOrganizations = async (req, res) => {
                     continue;
                 }
 
+                const normalizedUnvan = unvan.toString().trim();
+                if (!allowedTitles.has(normalizedUnvan)) {
+                    errors.push({
+                        row: rowNumber,
+                        message: `Unvan alanı geçersiz. Değer şu seçeneklerden biri olmalıdır: ${titleOptions.join(', ')}.`
+                    });
+                    continue;
+                }
+
+                if (isEmpty(grupLiderligi)) {
+                    errors.push({
+                        row: rowNumber,
+                        message: 'Departman alanı boş olamaz. Bu alan zorunludur.'
+                    });
+                    continue;
+                }
+
                 // Diğer alanları temizle - boş olanları "-" yap, "-" olanları olduğu gibi bırak
                 const cleanedOrgData = {
                     genelMudurYardimciligi: genelMudurYardimciligi && genelMudurYardimciligi.toString().trim() !== '' ? genelMudurYardimciligi.toString().trim() : '-',
                     direktörlük: direktörlük && direktörlük.toString().trim() !== '' ? direktörlük.toString().trim() : '-',
                     müdürlük: müdürlük && müdürlük.toString().trim() !== '' ? müdürlük.toString().trim() : '-',
-                    grupLiderligi: grupLiderligi && grupLiderligi.toString().trim() !== '' ? grupLiderligi.toString().trim() : '-',
-                    unvan: unvan && unvan.toString().trim() !== '' ? unvan.toString().trim() : '-',
+                    grupLiderligi: grupLiderligi.toString().trim(),
+                    unvan: normalizedUnvan,
                     pozisyon: pozisyon.toString().trim()
                 };
 
@@ -471,6 +715,8 @@ const bulkCreateOrganizations = async (req, res) => {
 
 module.exports = {
     getAllOrganizations,
+    getTitleOptions,
+    updateTitleOptions,
     createOrganization,
     updateOrganization,
     deleteOrganization,

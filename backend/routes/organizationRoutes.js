@@ -2,6 +2,8 @@ const express = require('express');
 const router = express.Router();
 const {
     getAllOrganizations,
+    getTitleOptions,
+    updateTitleOptions,
     createOrganization,
     updateOrganization,
     deleteOrganization,
@@ -61,6 +63,10 @@ router.post('/import', authenticateAdmin, upload.single('excelFile'), (err, req,
     }
     next();
 }, bulkCreateOrganizations);
+
+// Unvan seçenekleri
+router.get('/title-options', authenticateAdmin, getTitleOptions);
+router.put('/title-options', authenticateAdmin, updateTitleOptions);
 
 // Yeni organizasyon ekle
 router.post('/', authenticateAdmin, createOrganization);

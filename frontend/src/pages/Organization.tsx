@@ -83,6 +83,18 @@ const Organization: React.FC = () => {
     unvan: '',
     pozisyon: ''
   });
+  const defaultTitleOptions = [
+    'Direktör',
+    'Müdür/Yönetici',
+    'Kıdemli Uzman',
+    'Uzman',
+    'Uzman Yardımcısı',
+    'MT/Stajyer'
+  ];
+  const [titleOptions, setTitleOptions] = useState<string[]>(defaultTitleOptions);
+  const [showTitlePopup, setShowTitlePopup] = useState(false);
+  const [editTitleOptions, setEditTitleOptions] = useState<string[]>([]);
+  const [isTitleSaving, setIsTitleSaving] = useState(false);
 
   // Pagination states
   const [currentPage, setCurrentPage] = useState(1);
@@ -108,6 +120,7 @@ const Organization: React.FC = () => {
 
   useEffect(() => {
     loadOrganizations();
+    loadTitleOptions();
   }, []);
 
   // Debounce search term
@@ -146,6 +159,22 @@ const Organization: React.FC = () => {
     }
   };
 
+  const loadTitleOptions = async () => {
+    try {
+      const result = await organizationAPI.getTitleOptions();
+      if (result.data?.success && Array.isArray(result.data.titleOptions)) {
+        setTitleOptions(result.data.titleOptions.length > 0 ? result.data.titleOptions : defaultTitleOptions);
+      } else {
+        setTitleOptions(defaultTitleOptions);
+      }
+    } catch (error: any) {
+      console.error('💥 Unvan listesi yükleme hatası:', error);
+      setErrorMessage(t('errors.titleOptionsFetch'));
+      setShowErrorPopup(true);
+      setTitleOptions(defaultTitleOptions);
+    }
+  };
+
   const handleAddOrganization = () => {
     setFormData({
       genelMudurYardimciligi: '',
@@ -156,6 +185,90 @@ const Organization: React.FC = () => {
       pozisyon: ''
     });
     setShowAddPopup(true);
+  };
+
+  const openTitlePopup = () => {
+    setEditTitleOptions(titleOptions.length > 0 ? [...titleOptions] : ['']);
+    setShowTitlePopup(true);
+  };
+
+  const closeTitlePopup = () => {
+    setShowTitlePopup(false);
+    setEditTitleOptions([]);
+  };
+
+  const updateTitleOption = (index: number, value: string) => {
+    setEditTitleOptions(prev =>
+      prev.map((item, i) => (i === index ? value : item))
+    );
+  };
+
+  const addTitleOption = () => {
+    setEditTitleOptions(prev => [...prev, '']);
+  };
+
+  const removeTitleOption = (index: number) => {
+    setEditTitleOptions(prev => {
+      if (prev.length === 1) {
+        return [''];
+      }
+      return prev.filter((_, i) => i !== index);
+    });
+  };
+
+  const moveTitleOption = (fromIndex: number, toIndex: number) => {
+    setEditTitleOptions(prev => {
+      if (toIndex < 0 || toIndex >= prev.length) return prev;
+      const next = [...prev];
+      const [item] = next.splice(fromIndex, 1);
+      next.splice(toIndex, 0, item);
+      return next;
+    });
+  };
+
+  const handleSaveTitleOptions = async () => {
+    const trimmed = editTitleOptions.map(item => item.trim());
+    if (trimmed.length < 3 || trimmed.length > 6) {
+      setErrorMessage(t('errors.titleOptionsMinMax'));
+      setShowErrorPopup(true);
+      return;
+    }
+    if (trimmed.some(item => item === '')) {
+      setErrorMessage(t('errors.titleOptionsEmpty'));
+      setShowErrorPopup(true);
+      return;
+    }
+
+    const seen = new Set<string>();
+    for (const item of trimmed) {
+      const key = item.toLowerCase();
+      if (seen.has(key)) {
+        setErrorMessage(t('errors.titleOptionsDuplicate'));
+        setShowErrorPopup(true);
+        return;
+      }
+      seen.add(key);
+    }
+
+    try {
+      setIsTitleSaving(true);
+      const result = await organizationAPI.updateTitleOptions(trimmed);
+      if (result.data?.success) {
+        setTitleOptions(trimmed);
+        setSuccessMessage(result.data.message || t('labels.success'));
+        setShowSuccessPopup(true);
+        closeTitlePopup();
+      } else {
+        setErrorMessage(result.data?.message || t('errors.titleOptionsUpdate'));
+        setShowErrorPopup(true);
+      }
+    } catch (error: any) {
+      console.error('💥 Unvan listesi güncelleme hatası:', error);
+      setErrorMessage(error.response?.data?.message || t('errors.titleOptionsUpdate'));
+      setShowErrorPopup(true);
+    } finally {
+      setIsTitleSaving(false);
+    }
   };
 
   const handleEditOrganization = (organization: Organization) => {
@@ -249,13 +362,19 @@ const Organization: React.FC = () => {
         setShowErrorPopup(true);
         return;
       }
+
+      if (!formData.grupLiderligi || formData.grupLiderligi.trim() === '') {
+        setErrorMessage(t('errors.departmentRequired'));
+        setShowErrorPopup(true);
+        return;
+      }
       
       // Diğer alanları temizle - boş olanları "-" yap, "-" olanları olduğu gibi bırak
       const cleanedFormData = {
         genelMudurYardimciligi: formData.genelMudurYardimciligi.trim(),
         direktörlük: formData.direktörlük.trim() === '' ? '-' : formData.direktörlük.trim(),
         müdürlük: formData.müdürlük.trim() === '' ? '-' : formData.müdürlük.trim(),
-        grupLiderligi: formData.grupLiderligi.trim() === '' ? '-' : formData.grupLiderligi.trim(),
+        grupLiderligi: formData.grupLiderligi.trim(),
         unvan: formData.unvan.trim() === '' ? '-' : formData.unvan.trim(),
         pozisyon: formData.pozisyon.trim()
       };
@@ -312,13 +431,19 @@ const Organization: React.FC = () => {
         setShowErrorPopup(true);
         return;
       }
+
+      if (!formData.grupLiderligi || formData.grupLiderligi.trim() === '') {
+        setErrorMessage(t('errors.departmentRequired'));
+        setShowErrorPopup(true);
+        return;
+      }
       
       // Diğer alanları temizle - boş olanları "-" yap, "-" olanları olduğu gibi bırak
       const cleanedFormData = {
         genelMudurYardimciligi: formData.genelMudurYardimciligi.trim(),
         direktörlük: formData.direktörlük.trim() === '' ? '-' : formData.direktörlük.trim(),
         müdürlük: formData.müdürlük.trim() === '' ? '-' : formData.müdürlük.trim(),
-        grupLiderligi: formData.grupLiderligi.trim() === '' ? '-' : formData.grupLiderligi.trim(),
+        grupLiderligi: formData.grupLiderligi.trim(),
         unvan: formData.unvan.trim() === '' ? '-' : formData.unvan.trim(),
         pozisyon: formData.pozisyon.trim()
       };
@@ -537,9 +662,9 @@ const Organization: React.FC = () => {
         t('labels.generalManagerAssistant'),
         t('labels.directorate'),
         t('labels.management'),
-        t('labels.departmentLeadership'),
-        t('labels.title'),
-        t('labels.position')
+        `${t('labels.departmentLeadership')} (${t('labels.required')})`,
+        `${t('labels.title')} (${t('labels.required')})`,
+        `${t('labels.position')} (${t('labels.required')})`
       ];
 
       // Örnek veri satırı
@@ -572,7 +697,7 @@ const Organization: React.FC = () => {
         { wch: 25 }, // Genel Müdür Yardımcılığı
         { wch: 20 }, // Direktörlük
         { wch: 20 }, // Müdürlük
-        { wch: 20 }, // Departman/Şeflik
+        { wch: 20 }, // Departman
         { wch: 20 }, // Unvan
         { wch: 20 }  // Pozisyon
       ];
@@ -974,6 +1099,25 @@ const Organization: React.FC = () => {
                 {formatTemplate(t('labels.bulkDeleteWithCount'), { count: selectedItems.length })}
               </button>
             )}
+            <button
+              onClick={openTitlePopup}
+              style={{
+                backgroundColor: '#6F42C1',
+                color: 'white',
+                border: 'none',
+                borderRadius: '6px',
+                padding: '10px 20px',
+                fontSize: '14px',
+                fontWeight: 600,
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px'
+              }}
+            >
+              <i className="fas fa-list"></i>
+              {t('buttons.editTitles')}
+            </button>
             <button
               onClick={handleOpenImportPopup}
               style={{
@@ -1552,7 +1696,7 @@ const Organization: React.FC = () => {
                     marginBottom: '8px',
                     fontFamily: 'Inter'
                   }}>
-                    {t('labels.departmentLeadership')}
+                    {t('labels.departmentLeadership')} <span style={{ color: '#E53E3E' }}>*</span>
                   </label>
                   <input
                     type="text"
@@ -1582,11 +1726,9 @@ const Organization: React.FC = () => {
                   }}>
                     {t('labels.title')} <span style={{ color: '#E53E3E' }}>*</span>
                   </label>
-                  <input
-                    type="text"
+                  <select
                     value={formData.unvan}
                     onChange={(e) => setFormData({ ...formData, unvan: e.target.value })}
-                    placeholder={t('placeholders.title')}
                     style={{
                       width: '100%',
                       padding: '14px 16px',
@@ -1594,9 +1736,15 @@ const Organization: React.FC = () => {
                       borderRadius: '8px',
                       fontSize: '14px',
                       fontFamily: 'Inter',
-                      outline: 'none'
+                      outline: 'none',
+                      backgroundColor: 'white'
                     }}
-                  />
+                  >
+                    <option value="">{t('placeholders.title')}</option>
+                    {titleOptions.map((option) => (
+                      <option key={option} value={option}>{option}</option>
+                    ))}
+                  </select>
                 </div>
                 
                 <div>
@@ -1837,7 +1985,7 @@ const Organization: React.FC = () => {
                     marginBottom: '8px',
                     fontFamily: 'Inter'
                   }}>
-                    {t('labels.departmentLeadership')}
+                    {t('labels.departmentLeadership')} <span style={{ color: '#E53E3E' }}>*</span>
                   </label>
                   <input
                     type="text"
@@ -1866,8 +2014,7 @@ const Organization: React.FC = () => {
                   }}>
                     {t('labels.title')} <span style={{ color: '#E53E3E' }}>*</span>
                   </label>
-                  <input
-                    type="text"
+                  <select
                     value={formData.unvan}
                     onChange={(e) => setFormData({ ...formData, unvan: e.target.value })}
                     style={{
@@ -1877,9 +2024,15 @@ const Organization: React.FC = () => {
                       borderRadius: '8px',
                       fontSize: '14px',
                       fontFamily: 'Inter',
-                      outline: 'none'
+                      outline: 'none',
+                      backgroundColor: 'white'
                     }}
-                  />
+                  >
+                    <option value="">{t('placeholders.title')}</option>
+                    {titleOptions.map((option) => (
+                      <option key={option} value={option}>{option}</option>
+                    ))}
+                  </select>
                 </div>
                 
                 <div>
@@ -2257,6 +2410,189 @@ const Organization: React.FC = () => {
               >
                 {t('buttons.ok')}
               </button>
+            </div>
+          </div>
+        )}
+
+        {/* Title Options Popup */}
+        {showTitlePopup && (
+          <div style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: 'rgba(0, 0, 0, 0.5)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 1600
+          }}>
+            <div style={{
+              backgroundColor: 'white',
+              borderRadius: '12px',
+              padding: '24px',
+              maxWidth: '560px',
+              width: '90%',
+              maxHeight: '80vh',
+              overflowY: 'auto',
+              boxShadow: '0 10px 25px rgba(0, 0, 0, 0.2)'
+            }}>
+              <div style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                marginBottom: '16px'
+              }}>
+                <div style={{
+                  fontSize: '18px',
+                  fontWeight: 600,
+                  color: '#232D42',
+                  fontFamily: 'Inter'
+                }}>
+                  {t('labels.editTitleOptions')}
+                </div>
+                <button
+                  onClick={closeTitlePopup}
+                  style={{
+                    background: 'none',
+                    border: 'none',
+                    fontSize: '24px',
+                    cursor: 'pointer',
+                    color: '#6B7280'
+                  }}
+                >
+                  ×
+                </button>
+              </div>
+
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                {editTitleOptions.map((item, index) => (
+                  <div key={index} style={{
+                    display: 'flex',
+                    gap: '8px',
+                    alignItems: 'center'
+                  }}>
+                    <input
+                      type="text"
+                      value={item}
+                      onChange={(e) => updateTitleOption(index, e.target.value)}
+                      style={{
+                        flex: 1,
+                        padding: '10px 12px',
+                        border: '1px solid #E5E7EB',
+                        borderRadius: '6px',
+                        fontSize: '14px',
+                        fontFamily: 'Inter',
+                        outline: 'none'
+                      }}
+                    />
+                    <div style={{ display: 'flex', gap: '4px' }}>
+                      <button
+                        onClick={() => moveTitleOption(index, index - 1)}
+                        disabled={index === 0}
+                        style={{
+                          backgroundColor: '#F3F4F6',
+                          border: '1px solid #E5E7EB',
+                          borderRadius: '6px',
+                          padding: '6px 8px',
+                          cursor: index === 0 ? 'not-allowed' : 'pointer',
+                          color: '#374151'
+                        }}
+                      >
+                        ↑
+                      </button>
+                      <button
+                        onClick={() => moveTitleOption(index, index + 1)}
+                        disabled={index === editTitleOptions.length - 1}
+                        style={{
+                          backgroundColor: '#F3F4F6',
+                          border: '1px solid #E5E7EB',
+                          borderRadius: '6px',
+                          padding: '6px 8px',
+                          cursor: index === editTitleOptions.length - 1 ? 'not-allowed' : 'pointer',
+                          color: '#374151'
+                        }}
+                      >
+                        ↓
+                      </button>
+                      <button
+                        onClick={() => removeTitleOption(index)}
+                        style={{
+                          backgroundColor: '#FEE2E2',
+                          border: '1px solid #FECACA',
+                          borderRadius: '6px',
+                          padding: '6px 8px',
+                          cursor: 'pointer',
+                          color: '#B91C1C'
+                        }}
+                      >
+                        ✕
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              <button
+                onClick={addTitleOption}
+                disabled={editTitleOptions.length >= 6}
+                style={{
+                  marginTop: '16px',
+                  backgroundColor: editTitleOptions.length >= 6 ? '#E5E7EB' : '#EEF2FF',
+                  color: editTitleOptions.length >= 6 ? '#9CA3AF' : '#4338CA',
+                  border: '1px solid #C7D2FE',
+                  borderRadius: '6px',
+                  padding: '8px 12px',
+                  fontSize: '13px',
+                  fontWeight: 600,
+                  cursor: editTitleOptions.length >= 6 ? 'not-allowed' : 'pointer'
+                }}
+              >
+                + {t('labels.addTitleOption')}
+              </button>
+
+              <div style={{
+                display: 'flex',
+                justifyContent: 'flex-end',
+                gap: '12px',
+                marginTop: '24px',
+                paddingTop: '16px',
+                borderTop: '1px solid #E5E7EB'
+              }}>
+                <button
+                  onClick={closeTitlePopup}
+                  disabled={isTitleSaving}
+                  style={{
+                    backgroundColor: '#F3F4F6',
+                    color: '#374151',
+                    border: '1px solid #D1D5DB',
+                    padding: '10px 20px',
+                    borderRadius: '6px',
+                    fontSize: '14px',
+                    fontWeight: 500,
+                    cursor: isTitleSaving ? 'not-allowed' : 'pointer'
+                  }}
+                >
+                  {t('buttons.cancel')}
+                </button>
+                <button
+                  onClick={handleSaveTitleOptions}
+                  disabled={isTitleSaving}
+                  style={{
+                    backgroundColor: isTitleSaving ? '#9CA3AF' : '#3B82F6',
+                    color: 'white',
+                    border: 'none',
+                    padding: '10px 20px',
+                    borderRadius: '6px',
+                    fontSize: '14px',
+                    fontWeight: 500,
+                    cursor: isTitleSaving ? 'not-allowed' : 'pointer'
+                  }}
+                >
+                  {isTitleSaving ? t('statuses.saving') : t('buttons.save')}
+                </button>
+              </div>
             </div>
           </div>
         )}

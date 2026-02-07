@@ -39,6 +39,18 @@ const adminSchema = new mongoose.Schema({
         type: Boolean,
         default: true
     },
+    titleOptions: {
+        type: [String],
+        default: [
+            'Direktör',
+            'Müdür/Yönetici',
+            'Kıdemli Uzman',
+            'Uzman',
+            'Uzman Yardımcısı',
+            'MT/Stajyer'
+        ],
+        trim: true
+    },
     createdAt: {
         type: Date,
         default: Date.now

@@ -20,6 +20,18 @@ const companyManagementSchema = new mongoose.Schema({
             },
             message: props => `${props.value} geçerli bir email adresi değil!`
         }
+    },
+    titleOptions: {
+        type: [String],
+        default: [
+            'Direktör',
+            'Müdür/Yönetici',
+            'Kıdemli Uzman',
+            'Uzman',
+            'Uzman Yardımcısı',
+            'MT/Stajyer'
+        ],
+        trim: true
     }
 });
 
