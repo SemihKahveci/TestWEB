@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useLanguage } from '../contexts/LanguageContext';
-import { creditAPI } from '../services/api';
+import { creditAPI, organizationAPI } from '../services/api';
 import { safeLog } from '../utils/logger';
 
 interface Planet {
@@ -27,6 +27,13 @@ interface Person {
   planets: string[];
 }
 
+interface OrganizationItem {
+  _id: string;
+  grupLiderligi?: string;
+  unvan?: string;
+  pozisyon?: string;
+}
+
 const GameSendPage: React.FC = () => {
   const { language, t } = useLanguage();
   // State management
@@ -40,6 +47,12 @@ const GameSendPage: React.FC = () => {
   // Person tab states
   const [personName, setPersonName] = useState('');
   const [personEmail, setPersonEmail] = useState('');
+  const [personType, setPersonType] = useState('');
+  const [personDepartment, setPersonDepartment] = useState('');
+  const [personTitle, setPersonTitle] = useState('');
+  const [personPosition, setPersonPosition] = useState('');
+  const [organizations, setOrganizations] = useState<OrganizationItem[]>([]);
+  const [isOrgLoading, setIsOrgLoading] = useState(false);
   const [selectedPlanets, setSelectedPlanets] = useState<string[]>([]);
   const [showPlanetDropdown, setShowPlanetDropdown] = useState(false);
   const [planetSearchTerm, setPlanetSearchTerm] = useState('');
@@ -173,6 +186,13 @@ const GameSendPage: React.FC = () => {
       loadTitles();
     }
   }, [activeTab, titles.length]);
+
+  // Load organizations for person tab comboboxes
+  useEffect(() => {
+    if (activeTab === 'person' && organizations.length === 0) {
+      loadOrganizations();
+    }
+  }, [activeTab, organizations.length]);
 
   // Debounce group search term
   useEffect(() => {
@@ -701,9 +721,55 @@ const GameSendPage: React.FC = () => {
     }
   };
 
+  const loadOrganizations = async () => {
+    try {
+      setIsOrgLoading(true);
+      const response = await organizationAPI.getAll();
+      if (response.data?.success) {
+        setOrganizations(response.data.organizations || []);
+      } else {
+        showMessage(t('labels.error'), t('errors.organizationListFetch'), 'error');
+      }
+    } catch (error) {
+      safeLog('error', 'Organizasyon listesi yükleme hatası', error);
+      showMessage(t('labels.error'), t('errors.organizationLoadFailed'), 'error');
+    } finally {
+      setIsOrgLoading(false);
+    }
+  };
+
+  const getUniqueOptions = (values: Array<string | undefined>) => {
+    const seen = new Set<string>();
+    const result: string[] = [];
+    values.forEach((value) => {
+      const trimmed = (value || '').trim();
+      if (!trimmed) return;
+      const key = trimmed.toLowerCase();
+      if (seen.has(key)) return;
+      seen.add(key);
+      result.push(trimmed);
+    });
+    return result;
+  };
+
+  const availableDepartments = getUniqueOptions(organizations.map(org => org.grupLiderligi));
+  const availableTitles = getUniqueOptions(
+    organizations
+      .filter(org => !personDepartment || org.grupLiderligi === personDepartment)
+      .map(org => org.unvan)
+  );
+  const availablePositions = getUniqueOptions(
+    organizations
+      .filter(org =>
+        (!personDepartment || org.grupLiderligi === personDepartment) &&
+        (!personTitle || org.unvan === personTitle)
+      )
+      .map(org => org.pozisyon)
+  );
+
   // Send person interview
   const sendPersonInterview = async () => {
-    if (!personName || !personEmail || selectedPlanets.length === 0) {
+    if (!personName || !personEmail || !personType || !personTitle || !personPosition || !personDepartment || selectedPlanets.length === 0) {
       showMessage(t('labels.error'), t('errors.fillAllFieldsSelectPlanet'), 'error');
       return;
     }
@@ -732,7 +798,11 @@ const GameSendPage: React.FC = () => {
           name: personName,
           email: personEmail,
           planet: primaryPlanet,
-          allPlanets: selectedPlanets
+          allPlanets: selectedPlanets,
+          personType,
+          unvan: personTitle,
+          pozisyon: personPosition,
+          departman: personDepartment
         })
       });
 
@@ -753,7 +823,11 @@ const GameSendPage: React.FC = () => {
           name: personName,
           email: personEmail,
           planet: primaryPlanet,
-          allPlanets: selectedPlanets
+          allPlanets: selectedPlanets,
+          personType,
+          unvan: personTitle,
+          pozisyon: personPosition,
+          departman: personDepartment
         })
       });
 
@@ -764,6 +838,10 @@ const GameSendPage: React.FC = () => {
         // Clear form
         setPersonName('');
         setPersonEmail('');
+        setPersonType('');
+        setPersonTitle('');
+        setPersonPosition('');
+        setPersonDepartment('');
         setSelectedPlanets([]);
         // Kredi düşür (API ile) - Super admin için atla
         if (!isSuperAdmin) {
@@ -1541,15 +1619,17 @@ const GameSendPage: React.FC = () => {
               flex: 1,
               padding: '12px 24px',
               textAlign: 'center',
-              background: activeTab === 'person' ? 'white' : 'transparent',
+              background: activeTab === 'person'
+                ? 'linear-gradient(90deg, #2563EB 0%, #3B82F6 100%)'
+                : 'transparent',
               border: 'none',
               borderRadius: '6px',
               cursor: 'pointer',
               fontSize: '14px',
-              fontWeight: 500,
-              color: activeTab === 'person' ? '#3A57E8' : '#8A92A6',
+              fontWeight: 600,
+              color: activeTab === 'person' ? 'white' : '#8A92A6',
               transition: 'all 0.3s ease',
-              boxShadow: activeTab === 'person' ? '0 2px 4px rgba(0,0,0,0.1)' : 'none'
+              boxShadow: activeTab === 'person' ? '0 2px 6px rgba(37, 99, 235, 0.35)' : 'none'
             }}
           >
             {t('labels.person')}
@@ -1560,15 +1640,17 @@ const GameSendPage: React.FC = () => {
               flex: 1,
               padding: '12px 24px',
               textAlign: 'center',
-              background: activeTab === 'group' ? 'white' : 'transparent',
+              background: activeTab === 'group'
+                ? 'linear-gradient(90deg, #2563EB 0%, #3B82F6 100%)'
+                : 'transparent',
               border: 'none',
               borderRadius: '6px',
               cursor: 'pointer',
               fontSize: '14px',
-              fontWeight: 500,
-              color: activeTab === 'group' ? '#3A57E8' : '#8A92A6',
+              fontWeight: 600,
+              color: activeTab === 'group' ? 'white' : '#8A92A6',
               transition: 'all 0.3s ease',
-              boxShadow: activeTab === 'group' ? '0 2px 4px rgba(0,0,0,0.1)' : 'none'
+              boxShadow: activeTab === 'group' ? '0 2px 6px rgba(37, 99, 235, 0.35)' : 'none'
             }}
           >
             {t('labels.group')}
@@ -1579,15 +1661,17 @@ const GameSendPage: React.FC = () => {
               flex: 1,
               padding: '12px 24px',
               textAlign: 'center',
-              background: activeTab === 'title' ? 'white' : 'transparent',
+              background: activeTab === 'title'
+                ? 'linear-gradient(90deg, #2563EB 0%, #3B82F6 100%)'
+                : 'transparent',
               border: 'none',
               borderRadius: '6px',
               cursor: 'pointer',
               fontSize: '14px',
-              fontWeight: 500,
-              color: activeTab === 'title' ? '#3A57E8' : '#8A92A6',
+              fontWeight: 600,
+              color: activeTab === 'title' ? 'white' : '#8A92A6',
               transition: 'all 0.3s ease',
-              boxShadow: activeTab === 'title' ? '0 2px 4px rgba(0,0,0,0.1)' : 'none'
+              boxShadow: activeTab === 'title' ? '0 2px 6px rgba(37, 99, 235, 0.35)' : 'none'
             }}
           >
             {t('labels.title')}
@@ -1596,292 +1680,555 @@ const GameSendPage: React.FC = () => {
 
         {/* Person Tab Content */}
         {activeTab === 'person' && (
-          <div>
-            <div style={{ marginBottom: '30px' }}>
-              <label style={{
-                display: 'block',
-                color: 'black',
-                fontSize: '14px',
-                fontWeight: 700,
-                marginBottom: '12px'
-              }}>
-                {t('labels.nameSurname')}
-              </label>
-              <input
-                type="text"
-                value={personName}
-                onChange={(e) => setPersonName(e.target.value)}
-                placeholder={t('placeholders.nameSurname')}
-                style={{
-                  width: '100%',
-                  padding: '16px',
-                  border: '1px solid #E9ECEF',
-                  borderRadius: '4px',
-                  fontSize: '14px',
-                  color: '#232D42',
-                  transition: 'border-color 0.3s'
-                }}
-              />
-            </div>
+          <div style={{
+            background: 'white',
+            borderRadius: '16px',
+            border: '1px solid #E5E7EB',
+            padding: '32px'
+          }}>
+            <div style={{
+              display: 'grid',
+              gridTemplateColumns: isMobile ? '1fr' : 'repeat(2, minmax(0, 1fr))',
+              gap: '20px',
+              marginBottom: '24px'
+            }}>
+              <div style={{ gridColumn: isMobile ? 'auto' : '1 / -1' }}>
+                <label style={{
+                  display: 'block',
+                  fontSize: '13px',
+                  fontWeight: 600,
+                  color: '#111827',
+                  marginBottom: '10px'
+                }}>
+                  Email
+                </label>
+                <div style={{ position: 'relative' }}>
+                  <div style={{
+                    position: 'absolute',
+                    left: '14px',
+                    top: '50%',
+                    transform: 'translateY(-50%)',
+                    color: '#9CA3AF'
+                  }}>
+                    <i className="fa-regular fa-envelope" />
+                  </div>
+                  <input
+                    type="email"
+                    value={personEmail}
+                    onChange={(e) => setPersonEmail(e.target.value)}
+                    placeholder={t('placeholders.email')}
+                    style={{
+                      width: '100%',
+                      padding: '12px 14px 12px 40px',
+                      background: '#F9FAFB',
+                      border: '1px solid #E5E7EB',
+                      borderRadius: '10px',
+                      fontSize: '14px',
+                      color: '#374151',
+                      outline: 'none'
+                    }}
+                  />
+                </div>
+              </div>
 
-            <div style={{ marginBottom: '30px' }}>
-              <label style={{
-                display: 'block',
-                color: 'black',
-                fontSize: '14px',
-                fontWeight: 700,
-                marginBottom: '12px'
-              }}>
-                Email
-              </label>
-              <input
-                type="email"
-                value={personEmail}
-                onChange={(e) => setPersonEmail(e.target.value)}
-                placeholder={t('placeholders.email')}
-                style={{
-                  width: '100%',
-                  padding: '16px',
-                  border: '1px solid #E9ECEF',
-                  borderRadius: '4px',
-                  fontSize: '14px',
-                  color: '#232D42',
-                  transition: 'border-color 0.3s'
-                }}
-              />
-            </div>
+              <div>
+                <label style={{
+                  display: 'block',
+                  fontSize: '13px',
+                  fontWeight: 600,
+                  color: '#111827',
+                  marginBottom: '10px'
+                }}>
+                  {t('labels.nameSurname')}
+                </label>
+                <div style={{ position: 'relative' }}>
+                  <div style={{
+                    position: 'absolute',
+                    left: '14px',
+                    top: '50%',
+                    transform: 'translateY(-50%)',
+                    color: '#9CA3AF'
+                  }}>
+                    <i className="fa-regular fa-user" />
+                  </div>
+                  <input
+                    type="text"
+                    value={personName}
+                    onChange={(e) => setPersonName(e.target.value)}
+                    placeholder={t('placeholders.nameSurname')}
+                    style={{
+                      width: '100%',
+                      padding: '12px 14px 12px 40px',
+                      background: '#F9FAFB',
+                      border: '1px solid #E5E7EB',
+                      borderRadius: '10px',
+                      fontSize: '14px',
+                      color: '#374151',
+                      outline: 'none'
+                    }}
+                  />
+                </div>
+              </div>
 
-            <div style={{ marginBottom: '30px' }}>
-              <label style={{
-                display: 'block',
-                color: 'black',
-                fontSize: '14px',
-                fontWeight: 700,
-                marginBottom: '12px'
-              }}>
-                {t('labels.planetSelection')}
-              </label>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-                  {/* Custom Dropdown */}
-                  <div style={{ flex: 1, position: 'relative' }} data-dropdown="planet">
-                    <div
-                      onClick={() => setShowPlanetDropdown(!showPlanetDropdown)}
-                      style={{
-                        padding: '16px',
-                        border: '1px solid #E9ECEF',
-                        borderRadius: '4px',
-                        fontSize: '14px',
-                        color: '#232D42',
-                        backgroundColor: '#FFFFFF',
-                        cursor: 'pointer',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'space-between',
-                        userSelect: 'none'
-                      }}
-                    >
-                      <span style={{ color: planetSearchTerm ? '#232D42' : '#8A92A6' }}>
-                        {planetSearchTerm || t('placeholders.selectPlanet')}
-                      </span>
-                      <i 
-                        className={`fas fa-chevron-${showPlanetDropdown ? 'up' : 'down'}`}
-                        style={{ 
-                          color: '#8A92A6',
-                          fontSize: '12px',
-                          transition: 'transform 0.3s ease'
-                        }}
-                      />
-                    </div>
-
-                    {/* Dropdown Menu */}
-                    {showPlanetDropdown && (
-                      <div style={{
-                        position: 'absolute',
-                        top: '100%',
-                        left: 0,
-                        right: 0,
-                        backgroundColor: '#FFFFFF',
-                        border: '1px solid #E9ECEF',
-                        borderRadius: '4px',
-                        boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)',
-                        zIndex: 1000,
-                        maxHeight: '200px',
-                        overflow: 'hidden'
-                      }}>
-                        {/* Search Input */}
-                        <div style={{ padding: '8px', borderBottom: '1px solid #E9ECEF', position: 'relative' }}>
-                          <input
-                            type="text"
-                            placeholder={t('placeholders.searchPlanet')}
-                            value={planetSearchTerm}
-                            onChange={(e) => setPlanetSearchTerm(e.target.value)}
-                            style={{
-                              width: '100%',
-                              padding: '8px 12px 8px 32px',
-                              border: '1px solid #E9ECEF',
-                              borderRadius: '4px',
-                              fontSize: '14px',
-                              outline: 'none'
-                            }}
-                            onClick={(e) => e.stopPropagation()}
-                          />
-                          <i className="fas fa-search" style={{
-                            position: 'absolute',
-                            left: '16px',
-                            top: '50%',
-                            transform: 'translateY(-50%)',
-                            color: '#6B7280',
-                            fontSize: '12px'
-                          }} />
-                          {planetSearchTerm && (
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                setPlanetSearchTerm('');
-                              }}
-                              style={{
-                                position: 'absolute',
-                                right: '12px',
-                                top: '50%',
-                                transform: 'translateY(-50%)',
-                                background: 'none',
-                                border: 'none',
-                                color: '#6B7280',
-                                cursor: 'pointer',
-                                fontSize: '12px',
-                                padding: '2px'
-                              }}
-                            >
-                              <i className="fas fa-times"></i>
-                            </button>
-                          )}
-                        </div>
-
-                        {/* Options */}
-                        <div style={{ maxHeight: '150px', overflowY: 'auto' }}>
-                          {filteredPlanets
-                            .filter(planet => !selectedPlanets.includes(planet.value))
-                            .map(planet => (
-                              <div
-                                key={planet.value}
-                                onClick={() => addPlanet(planet.value)}
-                                style={{
-                                  padding: '12px 16px',
-                                  cursor: 'pointer',
-                                  fontSize: '14px',
-                                  color: '#232D42',
-                                  borderBottom: '1px solid #F1F3F4',
-                                  transition: 'background-color 0.2s ease'
-                                }}
-                                onMouseEnter={(e) => {
-                                  e.currentTarget.style.backgroundColor = '#F8F9FA';
-                                }}
-                                onMouseLeave={(e) => {
-                                  e.currentTarget.style.backgroundColor = 'transparent';
-                                }}
-                              >
-                                {highlightText(capitalizeFirstLetter(planet.label), planetSearchTerm)}
-                              </div>
-                            ))}
-                          
-                          {/* No results message */}
-                          {planetSearchTerm && filteredPlanets.filter(planet => !selectedPlanets.includes(planet.value)).length === 0 && (
-                            <div style={{
-                              padding: '12px 16px',
-                              color: '#8A92A6',
-                              fontSize: '14px',
-                              textAlign: 'center'
-                            }}>
-                              {formatNoSearchResults(planetSearchTerm)}
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    )}
+              <div>
+                <label style={{
+                  display: 'block',
+                  fontSize: '13px',
+                  fontWeight: 600,
+                  color: '#111827',
+                  marginBottom: '10px'
+                }}>
+                  {t('labels.personType')}
+                </label>
+                <div style={{ position: 'relative' }}>
+                  <div style={{
+                    position: 'absolute',
+                    left: '14px',
+                    top: '50%',
+                    transform: 'translateY(-50%)',
+                    color: '#9CA3AF',
+                    zIndex: 1
+                  }}>
+                    <i className="fa-solid fa-user-tag" />
+                  </div>
+                  <select
+                    value={personType}
+                    onChange={(e) => setPersonType(e.target.value)}
+                    style={{
+                      width: '100%',
+                      padding: '12px 36px 12px 40px',
+                      background: '#F9FAFB',
+                      border: '1px solid #E5E7EB',
+                      borderRadius: '10px',
+                      fontSize: '14px',
+                      color: '#374151',
+                      outline: 'none',
+                      appearance: 'none',
+                      cursor: 'pointer'
+                    }}
+                  >
+                    <option value="">{t('placeholders.personType')}</option>
+                    <option value="Aday">Aday</option>
+                    <option value="Çalışan">Çalışan</option>
+                  </select>
+                  <div style={{
+                    position: 'absolute',
+                    right: '12px',
+                    top: '50%',
+                    transform: 'translateY(-50%)',
+                    color: '#9CA3AF',
+                    pointerEvents: 'none'
+                  }}>
+                    <i className="fa-solid fa-chevron-down" style={{ fontSize: '12px' }} />
                   </div>
                 </div>
-                <div style={{
-                  display: 'flex',
-                  flexWrap: 'wrap',
-                  gap: '8px',
-                  minHeight: '40px',
-                  padding: '8px',
-                  border: '1px solid #E9ECEF',
-                  borderRadius: '4px',
-                  background: '#f8f9fa'
+              </div>
+
+              <div>
+                <label style={{
+                  display: 'block',
+                  fontSize: '13px',
+                  fontWeight: 600,
+                  color: '#111827',
+                  marginBottom: '10px'
                 }}>
-                  {selectedPlanets.map((planetValue, index) => {
-                    const planet = availablePlanets.find(p => p.value === planetValue);
-                    return planet ? (
+                  {t('labels.title')}
+                </label>
+                <div style={{ position: 'relative' }}>
+                  <div style={{
+                    position: 'absolute',
+                    left: '14px',
+                    top: '50%',
+                    transform: 'translateY(-50%)',
+                    color: '#9CA3AF'
+                  }}>
+                    <i className="fa-solid fa-briefcase" />
+                  </div>
+                  <select
+                    value={personTitle}
+                    onChange={(e) => {
+                      setPersonTitle(e.target.value);
+                      setPersonPosition('');
+                    }}
+                    disabled={isOrgLoading}
+                    style={{
+                      width: '100%',
+                      padding: '12px 36px 12px 40px',
+                      background: '#F9FAFB',
+                      border: '1px solid #E5E7EB',
+                      borderRadius: '10px',
+                      fontSize: '14px',
+                      color: '#374151',
+                      outline: 'none',
+                      appearance: 'none',
+                      cursor: isOrgLoading ? 'not-allowed' : 'pointer'
+                    }}
+                  >
+                    <option value="">{t('placeholders.title')}</option>
+                    {availableTitles.map((option) => (
+                      <option key={option} value={option}>{option}</option>
+                    ))}
+                  </select>
+                  <div style={{
+                    position: 'absolute',
+                    right: '12px',
+                    top: '50%',
+                    transform: 'translateY(-50%)',
+                    color: '#9CA3AF',
+                    pointerEvents: 'none'
+                  }}>
+                    <i className="fa-solid fa-chevron-down" style={{ fontSize: '12px' }} />
+                  </div>
+                </div>
+              </div>
+
+              <div>
+                <label style={{
+                  display: 'block',
+                  fontSize: '13px',
+                  fontWeight: 600,
+                  color: '#111827',
+                  marginBottom: '10px'
+                }}>
+                  {t('labels.position')}
+                </label>
+                <div style={{ position: 'relative' }}>
+                  <div style={{
+                    position: 'absolute',
+                    left: '14px',
+                    top: '50%',
+                    transform: 'translateY(-50%)',
+                    color: '#9CA3AF'
+                  }}>
+                    <i className="fa-solid fa-id-badge" />
+                  </div>
+                  <select
+                    value={personPosition}
+                    onChange={(e) => setPersonPosition(e.target.value)}
+                    disabled={isOrgLoading}
+                    style={{
+                      width: '100%',
+                      padding: '12px 36px 12px 40px',
+                      background: '#F9FAFB',
+                      border: '1px solid #E5E7EB',
+                      borderRadius: '10px',
+                      fontSize: '14px',
+                      color: '#374151',
+                      outline: 'none',
+                      appearance: 'none',
+                      cursor: isOrgLoading ? 'not-allowed' : 'pointer'
+                    }}
+                  >
+                    <option value="">{t('placeholders.position')}</option>
+                    {availablePositions.map((option) => (
+                      <option key={option} value={option}>{option}</option>
+                    ))}
+                  </select>
+                  <div style={{
+                    position: 'absolute',
+                    right: '12px',
+                    top: '50%',
+                    transform: 'translateY(-50%)',
+                    color: '#9CA3AF',
+                    pointerEvents: 'none'
+                  }}>
+                    <i className="fa-solid fa-chevron-down" style={{ fontSize: '12px' }} />
+                  </div>
+                </div>
+              </div>
+
+              <div>
+                <label style={{
+                  display: 'block',
+                  fontSize: '13px',
+                  fontWeight: 600,
+                  color: '#111827',
+                  marginBottom: '10px'
+                }}>
+                  {t('labels.departmentLeadership')}
+                </label>
+                <div style={{ position: 'relative' }}>
+                  <div style={{
+                    position: 'absolute',
+                    left: '14px',
+                    top: '50%',
+                    transform: 'translateY(-50%)',
+                    color: '#9CA3AF',
+                    zIndex: 1
+                  }}>
+                    <i className="fa-solid fa-building" />
+                  </div>
+                  <select
+                    value={personDepartment}
+                    onChange={(e) => {
+                      setPersonDepartment(e.target.value);
+                      setPersonTitle('');
+                      setPersonPosition('');
+                    }}
+                    disabled={isOrgLoading}
+                    style={{
+                      width: '100%',
+                      padding: '12px 36px 12px 40px',
+                      background: '#F9FAFB',
+                      border: '1px solid #E5E7EB',
+                      borderRadius: '10px',
+                      fontSize: '14px',
+                      color: '#374151',
+                      outline: 'none',
+                      appearance: 'none',
+                      cursor: isOrgLoading ? 'not-allowed' : 'pointer'
+                    }}
+                  >
+                    <option value="">{t('placeholders.departmentLeadership')}</option>
+                    {availableDepartments.map((option) => (
+                      <option key={option} value={option}>{option}</option>
+                    ))}
+                  </select>
+                  <div style={{
+                    position: 'absolute',
+                    right: '12px',
+                    top: '50%',
+                    transform: 'translateY(-50%)',
+                    color: '#9CA3AF',
+                    pointerEvents: 'none'
+                  }}>
+                    <i className="fa-solid fa-chevron-down" style={{ fontSize: '12px' }} />
+                  </div>
+                </div>
+              </div>
+
+              <div style={{ gridColumn: isMobile ? 'auto' : '1 / -1' }}>
+                <label style={{
+                  display: 'block',
+                  fontSize: '13px',
+                  fontWeight: 600,
+                  color: '#111827',
+                  marginBottom: '10px'
+                }}>
+                  {t('labels.planetSelection')}
+                </label>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                  <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                    <div style={{ flex: 1, position: 'relative' }} data-dropdown="planet">
                       <div
-                        key={planetValue}
+                        onClick={() => setShowPlanetDropdown(!showPlanetDropdown)}
                         style={{
+                          padding: '12px 14px 12px 40px',
+                          border: '1px solid #E5E7EB',
+                          borderRadius: '10px',
+                          fontSize: '14px',
+                          color: '#232D42',
+                          backgroundColor: '#F9FAFB',
+                          cursor: 'pointer',
                           display: 'flex',
                           alignItems: 'center',
-                          gap: '8px',
-                          background: '#3A57E8',
-                          color: 'white',
-                          padding: '6px 12px',
-                          borderRadius: '20px',
-                          fontSize: '12px',
-                          fontWeight: 500,
-                          userSelect: 'none',
-                          transition: 'transform 0.2s, box-shadow 0.2s'
+                          justifyContent: 'space-between',
+                          userSelect: 'none'
                         }}
                       >
-                        <div style={{ cursor: 'grab', padding: '2px', borderRadius: '3px' }}>
-                          <i className="fas fa-grip-vertical"></i>
-                        </div>
-                        {capitalizeFirstLetter(planet.label)}
-                        <button
-                          onClick={() => removePlanet(planetValue)}
+                        <span style={{ color: planetSearchTerm ? '#232D42' : '#9CA3AF' }}>
+                          {planetSearchTerm || t('placeholders.selectPlanet')}
+                        </span>
+                        <i
+                          className={`fas fa-chevron-${showPlanetDropdown ? 'up' : 'down'}`}
                           style={{
-                            background: 'none',
-                            border: 'none',
-                            color: 'white',
-                            cursor: 'pointer',
-                            fontSize: '14px',
-                            padding: '0',
-                            width: '16px',
-                            height: '16px',
+                            color: '#9CA3AF',
+                            fontSize: '12px',
+                            transition: 'transform 0.3s ease'
+                          }}
+                        />
+                        <div style={{
+                          position: 'absolute',
+                          left: '14px',
+                          top: '50%',
+                          transform: 'translateY(-50%)',
+                          color: '#9CA3AF'
+                        }}>
+                          <i className="fa-solid fa-globe" />
+                        </div>
+                      </div>
+
+                      {showPlanetDropdown && (
+                        <div style={{
+                          position: 'absolute',
+                          top: '100%',
+                          left: 0,
+                          right: 0,
+                          backgroundColor: '#FFFFFF',
+                          border: '1px solid #E5E7EB',
+                          borderRadius: '10px',
+                          boxShadow: '0 10px 20px rgba(0, 0, 0, 0.08)',
+                          zIndex: 1000,
+                          maxHeight: '220px',
+                          overflow: 'hidden',
+                          marginTop: '6px'
+                        }}>
+                          <div style={{ padding: '8px', borderBottom: '1px solid #E5E7EB', position: 'relative' }}>
+                            <input
+                              type="text"
+                              placeholder={t('placeholders.searchPlanet')}
+                              value={planetSearchTerm}
+                              onChange={(e) => setPlanetSearchTerm(e.target.value)}
+                              style={{
+                                width: '100%',
+                                padding: '8px 12px 8px 32px',
+                                border: '1px solid #E5E7EB',
+                                borderRadius: '8px',
+                                fontSize: '14px',
+                                outline: 'none'
+                              }}
+                              onClick={(e) => e.stopPropagation()}
+                            />
+                            <i className="fas fa-search" style={{
+                              position: 'absolute',
+                              left: '16px',
+                              top: '50%',
+                              transform: 'translateY(-50%)',
+                              color: '#6B7280',
+                              fontSize: '12px'
+                            }} />
+                            {planetSearchTerm && (
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setPlanetSearchTerm('');
+                                }}
+                                style={{
+                                  position: 'absolute',
+                                  right: '12px',
+                                  top: '50%',
+                                  transform: 'translateY(-50%)',
+                                  background: 'none',
+                                  border: 'none',
+                                  color: '#6B7280',
+                                  cursor: 'pointer',
+                                  fontSize: '12px',
+                                  padding: '2px'
+                                }}
+                              >
+                                <i className="fas fa-times"></i>
+                              </button>
+                            )}
+                          </div>
+
+                          <div style={{ maxHeight: '160px', overflowY: 'auto' }}>
+                            {filteredPlanets
+                              .filter(planet => !selectedPlanets.includes(planet.value))
+                              .map(planet => (
+                                <div
+                                  key={planet.value}
+                                  onClick={() => addPlanet(planet.value)}
+                                  style={{
+                                    padding: '10px 14px',
+                                    cursor: 'pointer',
+                                    fontSize: '14px',
+                                    color: '#232D42',
+                                    borderBottom: '1px solid #F3F4F6'
+                                  }}
+                                  onMouseEnter={(e) => {
+                                    e.currentTarget.style.backgroundColor = '#F9FAFB';
+                                  }}
+                                  onMouseLeave={(e) => {
+                                    e.currentTarget.style.backgroundColor = 'transparent';
+                                  }}
+                                >
+                                  {highlightText(capitalizeFirstLetter(planet.label), planetSearchTerm)}
+                                </div>
+                              ))}
+
+                            {planetSearchTerm && filteredPlanets.filter(planet => !selectedPlanets.includes(planet.value)).length === 0 && (
+                              <div style={{
+                                padding: '12px 16px',
+                                color: '#9CA3AF',
+                                fontSize: '14px',
+                                textAlign: 'center'
+                              }}>
+                                {formatNoSearchResults(planetSearchTerm)}
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                  <div style={{
+                    display: 'flex',
+                    flexWrap: 'wrap',
+                    gap: '8px',
+                    minHeight: '40px',
+                    padding: '8px',
+                    border: '1px solid #E5E7EB',
+                    borderRadius: '10px',
+                    background: '#F9FAFB'
+                  }}>
+                    {selectedPlanets.map((planetValue) => {
+                      const planet = availablePlanets.find(p => p.value === planetValue);
+                      return planet ? (
+                        <div
+                          key={planetValue}
+                          style={{
                             display: 'flex',
                             alignItems: 'center',
-                            justifyContent: 'center'
+                            gap: '8px',
+                            background: '#4361ee',
+                            color: 'white',
+                            padding: '6px 12px',
+                            borderRadius: '999px',
+                            fontSize: '12px',
+                            fontWeight: 600,
+                            userSelect: 'none'
                           }}
                         >
-                          <i className="fas fa-times"></i>
-                        </button>
-                      </div>
-                    ) : null;
-                  })}
+                          {capitalizeFirstLetter(planet.label)}
+                          <button
+                            onClick={() => removePlanet(planetValue)}
+                            style={{
+                              background: 'none',
+                              border: 'none',
+                              color: 'white',
+                              cursor: 'pointer',
+                              fontSize: '12px',
+                              padding: '0',
+                              width: '16px',
+                              height: '16px',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center'
+                            }}
+                          >
+                            <i className="fas fa-times"></i>
+                          </button>
+                        </div>
+                      ) : null;
+                    })}
+                  </div>
                 </div>
               </div>
             </div>
 
-            <button
-              onClick={sendPersonInterview}
-              disabled={isSubmitting}
-              style={{
-                background: '#3A57E8',
-                color: 'white',
-                border: 'none',
-                padding: '16px 32px',
-                borderRadius: '8px',
-                fontSize: '14px',
-                fontWeight: 700,
-                cursor: isSubmitting ? 'not-allowed' : 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '12px',
-                marginTop: '30px',
-                transition: 'background-color 0.3s',
-                opacity: isSubmitting ? 0.7 : 1
-              }}
-            >
-              <i className="fas fa-paper-plane"></i>
-              {isSubmitting ? t('statuses.sending') : t('buttons.send')}
-            </button>
+            <div style={{ display: 'flex', justifyContent: 'flex-start' }}>
+              <button
+                onClick={sendPersonInterview}
+                disabled={isSubmitting}
+                style={{
+                  background: 'linear-gradient(90deg, #2563EB 0%, #3B82F6 100%)',
+                  color: 'white',
+                  border: 'none',
+                  padding: '12px 24px',
+                  borderRadius: '12px',
+                  fontSize: '14px',
+                  fontWeight: 600,
+                  cursor: isSubmitting ? 'not-allowed' : 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '10px',
+                  opacity: isSubmitting ? 0.7 : 1
+                }}
+              >
+                <i className="fas fa-paper-plane"></i>
+                {isSubmitting ? t('statuses.sending') : t('buttons.send')}
+              </button>
+            </div>
           </div>
         )}
 

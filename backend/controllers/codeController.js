@@ -21,7 +21,7 @@ class CodeController {
     // Kod üretme
     async generateCode(req, res) {
         try {
-            const { name, email, planet, allPlanets } = req.body;
+            const { name, email, planet, allPlanets, personType, unvan, pozisyon, departman } = req.body;
             
             if (!name || !email || !planet) {
                 return res.status(400).json({ 
@@ -42,6 +42,10 @@ class CodeController {
                 email,
                 planet,
                 allPlanets: allPlanets || [planet], // Eğer allPlanets yoksa sadece planet'i kullan
+                personType: personType || '',
+                unvan: unvan || '',
+                pozisyon: pozisyon || '',
+                departman: departman || '',
                 status: 'Beklemede',
                 sentDate: new Date(),
                 expiryDate

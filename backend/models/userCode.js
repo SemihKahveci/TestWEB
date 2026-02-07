@@ -64,6 +64,22 @@ const userCodeSchema = new mongoose.Schema({
         type: String,
         default: '-'
     },
+    personType: {
+        type: String,
+        default: ''
+    },
+    unvan: {
+        type: String,
+        default: ''
+    },
+    pozisyon: {
+        type: String,
+        default: ''
+    },
+    departman: {
+        type: String,
+        default: ''
+    },
     createdAt: {
         type: Date,
         default: Date.now

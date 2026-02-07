@@ -191,7 +191,7 @@ const adminController = {
     // Kod gönderme
     sendCode: async (req, res) => {
         try {
-            const { code, email, name, planet } = req.body;
+            const { code, email, name, planet, personType, unvan, pozisyon, departman } = req.body;
 
             if (!code) {
                 return res.status(400).json({ success: false, message: 'Kod bulunamadı' });
@@ -307,6 +307,10 @@ const adminController = {
                                 name,
                                 email,
                                 planet,
+                                personType: personType || '',
+                                unvan: unvan || '',
+                                pozisyon: pozisyon || '',
+                                departman: departman || '',
                                 status: 'Beklemede',
                                 sentDate: new Date(),
                                 expiryDate
@@ -586,9 +590,15 @@ const adminController = {
                 const nameKey = normalizeText(result.name || '');
                 const auth = authByEmailAndName[`${emailKey}|${nameKey}`];
                 const organization = auth?.organizationId || {};
-                const unvan = auth ? (organization.unvan || auth?.unvan || auth?.title || '-') : '-';
-                const pozisyon = auth ? (organization.pozisyon || auth?.pozisyon || auth?.title || '-') : '-';
-                const departman = auth ? (organization.grupLiderligi || '-') : '-';
+                const unvan = auth
+                    ? (organization.unvan || auth?.unvan || auth?.title || '-')
+                    : (result.unvan || '-');
+                const pozisyon = auth
+                    ? (organization.pozisyon || auth?.pozisyon || auth?.title || '-')
+                    : (result.pozisyon || '-');
+                const departman = auth
+                    ? (organization.grupLiderligi || '-')
+                    : (result.departman || '-');
 
                 return {
                     code: result.code,
