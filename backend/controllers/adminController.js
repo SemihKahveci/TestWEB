@@ -588,6 +588,7 @@ const adminController = {
                 const organization = auth?.organizationId || {};
                 const unvan = auth ? (organization.unvan || auth?.unvan || auth?.title || '-') : '-';
                 const pozisyon = auth ? (organization.pozisyon || auth?.pozisyon || auth?.title || '-') : '-';
+                const departman = auth ? (organization.grupLiderligi || '-') : '-';
 
                 return {
                     code: result.code,
@@ -598,6 +599,7 @@ const adminController = {
                     allPlanets: result.allPlanets,
                     unvan,
                     pozisyon,
+                    departman,
                     sentDate: result.sentDate,
                     completionDate: result.completionDate,
                     expiryDate: result.expiryDate,

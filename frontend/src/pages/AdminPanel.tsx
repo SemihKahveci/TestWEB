@@ -19,6 +19,15 @@ interface UserResult {
   expiryDate: string;
   reportExpiryDate: string;
   reportId?: string;
+  planet?: string;
+  allPlanets?: string[];
+  unvan?: string;
+  pozisyon?: string;
+  departman?: string;
+  customerFocusScore?: string | number;
+  uncertaintyScore?: string | number;
+  ieScore?: string | number;
+  idikScore?: string | number;
   isGrouped?: boolean;
   groupCount?: number;
   allGroupItems?: UserResult[];
@@ -132,6 +141,69 @@ const AdminPanel: React.FC = () => {
 
   const formatBulkDeleteConfirm = (count: number) =>
     formatTemplate(t('labels.bulkDeleteConfirm'), { count });
+
+  const getInitials = (name = '') => {
+    const parts = name.trim().split(/\s+/).filter(Boolean);
+    if (parts.length === 0) return '-';
+    if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
+    return `${parts[0][0]}${parts[1][0]}`.toUpperCase();
+  };
+
+  const getAvatarStyle = (name = '') => {
+    const palette = [
+      { bg: '#DBEAFE', text: '#2563EB' },
+      { bg: '#EDE9FE', text: '#7C3AED' },
+      { bg: '#FFEDD5', text: '#F97316' },
+      { bg: '#FCE7F3', text: '#DB2777' },
+      { bg: '#F3F4F6', text: '#4B5563' }
+    ];
+    const sum = name.split('').reduce((acc, ch) => acc + ch.charCodeAt(0), 0);
+    return palette[sum % palette.length];
+  };
+
+  const formatAverageScore = (result: UserResult) => {
+    const values = [
+      result.customerFocusScore,
+      result.uncertaintyScore,
+      result.ieScore,
+      result.idikScore
+    ]
+      .map((score) => {
+        const parsed = typeof score === 'number' ? score : parseFloat(String(score));
+        return Number.isFinite(parsed) ? parsed : null;
+      })
+      .filter((value): value is number => value !== null);
+
+    if (values.length === 0) return '-';
+    return Math.round(values.reduce((sum, value) => sum + value, 0) / values.length).toString();
+  };
+
+  const getMeasuredCompetencies = (result: UserResult) => {
+    const planets = Array.isArray(result.allPlanets) && result.allPlanets.length > 0
+      ? result.allPlanets
+      : result.planet ? [result.planet] : [];
+
+    const labels: string[] = [];
+    planets.forEach((planet) => {
+      const key = String(planet).toLowerCase();
+      if (key.includes('venus') || key === '0') {
+        labels.push(t('competency.uncertainty'), t('competency.customerFocus'));
+      } else if (key.includes('titan') || key === '1') {
+        labels.push(t('competency.ie'), t('competency.idik'));
+      } else if (planet) {
+        labels.push(String(planet));
+      }
+    });
+
+    const unique = Array.from(new Set(labels.filter(Boolean)));
+    return unique.length > 0 ? unique.join(', ') : '-';
+  };
+
+  const getMeasuredCompetencyList = (result: UserResult) => {
+    const text = getMeasuredCompetencies(result);
+    if (text === '-') return [];
+    return text.split(',').map((item) => item.trim()).filter(Boolean);
+  };
   
   const hasLoaded = useRef(false);
   
@@ -286,10 +358,10 @@ const AdminPanel: React.FC = () => {
 
     return (
       <span style={{
-        padding: '4px 8px',
-        borderRadius: '4px',
+        padding: '4px 10px',
+        borderRadius: '999px',
         fontSize: '12px',
-        fontWeight: 500,
+        fontWeight: 600,
         backgroundColor: statusStyle.bg,
         color: statusStyle.text,
         border: `1px solid ${statusStyle.border}`
@@ -993,9 +1065,10 @@ const AdminPanel: React.FC = () => {
       {/* Results Table */}
       <div style={{
         background: 'white',
-        borderRadius: '8px',
-        boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)',
-        overflow: 'hidden'
+        borderRadius: '12px',
+        boxShadow: '0 2px 8px rgba(0, 0, 0, 0.06)',
+        overflow: 'hidden',
+        border: '1px solid #F3F4F6'
       }}>
         <div style={{
           overflowX: 'auto'
@@ -1003,12 +1076,12 @@ const AdminPanel: React.FC = () => {
           <table style={{
             width: '100%',
             borderCollapse: 'collapse',
-            border: '1px solid #E9ECEF'
+            border: 'none'
           }}>
             <thead>
               <tr style={{
-                background: '#F8F9FA',
-                borderBottom: '1px solid #E9ECEF'
+                background: '#F9FAFB',
+                borderBottom: '1px solid #F1F5F9'
               }}>
                 <th style={{
                   padding: '16px',
@@ -1017,7 +1090,6 @@ const AdminPanel: React.FC = () => {
                   fontWeight: 600,
                   color: '#232D42',
                   fontFamily: 'Inter',
-                  borderRight: '1px solid #E9ECEF',
                   width: '50px'
                 }}>
                   <label style={{
@@ -1078,73 +1150,82 @@ const AdminPanel: React.FC = () => {
                 <th style={{
                   padding: '16px',
                   textAlign: 'left',
-                  fontSize: '14px',
-                  fontWeight: 600,
-                  color: '#232D42',
+                  fontSize: '12px',
+                  fontWeight: 700,
+                  color: '#6B7280',
                   fontFamily: 'Inter',
-                  borderRight: '1px solid #E9ECEF'
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.04em'
                 }}>{t('labels.nameSurname')}</th>
                 <th style={{
                   padding: '16px',
                   textAlign: 'center',
-                  fontSize: '14px',
-                  fontWeight: 600,
-                  color: '#232D42',
+                  fontSize: '12px',
+                  fontWeight: 700,
+                  color: '#6B7280',
                   fontFamily: 'Inter',
-                  borderRight: '1px solid #E9ECEF'
-                }}>{t('labels.email')}</th>
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.04em'
+                }}>{t('labels.statusShort')}</th>
                 <th style={{
                   padding: '16px',
                   textAlign: 'center',
-                  fontSize: '14px',
-                  fontWeight: 600,
-                  color: '#232D42',
+                  fontSize: '12px',
+                  fontWeight: 700,
+                  color: '#6B7280',
                   fontFamily: 'Inter',
-                  borderRight: '1px solid #E9ECEF'
-                }}>{t('labels.status')}</th>
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.04em'
+                }}>{t('labels.averageScore')}</th>
+                <th style={{
+                  padding: '16px',
+                  textAlign: 'left',
+                  fontSize: '12px',
+                  fontWeight: 700,
+                  color: '#6B7280',
+                  fontFamily: 'Inter',
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.04em'
+                }}>{t('labels.measuredCompetencies')}</th>
                 <th style={{
                   padding: '16px',
                   textAlign: 'center',
-                  fontSize: '14px',
-                  fontWeight: 600,
-                  color: '#232D42',
+                  fontSize: '12px',
+                  fontWeight: 700,
+                  color: '#6B7280',
                   fontFamily: 'Inter',
-                  borderRight: '1px solid #E9ECEF'
-                }}>{t('labels.sentDate')}</th>
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.04em'
+                }}>{t('labels.title')}</th>
                 <th style={{
                   padding: '16px',
                   textAlign: 'center',
-                  fontSize: '14px',
-                  fontWeight: 600,
-                  color: '#232D42',
+                  fontSize: '12px',
+                  fontWeight: 700,
+                  color: '#6B7280',
                   fontFamily: 'Inter',
-                  borderRight: '1px solid #E9ECEF'
-                }}>{t('labels.completionDate')}</th>
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.04em'
+                }}>{t('labels.position')}</th>
                 <th style={{
                   padding: '16px',
                   textAlign: 'center',
-                  fontSize: '14px',
-                  fontWeight: 600,
-                  color: '#232D42',
+                  fontSize: '12px',
+                  fontWeight: 700,
+                  color: '#6B7280',
                   fontFamily: 'Inter',
-                  borderRight: '1px solid #E9ECEF'
-                }}>{t('labels.codeExpiryDate')}</th>
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.04em'
+                }}>{t('labels.departmentLeadership')}</th>
                 <th style={{
                   padding: '16px',
                   textAlign: 'center',
-                  fontSize: '14px',
-                  fontWeight: 600,
-                  color: '#232D42',
+                  fontSize: '12px',
+                  fontWeight: 700,
+                  color: '#6B7280',
                   fontFamily: 'Inter',
-                  borderRight: '1px solid #E9ECEF'
-                }}>{t('labels.reportExpiryDate')}</th>
-                <th style={{
-                  padding: '16px',
-                  textAlign: 'center',
-                  fontSize: '14px',
-                  fontWeight: 600,
-                  color: '#232D42',
-                  fontFamily: 'Inter'
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.04em'
                 }}>{t('labels.actions')}</th>
               </tr>
             </thead>
@@ -1155,8 +1236,8 @@ const AdminPanel: React.FC = () => {
               }).map((result, index) => (
                 <React.Fragment key={result.code}>
                   <tr style={{
-                    borderBottom: '1px solid #F1F3F4',
-                    background: index % 2 === 0 ? '#E3F2FD' : 'white'
+                    borderBottom: '1px solid #F1F5F9',
+                    background: 'white'
                   }}>
                   <td style={{
                     padding: '16px',
@@ -1164,7 +1245,6 @@ const AdminPanel: React.FC = () => {
                     color: '#232D42',
                     fontFamily: 'Inter',
                     fontWeight: 500,
-                    borderRight: '1px solid #E9ECEF',
                     textAlign: 'center'
                   }}>
                     <label style={{
@@ -1218,18 +1298,45 @@ const AdminPanel: React.FC = () => {
                     color: '#232D42',
                     fontFamily: 'Inter',
                     fontWeight: 500,
-                    borderRight: '1px solid #E9ECEF',
                     textAlign: 'left'
                   }}>
-                    <span
-                      onClick={() => navigate('/person-results', { state: { selectedUser: result } })}
-                      style={{
-                        cursor: 'pointer',
-                        textDecoration: 'underline'
-                      }}
-                    >
-                      {result.name}
-                    </span>
+                    <div style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '12px'
+                    }}>
+                      <div style={{
+                        width: '32px',
+                        height: '32px',
+                        borderRadius: '999px',
+                        backgroundColor: getAvatarStyle(result.name).bg,
+                        color: getAvatarStyle(result.name).text,
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        fontSize: '12px',
+                        fontWeight: 700
+                      }}>
+                        {getInitials(result.name)}
+                      </div>
+                      <div>
+                        <div
+                          onClick={() => navigate('/person-results', { state: { selectedUser: result } })}
+                          style={{
+                            cursor: 'pointer',
+                            textDecoration: 'underline',
+                            fontSize: '14px',
+                            fontWeight: 600,
+                            color: '#1F2937'
+                          }}
+                        >
+                          {result.name}
+                        </div>
+                        <div style={{ fontSize: '12px', color: '#9CA3AF' }}>
+                          {result.email || '-'}
+                        </div>
+                      </div>
+                    </div>
                      {result.isGrouped && result.groupCount && result.groupCount > 1 && (() => {
                        // HTML'deki gibi görünür grup sayısını hesapla
                        let visibleGroupCount = 1;
@@ -1260,66 +1367,81 @@ const AdminPanel: React.FC = () => {
                   </td>
                   <td style={{
                     padding: '16px',
-                    fontSize: '14px',
-                    color: '#8A92A6',
+                    fontSize: '12px',
+                    color: '#6B7280',
                     fontFamily: 'Inter',
-                    borderRight: '1px solid #E9ECEF',
-                    textAlign: 'center'
-                  }}>
-                    {result.email}
-                  </td>
-                  <td style={{
-                    padding: '16px',
-                    borderRight: '1px solid #E9ECEF',
                     textAlign: 'center'
                   }}>
                     {getStatusBadge(result.status)}
                   </td>
                   <td style={{
                     padding: '16px',
+                    textAlign: 'center',
                     fontSize: '14px',
-                    color: '#8A92A6',
-                    fontFamily: 'Inter',
-                    borderRight: '1px solid #E9ECEF',
-                    textAlign: 'center'
+                    fontWeight: 700,
+                    color: '#1F2937'
                   }}>
-                    {formatDate(result.sentDate)}
+                    {formatAverageScore(result)}
                   </td>
                   <td style={{
                     padding: '16px',
                     fontSize: '14px',
                     color: '#8A92A6',
                     fontFamily: 'Inter',
-                    borderRight: '1px solid #E9ECEF',
-                    textAlign: 'center'
-                  }}>
-                    {result.completionDate ? formatDate(result.completionDate) : '-'}
-                  </td>
-                  <td style={{
-                    padding: '16px',
-                    fontSize: '14px',
-                    color: '#8A92A6',
-                    fontFamily: 'Inter',
-                    borderRight: '1px solid #E9ECEF',
-                    textAlign: 'center'
-                  }}>
-                    {formatDate(result.expiryDate)}
-                  </td>
-                  <td style={{
-                    padding: '16px',
-                    fontSize: '14px',
-                    color: '#8A92A6',
-                    fontFamily: 'Inter',
-                    borderRight: '1px solid #E9ECEF',
-                    textAlign: 'center'
+                    textAlign: 'left'
                   }}>
                     {(() => {
-                      // Rapor geçerlilik tarihini hesapla (Gönderim tarihi + 6 ay)
-                      const sentDate = new Date(result.sentDate);
-                      const reportExpiryDate = new Date(sentDate);
-                      reportExpiryDate.setMonth(reportExpiryDate.getMonth() + 6);
-                      return formatDate(reportExpiryDate.toISOString());
+                      const items = getMeasuredCompetencyList(result);
+                      if (items.length === 0) {
+                        return <span style={{ color: '#9CA3AF' }}>-</span>;
+                      }
+                      return (
+                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+                          {items.map((item) => (
+                            <span
+                              key={item}
+                              style={{
+                                fontSize: '10px',
+                                padding: '2px 8px',
+                                borderRadius: '999px',
+                                backgroundColor: '#F3F4F6',
+                                color: '#6B7280',
+                                fontWeight: 600
+                              }}
+                            >
+                              {item}
+                            </span>
+                          ))}
+                        </div>
+                      );
                     })()}
+                  </td>
+                  <td style={{
+                    padding: '16px',
+                    fontSize: '14px',
+                    color: '#8A92A6',
+                    fontFamily: 'Inter',
+                    textAlign: 'center'
+                  }}>
+                    {result.unvan || '-'}
+                  </td>
+                  <td style={{
+                    padding: '16px',
+                    fontSize: '14px',
+                    color: '#8A92A6',
+                    fontFamily: 'Inter',
+                    textAlign: 'center'
+                  }}>
+                    {result.pozisyon || '-'}
+                  </td>
+                  <td style={{
+                    padding: '16px',
+                    fontSize: '14px',
+                    color: '#8A92A6',
+                    fontFamily: 'Inter',
+                    textAlign: 'center'
+                  }}>
+                    {result.departman || '-'}
                   </td>
                   <td style={{
                     padding: '16px',

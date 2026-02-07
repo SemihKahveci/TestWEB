@@ -279,7 +279,7 @@ const deductCredits = async (req, res) => {
     credit.transactions.push({
       type: type || 'game_send',
       amount: amount,
-      description: description || `Oyun gönderildi (Admin: ${req.admin.name})`,
+      description: description || `Değerlendirme gönderildi (Admin: ${req.admin.name})`,
       timestamp: new Date()
     });
     
