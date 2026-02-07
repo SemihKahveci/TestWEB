@@ -69,7 +69,7 @@ const AdminPanel: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
-  const [showExpiredWarning, setShowExpiredWarning] = useState(false);
+  const showExpiredWarning = true;
   const [activePersonTab, setActivePersonTab] = useState<'all' | 'candidate' | 'employee'>('all');
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage] = useState(10);
@@ -327,7 +327,7 @@ const AdminPanel: React.FC = () => {
         setIsSearching(false);
       }
     }
-  }, [currentPage, itemsPerPage, debouncedSearchTerm, statusFilter, showExpiredWarning, activePersonTab]);
+  }, [currentPage, itemsPerPage, debouncedSearchTerm, statusFilter, activePersonTab]);
 
   // Debounce search term - kullanıcı yazmayı bitirdikten 500ms sonra arama yap
   useEffect(() => {
@@ -362,7 +362,7 @@ const AdminPanel: React.FC = () => {
     } else {
       loadData(false); // Sonraki yüklemelerde loading gösterme
     }
-  }, [currentPage, statusFilter, showExpiredWarning, activePersonTab]);
+  }, [currentPage, statusFilter, activePersonTab]);
 
   useEffect(() => {
     setCurrentPage(1);
@@ -379,7 +379,7 @@ const AdminPanel: React.FC = () => {
   useEffect(() => {
     // Search/filter değiştiğinde sayfayı 1'e resetle
     setCurrentPage(1);
-  }, [debouncedSearchTerm, statusFilter, showExpiredWarning]);
+  }, [debouncedSearchTerm, statusFilter]);
 
   useEffect(() => {
     if (!isPdfDownloading) {
@@ -419,7 +419,8 @@ const AdminPanel: React.FC = () => {
         fontWeight: 600,
         backgroundColor: statusStyle.bg,
         color: statusStyle.text,
-        border: `1px solid ${statusStyle.border}`
+        border: `1px solid ${statusStyle.border}`,
+        whiteSpace: 'nowrap'
       }}>
         {formatStatusLabel(status)}
       </span>
@@ -742,9 +743,7 @@ const AdminPanel: React.FC = () => {
   };
 
   const handleSelectAll = () => {
-    const visibleResults = paginatedResults.filter(result => {
-      return showExpiredWarning || result.status !== 'Süresi Doldu';
-    });
+    const visibleResults = paginatedResults;
     
     if (selectedItems.length === visibleResults.length) {
       setSelectedItems([]);
@@ -1093,67 +1092,6 @@ const AdminPanel: React.FC = () => {
             {t('buttons.refresh')}
           </button>
 
-          {/* Switch */}
-          <label style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '8px',
-            cursor: 'pointer'
-          }}>
-            <span style={{
-              position: 'relative',
-              display: 'inline-block',
-              width: '44px',
-              height: '24px',
-              verticalAlign: 'middle'
-            }}>
-              <input
-                type="checkbox"
-                checked={showExpiredWarning}
-                onChange={(e) => setShowExpiredWarning(e.target.checked)}
-                style={{
-                  opacity: 0,
-                  width: 0,
-                  height: 0
-                }}
-              />
-              <span style={{
-                position: 'absolute',
-                cursor: 'pointer',
-                top: 0,
-                left: 0,
-                right: 0,
-                bottom: 0,
-                backgroundColor: showExpiredWarning ? '#0286F7' : '#E9ECEF',
-                transition: '0.3s',
-                borderRadius: '24px'
-              }}>
-                <span style={{
-                  position: 'absolute',
-                  content: '""',
-                  height: '18px',
-                  width: '18px',
-                  left: '3px',
-                  bottom: '3px',
-                  backgroundColor: 'white',
-                  transition: '0.3s',
-                  borderRadius: '50%',
-                  transform: showExpiredWarning ? 'translateX(20px)' : 'translateX(0px)'
-                }}></span>
-              </span>
-            </span>
-            <span style={{
-              marginLeft: '10px',
-              fontSize: '14px',
-              color: '#232D42',
-              fontFamily: 'Inter',
-              fontWeight: 500,
-              cursor: 'pointer',
-              userSelect: 'none'
-            }}>
-              {t('labels.showExpiredGames')}
-            </span>
-          </label>
         </div>
       </div>
 
@@ -1195,9 +1133,7 @@ const AdminPanel: React.FC = () => {
                   }}>
                     <input
                       type="checkbox"
-                      checked={selectedItems.length > 0 && selectedItems.length === paginatedResults.filter(result => {
-                        return showExpiredWarning || result.status !== 'Süresi Doldu';
-                      }).length}
+                      checked={selectedItems.length > 0 && selectedItems.length === paginatedResults.length}
                       onChange={handleSelectAll}
                       style={{
                         opacity: 0,
@@ -1212,21 +1148,13 @@ const AdminPanel: React.FC = () => {
                       display: 'inline-block',
                       width: '18px',
                       height: '18px',
-                      backgroundColor: selectedItems.length > 0 && selectedItems.length === paginatedResults.filter(result => {
-                        return showExpiredWarning || result.status !== 'Süresi Doldu';
-                      }).length ? '#0286F7' : 'white',
-                      border: `2px solid ${selectedItems.length > 0 && selectedItems.length === paginatedResults.filter(result => {
-                        return showExpiredWarning || result.status !== 'Süresi Doldu';
-                      }).length ? '#0286F7' : '#E9ECEF'}`,
+                      backgroundColor: selectedItems.length > 0 && selectedItems.length === paginatedResults.length ? '#0286F7' : 'white',
+                      border: `2px solid ${selectedItems.length > 0 && selectedItems.length === paginatedResults.length ? '#0286F7' : '#E9ECEF'}`,
                       borderRadius: '4px',
                       transition: 'all 0.3s ease',
-                      transform: selectedItems.length > 0 && selectedItems.length === paginatedResults.filter(result => {
-                        return showExpiredWarning || result.status !== 'Süresi Doldu';
-                      }).length ? 'scale(1.1)' : 'scale(1)'
+                      transform: selectedItems.length > 0 && selectedItems.length === paginatedResults.length ? 'scale(1.1)' : 'scale(1)'
                     }}>
-                      {selectedItems.length > 0 && selectedItems.length === paginatedResults.filter(result => {
-                        return showExpiredWarning || result.status !== 'Süresi Doldu';
-                      }).length && (
+                      {selectedItems.length > 0 && selectedItems.length === paginatedResults.length && (
                         <span style={{
                           position: 'absolute',
                           display: 'block',
@@ -1325,10 +1253,7 @@ const AdminPanel: React.FC = () => {
               </tr>
             </thead>
             <tbody>
-              {paginatedResults.filter(result => {
-                // HTML'deki gibi: switch açık değilse süresi dolanları gizle
-                return showExpiredWarning || result.status !== 'Süresi Doldu';
-              }).map((result, index) => (
+              {paginatedResults.map((result, index) => (
                 <React.Fragment key={result.code}>
                   <tr style={{
                     borderBottom: '1px solid #F1F5F9',
@@ -1436,9 +1361,7 @@ const AdminPanel: React.FC = () => {
                        // HTML'deki gibi görünür grup sayısını hesapla
                        let visibleGroupCount = 1;
                        if (result.allGroupItems) {
-                         visibleGroupCount = 1 + result.allGroupItems.slice(1).filter(sub => 
-                           showExpiredWarning || sub.status !== 'Süresi Doldu'
-                         ).length;
+                         visibleGroupCount = result.allGroupItems.length;
                        }
                        return visibleGroupCount > 1 ? (
                          <span style={{
@@ -1450,7 +1373,7 @@ const AdminPanel: React.FC = () => {
                          </span>
                        ) : null;
                      })()}
-                     {result.hasExpiredCode && showExpiredWarning && (
+                     {result.hasExpiredCode && (
                        <span style={{
                          marginLeft: '8px',
                          color: '#FF6B35',
