@@ -2169,6 +2169,66 @@ const GameSendPage: React.FC = () => {
                   color: '#111827',
                   marginBottom: '10px'
                 }}>
+                  {t('labels.departmentLeadership')}
+                </label>
+                <div style={{ position: 'relative' }}>
+                  <div style={{
+                    position: 'absolute',
+                    left: '14px',
+                    top: '50%',
+                    transform: 'translateY(-50%)',
+                    color: '#9CA3AF',
+                    zIndex: 1
+                  }}>
+                    <i className="fa-solid fa-building" />
+                  </div>
+                  <select
+                    value={personDepartment}
+                    onChange={(e) => {
+                      setPersonDepartment(e.target.value);
+                      setPersonTitle('');
+                      setPersonPosition('');
+                    }}
+                    disabled={isOrgLoading}
+                    style={{
+                      width: '100%',
+                      padding: '12px 36px 12px 40px',
+                      background: '#F9FAFB',
+                      border: '1px solid #E5E7EB',
+                      borderRadius: '10px',
+                      fontSize: '14px',
+                      color: '#374151',
+                      outline: 'none',
+                      appearance: 'none',
+                      cursor: isOrgLoading ? 'not-allowed' : 'pointer'
+                    }}
+                  >
+                    <option value="">{t('placeholders.departmentLeadership')}</option>
+                    {availableDepartments.map((option) => (
+                      <option key={option} value={option}>{option}</option>
+                    ))}
+                  </select>
+                  <div style={{
+                    position: 'absolute',
+                    right: '12px',
+                    top: '50%',
+                    transform: 'translateY(-50%)',
+                    color: '#9CA3AF',
+                    pointerEvents: 'none'
+                  }}>
+                    <i className="fa-solid fa-chevron-down" style={{ fontSize: '12px' }} />
+                  </div>
+                </div>
+              </div>
+
+              <div>
+                <label style={{
+                  display: 'block',
+                  fontSize: '13px',
+                  fontWeight: 600,
+                  color: '#111827',
+                  marginBottom: '10px'
+                }}>
                   {t('labels.title')}
                 </label>
                 <div style={{ position: 'relative' }}>
@@ -2258,66 +2318,6 @@ const GameSendPage: React.FC = () => {
                   >
                     <option value="">{t('placeholders.position')}</option>
                     {availablePositions.map((option) => (
-                      <option key={option} value={option}>{option}</option>
-                    ))}
-                  </select>
-                  <div style={{
-                    position: 'absolute',
-                    right: '12px',
-                    top: '50%',
-                    transform: 'translateY(-50%)',
-                    color: '#9CA3AF',
-                    pointerEvents: 'none'
-                  }}>
-                    <i className="fa-solid fa-chevron-down" style={{ fontSize: '12px' }} />
-                  </div>
-                </div>
-              </div>
-
-              <div>
-                <label style={{
-                  display: 'block',
-                  fontSize: '13px',
-                  fontWeight: 600,
-                  color: '#111827',
-                  marginBottom: '10px'
-                }}>
-                  {t('labels.departmentLeadership')}
-                </label>
-                <div style={{ position: 'relative' }}>
-                  <div style={{
-                    position: 'absolute',
-                    left: '14px',
-                    top: '50%',
-                    transform: 'translateY(-50%)',
-                    color: '#9CA3AF',
-                    zIndex: 1
-                  }}>
-                    <i className="fa-solid fa-building" />
-                  </div>
-                  <select
-                    value={personDepartment}
-                    onChange={(e) => {
-                      setPersonDepartment(e.target.value);
-                      setPersonTitle('');
-                      setPersonPosition('');
-                    }}
-                    disabled={isOrgLoading}
-                    style={{
-                      width: '100%',
-                      padding: '12px 36px 12px 40px',
-                      background: '#F9FAFB',
-                      border: '1px solid #E5E7EB',
-                      borderRadius: '10px',
-                      fontSize: '14px',
-                      color: '#374151',
-                      outline: 'none',
-                      appearance: 'none',
-                      cursor: isOrgLoading ? 'not-allowed' : 'pointer'
-                    }}
-                  >
-                    <option value="">{t('placeholders.departmentLeadership')}</option>
-                    {availableDepartments.map((option) => (
                       <option key={option} value={option}>{option}</option>
                     ))}
                   </select>

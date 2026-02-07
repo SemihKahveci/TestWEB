@@ -171,6 +171,11 @@ const updateTitleOptions = async (req, res) => {
                 });
             }
 
+            const adminController = require('./adminController');
+            if (typeof adminController.clearDashboardStatsCache === 'function') {
+                adminController.clearDashboardStatsCache();
+            }
+
             return res.json({
                 success: true,
                 message: 'Unvan listesi güncellendi',
@@ -197,6 +202,11 @@ const updateTitleOptions = async (req, res) => {
                 success: false,
                 message: 'Firma bulunamadı.'
             });
+        }
+
+        const adminController = require('./adminController');
+        if (typeof adminController.clearDashboardStatsCache === 'function') {
+            adminController.clearDashboardStatsCache();
         }
 
         res.json({

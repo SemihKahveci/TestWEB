@@ -3,6 +3,7 @@ const EvaluationResult = require('../models/evaluationResult');
 const { sendEmail } = require('../services/emailService');
 const jwt = require('jsonwebtoken');
 const Admin = require('../models/Admin');
+const CompanyManagement = require('../models/companyManagement');
 const bcrypt = require('bcryptjs');
 const UserCode = require('../models/userCode');
 const Game = require('../models/game');
@@ -15,6 +16,15 @@ const { adminLoginLimiter } = require('../middleware/rateLimiters');
 
 const dashboardStatsCache = new Map();
 const DASHBOARD_STATS_TTL_MS = 60 * 1000;
+
+const DEFAULT_TITLE_OPTIONS = [
+    'Direktör',
+    'Müdür/Yönetici',
+    'Kıdemli Uzman',
+    'Uzman',
+    'Uzman Yardımcısı',
+    'MT/Stajyer'
+];
 
 // Şifre validasyon fonksiyonu
 const validatePassword = (password) => {
@@ -938,8 +948,36 @@ const adminController = {
                 buckets[index] += 1;
             };
 
+            const normalizeText = (value) =>
+                (value || '')
+                    .toString()
+                    .trim()
+                    .toLowerCase()
+                    .replace(/\s+/g, ' ');
+
+            const normalizePersonType = (value) => {
+                const normalized = normalizeText(value);
+                if (normalized.includes('aday') || normalized.includes('candidate')) return 'candidate';
+                if (normalized.includes('calisan') || normalized.includes('çalışan') || normalized.includes('employee')) return 'employee';
+                return '';
+            };
+
+            let titleOptions = DEFAULT_TITLE_OPTIONS;
+            if (req.admin?.role === 'superadmin') {
+                if (Array.isArray(req.admin?.titleOptions) && req.admin.titleOptions.length > 0) {
+                    titleOptions = req.admin.titleOptions;
+                }
+            } else if (req.admin?.companyId) {
+                const company = await CompanyManagement.findById(req.admin.companyId)
+                    .select('titleOptions')
+                    .lean();
+                if (Array.isArray(company?.titleOptions) && company.titleOptions.length > 0) {
+                    titleOptions = company.titleOptions;
+                }
+            }
+
             const userCodes = await UserCode.find(companyFilter)
-                .select('email name status planet allPlanets customerFocusScore uncertaintyScore ieScore idikScore')
+                .select('email name status planet allPlanets customerFocusScore uncertaintyScore ieScore idikScore personType unvan')
                 .lean();
 
             const normalizeStatus = (status) => status.toLowerCase().replace(/\s+/g, ' ').trim();
@@ -953,12 +991,25 @@ const adminController = {
                 ie: initBuckets(),
                 idik: initBuckets()
             };
+            const completedCounts = { candidate: 0, employee: 0 };
+            const titleCounts = {};
             const uniqueKeys = new Set();
 
             userCodes.forEach((item) => {
                 const normalized = normalizeStatus(item.status || '');
                 if (normalized === 'tamamlandı' || normalized === 'tamamlandi') {
                     statusCounts.completed += 1;
+                    const personType = normalizePersonType(item.personType);
+                    if (personType === 'candidate') {
+                        completedCounts.candidate += 1;
+                    } else if (personType === 'employee') {
+                        completedCounts.employee += 1;
+                    }
+
+                    const titleKey = normalizeText(item.unvan);
+                    if (titleKey) {
+                        titleCounts[titleKey] = (titleCounts[titleKey] || 0) + 1;
+                    }
                 } else if (normalized.includes('devam') || (normalized.includes('oyun') && normalized.includes('ediyor'))) {
                     statusCounts.inProgress += 1;
                 } else if (normalized.includes('süresi doldu') || normalized.includes('suresi doldu')) {
@@ -1003,7 +1054,11 @@ const adminController = {
                 uniquePeopleCount,
                 statusCounts,
                 competencyCounts,
-                scoreDistributions
+                scoreDistributions,
+                completedCandidateCount: completedCounts.candidate,
+                completedEmployeeCount: completedCounts.employee,
+                titleOptions,
+                titleCounts
             };
 
             dashboardStatsCache.set(cacheKey, { fetchedAt: now, data: stats });
@@ -1963,6 +2018,10 @@ const adminController = {
             });
         }
     }
+};
+
+adminController.clearDashboardStatsCache = () => {
+    dashboardStatsCache.clear();
 };
 
 module.exports = adminController; 
