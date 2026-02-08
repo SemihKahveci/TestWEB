@@ -64,7 +64,9 @@ const AdminPanel: React.FC = () => {
   const [filteredResults, setFilteredResults] = useState<UserResult[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isPdfDownloading, setIsPdfDownloading] = useState(false);
+  const [isWordDownloading, setIsWordDownloading] = useState(false);
   const [pdfProgress, setPdfProgress] = useState(0);
+  const [wordProgress, setWordProgress] = useState(0);
   const [isSearching, setIsSearching] = useState(false); // Backend arama için ayrı loading
   const [searchTerm, setSearchTerm] = useState('');
   const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('');
@@ -396,6 +398,21 @@ const AdminPanel: React.FC = () => {
     return () => clearInterval(interval);
   }, [isPdfDownloading]);
 
+  useEffect(() => {
+    if (!isWordDownloading) {
+      setWordProgress(0);
+      return;
+    }
+    setWordProgress(5);
+    const interval = setInterval(() => {
+      setWordProgress((prev) => {
+        const next = prev + Math.floor(Math.random() * 12) + 8;
+        return next >= 95 ? 95 : next;
+      });
+    }, 300);
+    return () => clearInterval(interval);
+  }, [isWordDownloading]);
+
   // Sayfa değiştiğinde seçimleri temizle
   useEffect(() => {
     setSelectedItems([]);
@@ -611,6 +628,7 @@ const AdminPanel: React.FC = () => {
 
   const handleWord = async (code: string) => {
     try {
+      setIsWordDownloading(true);
       const response = await fetch(`${API_BASE_URL}/api/evaluation/generateWordFromTemplate`, {
         method: 'POST',
         headers: {
@@ -668,6 +686,8 @@ const AdminPanel: React.FC = () => {
     } catch (error) {
       console.error('Word indirme hatası:', error);
       showMessage(t('labels.error'), formatWordDownloadFailed((error as Error).message), 'error');
+    } finally {
+      setIsWordDownloading(false);
     }
   };
 
@@ -2259,6 +2279,52 @@ const AdminPanel: React.FC = () => {
             </div>
             <div style={{ marginTop: '10px', fontSize: '12px', color: '#6B7280' }}>
               {pdfProgress}%
+            </div>
+          </div>
+        </div>
+      )}
+
+      {isWordDownloading && (
+        <div style={{
+          position: 'fixed',
+          inset: 0,
+          background: 'rgba(0, 0, 0, 0.5)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 2000
+        }}>
+          <div style={{
+            width: '90%',
+            maxWidth: '420px',
+            background: 'white',
+            borderRadius: '12px',
+            padding: '24px',
+            boxShadow: '0 10px 30px rgba(0, 0, 0, 0.2)',
+            textAlign: 'center'
+          }}>
+            <div style={{ fontSize: '16px', fontWeight: 600, marginBottom: '8px' }}>
+              {t('labels.loading')}
+            </div>
+            <div style={{ fontSize: '13px', color: '#6B7280', marginBottom: '16px' }}>
+              Word oluşturuluyor ve indiriliyor, lütfen bekleyin.
+            </div>
+            <div style={{
+              width: '100%',
+              height: '8px',
+              background: '#E5E7EB',
+              borderRadius: '999px',
+              overflow: 'hidden'
+            }}>
+              <div style={{
+                width: `${wordProgress}%`,
+                height: '100%',
+                background: '#3B82F6',
+                transition: 'width 0.4s ease'
+              }} />
+            </div>
+            <div style={{ marginTop: '10px', fontSize: '12px', color: '#6B7280' }}>
+              {wordProgress}%
             </div>
           </div>
         </div>
