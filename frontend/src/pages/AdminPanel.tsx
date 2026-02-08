@@ -739,8 +739,8 @@ const AdminPanel: React.FC = () => {
       setShowDeletePopup(false);
       setSelectedUser(null);
       
-      // Sadece veriyi yeniden yükle (sayfa yenilenmesin)
-      await loadData();
+      // Sadece veriyi yeniden yükle (cache'i bypass et)
+      await loadData(true, true);
       
       showMessage(t('labels.success'), t('messages.evaluationDeleted'), 'success');
     } catch (error) {
