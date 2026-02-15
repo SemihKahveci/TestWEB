@@ -104,6 +104,10 @@ const AdminPanel: React.FC = () => {
   const [remainingCredits, setRemainingCredits] = useState(0);
   const [quickSendPlanets, setQuickSendPlanets] = useState<string[]>([]);
   const [isQuickSending, setIsQuickSending] = useState(false);
+  const [showBulkSendPopup, setShowBulkSendPopup] = useState(false);
+  const [bulkSendTargets, setBulkSendTargets] = useState<UserResult[]>([]);
+  const [bulkSendPlanets, setBulkSendPlanets] = useState<Record<string, string[]>>({});
+  const [isBulkSending, setIsBulkSending] = useState(false);
 
   const availablePlanets = useMemo(() => ([
     { value: 'venus', label: `${t('labels.planetVenus')} (${t('competency.uncertainty')} - ${t('competency.customerFocus')})` },
@@ -770,6 +774,62 @@ const AdminPanel: React.FC = () => {
     setShowQuickSendPopup(true);
   };
 
+  const handleBulkSendPopup = () => {
+    if (selectedItems.length === 0) {
+      showMessage(t('labels.warning'), t('warnings.selectRecordsToDelete'), 'warning');
+      return;
+    }
+
+    const selectedUsers: UserResult[] = [];
+    const missingCodes: string[] = [];
+
+    selectedItems.forEach((code) => {
+      let existingData = results.find(item => item.code === code);
+
+      if (!existingData) {
+        for (const result of results) {
+          if (result.allGroupItems) {
+            const foundInGroup = result.allGroupItems.find(item => item.code === code);
+            if (foundInGroup) {
+              existingData = foundInGroup;
+              break;
+            }
+          }
+        }
+      }
+
+      if (existingData) {
+        selectedUsers.push(existingData);
+      } else {
+        missingCodes.push(code);
+      }
+    });
+
+    if (missingCodes.length > 0) {
+      showMessage(t('labels.error'), formatNoDataForCode(), 'error');
+      return;
+    }
+
+    const initialPlanets: Record<string, string[]> = {};
+    selectedUsers.forEach((user) => {
+      initialPlanets[user.code] = [];
+    });
+
+    setBulkSendTargets(selectedUsers);
+    setBulkSendPlanets(initialPlanets);
+    setShowBulkSendPopup(true);
+  };
+
+  const toggleBulkSendPlanet = (code: string, planet: string) => {
+    setBulkSendPlanets((prev) => {
+      const current = prev[code] || [];
+      const next = current.includes(planet)
+        ? current.filter((item) => item !== planet)
+        : [...current, planet];
+      return { ...prev, [code]: next };
+    });
+  };
+
   const toggleQuickSendPlanet = (value: string) => {
     setQuickSendPlanets((prev) =>
       prev.includes(value) ? prev.filter((item) => item !== value) : [...prev, value]
@@ -870,6 +930,129 @@ const AdminPanel: React.FC = () => {
       showMessage(t('labels.error'), formatSendFailed((error as Error).message), 'error');
     } finally {
       setIsQuickSending(false);
+    }
+  };
+
+  const handleBulkSend = async () => {
+    if (bulkSendTargets.length === 0) return;
+
+    const missingPlanets = bulkSendTargets
+      .filter((user) => (bulkSendPlanets[user.code] || []).length === 0)
+      .map((user) => user.name || user.email || user.code);
+
+    if (missingPlanets.length > 0) {
+      showMessage(
+        t('labels.error'),
+        `Lütfen tüm kişiler için en az bir gezegen seçin: ${missingPlanets.join(', ')}`,
+        'error'
+      );
+      return;
+    }
+
+    const totalCreditCost = bulkSendTargets.reduce(
+      (sum, user) => sum + (bulkSendPlanets[user.code]?.length || 0),
+      0
+    );
+
+    if (!isSuperAdmin && remainingCredits < totalCreditCost) {
+      showMessage(
+        t('labels.error'),
+        formatInsufficientCredits(remainingCredits, totalCreditCost),
+        'error'
+      );
+      return;
+    }
+
+    try {
+      setIsBulkSending(true);
+      let successCount = 0;
+      let totalSentPlanets = 0;
+
+      for (const user of bulkSendTargets) {
+        const selectedPlanets = bulkSendPlanets[user.code] || [];
+        if (selectedPlanets.length === 0) {
+          continue;
+        }
+        const primaryPlanet = selectedPlanets[0];
+
+        const codeResponse = await fetch('/api/generate-code', {
+          method: 'POST',
+          credentials: 'include',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            name: user.name,
+            email: user.email,
+            planet: primaryPlanet,
+            allPlanets: selectedPlanets,
+            personType: user.personType || '',
+            unvan: user.unvan || '',
+            pozisyon: user.pozisyon || '',
+            departman: user.departman || ''
+          })
+        });
+
+        const codeData = await codeResponse.json();
+        if (!codeData.success || !codeData.code) {
+          throw new Error(t('errors.codeGenerateInvalid'));
+        }
+
+        const sendResponse = await fetch('/api/send-code', {
+          method: 'POST',
+          credentials: 'include',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            code: codeData.code,
+            name: user.name,
+            email: user.email,
+            planet: primaryPlanet,
+            allPlanets: selectedPlanets,
+            personType: user.personType || '',
+            unvan: user.unvan || '',
+            pozisyon: user.pozisyon || '',
+            departman: user.departman || ''
+          })
+        });
+
+        const sendData = await sendResponse.json();
+        if (!sendData.success) {
+          throw new Error(sendData.message || t('errors.sendFailedGeneric'));
+        }
+
+        successCount += 1;
+        totalSentPlanets += selectedPlanets.length;
+      }
+
+      if (!isSuperAdmin && totalSentPlanets > 0) {
+        try {
+          const deductResponse = await creditAPI.deductCredits({
+            amount: totalSentPlanets,
+            type: 'game_send',
+            description: `Toplu Gönderim: ${successCount} kişi (${totalSentPlanets} ${t('labels.planet')})`
+          });
+
+          if (deductResponse.data.success) {
+            const { totalCredits, usedCredits, remainingCredits } = deductResponse.data.credit;
+            localStorage.setItem('remainingCredits', remainingCredits.toString());
+            localStorage.setItem('usedCredits', usedCredits.toString());
+            localStorage.setItem('totalCredits', totalCredits.toString());
+            setRemainingCredits(remainingCredits);
+          }
+        } catch (error) {
+          const message = error.response?.data?.message || (error as Error).message;
+          showMessage(t('labels.error'), formatCreditDeductionFailed(message), 'error');
+        }
+      }
+
+      showMessage(t('labels.success'), formatCodeSent(totalSentPlanets), 'success');
+      setShowBulkSendPopup(false);
+      setBulkSendTargets([]);
+      setBulkSendPlanets({});
+      await refreshAfterMutation();
+    } catch (error) {
+      console.error('Toplu gönderim hatası:', error);
+      showMessage(t('labels.error'), formatSendFailed((error as Error).message), 'error');
+    } finally {
+      setIsBulkSending(false);
     }
   };
 
@@ -1194,32 +1377,60 @@ const AdminPanel: React.FC = () => {
         }}>
           {/* Toplu Silme Button */}
           {selectedItems.length > 0 && (
-            <button
-              onClick={handleBulkDelete}
-              style={{
-                background: '#DC3545',
-                color: 'white',
-                border: 'none',
-                padding: '8px 16px',
-                borderRadius: '8px',
-                cursor: 'pointer',
-                fontWeight: 500,
-                display: 'flex',
-                alignItems: 'center',
-                gap: '8px',
-                transition: 'background-color 0.3s',
-                fontFamily: 'Inter'
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.backgroundColor = '#C82333';
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.backgroundColor = '#DC3545';
-              }}
-            >
-              <i className="fas fa-trash"></i>
-              {t('buttons.bulkDelete')} ({selectedItems.length})
-            </button>
+            <>
+              <button
+                onClick={handleBulkSendPopup}
+                style={{
+                  background: '#7C3AED',
+                  color: 'white',
+                  border: 'none',
+                  padding: '8px 16px',
+                  borderRadius: '8px',
+                  cursor: 'pointer',
+                  fontWeight: 500,
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                  transition: 'background-color 0.3s',
+                  fontFamily: 'Inter'
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.backgroundColor = '#6D28D9';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.backgroundColor = '#7C3AED';
+                }}
+              >
+                <i className="fas fa-paper-plane"></i>
+                Toplu Gönder ({selectedItems.length})
+              </button>
+              <button
+                onClick={handleBulkDelete}
+                style={{
+                  background: '#DC3545',
+                  color: 'white',
+                  border: 'none',
+                  padding: '8px 16px',
+                  borderRadius: '8px',
+                  cursor: 'pointer',
+                  fontWeight: 500,
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                  transition: 'background-color 0.3s',
+                  fontFamily: 'Inter'
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.backgroundColor = '#C82333';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.backgroundColor = '#DC3545';
+                }}
+              >
+                <i className="fas fa-trash"></i>
+                {t('buttons.bulkDelete')} ({selectedItems.length})
+              </button>
+            </>
           )}
 
           {/* Person Type Tabs */}
@@ -2580,20 +2791,52 @@ const AdminPanel: React.FC = () => {
                 <label key={planet.value} style={{
                   display: 'flex',
                   alignItems: 'center',
-                  gap: '10px',
+                  justifyContent: 'space-between',
+                  gap: '12px',
                   padding: '10px 12px',
-                  borderRadius: '8px',
-                  border: '1px solid #E5E7EB',
-                  background: '#F9FAFB',
+                  borderRadius: '10px',
+                  border: '1px solid #E0E7FF',
+                  background: '#F8FAFF',
                   cursor: 'pointer'
                 }}>
+                  <span style={{ fontSize: '14px', color: '#232D42' }}>{planet.label}</span>
                   <input
                     type="checkbox"
                     checked={quickSendPlanets.includes(planet.value)}
                     onChange={() => toggleQuickSendPlanet(planet.value)}
-                    style={{ width: '16px', height: '16px', accentColor: '#7C3AED' }}
+                    style={{
+                      opacity: 0,
+                      position: 'absolute',
+                      cursor: 'pointer',
+                      height: 0,
+                      width: 0
+                    }}
                   />
-                  <span style={{ fontSize: '14px', color: '#232D42' }}>{planet.label}</span>
+                  <span style={{
+                    position: 'relative',
+                    display: 'inline-block',
+                    width: '18px',
+                    height: '18px',
+                    backgroundColor: quickSendPlanets.includes(planet.value) ? '#0286F7' : 'white',
+                    border: `2px solid ${quickSendPlanets.includes(planet.value) ? '#0286F7' : '#E9ECEF'}`,
+                    borderRadius: '4px',
+                    transition: 'all 0.3s ease',
+                    transform: quickSendPlanets.includes(planet.value) ? 'scale(1.05)' : 'scale(1)'
+                  }}>
+                    {quickSendPlanets.includes(planet.value) && (
+                      <span style={{
+                        position: 'absolute',
+                        display: 'block',
+                        left: '4px',
+                        top: '1px',
+                        width: '6px',
+                        height: '10px',
+                        border: 'solid white',
+                        borderWidth: '0 2px 2px 0',
+                        transform: 'rotate(40deg)'
+                      }} />
+                    )}
+                  </span>
                 </label>
               ))}
             </div>
@@ -2637,6 +2880,288 @@ const AdminPanel: React.FC = () => {
                 }}
               >
                 {isQuickSending ? t('labels.loading') : t('buttons.send')}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showBulkSendPopup && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          width: '100%',
+          height: '100%',
+          background: 'rgba(0, 0, 0, 0.5)',
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+          zIndex: 1000
+        }}>
+          <div style={{
+            width: isMobile ? '92%' : '640px',
+            maxHeight: '85vh',
+            background: 'white',
+            borderRadius: '10px',
+            display: 'flex',
+            flexDirection: 'column',
+            overflow: 'hidden'
+          }}>
+            <div style={{
+              padding: '20px',
+              borderBottom: '1px solid #E9ECEF',
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              background: '#F8F9FA'
+            }}>
+              <div style={{
+                fontSize: '18px',
+                fontWeight: 600,
+                color: '#232D42'
+              }}>
+                Toplu Gönder
+              </div>
+              <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const allPlanets = availablePlanets.map((planet) => planet.value);
+                    setBulkSendPlanets((prev) => {
+                      const next = { ...prev };
+                      bulkSendTargets.forEach((user) => {
+                        next[user.code] = allPlanets;
+                      });
+                      return next;
+                    });
+                  }}
+                  style={{
+                    border: '1px solid #C7D2FE',
+                    background: '#EEF2FF',
+                    color: '#4338CA',
+                    borderRadius: '999px',
+                    padding: '6px 12px',
+                    fontSize: '12px',
+                    cursor: 'pointer',
+                    fontWeight: 600
+                  }}
+                >
+                  Herkeste Tümü
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setBulkSendPlanets((prev) => {
+                      const next = { ...prev };
+                      bulkSendTargets.forEach((user) => {
+                        next[user.code] = [];
+                      });
+                      return next;
+                    });
+                  }}
+                  style={{
+                    border: '1px solid #E5E7EB',
+                    background: '#F3F4F6',
+                    color: '#6B7280',
+                    borderRadius: '999px',
+                    padding: '6px 12px',
+                    fontSize: '12px',
+                    cursor: 'pointer',
+                    fontWeight: 600
+                  }}
+                >
+                  Herkeste Temizle
+                </button>
+                <div
+                  onClick={() => setShowBulkSendPopup(false)}
+                  style={{
+                    cursor: 'pointer',
+                    fontSize: '24px',
+                    color: '#666',
+                    marginLeft: '4px'
+                  }}
+                >
+                  ×
+                </div>
+              </div>
+            </div>
+            <div style={{
+              padding: '20px',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '16px',
+              overflowY: 'auto'
+            }}>
+              {bulkSendTargets.map((user) => (
+                <div key={user.code} style={{
+                  border: '1px solid #E5E7EB',
+                  borderRadius: '10px',
+                  padding: '12px 14px',
+                  background: '#F9FAFB'
+                }}>
+                  <div style={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    gap: '12px',
+                    marginBottom: '6px'
+                  }}>
+                    <div style={{ fontSize: '14px', fontWeight: 600, color: '#111827' }}>
+                      {user.name || '-'}
+                    </div>
+                    <div style={{ fontSize: '12px', color: '#6B7280' }}>
+                      {(bulkSendPlanets[user.code] || []).length}/{availablePlanets.length} seçili
+                    </div>
+                  </div>
+                  <div style={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    gap: '12px',
+                    marginBottom: '8px'
+                  }}>
+                    <div style={{ fontSize: '12px', color: '#6B7280' }}>
+                      {user.email || user.code}
+                    </div>
+                    <div style={{ display: 'flex', gap: '8px' }}>
+                      <button
+                        type="button"
+                        onClick={() => setBulkSendPlanets((prev) => ({
+                          ...prev,
+                          [user.code]: availablePlanets.map((planet) => planet.value)
+                        }))}
+                        style={{
+                          border: '1px solid #C7D2FE',
+                          background: '#EEF2FF',
+                          color: '#4338CA',
+                          borderRadius: '999px',
+                          padding: '4px 10px',
+                          fontSize: '11px',
+                          cursor: 'pointer',
+                          fontWeight: 600
+                        }}
+                      >
+                        Tümü
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setBulkSendPlanets((prev) => ({
+                          ...prev,
+                          [user.code]: []
+                        }))}
+                        style={{
+                          border: '1px solid #E5E7EB',
+                          background: '#F3F4F6',
+                          color: '#6B7280',
+                          borderRadius: '999px',
+                          padding: '4px 10px',
+                          fontSize: '11px',
+                          cursor: 'pointer',
+                          fontWeight: 600
+                        }}
+                      >
+                        Temizle
+                      </button>
+                    </div>
+                  </div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                    {availablePlanets.map((planet) => (
+                      <label key={`${user.code}-${planet.value}`} style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        gap: '12px',
+                        padding: '10px 12px',
+                        borderRadius: '10px',
+                        border: '1px solid #E0E7FF',
+                        background: '#F8FAFF',
+                        cursor: 'pointer'
+                      }}>
+                        <span style={{ fontSize: '13px', color: '#232D42' }}>{planet.label}</span>
+                        <input
+                          type="checkbox"
+                          checked={(bulkSendPlanets[user.code] || []).includes(planet.value)}
+                          onChange={() => toggleBulkSendPlanet(user.code, planet.value)}
+                          style={{
+                            opacity: 0,
+                            position: 'absolute',
+                            cursor: 'pointer',
+                            height: 0,
+                            width: 0
+                          }}
+                        />
+                        <span style={{
+                          position: 'relative',
+                          display: 'inline-block',
+                          width: '18px',
+                          height: '18px',
+                          backgroundColor: (bulkSendPlanets[user.code] || []).includes(planet.value) ? '#0286F7' : 'white',
+                          border: `2px solid ${(bulkSendPlanets[user.code] || []).includes(planet.value) ? '#0286F7' : '#E9ECEF'}`,
+                          borderRadius: '4px',
+                          transition: 'all 0.3s ease',
+                          transform: (bulkSendPlanets[user.code] || []).includes(planet.value) ? 'scale(1.05)' : 'scale(1)'
+                        }}>
+                          {(bulkSendPlanets[user.code] || []).includes(planet.value) && (
+                            <span style={{
+                              position: 'absolute',
+                              display: 'block',
+                              left: '4px',
+                              top: '1px',
+                              width: '6px',
+                              height: '10px',
+                              border: 'solid white',
+                              borderWidth: '0 2px 2px 0',
+                              transform: 'rotate(40deg)'
+                            }} />
+                          )}
+                        </span>
+                      </label>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+            <div style={{
+              padding: '16px 20px',
+              borderTop: '1px solid #E9ECEF',
+              display: 'flex',
+              justifyContent: 'flex-end',
+              gap: '10px',
+              background: '#F8F9FA'
+            }}>
+              <button
+                onClick={() => setShowBulkSendPopup(false)}
+                style={{
+                  padding: '8px 14px',
+                  background: 'white',
+                  color: '#6B7280',
+                  border: '1px solid #E5E7EB',
+                  borderRadius: '6px',
+                  cursor: 'pointer',
+                  fontSize: '14px',
+                  fontFamily: 'Inter',
+                  fontWeight: 500
+                }}
+              >
+                {t('buttons.cancel')}
+              </button>
+              <button
+                onClick={handleBulkSend}
+                disabled={isBulkSending}
+                style={{
+                  padding: '8px 16px',
+                  background: '#7C3AED',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '6px',
+                  cursor: isBulkSending ? 'not-allowed' : 'pointer',
+                  fontSize: '14px',
+                  fontFamily: 'Inter',
+                  fontWeight: 600
+                }}
+              >
+                {isBulkSending ? t('labels.loading') : t('buttons.send')}
               </button>
             </div>
           </div>
