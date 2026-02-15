@@ -116,6 +116,19 @@ const DashboardPage: React.FC = () => {
   const [isVisualLoading, setIsVisualLoading] = useState(true);
 
   useEffect(() => {
+    statsCache.titleOptions = DEFAULT_TITLE_OPTIONS;
+    statsCache.statsByType = {
+      all: initStatsSet(),
+      candidate: initStatsSet(),
+      employee: initStatsSet()
+    };
+    statsCache.fetchedAt = 0;
+    statsCache.initialized = false;
+    setStatsByType(statsCache.statsByType);
+    setTitleOptions(statsCache.titleOptions);
+  }, []);
+
+  useEffect(() => {
     let isMounted = true;
     let loadingTimer: number | undefined;
     const minVisualMs = 1800;

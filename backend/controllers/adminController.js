@@ -942,7 +942,16 @@ const adminController = {
         try {
             const { getCompanyFilter } = require('../middleware/auth');
             const companyFilter = getCompanyFilter(req);
-            const cacheKey = req.admin?.companyId?.toString() || 'all';
+            let cacheKey = 'all';
+            if (req.admin?.role !== 'superadmin') {
+                if (req.admin?.companyId) {
+                    cacheKey = `company:${req.admin.companyId.toString()}`;
+                } else if (req.admin?._id) {
+                    cacheKey = `admin:${req.admin._id.toString()}`;
+                } else {
+                    cacheKey = 'admin:unknown';
+                }
+            }
             const cached = dashboardStatsCache.get(cacheKey);
             const now = Date.now();
 
