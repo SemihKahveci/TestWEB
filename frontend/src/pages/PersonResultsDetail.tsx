@@ -790,6 +790,15 @@ const PersonResultsDetail: React.FC = () => {
       .map((line) => line.trim())
       .filter(Boolean);
 
+    const sections: Array<{
+      title?: string;
+      rows: Array<{
+        developmentArea?: string;
+        interviewQuestion?: string;
+        followUpQuestions: string[];
+      }>;
+    }> = [];
+
     const rows: Array<{
       developmentArea?: string;
       interviewQuestion?: string;
@@ -798,6 +807,7 @@ const PersonResultsDetail: React.FC = () => {
 
     let current = { developmentArea: '', interviewQuestion: '', followUpQuestions: [] as string[] };
     let mode: 'area' | 'question' | 'followup' | null = null;
+    let currentTitle = '';
 
     const flush = () => {
       if (
@@ -815,13 +825,26 @@ const PersonResultsDetail: React.FC = () => {
       mode = null;
     };
 
+    const flushSection = () => {
+      flush();
+      if (rows.length > 0) {
+        sections.push({
+          title: currentTitle || undefined,
+          rows: [...rows]
+        });
+        rows.length = 0;
+      }
+      currentTitle = '';
+    };
+
     lines.forEach((line) => {
       if (/^(başlık|baslik)\b/i.test(line)) {
         const cleaned = line.replace(/^(başlık|baslik)\b\s*[:\-–—]?\s*/i, '').trim();
-        if (!cleaned) {
-          return;
+        flushSection();
+        if (cleaned) {
+          currentTitle = cleaned;
         }
-        line = cleaned;
+        return;
       }
 
       const areaMatch = line.match(/^(gelişim alanı|gelisim alani)\b\s*[:\-–—]?\s*(.*)$/i);
@@ -879,8 +902,11 @@ const PersonResultsDetail: React.FC = () => {
       }
     });
 
-    flush();
-    return rows;
+    flushSection();
+    if (sections.length === 0 && rows.length > 0) {
+      sections.push({ rows: [...rows] });
+    }
+    return sections;
   };
 
   const parseDevelopmentPlan = (text?: string) => {
@@ -1360,59 +1386,72 @@ const PersonResultsDetail: React.FC = () => {
                       <div className="text-gray-700">-</div>
                     ) : (
                       <div className="space-y-6">
-                        <div className="overflow-hidden border border-gray-200 rounded-xl shadow-sm">
-                          <table className="min-w-full divide-y divide-gray-200">
-                            <thead className="bg-gray-100">
-                              <tr>
-                                <th
-                                  scope="col"
-                                  className="px-6 py-4 text-left text-sm font-bold text-gray-900 w-1/4 uppercase tracking-wider"
-                                >
-                                  {t('labels.developmentArea')}
-                                </th>
-                                <th
-                                  scope="col"
-                                  className="px-6 py-4 text-left text-sm font-bold text-gray-900 w-1/3 uppercase tracking-wider"
-                                >
-                                  {t('labels.interviewQuestion')}
-                                </th>
-                                <th
-                                  scope="col"
-                                  className="px-6 py-4 text-left text-sm font-bold text-gray-900 w-1/3 uppercase tracking-wider"
-                                >
-                                  {t('labels.followUpQuestion')}
-                                </th>
-                              </tr>
-                            </thead>
-                            <tbody className="bg-white divide-y divide-gray-200">
-                              {activeReport?.interviewQuestions ? (
-                                parseInterviewQuestions(activeReport.interviewQuestions).map((row, idx) => (
-                                  <tr key={`${row.developmentArea || 'row'}-${idx}`}>
-                                    <td className="px-6 py-5 text-sm text-gray-900 font-medium align-top">
-                                      {row.developmentArea || '-'}
-                                    </td>
-                                    <td className="px-6 py-5 text-sm text-gray-700 align-top leading-relaxed">
-                                      {row.interviewQuestion || '-'}
-                                    </td>
-                                    <td className="px-6 py-5 text-sm text-gray-600 align-top italic leading-relaxed space-y-2">
-                                      {row.followUpQuestions.length > 0 ? (
-                                        row.followUpQuestions.map((question, qIndex) => (
-                                          <p key={`${question}-${qIndex}`}>{question}</p>
-                                        ))
-                                      ) : (
-                                        '-'
-                                      )}
-                                    </td>
-                                  </tr>
-                                ))
-                              ) : (
+                        {activeReport?.interviewQuestions ? (
+                          parseInterviewQuestions(activeReport.interviewQuestions).map((section, sectionIndex) => (
+                            <div key={`interview-section-${sectionIndex}`} className="space-y-4">
+                              <div className="overflow-hidden border border-gray-200 rounded-xl shadow-sm">
+                                <table className="min-w-full divide-y divide-gray-200">
+                                  <thead className="bg-gray-100">
+                                    <tr>
+                                      <th
+                                        scope="col"
+                                        className="px-6 py-4 text-left text-sm font-bold text-gray-900 w-1/4 uppercase tracking-wider"
+                                      >
+                                        {t('labels.developmentArea')}
+                                      </th>
+                                      <th
+                                        scope="col"
+                                        className="px-6 py-4 text-left text-sm font-bold text-gray-900 w-1/3 uppercase tracking-wider"
+                                      >
+                                        {t('labels.interviewQuestion')}
+                                      </th>
+                                      <th
+                                        scope="col"
+                                        className="px-6 py-4 text-left text-sm font-bold text-gray-900 w-1/3 uppercase tracking-wider"
+                                      >
+                                        {t('labels.followUpQuestion')}
+                                      </th>
+                                    </tr>
+                                  </thead>
+                                  <tbody className="bg-white divide-y divide-gray-200">
+                                      {section.rows.map((row, idx) => (
+                                        <tr key={`${row.developmentArea || 'row'}-${sectionIndex}-${idx}`}>
+                                          <td className="px-6 py-5 text-sm text-gray-900 font-medium align-top">
+                                            {idx === 0 && section.title && (
+                                              <div className="mb-2">{section.title}</div>
+                                            )}
+                                            {row.developmentArea ? row.developmentArea : ''}
+                                          </td>
+
+                                          <td className="px-6 py-5 text-sm text-gray-700 align-top leading-relaxed">
+                                            {row.interviewQuestion || '-'}
+                                          </td>
+
+                                          <td className="px-6 py-5 text-sm text-gray-600 align-top italic leading-relaxed space-y-2">
+                                            {row.followUpQuestions?.length > 0
+                                              ? row.followUpQuestions.map((question, qIndex) => (
+                                                  <p key={`${question}-${qIndex}`}>{question}</p>
+                                                ))
+                                              : '-'}
+                                          </td>
+                                        </tr>
+                                      ))}
+                                    </tbody>
+                                </table>
+                              </div>
+                            </div>
+                          ))
+                        ) : (
+                          <div className="overflow-hidden border border-gray-200 rounded-xl shadow-sm">
+                            <table className="min-w-full divide-y divide-gray-200">
+                              <tbody className="bg-white divide-y divide-gray-200">
                                 <tr>
                                   <td className="px-6 py-5 text-sm text-gray-700" colSpan={3}>-</td>
                                 </tr>
-                              )}
-                            </tbody>
-                          </table>
-                        </div>
+                              </tbody>
+                            </table>
+                          </div>
+                        )}
 
                         <div className="bg-gray-50 rounded-xl p-8 border border-gray-100 space-y-3">
                           <h3 className="text-xl font-bold text-gray-900">{t('labels.whyTheseQuestions')}</h3>

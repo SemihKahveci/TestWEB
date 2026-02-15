@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { evaluationAPI, creditAPI } from '../services/api';
 import { useAuth } from '../contexts/AuthContext';
@@ -82,6 +82,7 @@ const AdminPanel: React.FC = () => {
   const [showPDFPopup, setShowPDFPopup] = useState(false);
   const [showDeletePopup, setShowDeletePopup] = useState(false);
   const [showPDFPreview, setShowPDFPreview] = useState(false);
+  const [showQuickSendPopup, setShowQuickSendPopup] = useState(false);
   const [showAnswersPopup, setShowAnswersPopup] = useState(false);
   const [showMessageModal, setShowMessageModal] = useState(false);
   const [messageModal, setMessageModal] = useState({
@@ -100,6 +101,14 @@ const AdminPanel: React.FC = () => {
     whyTheseQuestions: true,
     developmentSuggestions: true
   });
+  const [remainingCredits, setRemainingCredits] = useState(0);
+  const [quickSendPlanets, setQuickSendPlanets] = useState<string[]>([]);
+  const [isQuickSending, setIsQuickSending] = useState(false);
+
+  const availablePlanets = useMemo(() => ([
+    { value: 'venus', label: `${t('labels.planetVenus')} (${t('competency.uncertainty')} - ${t('competency.customerFocus')})` },
+    { value: 'titan', label: `${t('labels.planetTitan')} (${t('competency.ie')} - ${t('competency.idik')})` }
+  ]), [t]);
 
   const formatStatusLabel = (status: string) => {
     if (language === 'tr') return status;
@@ -133,6 +142,18 @@ const AdminPanel: React.FC = () => {
 
   const formatPdfDownloadFailed = (message: string) =>
     `${t('errors.pdfDownloadFailed')}: ${message}`;
+
+  const formatInsufficientCredits = (remaining: number, needed: number) =>
+    formatTemplate(t('errors.insufficientCredits'), { remaining, needed });
+
+  const formatCodeSent = (creditCost: number) =>
+    formatTemplate(t('messages.codeSent'), { creditCost });
+
+  const formatCreditDeductionFailed = (message: string) =>
+    formatTemplate(t('errors.creditDeductionFailed'), { message });
+
+  const formatSendFailed = (message: string) =>
+    formatTemplate(t('errors.sendFailed'), { message });
 
   const formatDeleteFailed = (message: string) =>
     `${t('errors.deleteFailed')}: ${message}`;
@@ -239,6 +260,35 @@ const AdminPanel: React.FC = () => {
       window.removeEventListener('resize', checkIsMobile);
     };
   }, []);
+
+  useEffect(() => {
+    if (isSuperAdmin) {
+      return undefined;
+    }
+
+    let isMounted = true;
+    const loadCredits = async () => {
+      try {
+        const response = await creditAPI.getUserCredits();
+        const { remainingCredits: fetchedRemaining } = response.data.credit;
+        if (isMounted) {
+          setRemainingCredits(fetchedRemaining);
+        }
+        localStorage.setItem('remainingCredits', fetchedRemaining.toString());
+      } catch (error) {
+        const fallbackRemaining = parseInt(localStorage.getItem('remainingCredits') || '0', 10);
+        if (isMounted && Number.isFinite(fallbackRemaining)) {
+          setRemainingCredits(fallbackRemaining);
+        }
+      }
+    };
+
+    loadCredits();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [isSuperAdmin]);
 
   const loadData = useCallback(async (showLoading = true, forceFetch = false) => {
     const requestId = ++requestIdRef.current;
@@ -688,6 +738,132 @@ const AdminPanel: React.FC = () => {
       showMessage(t('labels.error'), formatWordDownloadFailed((error as Error).message), 'error');
     } finally {
       setIsWordDownloading(false);
+    }
+  };
+
+  const handleQuickSendPopup = (code: string) => {
+    let existingData = results.find(item => item.code === code);
+
+    if (!existingData) {
+      for (const result of results) {
+        if (result.allGroupItems) {
+          const foundInGroup = result.allGroupItems.find(item => item.code === code);
+          if (foundInGroup) {
+            existingData = foundInGroup;
+            break;
+          }
+        }
+      }
+    }
+
+    if (!existingData) {
+      showMessage(t('labels.error'), formatNoDataForCode(), 'error');
+      return;
+    }
+
+    setSelectedUser(existingData);
+    setQuickSendPlanets([]);
+    setShowQuickSendPopup(true);
+  };
+
+  const toggleQuickSendPlanet = (value: string) => {
+    setQuickSendPlanets((prev) =>
+      prev.includes(value) ? prev.filter((item) => item !== value) : [...prev, value]
+    );
+  };
+
+  const handleQuickSend = async () => {
+    if (!selectedUser) return;
+    if (quickSendPlanets.length === 0) {
+      showMessage(t('labels.error'), t('errors.selectPlanet'), 'error');
+      return;
+    }
+    const creditCost = quickSendPlanets.length;
+    if (!isSuperAdmin && remainingCredits < creditCost) {
+      showMessage(
+        t('labels.error'),
+        formatInsufficientCredits(remainingCredits, creditCost),
+        'error'
+      );
+      return;
+    }
+
+    try {
+      setIsQuickSending(true);
+      const primaryPlanet = quickSendPlanets[0];
+
+      const codeResponse = await fetch('/api/generate-code', {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: selectedUser.name,
+          email: selectedUser.email,
+          planet: primaryPlanet,
+          allPlanets: quickSendPlanets,
+          personType: selectedUser.personType || '',
+          unvan: selectedUser.unvan || '',
+          pozisyon: selectedUser.pozisyon || '',
+          departman: selectedUser.departman || ''
+        })
+      });
+
+      const codeData = await codeResponse.json();
+      if (!codeData.success || !codeData.code) {
+        throw new Error(t('errors.codeGenerateInvalid'));
+      }
+
+      const sendResponse = await fetch('/api/send-code', {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          code: codeData.code,
+          name: selectedUser.name,
+          email: selectedUser.email,
+          planet: primaryPlanet,
+          allPlanets: quickSendPlanets,
+          personType: selectedUser.personType || '',
+          unvan: selectedUser.unvan || '',
+          pozisyon: selectedUser.pozisyon || '',
+          departman: selectedUser.departman || ''
+        })
+      });
+
+      const sendData = await sendResponse.json();
+      if (!sendData.success) {
+        throw new Error(sendData.message || t('errors.sendFailedGeneric'));
+      }
+
+      showMessage(t('labels.success'), formatCodeSent(creditCost), 'success');
+      setShowQuickSendPopup(false);
+      setQuickSendPlanets([]);
+      
+      if (!isSuperAdmin) {
+        try {
+          const deductResponse = await creditAPI.deductCredits({
+            amount: creditCost,
+            type: 'game_send',
+            description: `${t('labels.personSend')}: ${selectedUser.name} (${creditCost} ${t('labels.planet')})`
+          });
+
+          if (deductResponse.data.success) {
+            const { totalCredits, usedCredits, remainingCredits } = deductResponse.data.credit;
+            localStorage.setItem('remainingCredits', remainingCredits.toString());
+            localStorage.setItem('usedCredits', usedCredits.toString());
+            localStorage.setItem('totalCredits', totalCredits.toString());
+            setRemainingCredits(remainingCredits);
+          }
+        } catch (error) {
+          const message = error.response?.data?.message || (error as Error).message;
+          showMessage(t('labels.error'), formatCreditDeductionFailed(message), 'error');
+        }
+      }
+    } catch (error) {
+      console.error('Hızlı değerlendirme gönderim hatası:', error);
+      showMessage(t('labels.error'), formatSendFailed((error as Error).message), 'error');
+    } finally {
+      setIsQuickSending(false);
     }
   };
 
@@ -1526,6 +1702,22 @@ const AdminPanel: React.FC = () => {
                       >
                         <i className="fas fa-file-pdf"></i>
                       </div>
+                      <div
+                        onClick={() => handleQuickSendPopup(result.code)}
+                        style={{
+                          cursor: 'pointer',
+                          color: '#7C3AED',
+                          fontSize: '16px',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          width: '24px',
+                          height: '24px'
+                        }}
+                        title={t('buttons.send')}
+                      >
+                        <i className="fas fa-paper-plane"></i>
+                      </div>
                       {isSuperAdmin && (
                         <div
                           onClick={() => result.status === 'Tamamlandı' ? handleExcel(result.code) : null}
@@ -2325,6 +2517,121 @@ const AdminPanel: React.FC = () => {
             </div>
             <div style={{ marginTop: '10px', fontSize: '12px', color: '#6B7280' }}>
               {wordProgress}%
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showQuickSendPopup && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          width: '100%',
+          height: '100%',
+          background: 'rgba(0, 0, 0, 0.5)',
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+          zIndex: 1000
+        }}>
+          <div style={{
+            width: isMobile ? '90%' : '420px',
+            background: 'white',
+            borderRadius: '10px',
+            display: 'flex',
+            flexDirection: 'column',
+            overflow: 'hidden'
+          }}>
+            <div style={{
+              padding: '20px',
+              borderBottom: '1px solid #E9ECEF',
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              background: '#F8F9FA'
+            }}>
+              <div style={{
+                fontSize: '18px',
+                fontWeight: 600,
+                color: '#232D42'
+              }}>
+                {t('labels.planetSelection')}
+              </div>
+              <div
+                onClick={() => setShowQuickSendPopup(false)}
+                style={{
+                  cursor: 'pointer',
+                  fontSize: '24px',
+                  color: '#666'
+                }}
+              >
+                ×
+              </div>
+            </div>
+            <div style={{ padding: '20px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+              {availablePlanets.map((planet) => (
+                <label key={planet.value} style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '10px',
+                  padding: '10px 12px',
+                  borderRadius: '8px',
+                  border: '1px solid #E5E7EB',
+                  background: '#F9FAFB',
+                  cursor: 'pointer'
+                }}>
+                  <input
+                    type="checkbox"
+                    checked={quickSendPlanets.includes(planet.value)}
+                    onChange={() => toggleQuickSendPlanet(planet.value)}
+                    style={{ width: '16px', height: '16px', accentColor: '#7C3AED' }}
+                  />
+                  <span style={{ fontSize: '14px', color: '#232D42' }}>{planet.label}</span>
+                </label>
+              ))}
+            </div>
+            <div style={{
+              padding: '16px 20px',
+              borderTop: '1px solid #E9ECEF',
+              display: 'flex',
+              justifyContent: 'flex-end',
+              gap: '10px',
+              background: '#F8F9FA'
+            }}>
+              <button
+                onClick={() => setShowQuickSendPopup(false)}
+                style={{
+                  padding: '8px 14px',
+                  background: 'white',
+                  color: '#6B7280',
+                  border: '1px solid #E5E7EB',
+                  borderRadius: '6px',
+                  cursor: 'pointer',
+                  fontSize: '14px',
+                  fontFamily: 'Inter',
+                  fontWeight: 500
+                }}
+              >
+                {t('buttons.cancel')}
+              </button>
+              <button
+                onClick={handleQuickSend}
+                disabled={isQuickSending}
+                style={{
+                  padding: '8px 16px',
+                  background: '#7C3AED',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '6px',
+                  cursor: isQuickSending ? 'not-allowed' : 'pointer',
+                  fontSize: '14px',
+                  fontFamily: 'Inter',
+                  fontWeight: 600
+                }}
+              >
+                {isQuickSending ? t('labels.loading') : t('buttons.send')}
+              </button>
             </div>
           </div>
         </div>
