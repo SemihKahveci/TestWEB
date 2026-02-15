@@ -381,6 +381,10 @@ const AdminPanel: React.FC = () => {
     }
   }, [currentPage, itemsPerPage, debouncedSearchTerm, statusFilter, activePersonTab]);
 
+  const refreshAfterMutation = async () => {
+    await loadData(true, true);
+  };
+
   // Debounce search term - kullanıcı yazmayı bitirdikten 500ms sonra arama yap
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -859,6 +863,8 @@ const AdminPanel: React.FC = () => {
           showMessage(t('labels.error'), formatCreditDeductionFailed(message), 'error');
         }
       }
+
+      await refreshAfterMutation();
     } catch (error) {
       console.error('Hızlı değerlendirme gönderim hatası:', error);
       showMessage(t('labels.error'), formatSendFailed((error as Error).message), 'error');
@@ -916,7 +922,7 @@ const AdminPanel: React.FC = () => {
       setSelectedUser(null);
       
       // Sadece veriyi yeniden yükle (cache'i bypass et)
-      await loadData(true, true);
+      await refreshAfterMutation();
       
       showMessage(t('labels.success'), t('messages.evaluationDeleted'), 'success');
     } catch (error) {
@@ -984,8 +990,8 @@ const AdminPanel: React.FC = () => {
       setShowBulkDeletePopup(false);
       setSelectedItems([]);
       
-      // Veriyi yeniden yükle
-      await loadData();
+      // Veriyi yeniden yükle (cache'i bypass et)
+      await refreshAfterMutation();
       
       showMessage(t('labels.success'), formatBulkDeleteSuccess(selectedItems.length), 'success');
     } catch (error) {
