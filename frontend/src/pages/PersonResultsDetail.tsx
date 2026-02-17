@@ -909,7 +909,7 @@ const PersonResultsDetail: React.FC = () => {
     return sections;
   };
 
-  const parseDevelopmentPlan = (text?: string) => {
+  const parseDevelopmentPlanChunk = (text?: string) => {
     if (!text || text === '-') return [];
     const lines = text
       .split(/\r?\n+/)
@@ -957,7 +957,9 @@ const PersonResultsDetail: React.FC = () => {
 
     lines.forEach((rawLine) => {
       const line = normalizeLine(rawLine);
-      const planMatch = line.match(/^(?:\d+[\).\s-]*)?(gelişim planı|gelisim plani)\b\s*[:\-–—]?\s*(.*)$/i);
+      const planMatch = line.match(
+        /^(?:.*?)(gelişim planı|gelisim plani)\b(?:\s*\d+[\).\s\-–—:]*)?\s*[:\-–—]?\s*(.*)$/i
+      );
       if (planMatch) {
         flushSection();
         const rawTitle = planMatch[2]?.trim() || '';
@@ -1042,10 +1044,89 @@ const PersonResultsDetail: React.FC = () => {
     return sections;
   };
 
+  const parseDevelopmentPlan = (text?: string) => {
+    if (!text || text === '-') return [];
+    const lines = text.split(/\r?\n/);
+    const blocks: string[][] = [];
+    let current: string[] = [];
+
+    const isPlanHeaderLine = (value: string) =>
+      /gelişim planı|gelisim plani/i.test(value.replace(/\u00A0/g, ' '));
+
+    lines.forEach((rawLine) => {
+      const line = rawLine.trimEnd();
+      if (isPlanHeaderLine(line) && current.length > 0) {
+        blocks.push(current);
+        current = [line];
+        return;
+      }
+      current.push(line);
+    });
+
+    if (current.length > 0) {
+      blocks.push(current);
+    }
+
+    if (blocks.length <= 1) {
+      return parseDevelopmentPlanChunk(text);
+    }
+
+    return blocks
+      .map((block) => block.join('\n').trim())
+      .filter(Boolean)
+      .flatMap((chunk) => parseDevelopmentPlanChunk(chunk));
+  };
+
   const developmentPlanSections = useMemo(
     () => parseDevelopmentPlan(activeReport?.developmentPlan),
     [activeReport?.developmentPlan]
   );
+
+  const normalizedDevelopmentPlanSections = useMemo(() => {
+    const normalizeItemTitle = (value: string) => value.replace(/^\uFEFF/, '').trim();
+    const isPlanTitle = (value: string) => {
+      const normalized = normalizeItemTitle(value).toLowerCase();
+      return normalized.startsWith('gelişim planı') || normalized.startsWith('gelisim plani');
+    };
+    const normalizePlanTitle = (value: string) =>
+      value.replace(/^(gelişim planı|gelisim plani)\b\s*[:\-–—]?\s*/i, '').trim();
+
+    const expanded: typeof developmentPlanSections = [];
+
+    developmentPlanSections.forEach((section) => {
+      const items = section.items || [];
+      const planIndices = items
+        .map((item, index) => (isPlanTitle(item.title || '') ? index : -1))
+        .filter((index) => index >= 0);
+
+      if (planIndices.length <= 1) {
+        expanded.push(section);
+        return;
+      }
+
+      const firstIndex = planIndices[0];
+      if (firstIndex > 0) {
+        expanded.push({
+          title: section.title || '',
+          items: items.slice(0, firstIndex)
+        });
+      }
+
+      planIndices.forEach((titleIndex, idx) => {
+        const nextIndex = planIndices[idx + 1] ?? items.length;
+        const titleItem = items[titleIndex];
+        const titleText =
+          titleItem?.content?.[0]?.trim() ||
+          normalizePlanTitle(normalizeItemTitle(titleItem?.title || ''));
+        expanded.push({
+          title: titleText || section.title || '',
+          items: items.slice(titleIndex + 1, nextIndex)
+        });
+      });
+    });
+
+    return expanded;
+  }, [developmentPlanSections]);
 
   return (
     <div className="bg-gray-50 font-inter min-h-screen">
@@ -1474,9 +1555,9 @@ const PersonResultsDetail: React.FC = () => {
                     !hasCompetencyScore ? (
                       <div className="text-gray-700">-</div>
                     ) : activeReport?.developmentPlan ? (
-                      developmentPlanSections.length > 0 ? (
+                      normalizedDevelopmentPlanSections.length > 0 ? (
                         <div className="space-y-4">
-                          {developmentPlanSections.map((section, idx) => {
+                          {normalizedDevelopmentPlanSections.map((section, idx) => {
                             const sectionKey = `dev-plan-${idx + 1}`;
                             const normalizeItemTitle = (value: string) => value.replace(/^\uFEFF/, '').trim();
                             const isPlanTitle = (value: string) => {
@@ -1544,6 +1625,11 @@ const PersonResultsDetail: React.FC = () => {
                                             >
                                               {opts?.isPodcast ? (
                                                 <>
+                                                  {title && (
+                                                    <h5 className="text-sm font-semibold text-gray-900 text-center mb-3">
+                                                      {title}
+                                                    </h5>
+                                                  )}
                                                   <div className="flex-1">
                                                     {item.content.length > 0 ? (
                                                       <ul className="list-disc pl-4 space-y-2 text-sm text-gray-700 leading-relaxed">
@@ -1555,11 +1641,6 @@ const PersonResultsDetail: React.FC = () => {
                                                       <p className="text-sm text-gray-700 leading-relaxed">-</p>
                                                     )}
                                                   </div>
-                                                  {title && (
-                                                    <div className="mt-4 text-center text-sm font-semibold text-gray-900">
-                                                      {title}
-                                                    </div>
-                                                  )}
                                                 </>
                                               ) : (
                                                 <>
