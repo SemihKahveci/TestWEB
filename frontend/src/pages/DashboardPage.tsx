@@ -84,17 +84,22 @@ const normalizeKey = (value: string) =>
   value.toString().trim().toLowerCase().replace(/\s+/g, ' ');
 
 const scoreRanges = [
-  { label: '0-10', midpoint: 5 },
-  { label: '10-20', midpoint: 15 },
-  { label: '20-30', midpoint: 25 },
-  { label: '30-40', midpoint: 35 },
-  { label: '40-50', midpoint: 45 },
-  { label: '50-60', midpoint: 55 },
-  { label: '60-70', midpoint: 65 },
-  { label: '70-80', midpoint: 75 },
-  { label: '80-90', midpoint: 85 },
-  { label: '90-100', midpoint: 95 }
+  { label: '0-20', midpoint: 10 },
+  { label: '20-40', midpoint: 30 },
+  { label: '40-60', midpoint: 50 },
+  { label: '60-80', midpoint: 70 },
+  { label: '80-100', midpoint: 90 }
 ];
+
+const aggregateBucketsBy20 = (buckets: number[]) => {
+  const safe = Array.isArray(buckets) ? buckets : [];
+  const sums = new Array(5).fill(0);
+  for (let i = 0; i < safe.length; i += 1) {
+    const index = Math.min(4, Math.floor(i / 2));
+    sums[index] += safe[i] || 0;
+  }
+  return sums;
+};
 
 const getAverageBucketIndex = (buckets: number[]) => {
   let total = 0;
@@ -105,7 +110,7 @@ const getAverageBucketIndex = (buckets: number[]) => {
   });
   if (!total) return -1;
   const avg = sum / total;
-  return Math.min(9, Math.floor(avg / 10));
+  return Math.min(4, Math.floor(avg / 20));
 };
 
 const DashboardPage: React.FC = () => {
@@ -561,7 +566,8 @@ const DashboardPage: React.FC = () => {
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
           {competencyCards.map((card) => {
-            const buckets = currentStats.scoreDistributions[card.key as keyof ScoreDistributions] || [];
+            const rawBuckets = currentStats.scoreDistributions[card.key as keyof ScoreDistributions] || [];
+            const buckets = aggregateBucketsBy20(rawBuckets);
             const maxCount = Math.max(1, ...buckets);
             const highlightIndex = getAverageBucketIndex(buckets);
             return (
@@ -582,7 +588,7 @@ const DashboardPage: React.FC = () => {
                       const animationDelay = `${index * 0.08}s`;
                       return (
                         <div key={range.label} className="flex flex-col items-center gap-2 group flex-1 h-full justify-end">
-                          <div className="relative w-full max-w-[24px] rounded-full h-full" style={{ backgroundColor: card.trackColor }}>
+                          <div className="relative w-full max-w-[40px] rounded-full h-full" style={{ backgroundColor: card.trackColor }}>
                             <div
                               className="absolute bottom-0 w-full rounded-full transition-all duration-500 group-hover:opacity-90"
                               style={{
