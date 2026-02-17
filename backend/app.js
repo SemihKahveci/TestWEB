@@ -199,6 +199,7 @@ apiRouter.post('/send-code', authenticateAdmin, adminController.sendCode.bind(ad
 
 apiRouter.post('/update-code-status', authenticateAdmin, adminController.updateCodeStatus.bind(adminController));
 apiRouter.get('/user-results', authenticateAdmin, adminController.getUserResults.bind(adminController));
+apiRouter.post('/user-results/pending', authenticateAdmin, adminController.createPendingPerson.bind(adminController));
 apiRouter.get('/user-results/latest-summary', authenticateAdmin, adminController.getLatestUserSummary.bind(adminController));
 apiRouter.get('/user-results/summary', authenticateAdmin, adminController.getUserSummaryByCode.bind(adminController));
 apiRouter.get('/user-results/report-details', authenticateAdmin, adminController.getUserReportDetails.bind(adminController));

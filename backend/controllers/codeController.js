@@ -30,12 +30,43 @@ class CodeController {
                 });
             }
 
-            const code = await UserCode.generateUniqueCode();
+            const { getCompanyFilter, addCompanyIdToData } = require('../middleware/auth');
+            const companyFilter = getCompanyFilter(req);
+            const escapeRegex = (value) => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+            const emailRegex = new RegExp(`^${escapeRegex(email.trim())}$`, 'i');
             const expiryDate = new Date();
             expiryDate.setHours(expiryDate.getHours() + 72);
 
+            const existingPlaceholder = await UserCode.findOne({
+                email: emailRegex,
+                status: 'Beklemede',
+                isPlaceholder: true,
+                ...companyFilter
+            });
+
+            if (existingPlaceholder) {
+                const code = await UserCode.generateUniqueCode();
+                existingPlaceholder.code = code;
+                existingPlaceholder.name = name;
+                existingPlaceholder.email = email;
+                existingPlaceholder.planet = planet;
+                existingPlaceholder.allPlanets = allPlanets || [planet];
+                existingPlaceholder.personType = personType || '';
+                existingPlaceholder.unvan = unvan || '';
+                existingPlaceholder.pozisyon = pozisyon || '';
+                existingPlaceholder.departman = departman || '';
+                existingPlaceholder.status = 'Beklemede';
+                existingPlaceholder.sentDate = new Date();
+                existingPlaceholder.expiryDate = expiryDate;
+                existingPlaceholder.isPlaceholder = false;
+
+                await existingPlaceholder.save();
+                return res.json({ success: true, code, updatedExisting: true });
+            }
+
+            const code = await UserCode.generateUniqueCode();
+
             // Multi-tenant: companyId otomatik eklenir
-            const { addCompanyIdToData } = require('../middleware/auth');
             const codeData = addCompanyIdToData(req, {
                 code,
                 name,

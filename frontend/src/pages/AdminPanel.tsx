@@ -84,6 +84,7 @@ const AdminPanel: React.FC = () => {
   const [showPDFPreview, setShowPDFPreview] = useState(false);
   const [showQuickSendPopup, setShowQuickSendPopup] = useState(false);
   const [showAnswersPopup, setShowAnswersPopup] = useState(false);
+  const [showAddPersonPopup, setShowAddPersonPopup] = useState(false);
   const [showMessageModal, setShowMessageModal] = useState(false);
   const [messageModal, setMessageModal] = useState({
     title: '',
@@ -104,6 +105,13 @@ const AdminPanel: React.FC = () => {
   const [remainingCredits, setRemainingCredits] = useState(0);
   const [quickSendPlanets, setQuickSendPlanets] = useState<string[]>([]);
   const [isQuickSending, setIsQuickSending] = useState(false);
+  const [isAddingPerson, setIsAddingPerson] = useState(false);
+  const [newPersonName, setNewPersonName] = useState('');
+  const [newPersonEmail, setNewPersonEmail] = useState('');
+  const [newPersonTitle, setNewPersonTitle] = useState('');
+  const [newPersonPosition, setNewPersonPosition] = useState('');
+  const [newPersonDepartment, setNewPersonDepartment] = useState('');
+  const [newPersonType, setNewPersonType] = useState('');
   const [showBulkSendPopup, setShowBulkSendPopup] = useState(false);
   const [bulkSendTargets, setBulkSendTargets] = useState<UserResult[]>([]);
   const [bulkSendPlanets, setBulkSendPlanets] = useState<Record<string, string[]>>({});
@@ -1056,6 +1064,51 @@ const AdminPanel: React.FC = () => {
     }
   };
 
+  const handleAddPerson = async () => {
+    const payload = {
+      name: newPersonName.trim(),
+      email: newPersonEmail.trim(),
+      unvan: newPersonTitle.trim(),
+      pozisyon: newPersonPosition.trim(),
+      departman: newPersonDepartment.trim(),
+      personType: newPersonType.trim()
+    };
+
+    if (!payload.name || !payload.email || !payload.unvan || !payload.pozisyon || !payload.departman || !payload.personType) {
+      showMessage(t('labels.error'), 'Lütfen tüm alanları doldurun.', 'error');
+      return;
+    }
+
+    try {
+      setIsAddingPerson(true);
+      const response = await fetch(`${API_BASE_URL}/api/user-results/pending`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify(payload)
+      });
+
+      const data = await response.json();
+      if (!response.ok || !data.success) {
+        throw new Error(data.message || t('errors.sendFailedGeneric'));
+      }
+
+      showMessage(t('labels.success'), 'Kişi başarıyla eklendi.', 'success');
+      setShowAddPersonPopup(false);
+      setNewPersonName('');
+      setNewPersonEmail('');
+      setNewPersonTitle('');
+      setNewPersonPosition('');
+      setNewPersonDepartment('');
+      setNewPersonType('');
+      await refreshAfterMutation();
+    } catch (error) {
+      showMessage(t('labels.error'), (error as Error).message, 'error');
+    } finally {
+      setIsAddingPerson(false);
+    }
+  };
+
   const handleDelete = async (code: string) => {
     
     // Önce ana results'ta ara
@@ -1375,6 +1428,32 @@ const AdminPanel: React.FC = () => {
           alignItems: 'center',
           gap: '16px'
         }}>
+          <button
+            onClick={() => setShowAddPersonPopup(true)}
+            style={{
+              background: '#2563EB',
+              color: 'white',
+              border: 'none',
+              padding: '8px 16px',
+              borderRadius: '8px',
+              cursor: 'pointer',
+              fontWeight: 600,
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+              transition: 'background-color 0.3s',
+              fontFamily: 'Inter'
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.backgroundColor = '#1D4ED8';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.backgroundColor = '#2563EB';
+            }}
+          >
+            <i className="fas fa-user-plus"></i>
+            Kişi Ekle
+          </button>
           {/* Toplu Silme Button */}
           {selectedItems.length > 0 && (
             <>
@@ -2734,6 +2813,212 @@ const AdminPanel: React.FC = () => {
             </div>
             <div style={{ marginTop: '10px', fontSize: '12px', color: '#6B7280' }}>
               {wordProgress}%
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showAddPersonPopup && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          width: '100%',
+          height: '100%',
+          background: 'rgba(0, 0, 0, 0.5)',
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+          zIndex: 1000
+        }}>
+          <div style={{
+            width: isMobile ? '92%' : '520px',
+            background: 'white',
+            borderRadius: '10px',
+            display: 'flex',
+            flexDirection: 'column',
+            overflow: 'hidden'
+          }}>
+            <div style={{
+              padding: '20px',
+              borderBottom: '1px solid #E9ECEF',
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              background: '#F8F9FA'
+            }}>
+              <div style={{ fontSize: '18px', fontWeight: 600, color: '#232D42' }}>
+                Kişi Ekle
+              </div>
+              <div
+                onClick={() => setShowAddPersonPopup(false)}
+                style={{ cursor: 'pointer', fontSize: '24px', color: '#666' }}
+              >
+                ×
+              </div>
+            </div>
+            <div style={{
+              padding: '20px',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '12px'
+            }}>
+              <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: '12px' }}>
+                <div>
+                  <div style={{ fontSize: '13px', fontWeight: 600, color: '#374151', marginBottom: '6px' }}>
+                    İsim Soyisim *
+                  </div>
+                  <input
+                    value={newPersonName}
+                    onChange={(e) => setNewPersonName(e.target.value)}
+                    placeholder="Örn: Ayşe Yılmaz"
+                    style={{
+                      width: '100%',
+                      padding: '10px 12px',
+                      border: '1px solid #E5E7EB',
+                      borderRadius: '8px',
+                      fontSize: '14px',
+                      fontFamily: 'Inter'
+                    }}
+                  />
+                </div>
+                <div>
+                  <div style={{ fontSize: '13px', fontWeight: 600, color: '#374151', marginBottom: '6px' }}>
+                    E-posta *
+                  </div>
+                  <input
+                    value={newPersonEmail}
+                    onChange={(e) => setNewPersonEmail(e.target.value)}
+                    placeholder="ornek@firma.com"
+                    style={{
+                      width: '100%',
+                      padding: '10px 12px',
+                      border: '1px solid #E5E7EB',
+                      borderRadius: '8px',
+                      fontSize: '14px',
+                      fontFamily: 'Inter'
+                    }}
+                  />
+                </div>
+                <div>
+                  <div style={{ fontSize: '13px', fontWeight: 600, color: '#374151', marginBottom: '6px' }}>
+                    Ünvan *
+                  </div>
+                  <input
+                    value={newPersonTitle}
+                    onChange={(e) => setNewPersonTitle(e.target.value)}
+                    placeholder="Örn: Uzman"
+                    style={{
+                      width: '100%',
+                      padding: '10px 12px',
+                      border: '1px solid #E5E7EB',
+                      borderRadius: '8px',
+                      fontSize: '14px',
+                      fontFamily: 'Inter'
+                    }}
+                  />
+                </div>
+                <div>
+                  <div style={{ fontSize: '13px', fontWeight: 600, color: '#374151', marginBottom: '6px' }}>
+                    Pozisyon *
+                  </div>
+                  <input
+                    value={newPersonPosition}
+                    onChange={(e) => setNewPersonPosition(e.target.value)}
+                    placeholder="Örn: Satış"
+                    style={{
+                      width: '100%',
+                      padding: '10px 12px',
+                      border: '1px solid #E5E7EB',
+                      borderRadius: '8px',
+                      fontSize: '14px',
+                      fontFamily: 'Inter'
+                    }}
+                  />
+                </div>
+                <div>
+                  <div style={{ fontSize: '13px', fontWeight: 600, color: '#374151', marginBottom: '6px' }}>
+                    Departman *
+                  </div>
+                  <input
+                    value={newPersonDepartment}
+                    onChange={(e) => setNewPersonDepartment(e.target.value)}
+                    placeholder="Örn: İnsan Kaynakları"
+                    style={{
+                      width: '100%',
+                      padding: '10px 12px',
+                      border: '1px solid #E5E7EB',
+                      borderRadius: '8px',
+                      fontSize: '14px',
+                      fontFamily: 'Inter'
+                    }}
+                  />
+                </div>
+                <div>
+                  <div style={{ fontSize: '13px', fontWeight: 600, color: '#374151', marginBottom: '6px' }}>
+                    Çalışan Tipi *
+                  </div>
+                  <select
+                    value={newPersonType}
+                    onChange={(e) => setNewPersonType(e.target.value)}
+                    style={{
+                      width: '100%',
+                      padding: '10px 12px',
+                      border: '1px solid #E5E7EB',
+                      borderRadius: '8px',
+                      fontSize: '14px',
+                      fontFamily: 'Inter',
+                      background: 'white'
+                    }}
+                  >
+                    <option value="">Seçiniz</option>
+                    <option value="Aday">Aday</option>
+                    <option value="Çalışan">Çalışan</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+            <div style={{
+              padding: '16px 20px',
+              borderTop: '1px solid #E9ECEF',
+              display: 'flex',
+              justifyContent: 'flex-end',
+              gap: '10px',
+              background: '#F8F9FA'
+            }}>
+              <button
+                onClick={() => setShowAddPersonPopup(false)}
+                style={{
+                  padding: '8px 14px',
+                  background: 'white',
+                  color: '#6B7280',
+                  border: '1px solid #E5E7EB',
+                  borderRadius: '6px',
+                  cursor: 'pointer',
+                  fontSize: '14px',
+                  fontFamily: 'Inter',
+                  fontWeight: 500
+                }}
+              >
+                {t('buttons.cancel')}
+              </button>
+              <button
+                onClick={handleAddPerson}
+                disabled={isAddingPerson}
+                style={{
+                  padding: '8px 16px',
+                  background: '#2563EB',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '6px',
+                  cursor: isAddingPerson ? 'not-allowed' : 'pointer',
+                  fontSize: '14px',
+                  fontFamily: 'Inter',
+                  fontWeight: 600
+                }}
+              >
+                {isAddingPerson ? t('labels.loading') : 'Kişi Ekle'}
+              </button>
             </div>
           </div>
         </div>

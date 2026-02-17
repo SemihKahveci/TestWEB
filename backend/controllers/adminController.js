@@ -629,6 +629,7 @@ const adminController = {
                     name: result.name,
                     email: result.email,
                     status: result.status,
+                    personType: result.personType,
                     planet: result.planet,
                     allPlanets: result.allPlanets,
                     unvan,
@@ -671,6 +672,73 @@ const adminController = {
             res.status(500).json({
                 success: false,
                 message: getSafeErrorMessage(error, 'Sonuçlar alınırken bir hata oluştu')
+            });
+        }
+    },
+
+    createPendingPerson: async (req, res) => {
+        try {
+            const { name, email, unvan, pozisyon, departman, personType } = req.body;
+
+            if (!name || !email || !unvan || !pozisyon || !departman || !personType) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'Tüm alanlar zorunludur'
+                });
+            }
+
+            const { getCompanyFilter, addCompanyIdToData } = require('../middleware/auth');
+            const companyFilter = getCompanyFilter(req);
+            const escapeRegex = (value) => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+            const emailRegex = new RegExp(`^${escapeRegex(email.trim())}$`, 'i');
+
+            const existing = await UserCode.findOne({ email: emailRegex, ...companyFilter });
+            if (existing) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'Bu e-posta ile kayıt zaten mevcut'
+                });
+            }
+
+            const expiryDate = new Date();
+            expiryDate.setFullYear(expiryDate.getFullYear() + 10);
+
+            const code = await UserCode.generateUniqueCode();
+            const codeData = addCompanyIdToData(req, {
+                code,
+                name,
+                email,
+                planet: '',
+                allPlanets: [],
+                personType,
+                unvan,
+                pozisyon,
+                departman,
+                status: 'Beklemede',
+                sentDate: new Date(),
+                expiryDate,
+                isPlaceholder: true
+            });
+
+            if (!codeData.companyId && req.admin && req.admin.role !== 'superadmin') {
+                return res.status(400).json({
+                    success: false,
+                    message: 'Admin companyId\'si bulunamadı. Lütfen admin hesabınızı kontrol edin.'
+                });
+            }
+
+            const newCode = new UserCode(codeData);
+            await newCode.save();
+
+            return res.json({
+                success: true,
+                result: newCode
+            });
+        } catch (error) {
+            safeLog('error', 'Kişi ekleme hatası', error);
+            return res.status(500).json({
+                success: false,
+                message: getSafeErrorMessage(error, 'Kişi eklenirken bir hata oluştu')
             });
         }
     },

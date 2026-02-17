@@ -16,7 +16,8 @@ const userCodeSchema = new mongoose.Schema({
     },
     planet: {
         type: String,
-        required: true
+        required: false,
+        default: ''
     },
     allPlanets: {
         type: [String],
@@ -79,6 +80,10 @@ const userCodeSchema = new mongoose.Schema({
     departman: {
         type: String,
         default: ''
+    },
+    isPlaceholder: {
+        type: Boolean,
+        default: false
     },
     createdAt: {
         type: Date,
