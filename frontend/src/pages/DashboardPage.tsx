@@ -372,7 +372,7 @@ const DashboardPage: React.FC = () => {
             <i className="fa-solid fa-chart-pie text-4xl" />
           </div>
           <div className="relative z-10">
-            <h3 className="text-base font-medium text-white text-opacity-90 mb-1">{t('labels.totalGamesSent')}</h3>
+            <h3 className="text-base font-bold text-white text-opacity-90 mb-1">{t('labels.totalGamesSent')}</h3>
             <div className="text-4xl font-bold">{currentStats.totalSentGames}</div>
           </div>
         </div>
@@ -381,7 +381,7 @@ const DashboardPage: React.FC = () => {
             <i className="fa-solid fa-users text-4xl" />
           </div>
           <div className="relative z-10">
-            <h3 className="text-base font-medium text-white text-opacity-90 mb-1">Tamamlanan Değerlendirme/ Aday</h3>
+            <h3 className="text-base font-bold text-white text-opacity-90 mb-1">{t('labels.dashboardCompletedCandidate')}</h3>
             <div className="text-4xl font-bold">{currentStats.completedCandidateCount}</div>
           </div>
         </div>
@@ -390,7 +390,7 @@ const DashboardPage: React.FC = () => {
             <i className="fa-solid fa-clock text-4xl" />
           </div>
           <div className="relative z-10">
-            <h3 className="text-base font-medium text-white text-opacity-90 mb-1">Tamamlanan Değerlendirme/ Çalışan</h3>
+            <h3 className="text-base font-bold text-white text-opacity-90 mb-1">{t('labels.dashboardCompletedEmployee')}</h3>
             <div className="text-4xl font-bold">{currentStats.completedEmployeeCount}</div>
           </div>
         </div>
@@ -399,7 +399,7 @@ const DashboardPage: React.FC = () => {
             <i className="fa-solid fa-circle-check text-4xl text-gray-400" />
           </div>
           <div className="relative z-10">
-            <h3 className="text-base font-medium text-gray-500 mb-1">Tamamlanan Değerlendirme (Çalışan + Aday)</h3>
+            <h3 className="text-base font-bold text-gray-500 mb-1">{t('labels.dashboardCompletedTotal')}</h3>
             <div className="text-4xl font-bold text-gray-800">{currentStats.statusCounts.completed}</div>
           </div>
         </div>
