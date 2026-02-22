@@ -2,8 +2,6 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useLanguage } from '../contexts/LanguageContext';
 
-type TabKey = 'trend' | 'summary' | 'full';
-
 type UserResult = {
   code: string;
   name: string;
@@ -11,6 +9,7 @@ type UserResult = {
   status?: string;
   completionDate?: string;
   sentDate?: string;
+  pozisyon?: string;
   customerFocusScore?: string | number;
   uncertaintyScore?: string | number;
   ieScore?: string | number;
@@ -20,13 +19,27 @@ type UserResult = {
 type CachedUserResults = {
   latestUser: UserResult | null;
   latestHistory: UserResult[];
+  companyAverageScores?: {
+    customerFocusScore?: number | null;
+    uncertaintyScore?: number | null;
+    ieScore?: number | null;
+    idikScore?: number | null;
+  } | null;
+  positionNorms?: {
+    customerFocusScore?: string | null;
+    uncertaintyScore?: string | null;
+    ieScore?: string | null;
+    idikScore?: string | null;
+  } | null;
 };
 
 const PersonResults: React.FC = () => {
-  const [activeTab, setActiveTab] = useState<TabKey>('trend');
   const [selectedCompetency, setSelectedCompetency] = useState('uyumluluk');
   const [latestUser, setLatestUser] = useState<UserResult | null>(null);
   const [latestHistory, setLatestHistory] = useState<UserResult[]>([]);
+  const [companyAverageScores, setCompanyAverageScores] = useState<CachedUserResults['companyAverageScores']>(null);
+  const [positionNorms, setPositionNorms] = useState<CachedUserResults['positionNorms']>(null);
+  const [selectedEvaluationIndex, setSelectedEvaluationIndex] = useState<number | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [showPDFPreview, setShowPDFPreview] = useState(false);
   const [pdfPreviewUrl, setPdfPreviewUrl] = useState<string | null>(null);
@@ -36,6 +49,9 @@ const PersonResults: React.FC = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const { language, t } = useLanguage();
+
+  const formatTemplate = (template: string, params: Record<string, string | number>) =>
+    template.replace(/\{(\w+)\}/g, (_, key) => `${params[key] ?? ''}`);
 
   const competencyConfig = useMemo(() => ([
     {
@@ -118,6 +134,55 @@ const PersonResults: React.FC = () => {
     });
   }, [latestHistory]);
 
+  useEffect(() => {
+    if (historySorted.length === 0) {
+      setSelectedEvaluationIndex(null);
+      return;
+    }
+    setSelectedEvaluationIndex((prev) => {
+      if (prev === null || prev < 0 || prev >= historySorted.length) {
+        return historySorted.length - 1;
+      }
+      return prev;
+    });
+  }, [historySorted.length]);
+
+  const displayHistory = useMemo(() => {
+    if (historySorted.length > 0) return historySorted;
+    return latestUser ? [latestUser] : [];
+  }, [historySorted, latestUser]);
+
+  useEffect(() => {
+    if (displayHistory.length === 0) {
+      if (selectedEvaluationIndex !== null) {
+        setSelectedEvaluationIndex(null);
+      }
+      return;
+    }
+    if (selectedEvaluationIndex === null || selectedEvaluationIndex >= displayHistory.length) {
+      setSelectedEvaluationIndex(displayHistory.length - 1);
+    }
+  }, [displayHistory.length, selectedEvaluationIndex]);
+
+  const displayUser = selectedEvaluationIndex !== null
+    ? displayHistory[selectedEvaluationIndex]
+    : displayHistory[displayHistory.length - 1];
+  const parsePositionNormValue = (value: string | number | null | undefined) => {
+    if (value === '-' || value === null || value === undefined) {
+      return null;
+    }
+    if (typeof value === 'number') return value;
+    const raw = String(value);
+    if (raw.includes('-')) {
+      const [minRaw, maxRaw] = raw.split('-').map((part) => Number(part.trim()));
+      if (!Number.isNaN(minRaw) && !Number.isNaN(maxRaw)) {
+        return (minRaw + maxRaw) / 2;
+      }
+    }
+    const parsed = Number(raw);
+    return Number.isNaN(parsed) ? null : parsed;
+  };
+
   const trendByCompetency = useMemo(() => {
     const lastThree = historySorted.slice(-3);
     const base = Object.fromEntries(
@@ -157,6 +222,11 @@ const PersonResults: React.FC = () => {
 
   const selectedTrend = (trendByCompetency[selectedCompetency] || []).slice(-3);
   const selectedMeta = competencyConfig.find((item) => item.key === selectedCompetency) || competencyConfig[0];
+  const companyAverageRaw = parseScore(
+    (companyAverageScores as any)?.[selectedMeta?.scoreField]
+  );
+  const companyAverageDisplay = companyAverageRaw === null ? '-' : Math.round(companyAverageRaw);
+  const positionNormRange = (positionNorms as any)?.[selectedMeta?.scoreField] || '-';
   const axisLabels = useMemo(() => {
     if (selectedTrend.length === 0) return [];
     const span = selectedTrend.length > 1 ? 460 / (selectedTrend.length - 1) : 0;
@@ -186,14 +256,14 @@ const PersonResults: React.FC = () => {
   }, [language, selectedTrend.length, trendDelta]);
 
   const handlePreviewPdf = async () => {
-    if (!latestUser?.code) return;
+    if (!displayUser?.code) return;
     try {
       setIsPdfLoading(true);
       const pdfParams = new URLSearchParams();
       Object.entries(defaultPdfOptions).forEach(([key, value]) => {
         pdfParams.append(key, value.toString());
       });
-      const response = await fetch(`/api/preview-pdf?code=${encodeURIComponent(latestUser.code)}&${pdfParams.toString()}`, {
+      const response = await fetch(`/api/preview-pdf?code=${encodeURIComponent(displayUser.code)}&${pdfParams.toString()}`, {
         credentials: 'include'
       });
       if (!response.ok) {
@@ -211,7 +281,7 @@ const PersonResults: React.FC = () => {
   };
 
   const handleDownloadPdf = async () => {
-    if (!latestUser?.code) return;
+    if (!displayUser?.code) return;
     try {
       setIsPdfLoading(true);
       const response = await fetch('/api/evaluation/generatePDF', {
@@ -221,7 +291,7 @@ const PersonResults: React.FC = () => {
         },
         credentials: 'include',
         body: JSON.stringify({
-          userCode: latestUser.code,
+          userCode: displayUser.code,
           selectedOptions: defaultPdfOptions
         })
       });
@@ -230,11 +300,11 @@ const PersonResults: React.FC = () => {
       }
       const blob = await response.blob();
       const url = URL.createObjectURL(blob);
-      const date = latestUser.completionDate ? new Date(latestUser.completionDate) : new Date();
+      const date = displayUser.completionDate ? new Date(displayUser.completionDate) : new Date();
       const formattedDate = `${date.getDate().toString().padStart(2, '0')}${(date.getMonth() + 1)
         .toString()
         .padStart(2, '0')}${date.getFullYear()}`;
-      const safeName = (latestUser.name || t('labels.user')).replace(/\s+/g, '_');
+      const safeName = (displayUser.name || t('labels.user')).replace(/\s+/g, '_');
       const a = document.createElement('a');
       a.href = url;
       a.download = `ANDRON_${t('labels.assessmentReport')}_${safeName}_${formattedDate}.pdf`;
@@ -297,9 +367,13 @@ const PersonResults: React.FC = () => {
           const historySafe = history.length > 0 ? history : [data.latestUser as UserResult];
           setLatestUser(data.latestUser as UserResult);
           setLatestHistory(historySafe);
+          setCompanyAverageScores(data.companyAverageScores || null);
+          setPositionNorms(data.positionNorms || null);
           sessionStorage.setItem('latestUserResults', JSON.stringify({
             latestUser: data.latestUser,
-            latestHistory: historySafe
+            latestHistory: historySafe,
+            companyAverageScores: data.companyAverageScores || null,
+            positionNorms: data.positionNorms || null
           }));
         } catch (error) {
           // Sessiz geç
@@ -320,17 +394,20 @@ const PersonResults: React.FC = () => {
       if (cachedViewState) {
         try {
           const parsed = JSON.parse(cachedViewState) as {
-            activeTab?: TabKey;
             selectedCompetency?: string;
+            selectedEvaluationIndex?: number | null;
             latestUser?: UserResult | null;
             latestHistory?: UserResult[];
+            companyAverageScores?: CachedUserResults['companyAverageScores'];
+            positionNorms?: CachedUserResults['positionNorms'];
           };
-          if (parsed.activeTab) setActiveTab(parsed.activeTab);
           if (parsed.selectedCompetency) setSelectedCompetency(parsed.selectedCompetency);
+          if (parsed.selectedEvaluationIndex !== undefined) setSelectedEvaluationIndex(parsed.selectedEvaluationIndex);
           if (parsed.latestUser) setLatestUser(parsed.latestUser);
           if (parsed.latestHistory) setLatestHistory(parsed.latestHistory);
+          if (parsed.companyAverageScores !== undefined) setCompanyAverageScores(parsed.companyAverageScores || null);
+          if (parsed.positionNorms !== undefined) setPositionNorms(parsed.positionNorms || null);
           setHasRestoredState(true);
-          return;
         } catch (error) {
           sessionStorage.removeItem('personResultsState');
         }
@@ -342,8 +419,9 @@ const PersonResults: React.FC = () => {
           const parsed = JSON.parse(cached) as CachedUserResults;
           setLatestUser(parsed.latestUser);
           setLatestHistory(parsed.latestHistory || []);
+          setCompanyAverageScores(parsed.companyAverageScores || null);
+          setPositionNorms(parsed.positionNorms || null);
           setHasRestoredState(true);
-          return;
         } catch (error) {
           sessionStorage.removeItem('latestUserResults');
         }
@@ -368,34 +446,43 @@ const PersonResults: React.FC = () => {
 
         setLatestUser(latest);
         setLatestHistory(historySafe);
+        setCompanyAverageScores(data.companyAverageScores || null);
+        setPositionNorms(data.positionNorms || null);
         sessionStorage.setItem('personResultsVisited', 'true');
-        sessionStorage.setItem('latestUserResults', JSON.stringify({ latestUser: latest, latestHistory: historySafe }));
+        sessionStorage.setItem('latestUserResults', JSON.stringify({
+          latestUser: latest,
+          latestHistory: historySafe,
+          companyAverageScores: data.companyAverageScores || null,
+          positionNorms: data.positionNorms || null
+        }));
       } catch (error) {
         setLatestUser(null);
         setLatestHistory([]);
+        setCompanyAverageScores(null);
+        setPositionNorms(null);
       } finally {
         setIsLoading(false);
       }
     };
 
-    if (!hasRestoredState) {
-      fetchLatest();
-    }
+    fetchLatest();
   }, [location.state, hasRestoredState]);
 
   useEffect(() => {
-    if (!latestUser) return;
-    sessionStorage.setItem('personResultsState', JSON.stringify({
-      activeTab,
-      selectedCompetency,
-      latestUser,
-      latestHistory
-    }));
+      if (!latestUser) return;
+      sessionStorage.setItem('personResultsState', JSON.stringify({
+        selectedCompetency,
+        selectedEvaluationIndex,
+        latestUser,
+        latestHistory,
+        companyAverageScores,
+        positionNorms
+      }));
     sessionStorage.setItem('personResultsVisited', 'true');
-  }, [activeTab, selectedCompetency, latestUser, latestHistory]);
+    }, [selectedCompetency, selectedEvaluationIndex, latestUser, latestHistory, companyAverageScores, positionNorms]);
 
   const selectedUserFromState = (location.state as { selectedUser?: UserResult } | null)?.selectedUser;
-  const userForDetail = selectedUserFromState || latestUser;
+  const userForDetail = selectedUserFromState || displayUser || latestUser;
 
   return (
     <div className="bg-gray-50 font-inter">
@@ -432,23 +519,58 @@ const PersonResults: React.FC = () => {
           <div className="flex items-start justify-between">
             <div className="flex items-center space-x-6">
               <div>
-                <h2 className="text-2xl font-bold text-gray-900 mb-2">{latestUser?.name || '—'}</h2>
+                <h2 className="text-2xl font-bold text-gray-900 mb-2">{displayUser?.name || '—'}</h2>
                 <div className="flex items-center space-x-4 text-sm text-gray-600 mb-3">
                   <div className="flex items-center">
                     <i className="fa-solid fa-briefcase mr-2 text-gray-400" />
-                    <span>{t('labels.sampleRole')}</span>
+                    <span>{displayUser?.pozisyon || '-'}</span>
                   </div>
                   <div className="flex items-center">
                     <i className="fa-solid fa-calendar mr-2 text-gray-400" />
                     <span>{t('labels.participation')}: {t('labels.sampleParticipation')}</span>
                   </div>
                 </div>
+                <div className="flex items-center space-x-3 mt-4">
+                  <button
+                    className="btn btn-primary"
+                    onClick={handlePreviewPdf}
+                    disabled={isPdfLoading || !displayUser}
+                  >
+                    <i className="fa-solid fa-eye mr-2" />
+                    {t('buttons.viewReport')}
+                  </button>
+                  <button
+                    className="btn btn-secondary"
+                    onClick={handleDownloadPdf}
+                    disabled={isPdfLoading || !displayUser}
+                  >
+                    <i className="fa-solid fa-download mr-2" />
+                    {isPdfLoading ? t('labels.pdfLoading') : t('buttons.downloadPdf')}
+                  </button>
+                </div>
               </div>
             </div>
             <div className="text-right">
-              <div className="text-sm text-gray-500 mb-1">{t('labels.currentEvaluation')}</div>
-              <div className="text-lg font-semibold text-gray-900">{formatQuarterLabel(latestUser?.completionDate)}</div>
-              <div className="text-sm text-gray-600">{t('labels.completion')}: {formatDateLong(latestUser?.completionDate)}</div>
+              <div className="text-sm text-gray-500 mb-2">{t('labels.assessmentPeriodLabel')}</div>
+              <select
+                value={selectedEvaluationIndex ?? ''}
+                onChange={(e) => setSelectedEvaluationIndex(Number(e.target.value))}
+                className="px-4 py-2.5 bg-white border-2 border-blue-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900 font-semibold cursor-pointer text-base min-w-[240px] hover:border-blue-400 transition-colors"
+                disabled={displayHistory.length === 0}
+              >
+                {displayHistory.map((item, index) => (
+                  <option key={`${item.code}-${index}`} value={index}>
+                    {formatQuarterLabel(item.completionDate || item.sentDate)} - {formatDateShort(item.completionDate || item.sentDate)}
+                  </option>
+                ))}
+              </select>
+              <div className="text-xs text-gray-500 mt-2 flex items-center justify-end">
+                <i className="fa-solid fa-info-circle mr-1" />
+                <span>{formatTemplate(t('labels.evaluationsAvailable'), { count: displayHistory.length })}</span>
+              </div>
+              <div className="text-sm text-gray-600 mt-2">
+                {t('labels.completion')}: {formatDateLong(displayUser?.completionDate || displayUser?.sentDate)}
+              </div>
             </div>
           </div>
         </div>
@@ -457,7 +579,7 @@ const PersonResults: React.FC = () => {
           {scoreCards.map((card) => {
             const isClickable = Boolean(card.competency);
             const scoreField = competencyConfig.find((item) => item.key === card.competency)?.scoreField;
-            const rawScore = scoreField ? formatScoreRaw((latestUser as any)?.[scoreField]) : '-';
+            const rawScore = scoreField ? formatScoreRaw((displayUser as any)?.[scoreField]) : '-';
             return (
             <div
               key={card.title}
@@ -521,7 +643,7 @@ const PersonResults: React.FC = () => {
               <div className="flex items-start">
                 <i className="fa-solid fa-info-circle text-blue-600 mt-0.5 mr-3" />
                 <div className="text-sm text-blue-900">
-                  <div className="font-medium mb-1">{t('labels.evaluationDate')}: {formatDateLong(latestUser?.completionDate)}</div>
+                  <div className="font-medium mb-1">{t('labels.evaluationDate')}: {formatDateLong(displayUser?.completionDate || displayUser?.sentDate)}</div>
                   <div className="text-blue-700">{t('labels.trendTip')}</div>
                 </div>
               </div>
@@ -529,8 +651,12 @@ const PersonResults: React.FC = () => {
 
             <div className="space-y-4 max-h-[800px] overflow-y-auto pr-2">
               {competencyConfig.map((item, index) => {
-                const scoreRaw = formatScoreRaw((latestUser as any)?.[item.scoreField]);
+                const scoreRaw = formatScoreRaw((displayUser as any)?.[item.scoreField]);
                 const scoreValue = typeof scoreRaw === 'number' ? scoreRaw : 0;
+                const positionNormDisplay = (positionNorms as any)?.[item.scoreField] || '-';
+                const positionNormValue = parsePositionNormValue(positionNormDisplay);
+                const companyAvgValue = parseScore((companyAverageScores as any)?.[item.scoreField]);
+                const companyAvgDisplay = companyAvgValue === null ? '-' : Math.round(companyAvgValue);
                 const isActive = selectedCompetency === item.key;
                 return (
                 <div
@@ -540,7 +666,6 @@ const PersonResults: React.FC = () => {
                   }`}
                   onClick={() => {
                     setSelectedCompetency(item.key);
-                    setActiveTab('trend');
                   }}
                 >
                   <div className="flex items-start justify-between mb-3">
@@ -555,14 +680,18 @@ const PersonResults: React.FC = () => {
                     </div>
                   </div>
                   <div className="space-y-2">
-                    {[{ label: t('labels.yourScore'), value: scoreValue, display: scoreRaw ?? '-', color: 'bg-green-600' }].map((row) => (
+                    {[
+                      { label: t('labels.yourScore'), value: scoreValue, display: scoreRaw ?? '-', color: 'bg-green-600' },
+                      { label: t('labels.positionNorm'), value: positionNormValue ?? 0, display: positionNormDisplay, color: 'bg-orange-400' },
+                        { label: t('labels.companyAverage'), value: companyAvgValue ?? 0, display: companyAvgDisplay, color: 'bg-gray-400' }
+                    ].map((row) => (
                         <div key={row.label} className="flex items-center justify-between text-sm">
                           <span className="text-gray-600">{row.label}</span>
                           <div className="flex items-center">
                             <div className="w-32 h-2 bg-gray-200 rounded-full mr-2">
                               <div className={`h-2 ${row.color} rounded-full`} style={{ width: `${(row.value / maxScore) * 100}%` }} />
                             </div>
-                            <span className="font-medium text-gray-700 w-8">{row.display}</span>
+                            <span className="font-medium text-gray-700 w-8 whitespace-nowrap">{row.display}</span>
                           </div>
                         </div>
                     ))}
@@ -573,27 +702,7 @@ const PersonResults: React.FC = () => {
           </div>
 
           <div className="bg-white rounded-xl shadow-sm border border-gray-200">
-            <div className="border-b border-gray-200">
-              <div className="flex">
-                {[
-                  { key: 'trend', label: t('tabs.trend') },
-                  { key: 'summary', label: t('tabs.summary') },
-                  { key: 'full', label: t('tabs.fullReport') }
-                ].map((tab) => (
-                  <button
-                    key={tab.key}
-                    onClick={() => setActiveTab(tab.key as TabKey)}
-                    className={activeTab === tab.key ? 'btn btn-primary' : 'btn btn-secondary'}
-                    style={{ borderRadius: 0, fontSize: '14px' }}
-                  >
-                    {tab.label}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {activeTab === 'trend' && (
-              <div className="p-6">
+            <div className="p-6">
                 <div className="mb-6">
                   <h3 className="text-xl font-bold text-gray-900 mb-1">{t('labels.trendAnalysis')}</h3>
                   <p className="text-sm text-gray-500">{t('labels.lastThreeResults')}</p>
@@ -705,6 +814,27 @@ const PersonResults: React.FC = () => {
                   ))}
                 </div>
 
+                <div className="grid grid-cols-2 gap-4 mb-6 mt-6">
+                  <div className="bg-orange-50 rounded-lg p-4 border border-orange-200">
+                    <div className="text-xs text-orange-600 font-semibold uppercase tracking-wide mb-2">
+                      {t('labels.positionNorm')}
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <div className="text-3xl font-bold text-orange-600">{positionNormRange}</div>
+                      <i className="fa-solid fa-users text-orange-400 text-2xl" />
+                    </div>
+                  </div>
+                  <div className="bg-gray-100 rounded-lg p-4 border border-gray-300">
+                    <div className="text-xs text-gray-600 font-semibold uppercase tracking-wide mb-2">
+                      {t('labels.companyAverage')}
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <div className="text-3xl font-bold text-gray-600">{companyAverageDisplay}</div>
+                      <i className="fa-solid fa-building text-gray-400 text-2xl" />
+                    </div>
+                  </div>
+                </div>
+
                 <div className="mt-6 p-4 bg-green-50 rounded-lg border border-green-200">
                   <div className="flex items-center">
                     <div className="w-10 h-10 bg-green-500 rounded-full flex items-center justify-center mr-3">
@@ -716,95 +846,8 @@ const PersonResults: React.FC = () => {
                   </div>
                 </div>
               </div>
-            )}
-
-            {activeTab === 'summary' && (
-              <div className="p-6">
-                <div className="mb-6">
-                  <h3 className="text-xl font-bold text-gray-900 mb-1">{t('labels.currentReport')}</h3>
-                  <p className="text-sm text-gray-500">{t('labels.comprehensiveAssessment')}</p>
-                </div>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-                  <div className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-lg p-5 border border-blue-200">
-                    <div className="flex items-center justify-between mb-3">
-                      <i className="fa-solid fa-star text-2xl text-blue-600" />
-                      <span className="px-3 py-1 bg-blue-600 text-white text-xs font-bold rounded-full">{t('labels.performanceExcellent')}</span>
-                    </div>
-                    <div className="text-3xl font-bold text-blue-900 mb-1">8.4/10</div>
-                    <div className="text-sm font-medium text-blue-800">{t('labels.overallPerformance')}</div>
-                    <div className="text-xs text-blue-700 mt-2">{t('labels.previousPeriodChange')}</div>
-                  </div>
-                  <div className="bg-gradient-to-br from-green-50 to-green-100 rounded-lg p-5 border border-green-200">
-                    <div className="flex items-center justify-between mb-3">
-                      <i className="fa-solid fa-arrow-up text-2xl text-green-600" />
-                      <span className="px-3 py-1 bg-green-600 text-white text-xs font-bold rounded-full">{t('labels.performanceGrowing')}</span>
-                    </div>
-                    <div className="text-3xl font-bold text-green-900 mb-1">9/12</div>
-                    <div className="text-sm font-medium text-green-800">{t('labels.developingCompetency')}</div>
-                    <div className="text-xs text-green-700 mt-2">{t('labels.positiveGrowth')}</div>
-                  </div>
-                  <div className="bg-gradient-to-br from-purple-50 to-purple-100 rounded-lg p-5 border border-purple-200">
-                    <div className="flex items-center justify-between mb-3">
-                      <i className="fa-solid fa-trophy text-2xl text-purple-600" />
-                      <span className="px-3 py-1 bg-purple-600 text-white text-xs font-bold rounded-full">{t('labels.performanceTopPercent')}</span>
-                    </div>
-                    <div className="text-3xl font-bold text-purple-900 mb-1">92</div>
-                    <div className="text-sm font-medium text-purple-800">{t('labels.percentileRank')}</div>
-                    <div className="text-xs text-purple-700 mt-2">{t('labels.companyOverall')}</div>
-                  </div>
-                </div>
-                <div className="mb-6">
-                  <h4 className="text-lg font-bold text-gray-900 mb-4">{t('tabs.executiveSummary')}</h4>
-                  <div className="prose prose-sm max-w-none text-gray-700 leading-relaxed">
-                    <p className="mb-4">
-                      {t('labels.executiveSummarySample')}
-                    </p>
-                    <p className="mb-4">
-                      {t('labels.executiveSummaryHighlights')}
-                    </p>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {activeTab === 'full' && (
-              <div className="p-6">
-                <div className="mb-6">
-                  <h3 className="text-xl font-bold text-gray-900 mb-1">{t('labels.fullReport')}</h3>
-                  <p className="text-sm text-gray-500">{t('labels.comprehensiveAssessment')}</p>
-                </div>
-                <div className="text-center py-12">
-                  <div className="inline-flex items-center justify-center w-20 h-20 bg-blue-100 rounded-full mb-6">
-                    <i className="fa-solid fa-file-pdf text-blue-600 text-3xl" />
-                  </div>
-                  <h4 className="text-xl font-bold text-gray-900 mb-2">{t('labels.reportTitleQ4')}</h4>
-                  <p className="text-gray-600 mb-8 max-w-md mx-auto">
-                    {t('labels.fullReportSummary')}
-                  </p>
-                  <div className="flex items-center justify-center space-x-4">
-                    <button
-                      className="btn btn-primary"
-                      onClick={handlePreviewPdf}
-                      disabled={isPdfLoading || !latestUser}
-                    >
-                      <i className="fa-solid fa-eye mr-2" /> {t('buttons.viewReport')}
-                    </button>
-                    <button
-                      className="btn btn-secondary"
-                      onClick={handleDownloadPdf}
-                      disabled={isPdfLoading || !latestUser}
-                    >
-                      <i className="fa-solid fa-download mr-2" /> {isPdfLoading ? t('labels.pdfLoading') : t('buttons.downloadPdf')}
-                    </button>
-                    <button className="btn btn-secondary">
-                      <i className="fa-solid fa-share-nodes mr-2" /> {t('buttons.share')}
-                    </button>
-                  </div>
-                </div>
-              </div>
-            )}
+            </div>
           </div>
-        </div>
       </div>
       {showPDFPreview && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30">

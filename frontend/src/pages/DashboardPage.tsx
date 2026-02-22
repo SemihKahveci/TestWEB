@@ -9,6 +9,12 @@ type DashboardStatsSet = {
   totalSentGames: number;
   statusCounts: StatusCounts;
   scoreDistributions: ScoreDistributions;
+  averageScores?: {
+    customerFocusScore?: number | null;
+    uncertaintyScore?: number | null;
+    ieScore?: number | null;
+    idikScore?: number | null;
+  };
   completedCandidateCount: number;
   completedEmployeeCount: number;
   titleCounts: TitleCounts;
@@ -42,6 +48,12 @@ const initStatsSet = (): DashboardStatsSet => ({
   totalSentGames: 0,
   statusCounts: { completed: 0, inProgress: 0, expired: 0, pending: 0 },
   scoreDistributions: initScoreDistributions(),
+  averageScores: {
+    customerFocusScore: null,
+    uncertaintyScore: null,
+    ieScore: null,
+    idikScore: null
+  },
   completedCandidateCount: 0,
   completedEmployeeCount: 0,
   titleCounts: {}
@@ -570,7 +582,17 @@ const DashboardPage: React.FC = () => {
             const buckets = aggregateBucketsBy20(rawBuckets);
             const maxCount = Math.max(1, ...buckets);
             const highlightIndex = getAverageBucketIndex(buckets);
-            const averageScore = getAverageScoreValue(rawBuckets);
+            const averageScoreFieldMap: Record<string, keyof NonNullable<DashboardStatsSet['averageScores']>> = {
+              customerFocus: 'customerFocusScore',
+              uncertainty: 'uncertaintyScore',
+              ie: 'ieScore',
+              idik: 'idikScore'
+            };
+            const averageKey = averageScoreFieldMap[card.key] || 'customerFocusScore';
+            const averageScoreRaw = currentStats.averageScores?.[averageKey];
+            const averageScore = averageScoreRaw === null || averageScoreRaw === undefined
+              ? getAverageScoreValue(rawBuckets)
+              : Math.round(averageScoreRaw);
             return (
               <div key={card.key} className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 flex flex-col h-full">
                 <div className="flex items-center justify-between mb-2">

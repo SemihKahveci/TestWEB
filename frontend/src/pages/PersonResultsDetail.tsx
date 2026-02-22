@@ -13,6 +13,7 @@ type UserResult = {
   status?: string;
   completionDate?: string;
   sentDate?: string;
+  pozisyon?: string;
   customerFocusScore?: string | number;
   uncertaintyScore?: string | number;
   ieScore?: string | number;
@@ -1179,7 +1180,7 @@ const PersonResultsDetail: React.FC = () => {
                 <div className="flex items-center space-x-4 text-sm text-gray-600 mb-3">
                   <div className="flex items-center">
                     <i className="fa-solid fa-briefcase mr-2 text-gray-400" />
-                    <span>{t('labels.sampleRole')}</span>
+                    <span>{latestUser?.pozisyon || '-'}</span>
                   </div>
                   <div className="flex items-center">
                     <i className="fa-solid fa-calendar mr-2 text-gray-400" />

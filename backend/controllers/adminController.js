@@ -8,6 +8,7 @@ const bcrypt = require('bcryptjs');
 const UserCode = require('../models/userCode');
 const Game = require('../models/game');
 const Authorization = require('../models/Authorization');
+const Competency = require('../models/Competency');
 const { capitalizeName, escapeHtml, safeLog, getSafeErrorMessage } = require('../utils/helpers');
 const XLSX = require('xlsx');
 const fs = require('fs');
@@ -748,6 +749,58 @@ const adminController = {
         try {
             const { getCompanyFilter } = require('../middleware/auth');
             const companyFilter = getCompanyFilter(req);
+            const escapeRegex = (value = '') => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+            const buildCompanyAverageScores = async () => {
+                const users = await UserCode.find({
+                    ...companyFilter,
+                    status: 'Tamamlandı',
+                    completionDate: { $ne: null }
+                })
+                    .select('customerFocusScore uncertaintyScore ieScore idikScore')
+                    .lean();
+                const sums = {
+                    customerFocusScore: 0,
+                    uncertaintyScore: 0,
+                    ieScore: 0,
+                    idikScore: 0
+                };
+                const counts = {
+                    customerFocusScore: 0,
+                    uncertaintyScore: 0,
+                    ieScore: 0,
+                    idikScore: 0
+                };
+                const fields = Object.keys(sums);
+                users.forEach((user) => {
+                    fields.forEach((field) => {
+                        const value = Number(user[field]);
+                        if (!Number.isNaN(value)) {
+                            sums[field] += value;
+                            counts[field] += 1;
+                        }
+                    });
+                });
+                return fields.reduce((acc, field) => {
+                    acc[field] = counts[field] ? sums[field] / counts[field] : null;
+                    return acc;
+                }, {});
+            };
+            const buildPositionNorms = async (position) => {
+                if (!position) return null;
+                const competency = await Competency.findOne({
+                    title: new RegExp(`^${escapeRegex(position.toString().trim())}$`, 'i'),
+                    ...companyFilter
+                })
+                    .sort({ updatedAt: -1, createdAt: -1 })
+                    .lean();
+                if (!competency) return null;
+                return {
+                    customerFocusScore: `${competency.customerFocus.min}-${competency.customerFocus.max}`,
+                    uncertaintyScore: `${competency.uncertaintyManagement.min}-${competency.uncertaintyManagement.max}`,
+                    ieScore: `${competency.influence.min}-${competency.influence.max}`,
+                    idikScore: `${competency.collaboration.min}-${competency.collaboration.max}`
+                };
+            };
 
             const latestUser = await UserCode.findOne({
                 ...companyFilter,
@@ -815,11 +868,15 @@ const adminController = {
             const historyWithScores = userHistory.map(mapUserScores);
             const latestWithScores = mapUserScores(latestUser);
             const lastThree = historyWithScores.slice(-3);
+            const companyAverageScores = await buildCompanyAverageScores();
+            const positionNorms = await buildPositionNorms(latestWithScores?.pozisyon);
 
             res.json({
                 success: true,
                 latestUser: latestWithScores,
-                history: lastThree
+                history: lastThree,
+                companyAverageScores,
+                positionNorms
             });
         } catch (error) {
             safeLog('error', 'Son kullanıcı özeti hatası', error);
@@ -840,6 +897,58 @@ const adminController = {
 
             const { getCompanyFilter } = require('../middleware/auth');
             const companyFilter = getCompanyFilter(req);
+            const escapeRegex = (value = '') => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+            const buildCompanyAverageScores = async () => {
+                const users = await UserCode.find({
+                    ...companyFilter,
+                    status: 'Tamamlandı',
+                    completionDate: { $ne: null }
+                })
+                    .select('customerFocusScore uncertaintyScore ieScore idikScore')
+                    .lean();
+                const sums = {
+                    customerFocusScore: 0,
+                    uncertaintyScore: 0,
+                    ieScore: 0,
+                    idikScore: 0
+                };
+                const counts = {
+                    customerFocusScore: 0,
+                    uncertaintyScore: 0,
+                    ieScore: 0,
+                    idikScore: 0
+                };
+                const fields = Object.keys(sums);
+                users.forEach((user) => {
+                    fields.forEach((field) => {
+                        const value = Number(user[field]);
+                        if (!Number.isNaN(value)) {
+                            sums[field] += value;
+                            counts[field] += 1;
+                        }
+                    });
+                });
+                return fields.reduce((acc, field) => {
+                    acc[field] = counts[field] ? sums[field] / counts[field] : null;
+                    return acc;
+                }, {});
+            };
+            const buildPositionNorms = async (position) => {
+                if (!position) return null;
+                const competency = await Competency.findOne({
+                    title: new RegExp(`^${escapeRegex(position.toString().trim())}$`, 'i'),
+                    ...companyFilter
+                })
+                    .sort({ updatedAt: -1, createdAt: -1 })
+                    .lean();
+                if (!competency) return null;
+                return {
+                    customerFocusScore: `${competency.customerFocus.min}-${competency.customerFocus.max}`,
+                    uncertaintyScore: `${competency.uncertaintyManagement.min}-${competency.uncertaintyManagement.max}`,
+                    ieScore: `${competency.influence.min}-${competency.influence.max}`,
+                    idikScore: `${competency.collaboration.min}-${competency.collaboration.max}`
+                };
+            };
 
             const user = await UserCode.findOne({ code, ...companyFilter }).lean();
             if (!user) {
@@ -902,11 +1011,15 @@ const adminController = {
             const historyWithScores = userHistory.map(mapUserScores);
             const latestWithScores = mapUserScores(user);
             const lastThree = historyWithScores.slice(-3);
+            const companyAverageScores = await buildCompanyAverageScores();
+            const positionNorms = await buildPositionNorms(latestWithScores?.pozisyon);
 
             res.json({
                 success: true,
                 latestUser: latestWithScores,
-                history: lastThree
+                history: lastThree,
+                companyAverageScores,
+                positionNorms
             });
         } catch (error) {
             safeLog('error', 'Kullanıcı özeti hatası', error);
@@ -1039,7 +1152,19 @@ const adminController = {
                 },
                 completedCandidateCount: 0,
                 completedEmployeeCount: 0,
-                titleCounts: {}
+                titleCounts: {},
+                scoreTotals: {
+                    customerFocusScore: 0,
+                    uncertaintyScore: 0,
+                    ieScore: 0,
+                    idikScore: 0
+                },
+                scoreCounts: {
+                    customerFocusScore: 0,
+                    uncertaintyScore: 0,
+                    ieScore: 0,
+                    idikScore: 0
+                }
             });
 
             const addScoreToBuckets = (buckets, score) => {
@@ -1082,8 +1207,34 @@ const adminController = {
             }
 
             const userCodes = await UserCode.find(companyFilter)
-                .select('email name status planet allPlanets customerFocusScore uncertaintyScore ieScore idikScore personType unvan')
+                .select('code email name status completionDate planet allPlanets customerFocusScore uncertaintyScore ieScore idikScore personType unvan')
                 .lean();
+
+            const codes = userCodes.map((item) => item.code).filter(Boolean);
+            const games = codes.length
+                ? await Game.find({
+                    playerCode: { $in: codes },
+                    ...companyFilter
+                }).select('playerCode section customerFocusScore uncertaintyScore ieScore idikScore').lean()
+                : [];
+            const gamesByCode = new Map();
+            games.forEach((game) => {
+                if (!gamesByCode.has(game.playerCode)) {
+                    gamesByCode.set(game.playerCode, []);
+                }
+                gamesByCode.get(game.playerCode).push(game);
+            });
+            const getMergedScores = (item) => {
+                const userGames = gamesByCode.get(item.code) || [];
+                const venusGame = userGames.find((g) => g.section === '0' || g.section === 0);
+                const titanGame = userGames.find((g) => g.section === '1' || g.section === 1);
+                return {
+                    customerFocusScore: (venusGame ? venusGame.customerFocusScore : null) || item.customerFocusScore,
+                    uncertaintyScore: (venusGame ? venusGame.uncertaintyScore : null) || item.uncertaintyScore,
+                    ieScore: (titanGame ? titanGame.ieScore : null) || item.ieScore,
+                    idikScore: (titanGame ? titanGame.idikScore : null) || item.idikScore
+                };
+            };
 
             const normalizeStatus = (status) => status.toLowerCase().replace(/\s+/g, ' ').trim();
             let uniquePeopleCount = 0;
@@ -1091,9 +1242,16 @@ const adminController = {
             const statsCandidate = initStatsSet();
             const statsEmployee = initStatsSet();
             const uniqueKeys = new Set();
+            const scoreFields = [
+                { bucketKey: 'customerFocus', field: 'customerFocusScore' },
+                { bucketKey: 'uncertainty', field: 'uncertaintyScore' },
+                { bucketKey: 'ie', field: 'ieScore' },
+                { bucketKey: 'idik', field: 'idikScore' }
+            ];
 
             const applyItemToStats = (statsSet, item, personType) => {
                 const normalized = normalizeStatus(item.status || '');
+                const mergedScores = getMergedScores(item);
                 if (normalized === 'tamamlandı' || normalized === 'tamamlandi') {
                     statsSet.statusCounts.completed += 1;
                     if (personType === 'candidate') {
@@ -1105,6 +1263,16 @@ const adminController = {
                     const titleKey = normalizeText(item.unvan);
                     if (titleKey) {
                         statsSet.titleCounts[titleKey] = (statsSet.titleCounts[titleKey] || 0) + 1;
+                    }
+
+                    if (item.completionDate) {
+                        scoreFields.forEach(({ field }) => {
+                            const value = Number(mergedScores[field]);
+                            if (!Number.isNaN(value)) {
+                                statsSet.scoreTotals[field] += value;
+                                statsSet.scoreCounts[field] += 1;
+                            }
+                        });
                     }
                 } else if (normalized.includes('devam') || (normalized.includes('oyun') && normalized.includes('ediyor'))) {
                     statsSet.statusCounts.inProgress += 1;
@@ -1123,10 +1291,9 @@ const adminController = {
 
                 statsSet.totalSentGames += normalizedPlanets.length;
 
-                addScoreToBuckets(statsSet.scoreDistributions.customerFocus, item.customerFocusScore);
-                addScoreToBuckets(statsSet.scoreDistributions.uncertainty, item.uncertaintyScore);
-                addScoreToBuckets(statsSet.scoreDistributions.ie, item.ieScore);
-                addScoreToBuckets(statsSet.scoreDistributions.idik, item.idikScore);
+                scoreFields.forEach(({ bucketKey, field }) => {
+                    addScoreToBuckets(statsSet.scoreDistributions[bucketKey], mergedScores[field]);
+                });
             };
 
             userCodes.forEach((item) => {
@@ -1148,19 +1315,33 @@ const adminController = {
 
             uniquePeopleCount = uniqueKeys.size;
 
+            const finalizeStats = (statsSet) => {
+                const averageScores = Object.keys(statsSet.scoreTotals).reduce((acc, field) => {
+                    acc[field] = statsSet.scoreCounts[field] ? statsSet.scoreTotals[field] / statsSet.scoreCounts[field] : null;
+                    return acc;
+                }, {});
+                const { scoreTotals, scoreCounts, ...rest } = statsSet;
+                return { ...rest, averageScores };
+            };
+
+            const statsAllFinal = finalizeStats(statsAll);
+            const statsCandidateFinal = finalizeStats(statsCandidate);
+            const statsEmployeeFinal = finalizeStats(statsEmployee);
+
             const stats = {
-                totalSentGames: statsAll.totalSentGames,
+                totalSentGames: statsAllFinal.totalSentGames,
                 uniquePeopleCount,
-                statusCounts: statsAll.statusCounts,
-                scoreDistributions: statsAll.scoreDistributions,
-                completedCandidateCount: statsAll.completedCandidateCount,
-                completedEmployeeCount: statsAll.completedEmployeeCount,
+                statusCounts: statsAllFinal.statusCounts,
+                scoreDistributions: statsAllFinal.scoreDistributions,
+                averageScores: statsAllFinal.averageScores,
+                completedCandidateCount: statsAllFinal.completedCandidateCount,
+                completedEmployeeCount: statsAllFinal.completedEmployeeCount,
                 titleOptions,
-                titleCounts: statsAll.titleCounts,
+                titleCounts: statsAllFinal.titleCounts,
                 byPersonType: {
-                    all: statsAll,
-                    candidate: statsCandidate,
-                    employee: statsEmployee
+                    all: statsAllFinal,
+                    candidate: statsCandidateFinal,
+                    employee: statsEmployeeFinal
                 }
             };
 
