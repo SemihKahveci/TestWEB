@@ -238,22 +238,21 @@ const PersonResults: React.FC = () => {
 
   const trendDelta = useMemo(() => {
     if (selectedTrend.length < 2) return null;
-    const first = selectedTrend[0]?.value ?? null;
+    const prev = selectedTrend[selectedTrend.length - 2]?.value ?? null;
     const last = selectedTrend[selectedTrend.length - 1]?.value ?? null;
-    if (first === null || last === null) return null;
-    return Math.round(last - first);
+    if (prev === null || last === null) return null;
+    return Math.round(last - prev);
   }, [selectedTrend]);
 
   const trendDeltaText = useMemo(() => {
     if (trendDelta === null) {
       return t('labels.notEnoughData');
     }
-    const prefix = trendDelta >= 0 ? '+' : '';
-    if (language === 'en') {
-      return `Change of ${prefix}${trendDelta} points across last ${selectedTrend.length} evaluations`;
-    }
-    return `Son ${selectedTrend.length} değerlendirmede ${prefix}${trendDelta} puan gelişim`;
-  }, [language, selectedTrend.length, trendDelta]);
+    const absValue = Math.abs(trendDelta);
+    return trendDelta >= 0
+      ? formatTemplate(t('labels.lastEvaluationImprovement'), { value: absValue })
+      : formatTemplate(t('labels.lastEvaluationDecline'), { value: absValue });
+  }, [t, trendDelta, formatTemplate]);
 
   const handlePreviewPdf = async () => {
     if (!displayUser?.code) return;
@@ -835,12 +834,36 @@ const PersonResults: React.FC = () => {
                   </div>
                 </div>
 
-                <div className="mt-6 p-4 bg-green-50 rounded-lg border border-green-200">
+                <div
+                  className={`mt-6 p-4 rounded-lg border ${
+                    trendDelta === null
+                      ? 'bg-gray-50 border-gray-200'
+                      : trendDelta >= 0
+                        ? 'bg-green-50 border-green-200'
+                        : 'bg-orange-50 border-orange-200'
+                  }`}
+                >
                   <div className="flex items-center">
-                    <div className="w-10 h-10 bg-green-500 rounded-full flex items-center justify-center mr-3">
+                    <div
+                      className={`w-10 h-10 rounded-full flex items-center justify-center mr-3 ${
+                        trendDelta === null
+                          ? 'bg-gray-400'
+                          : trendDelta >= 0
+                            ? 'bg-green-500'
+                            : 'bg-orange-500'
+                      }`}
+                    >
                       <i className="fa-solid fa-arrow-trend-up text-white text-lg" />
                     </div>
-                    <p className="text-sm text-green-900 font-medium">
+                    <p
+                      className={`text-sm font-medium ${
+                        trendDelta === null
+                          ? 'text-gray-700'
+                          : trendDelta >= 0
+                            ? 'text-green-900'
+                            : 'text-orange-900'
+                      }`}
+                    >
                       {trendDeltaText}
                     </p>
                   </div>
