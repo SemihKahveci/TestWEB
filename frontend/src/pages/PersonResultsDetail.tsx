@@ -217,6 +217,7 @@ const PersonResultsDetail: React.FC = () => {
       setTimeout(() => URL.revokeObjectURL(url), 60000);
     } catch (error) {
       console.error('PDF preview error:', error);
+      showToast((error as Error).message || t('errors.pdfCreateFailed'), 'error');
     } finally {
       setIsPdfLoading(false);
     }
@@ -261,6 +262,7 @@ const PersonResultsDetail: React.FC = () => {
       document.body.removeChild(a);
     } catch (error) {
       console.error('PDF download error:', error);
+      showToast((error as Error).message || t('errors.pdfCreateFailed'), 'error');
     } finally {
       setIsPdfLoading(false);
     }
@@ -1702,21 +1704,20 @@ const PersonResultsDetail: React.FC = () => {
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
                 {[
                   { title: t('labels.viewOnline'), desc: t('labels.viewOnlineDesc'), variant: 'primary', icon: 'fa-eye', iconColor: 'text-blue-600', action: handlePreviewPdf },
-                  { title: t('labels.downloadReport'), desc: t('labels.downloadPdfDesc'), variant: 'secondary', icon: 'fa-download', iconColor: 'text-green-600', action: handleDownloadPdf },
-                  { title: t('labels.shareReport'), desc: t('labels.shareReportDesc'), variant: 'secondary', icon: 'fa-share-nodes', iconColor: 'text-purple-600', action: handleSharePdf }
+                  { title: t('labels.downloadReport'), desc: t('labels.downloadPdfDesc'), variant: 'primary', icon: 'fa-download', iconColor: 'text-green-600', action: handleDownloadPdf },
+                  { title: t('labels.shareReport'), desc: t('labels.shareReportDesc'), variant: 'primary', icon: 'fa-share-nodes', iconColor: 'text-purple-600', action: handleSharePdf }
                 ].map((card) => (
                   <button
                     key={card.title}
-                    className={`btn btn-${card.variant} rounded-xl p-6 text-left transition-colors group disabled:opacity-60 disabled:cursor-not-allowed`}
-                    style={{ height: 'auto', alignItems: 'flex-start' }}
+                    className={`btn btn-${card.variant} rounded-xl p-6 text-center transition-colors group disabled:opacity-60 disabled:cursor-not-allowed flex flex-col items-center`}
+                    style={{ height: 'auto', alignItems: 'center' }}
                     onClick={card.action}
                     disabled={isPdfLoading || !latestUser}
                   >
-                    <div className="flex items-center justify-between mb-4">
+                    <div className="flex items-center justify-center mb-2 mt-4">
                       <div className="w-12 h-12 bg-white rounded-lg flex items-center justify-center shadow-sm">
                         <i className={`fa-solid ${card.icon} text-2xl ${card.iconColor || 'text-white'}`} />
                       </div>
-                      <i className="fa-solid fa-arrow-right text-xl opacity-0 group-hover:opacity-100 transition-opacity" />
                     </div>
                     <h3 className="text-lg font-semibold mb-2">{card.title}</h3>
                     <p className="text-sm text-blue-100">{card.desc}</p>
@@ -1910,6 +1911,14 @@ const PersonResultsDetail: React.FC = () => {
               />
             </div>
             <div className="mt-2 text-xs text-gray-500">{pdfProgress}%</div>
+            <div className="mt-4 flex items-center justify-center">
+              <button
+                className="btn btn-secondary"
+                onClick={() => setIsPdfLoading(false)}
+              >
+                {t('buttons.cancel')}
+              </button>
+            </div>
           </div>
         </div>
       )}

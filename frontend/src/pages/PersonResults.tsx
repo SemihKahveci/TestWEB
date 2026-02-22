@@ -46,7 +46,10 @@ const PersonResults: React.FC = () => {
   const [isPdfLoading, setIsPdfLoading] = useState(false);
   const [pdfProgress, setPdfProgress] = useState(0);
   const [hasRestoredState, setHasRestoredState] = useState(false);
+  const [showErrorPopup, setShowErrorPopup] = useState(false);
+  const [errorMessage, setErrorMessage] = useState('');
   const preferredSelectionRef = useRef<UserResult | null>(null);
+  const preferredResolvedRef = useRef(false);
   const location = useLocation();
   const navigate = useNavigate();
   const { language, t } = useLanguage();
@@ -98,8 +101,12 @@ const PersonResults: React.FC = () => {
     if (!preferred) return -1;
     return list.findIndex((row) => {
       if (preferred.code && row.code !== preferred.code) return false;
-      if (preferred.completionDate && row.completionDate !== preferred.completionDate) return false;
-      if (preferred.sentDate && row.sentDate !== preferred.sentDate) return false;
+      const preferredDates = [preferred.completionDate, preferred.sentDate].filter(Boolean);
+      const rowDates = [row.completionDate, row.sentDate].filter(Boolean);
+      if (preferredDates.length > 0 && rowDates.length > 0) {
+        const matches = preferredDates.some((date) => rowDates.includes(date as string));
+        if (!matches) return false;
+      }
       return true;
     });
   };
@@ -164,6 +171,10 @@ const PersonResults: React.FC = () => {
       const preferredIndex = findPreferredIndex(historySorted, preferredSelectionRef.current);
       if (preferredIndex >= 0) {
         setSelectedEvaluationIndex(preferredIndex);
+        preferredResolvedRef.current = true;
+        return;
+      }
+      if (!preferredResolvedRef.current) {
         return;
       }
     }
@@ -187,7 +198,7 @@ const PersonResults: React.FC = () => {
       }
       return;
     }
-    if (preferredSelectionRef.current) {
+    if (preferredSelectionRef.current && !preferredResolvedRef.current) {
       return;
     }
     if (selectedEvaluationIndex === null || selectedEvaluationIndex >= displayHistory.length) {
@@ -326,6 +337,8 @@ const PersonResults: React.FC = () => {
       setShowPDFPreview(true);
     } catch (error) {
       console.error('PDF preview error:', error);
+      setErrorMessage((error as Error).message || t('errors.pdfCreateFailed'));
+      setShowErrorPopup(true);
     } finally {
       setIsPdfLoading(false);
     }
@@ -365,6 +378,8 @@ const PersonResults: React.FC = () => {
       document.body.removeChild(a);
     } catch (error) {
       console.error('PDF download error:', error);
+      setErrorMessage((error as Error).message || t('errors.pdfCreateFailed'));
+      setShowErrorPopup(true);
     } finally {
       setIsPdfLoading(false);
     }
@@ -396,9 +411,10 @@ const PersonResults: React.FC = () => {
     const state = location.state as { selectedUser?: UserResult } | null;
     if (state?.selectedUser) {
       preferredSelectionRef.current = state.selectedUser;
+      preferredResolvedRef.current = false;
       setLatestUser(state.selectedUser);
       setLatestHistory([state.selectedUser]);
-      setSelectedEvaluationIndex(0);
+      setSelectedEvaluationIndex(null);
       sessionStorage.setItem('personResultsVisited', 'true');
       sessionStorage.setItem('latestUserResults', JSON.stringify({
         latestUser: state.selectedUser,
@@ -421,8 +437,10 @@ const PersonResults: React.FC = () => {
           setLatestHistory(historySafe);
           if (preferredIndex >= 0) {
             setSelectedEvaluationIndex(preferredIndex);
+            preferredResolvedRef.current = true;
           } else if (selectedEvaluationIndex === null) {
             setSelectedEvaluationIndex(historySafe.length - 1);
+            preferredResolvedRef.current = true;
           }
           setCompanyAverageScores(data.companyAverageScores || null);
           setPositionNorms(data.positionNorms || null);
@@ -539,7 +557,7 @@ const PersonResults: React.FC = () => {
     }, [selectedCompetency, selectedEvaluationIndex, latestUser, latestHistory, companyAverageScores, positionNorms]);
 
   const selectedUserFromState = (location.state as { selectedUser?: UserResult } | null)?.selectedUser;
-  const userForDetail = selectedUserFromState || displayUser || latestUser;
+  const userForDetail = displayUser || selectedUserFromState || latestUser;
 
   return (
     <div className="bg-gray-50 font-inter">
@@ -613,6 +631,7 @@ const PersonResults: React.FC = () => {
                 value={selectedEvaluationIndex ?? ''}
                 onChange={(e) => {
                   preferredSelectionRef.current = null;
+                  preferredResolvedRef.current = true;
                   setSelectedEvaluationIndex(Number(e.target.value));
                 }}
                 className="px-4 py-2.5 bg-white border-2 border-blue-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900 font-semibold cursor-pointer text-base min-w-[240px] hover:border-blue-400 transition-colors"
@@ -1016,6 +1035,36 @@ const PersonResults: React.FC = () => {
               />
             </div>
             <div className="mt-2 text-xs text-gray-500">{pdfProgress}%</div>
+            <div className="mt-4 flex items-center justify-center">
+              <button
+                className="btn btn-secondary"
+                onClick={() => setIsPdfLoading(false)}
+              >
+                {t('buttons.cancel')}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showErrorPopup && (
+        <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/40">
+          <div className="bg-white rounded-xl shadow-xl w-[90%] max-w-[420px] p-6 text-center">
+            <div className="text-base font-semibold text-gray-900 mb-2">
+              {t('labels.error')}
+            </div>
+            <div className="text-sm text-gray-600 mb-4">
+              {errorMessage}
+            </div>
+            <button
+              className="btn btn-primary"
+              onClick={() => {
+                setShowErrorPopup(false);
+                setErrorMessage('');
+              }}
+            >
+              {t('buttons.close')}
+            </button>
           </div>
         </div>
       )}

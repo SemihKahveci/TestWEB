@@ -2772,6 +2772,14 @@ const AdminPanel: React.FC = () => {
             <div style={{ marginTop: '10px', fontSize: '12px', color: '#6B7280' }}>
               {pdfProgress}%
             </div>
+            <div style={{ marginTop: '16px', display: 'flex', justifyContent: 'center' }}>
+              <button
+                className="btn btn-secondary"
+                onClick={() => setIsPdfDownloading(false)}
+              >
+                {t('buttons.cancel')}
+              </button>
+            </div>
           </div>
         </div>
       )}
@@ -2817,6 +2825,14 @@ const AdminPanel: React.FC = () => {
             </div>
             <div style={{ marginTop: '10px', fontSize: '12px', color: '#6B7280' }}>
               {wordProgress}%
+            </div>
+            <div style={{ marginTop: '16px', display: 'flex', justifyContent: 'center' }}>
+              <button
+                className="btn btn-secondary"
+                onClick={() => setIsWordDownloading(false)}
+              >
+                {t('buttons.cancel')}
+              </button>
             </div>
           </div>
         </div>
