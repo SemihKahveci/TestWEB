@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useLanguage } from '../contexts/LanguageContext';
 
@@ -46,6 +46,7 @@ const PersonResults: React.FC = () => {
   const [isPdfLoading, setIsPdfLoading] = useState(false);
   const [pdfProgress, setPdfProgress] = useState(0);
   const [hasRestoredState, setHasRestoredState] = useState(false);
+  const preferredSelectionRef = useRef<UserResult | null>(null);
   const location = useLocation();
   const navigate = useNavigate();
   const { language, t } = useLanguage();
@@ -93,6 +94,15 @@ const PersonResults: React.FC = () => {
   };
 
   const maxScore = 100;
+  const findPreferredIndex = (list: UserResult[], preferred: UserResult | null) => {
+    if (!preferred) return -1;
+    return list.findIndex((row) => {
+      if (preferred.code && row.code !== preferred.code) return false;
+      if (preferred.completionDate && row.completionDate !== preferred.completionDate) return false;
+      if (preferred.sentDate && row.sentDate !== preferred.sentDate) return false;
+      return true;
+    });
+  };
 
   const getScoreColor = (value: number | null) => {
     if (value === null || Number.isNaN(value)) return '#9CA3AF';
@@ -150,6 +160,13 @@ const PersonResults: React.FC = () => {
       setSelectedEvaluationIndex(null);
       return;
     }
+    if (preferredSelectionRef.current) {
+      const preferredIndex = findPreferredIndex(historySorted, preferredSelectionRef.current);
+      if (preferredIndex >= 0) {
+        setSelectedEvaluationIndex(preferredIndex);
+        return;
+      }
+    }
     setSelectedEvaluationIndex((prev) => {
       if (prev === null || prev < 0 || prev >= historySorted.length) {
         return historySorted.length - 1;
@@ -168,6 +185,9 @@ const PersonResults: React.FC = () => {
       if (selectedEvaluationIndex !== null) {
         setSelectedEvaluationIndex(null);
       }
+      return;
+    }
+    if (preferredSelectionRef.current) {
       return;
     }
     if (selectedEvaluationIndex === null || selectedEvaluationIndex >= displayHistory.length) {
@@ -238,6 +258,19 @@ const PersonResults: React.FC = () => {
   );
   const companyAverageDisplay = companyAverageRaw === null ? '-' : Math.round(companyAverageRaw);
   const positionNormRange = (positionNorms as any)?.[selectedMeta?.scoreField] || '-';
+  const selectedHistoryIndex = displayHistory.length > 0
+    ? (selectedEvaluationIndex === null || selectedEvaluationIndex >= displayHistory.length
+      ? displayHistory.length - 1
+      : selectedEvaluationIndex)
+    : null;
+  const selectedTrendIndex = useMemo(() => {
+    if (selectedTrend.length === 0) return null;
+    if (historySorted.length === 0) return 0;
+    if (selectedHistoryIndex === null) return null;
+    const startIndex = Math.max(historySorted.length - selectedTrend.length, 0);
+    if (selectedHistoryIndex < startIndex) return null;
+    return selectedHistoryIndex - startIndex;
+  }, [selectedTrend.length, historySorted.length, selectedHistoryIndex]);
   const companyAverageLineY = companyAverageRaw === null
     ? null
     : 180 - (companyAverageRaw / maxScore) * 160;
@@ -254,12 +287,14 @@ const PersonResults: React.FC = () => {
   }, [selectedTrend]);
 
   const trendDelta = useMemo(() => {
-    if (selectedTrend.length < 2) return null;
-    const prev = selectedTrend[selectedTrend.length - 2]?.value ?? null;
-    const last = selectedTrend[selectedTrend.length - 1]?.value ?? null;
-    if (prev === null || last === null) return null;
-    return Math.round(last - prev);
-  }, [selectedTrend]);
+    if (selectedHistoryIndex === null || selectedHistoryIndex <= 0) return null;
+    const current = displayHistory[selectedHistoryIndex];
+    const prev = displayHistory[selectedHistoryIndex - 1];
+    const currentValue = parseScore((current as any)?.[selectedMeta?.scoreField]);
+    const prevValue = parseScore((prev as any)?.[selectedMeta?.scoreField]);
+    if (currentValue === null || prevValue === null) return null;
+    return Math.round(currentValue - prevValue);
+  }, [displayHistory, selectedHistoryIndex, selectedMeta?.scoreField]);
 
   const trendDeltaText = useMemo(() => {
     if (trendDelta === null) {
@@ -360,8 +395,10 @@ const PersonResults: React.FC = () => {
   useEffect(() => {
     const state = location.state as { selectedUser?: UserResult } | null;
     if (state?.selectedUser) {
+      preferredSelectionRef.current = state.selectedUser;
       setLatestUser(state.selectedUser);
       setLatestHistory([state.selectedUser]);
+      setSelectedEvaluationIndex(0);
       sessionStorage.setItem('personResultsVisited', 'true');
       sessionStorage.setItem('latestUserResults', JSON.stringify({
         latestUser: state.selectedUser,
@@ -379,8 +416,14 @@ const PersonResults: React.FC = () => {
           }
           const history = Array.isArray(data.history) ? (data.history as UserResult[]) : [];
           const historySafe = history.length > 0 ? history : [data.latestUser as UserResult];
+          const preferredIndex = findPreferredIndex(historySafe, preferredSelectionRef.current);
           setLatestUser(data.latestUser as UserResult);
           setLatestHistory(historySafe);
+          if (preferredIndex >= 0) {
+            setSelectedEvaluationIndex(preferredIndex);
+          } else if (selectedEvaluationIndex === null) {
+            setSelectedEvaluationIndex(historySafe.length - 1);
+          }
           setCompanyAverageScores(data.companyAverageScores || null);
           setPositionNorms(data.positionNorms || null);
           sessionStorage.setItem('latestUserResults', JSON.stringify({
@@ -568,7 +611,10 @@ const PersonResults: React.FC = () => {
               <div className="text-sm text-gray-500 mb-2">{t('labels.assessmentPeriodLabel')}</div>
               <select
                 value={selectedEvaluationIndex ?? ''}
-                onChange={(e) => setSelectedEvaluationIndex(Number(e.target.value))}
+                onChange={(e) => {
+                  preferredSelectionRef.current = null;
+                  setSelectedEvaluationIndex(Number(e.target.value));
+                }}
                 className="px-4 py-2.5 bg-white border-2 border-blue-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900 font-semibold cursor-pointer text-base min-w-[240px] hover:border-blue-400 transition-colors"
                 disabled={displayHistory.length === 0}
               >
@@ -838,19 +884,25 @@ const PersonResults: React.FC = () => {
                 </div>
 
                 <div className={`grid gap-4 ${selectedTrend.length === 1 ? 'grid-cols-1' : selectedTrend.length === 2 ? 'grid-cols-2' : 'grid-cols-3'}`}>
-                  {selectedTrend.map((point, index) => (
-                    <div key={point.label} className={`rounded-lg p-5 text-center border ${index === selectedTrend.length - 1 ? 'bg-blue-50 border-blue-400 border-2' : 'bg-gray-50 border-gray-200'}`}>
-                      <div className={`text-xs uppercase tracking-wide mb-2 ${index === selectedTrend.length - 1 ? 'text-blue-600 font-semibold' : 'text-gray-500'}`}>
-                        {point.label}{index === selectedTrend.length - 1 ? ` (${t('labels.currentTag')})` : ''}
+                  {selectedTrend.map((point, index) => {
+                    const isSelected = selectedTrendIndex !== null && index === selectedTrendIndex;
+                    return (
+                      <div
+                        key={point.label}
+                        className={`rounded-lg p-5 text-center border ${isSelected ? 'bg-blue-50 border-blue-400 border-2' : 'bg-gray-50 border-gray-200'}`}
+                      >
+                        <div className={`text-xs uppercase tracking-wide mb-2 ${isSelected ? 'text-blue-600 font-semibold' : 'text-gray-500'}`}>
+                          {point.label}{isSelected ? ` (${t('labels.selectedTag')})` : ''}
+                        </div>
+                        <div className={`text-4xl font-bold mb-1 ${isSelected ? 'text-blue-600' : 'text-gray-700'}`}>
+                          {point.value}
+                        </div>
+                        <div className={`text-xs ${isSelected ? 'text-blue-700' : 'text-gray-600'}`}>
+                          {point.date}
+                        </div>
                       </div>
-                      <div className={`text-4xl font-bold mb-1 ${index === selectedTrend.length - 1 ? 'text-blue-600' : 'text-gray-700'}`}>
-                        {point.value}
-                      </div>
-                      <div className={`text-xs ${index === selectedTrend.length - 1 ? 'text-blue-700' : 'text-gray-600'}`}>
-                        {point.date}
-                      </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
 
                 <div className="grid grid-cols-2 gap-4 mb-6 mt-6">
