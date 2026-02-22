@@ -463,6 +463,7 @@ const PersonResults: React.FC = () => {
       return;
     }
 
+    let restoredFromCache = false;
     const hasVisited = sessionStorage.getItem('personResultsVisited') === 'true';
     if (hasVisited) {
       const cachedViewState = sessionStorage.getItem('personResultsState');
@@ -482,25 +483,30 @@ const PersonResults: React.FC = () => {
           if (parsed.latestHistory) setLatestHistory(parsed.latestHistory);
           if (parsed.companyAverageScores !== undefined) setCompanyAverageScores(parsed.companyAverageScores || null);
           if (parsed.positionNorms !== undefined) setPositionNorms(parsed.positionNorms || null);
-          setHasRestoredState(true);
+          restoredFromCache = true;
         } catch (error) {
           sessionStorage.removeItem('personResultsState');
         }
       }
 
       const cached = sessionStorage.getItem('latestUserResults');
-      if (cached) {
+      if (!restoredFromCache && cached) {
         try {
           const parsed = JSON.parse(cached) as CachedUserResults;
           setLatestUser(parsed.latestUser);
           setLatestHistory(parsed.latestHistory || []);
           setCompanyAverageScores(parsed.companyAverageScores || null);
           setPositionNorms(parsed.positionNorms || null);
-          setHasRestoredState(true);
+          restoredFromCache = true;
         } catch (error) {
           sessionStorage.removeItem('latestUserResults');
         }
       }
+    }
+
+    if (restoredFromCache) {
+      setHasRestoredState(true);
+      return;
     }
 
     const fetchLatest = async () => {
