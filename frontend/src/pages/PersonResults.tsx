@@ -76,12 +76,6 @@ const PersonResults: React.FC = () => {
     return Math.round(parsed);
   };
 
-  const toScore10 = (value?: string | number) => {
-    const parsed = parseScore(value);
-    if (parsed === null) return null;
-    return Math.round((parsed / 10) * 10) / 10;
-  };
-
   const formatDateShort = (value?: string) => {
     if (!value) return '-';
     const date = new Date(value);
@@ -132,12 +126,12 @@ const PersonResults: React.FC = () => {
 
     lastThree.forEach((row) => {
       competencyConfig.forEach((item) => {
-        const score10 = toScore10((row as any)[item.scoreField]);
-        if (score10 !== null) {
+        const scoreValue = parseScore((row as any)[item.scoreField]);
+        if (scoreValue !== null) {
           base[item.key].push({
             label: formatDateShort(row.completionDate || row.sentDate),
             date: formatDateLong(row.completionDate || row.sentDate),
-            value: score10
+            value: Math.round(scoreValue)
           });
         }
       });
@@ -146,12 +140,12 @@ const PersonResults: React.FC = () => {
     if (latestUser) {
       competencyConfig.forEach((item) => {
         if (base[item.key].length === 0) {
-          const score10 = toScore10((latestUser as any)[item.scoreField]);
-          if (score10 !== null) {
+          const scoreValue = parseScore((latestUser as any)[item.scoreField]);
+          if (scoreValue !== null) {
             base[item.key].push({
               label: formatDateShort(latestUser.completionDate || latestUser.sentDate),
               date: formatDateLong(latestUser.completionDate || latestUser.sentDate),
-              value: score10
+              value: Math.round(scoreValue)
             });
           }
         }
@@ -177,7 +171,7 @@ const PersonResults: React.FC = () => {
     const first = selectedTrend[0]?.value ?? null;
     const last = selectedTrend[selectedTrend.length - 1]?.value ?? null;
     if (first === null || last === null) return null;
-    return Math.round((last - first) * 10) / 10;
+    return Math.round(last - first);
   }, [selectedTrend]);
 
   const trendDeltaText = useMemo(() => {
@@ -271,13 +265,13 @@ const PersonResults: React.FC = () => {
   }, [isPdfLoading]);
 
   const scoreCards = [
-    { title: t('competency.uncertainty'), icon: 'fa-chart-line', badge: '+12%', color: 'from-blue-500 to-blue-600', competency: 'uyumluluk' },
-    { title: t('competency.customerFocus'), icon: 'fa-trophy', badge: t('labels.performanceTopPercent'), color: 'from-green-500 to-green-600', competency: 'musteri' },
-    { title: t('competency.ie'), icon: 'fa-star', badge: '8/12', color: 'from-purple-500 to-purple-600', competency: 'etkileme' },
-    { title: t('competency.idik'), icon: 'fa-arrow-trend-up', badge: '+3', color: 'from-orange-500 to-orange-600', competency: 'sinerji' }
+    { title: t('competency.uncertainty'), icon: 'fa-chart-line', badge: '+12%', color: '#7fd3e6', competency: 'uyumluluk' },
+    { title: t('competency.customerFocus'), icon: 'fa-trophy', badge: t('labels.performanceTopPercent'), color: '#9f8fbe', competency: 'musteri' },
+    { title: t('competency.ie'), icon: 'fa-star', badge: '8/12', color: '#ff751f', competency: 'etkileme' },
+    { title: t('competency.idik'), icon: 'fa-arrow-trend-up', badge: '+3', color: '#ff625f', competency: 'sinerji' }
   ];
 
-  const maxScore = 10;
+  const maxScore = 100;
 
   useEffect(() => {
     const state = location.state as { selectedUser?: UserResult } | null;
@@ -467,7 +461,8 @@ const PersonResults: React.FC = () => {
             return (
             <div
               key={card.title}
-              className={`bg-gradient-to-br ${card.color} rounded-xl shadow-sm p-6 text-white ${isClickable ? 'cursor-pointer hover:shadow-md' : ''}`}
+              className={`rounded-xl shadow-sm p-6 text-white ${isClickable ? 'cursor-pointer hover:shadow-md' : ''}`}
+              style={{ background: card.color }}
               role={isClickable ? 'button' : undefined}
               tabIndex={isClickable ? 0 : undefined}
               onClick={() => {
@@ -534,7 +529,8 @@ const PersonResults: React.FC = () => {
 
             <div className="space-y-4 max-h-[800px] overflow-y-auto pr-2">
               {competencyConfig.map((item, index) => {
-                const score10 = toScore10((latestUser as any)?.[item.scoreField]);
+                const scoreRaw = formatScoreRaw((latestUser as any)?.[item.scoreField]);
+                const scoreValue = typeof scoreRaw === 'number' ? scoreRaw : 0;
                 const isActive = selectedCompetency === item.key;
                 return (
                 <div
@@ -554,20 +550,19 @@ const PersonResults: React.FC = () => {
                     </div>
                     <div className="text-right ml-4">
                       <div className={`text-2xl font-bold ${isActive ? 'text-blue-600' : 'text-green-600'}`}>
-                        {score10 ?? '-'}
+                        {scoreRaw ?? '-'}
                       </div>
-                      <div className="text-xs text-gray-500">{t('labels.outOf10')}</div>
                     </div>
                   </div>
                   <div className="space-y-2">
-                    {[{ label: t('labels.yourScore'), value: score10 ?? 0, color: 'bg-green-600' }].map((row) => (
+                    {[{ label: t('labels.yourScore'), value: scoreValue, display: scoreRaw ?? '-', color: 'bg-green-600' }].map((row) => (
                         <div key={row.label} className="flex items-center justify-between text-sm">
                           <span className="text-gray-600">{row.label}</span>
                           <div className="flex items-center">
                             <div className="w-32 h-2 bg-gray-200 rounded-full mr-2">
                               <div className={`h-2 ${row.color} rounded-full`} style={{ width: `${(row.value / maxScore) * 100}%` }} />
                             </div>
-                            <span className="font-medium text-gray-700 w-8">{row.value || '-'}</span>
+                            <span className="font-medium text-gray-700 w-8">{row.display}</span>
                           </div>
                         </div>
                     ))}
@@ -640,8 +635,8 @@ const PersonResults: React.FC = () => {
                           <line x1="40" y1="20" x2="40" y2="180" />
                         </g>
                         <g fill="#6B7280" fontSize="10">
-                          {[10, 8, 6, 4, 2].map((tick, i) => (
-                            <text key={tick} x="8" y={24 + i * 40}>{tick}</text>
+                          {[100, 80, 60, 40, 20].map((tick, i) => (
+                            <text key={tick} x="4" y={24 + i * 40}>{tick}</text>
                           ))}
                         </g>
                         {(() => {

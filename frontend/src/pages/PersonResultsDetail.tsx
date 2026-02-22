@@ -71,7 +71,8 @@ const PersonResultsDetail: React.FC = () => {
       key: 'uyumluluk',
       title: t('competency.uncertainty'),
       scoreField: 'uncertaintyScore',
-      color: 'from-blue-500 to-blue-600',
+      activeColor: '#7fd3e6',
+      inactiveColor: '#a5e0ee',
       icon: 'fa-chart-line',
       badge: '+12%'
     },
@@ -79,7 +80,8 @@ const PersonResultsDetail: React.FC = () => {
       key: 'musteri',
       title: t('competency.customerFocus'),
       scoreField: 'customerFocusScore',
-      color: 'from-green-500 to-green-600',
+      activeColor: '#9f8fbe',
+      inactiveColor: '#bcb1d2',
       icon: 'fa-trophy',
       badge: 'Top 15%'
     },
@@ -87,7 +89,8 @@ const PersonResultsDetail: React.FC = () => {
       key: 'etkileme',
       title: t('competency.ie'),
       scoreField: 'ieScore',
-      color: 'from-purple-500 to-purple-600',
+      activeColor: '#ff751f',
+      inactiveColor: '#ff9e62',
       icon: 'fa-star',
       badge: '8/12'
     },
@@ -95,7 +98,8 @@ const PersonResultsDetail: React.FC = () => {
       key: 'sinerji',
       title: t('competency.idik'),
       scoreField: 'idikScore',
-      color: 'from-orange-500 to-orange-600',
+      activeColor: '#ff625f',
+      inactiveColor: '#ff918f',
       icon: 'fa-arrow-trend-up',
       badge: '+0.7'
     }
@@ -1199,9 +1203,10 @@ const PersonResultsDetail: React.FC = () => {
               return (
                 <div
                   key={`${item.title}-${item.key}`}
-                  className={`bg-gradient-to-br ${item.color} rounded-xl shadow-sm p-6 text-white transition-all ${
+                  className={`rounded-xl shadow-sm p-6 text-white transition-all ${
                     isSelectable ? 'cursor-pointer hover:shadow-md' : ''
                   } ${isActive ? 'ring-2 ring-white/70 ring-offset-2 ring-offset-gray-50' : 'opacity-60'}`}
+                  style={{ background: isActive ? item.activeColor : item.inactiveColor }}
                   role={isSelectable ? 'button' : undefined}
                   tabIndex={isSelectable ? 0 : undefined}
                   onClick={() => {

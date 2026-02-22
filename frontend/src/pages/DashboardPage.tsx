@@ -310,9 +310,9 @@ const DashboardPage: React.FC = () => {
     {
       key: 'customerFocus',
       title: t('competency.customerFocus'),
-      color: '#7fd3e6',
-      lightColor: 'rgba(127, 211, 230, 0.3)',
-      trackColor: 'rgba(127, 211, 230, 0.15)'
+      color: '#9f8fbe',
+      lightColor: 'rgba(159, 143, 190, 0.3)',
+      trackColor: 'rgba(159, 143, 190, 0.15)'
     },
     {
       key: 'ie',
@@ -324,9 +324,9 @@ const DashboardPage: React.FC = () => {
     {
       key: 'idik',
       title: t('competency.idik'),
-      color: '#ff751f',
-      lightColor: 'rgba(255, 117, 31, 0.3)',
-      trackColor: 'rgba(255, 117, 31, 0.15)'
+      color: '#ff625f',
+      lightColor: 'rgba(255, 98, 95, 0.3)',
+      trackColor: 'rgba(255, 98, 95, 0.15)'
     }
   ]), [t]);
 
