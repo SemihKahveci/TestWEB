@@ -17,7 +17,7 @@ const { getCompanyFilter } = require('../middleware/auth');
 const expressionParser = require("docxtemplater/expressions.js");
 const parser = expressionParser.configure({});
 
-const DEFAULT_WORD_TEMPLATE_PATH = path.join(__dirname, '..', 'templates', 'Degerlendirme_Merkez_Raporu_v19.docx');
+const DEFAULT_WORD_TEMPLATE_PATH = path.join(__dirname, '..', 'templates', 'Degerlendirme_Merkez_Raporu_v20.docx');
 const SHARED_PDF_DIR = path.join(__dirname, '..', 'tmp', 'shared-pdfs');
 const SHARED_PDF_TTL_MS = Number(process.env.SHARE_PDF_TTL_MS || 60 * 60 * 1000);
 
@@ -1179,11 +1179,12 @@ const evaluationController = {
                 pageBreak: page.pageBreak
             })));
 
+            const resolvedPozisyon = templateData?.pozisyon || userCodeData.pozisyon || '';
             const baseTemplatePayload = {
                 ...competencyPayload,
                 'ortalama_puan': averageScoreText,
                 'kullanıcı_adı': userCodeData.name || '-',
-                'pozisyon': '',
+                'pozisyon': resolvedPozisyon,
                 'oyun_tamamlanma_tarih': completionFullDate,
                 'yıl': currentYear,
                 'g1': g1Buffer,
@@ -1192,8 +1193,8 @@ const evaluationController = {
                 'g4': g4Buffer,
                 'avrScoreTable': avrGaugeBuffer,
                 'Kullanıcı Adı Soyadı': userCodeData.name || '-',
-                'Kullanıcı Pozisyon': '',
-                'Kullanıcı Pozisyon ': '',
+                'Kullanıcı Pozisyon': resolvedPozisyon,
+                'Kullanıcı Pozisyon ': resolvedPozisyon,
                 'Oyun Süresi': gameDuration,
                 'Oyun Tamamlama Gün ve ay': completionDayMonth,
                 'Oyun Tamamlana Gün ve ay': completionDayMonth,
@@ -1202,7 +1203,11 @@ const evaluationController = {
                 'Podcast': developmentSections.Podcast || '',
                 'Eğitim_Önerileri': developmentSections.Eğitim_Önerileri || '',
                 'Uygulama': developmentSections.Uygulama || '',
-                'Hedef': developmentSections.Hedef || ''
+                'Hedef': developmentSections.Hedef || '',
+                'Sabit_metin_Yetkinlik_1': 'Uyumluluk ve dayanıklılık, bireyin belirsizlik ve değişim karşısında soğukkanlılığını koruyarak farklı koşullara hızla uyum sağlayabilmesi ve üretkenliğini sürdürebilmesidir. Bu yetkinlik, yeni durumlara uygun çözümler geliştirmeyi, ilişki biçimlerini esnetebilmeyi ve duygusal dayanıklılıkla ilerleyebilmeyi kapsar.',
+                'Sabit_metin_Yetkinlik_2': 'Müşteri odaklılık, iç ve dış müşterilerin ihtiyaçlarını öngörebilen, güvene dayalı ilişkiler kurmayı ve her temas noktasında değer yaratmayı hedefleyen bir yaklaşımdır. Bu yetkinlik, yalnızca beklentileri karşılamayı değil, müşteri deneyimini sürekli iyileştirmeyi de kapsar.',
+                'Sabit_metin_Yetkinlik_3': 'İnsanları etkileme, bireyin düşünce ve önerilerini açık, ikna edici ve güvenilir bir şekilde ifade edebilmesi; farklı bakış açılarını dikkate alarak karşılıklı etkileşim yaratabilmesidir. Bu yetkinlik, yalnızca söylem gücünü değil, karşı tarafın ihtiyaçlarını anlayarak uygun iletişim tarzını seçebilme ve ortak zemin oluşturabilme becerisini kapsar. Etkili etkileşim, karşılıklı güveni güçlendirir ve karar süreçlerini hızlandırır.',
+                'Sabit_metin_Yetkinlik_4': 'Güven veren işbirliği ve sinerji, bireyin ekip içinde adil, kapsayıcı ve katkı odaklı bir tutum sergileyerek ortak hedeflere birlikte ilerleyebilmesidir. Bu yetkinlik, farklı görüşleri bir araya getirebilme, ilişki dinamiklerini gözetme ve karşılıklı güven ortamı yaratma becerisini içerir. Güven temelli işbirliği, bireysel katkıların sinerjiye dönüşmesini ve sürdürülebilir sonuçlar üretilmesini sağlar.'
             };
 
             const templatePayload = {
