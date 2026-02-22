@@ -806,17 +806,8 @@ const Grouping: React.FC = () => {
         <button
           key={i}
           onClick={() => handlePageChange(i)}
-          style={{
-            padding: '8px 12px',
-            margin: '0 2px',
-            border: '1px solid #E5E7EB',
-            borderRadius: '6px',
-            backgroundColor: i === currentPage ? '#3B82F6' : 'white',
-            color: i === currentPage ? 'white' : '#374151',
-            cursor: 'pointer',
-            fontSize: '14px',
-            fontWeight: i === currentPage ? '600' : '400'
-          }}
+          className={i === currentPage ? 'btn btn-primary' : 'btn btn-secondary'}
+          style={{ margin: '0 2px', fontSize: '14px', minWidth: '40px' }}
         >
           {i}
         </button>
@@ -828,15 +819,8 @@ const Grouping: React.FC = () => {
         <button
           onClick={() => handlePageChange(currentPage - 1)}
           disabled={currentPage === 1}
-          style={{
-            padding: '8px 12px',
-            border: '1px solid #E5E7EB',
-            borderRadius: '6px',
-            backgroundColor: 'white',
-            color: currentPage === 1 ? '#9CA3AF' : '#374151',
-            cursor: currentPage === 1 ? 'not-allowed' : 'pointer',
-            fontSize: '14px'
-          }}
+          className="btn btn-secondary"
+          style={{ fontSize: '14px' }}
         >
           {t('buttons.previous')}
         </button>
@@ -844,15 +828,8 @@ const Grouping: React.FC = () => {
         <button
           onClick={() => handlePageChange(currentPage + 1)}
           disabled={currentPage === totalPages}
-          style={{
-            padding: '8px 12px',
-            border: '1px solid #E5E7EB',
-            borderRadius: '6px',
-            backgroundColor: 'white',
-            color: currentPage === totalPages ? '#9CA3AF' : '#374151',
-            cursor: currentPage === totalPages ? 'not-allowed' : 'pointer',
-            fontSize: '14px'
-          }}
+          className="btn btn-secondary"
+          style={{ fontSize: '14px' }}
         >
           {t('buttons.next')}
         </button>
@@ -1643,25 +1620,19 @@ const Grouping: React.FC = () => {
           {searchTerm && (
             <button
               onClick={() => setSearchTerm('')}
-              style={{
-                position: 'absolute',
-                right: '12px',
-                top: '50%',
-                transform: 'translateY(-50%)',
-                background: 'none',
-                border: 'none',
-                color: '#9CA3AF',
-                cursor: 'pointer',
-                fontSize: '16px',
-                padding: '4px',
-                borderRadius: '50%',
-                width: '24px',
-                height: '24px',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                transition: 'all 0.2s ease'
-              }}
+            className="btn btn-ghost"
+            style={{
+              position: 'absolute',
+              right: '12px',
+              top: '50%',
+              transform: 'translateY(-50%)',
+              color: '#9CA3AF',
+              fontSize: '16px',
+              padding: '4px',
+              width: '24px',
+              height: '24px',
+              minWidth: '24px'
+            }}
               onMouseEnter={(e) => {
                 (e.target as HTMLButtonElement).style.backgroundColor = '#F3F4F6';
                 (e.target as HTMLButtonElement).style.color = '#6B7280';
@@ -1679,19 +1650,8 @@ const Grouping: React.FC = () => {
           {selectedItems.length > 0 && (
             <button
               onClick={handleBulkDelete}
-              style={{
-                backgroundColor: '#DC3545',
-                color: 'white',
-                border: 'none',
-                borderRadius: '6px',
-                padding: '10px 20px',
-                fontSize: '14px',
-                fontWeight: 600,
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '8px'
-              }}
+            className="btn btn-danger"
+            style={{ display: 'flex', alignItems: 'center', gap: '8px' }}
             >
               <i className="fas fa-trash"></i>
               {t('labels.bulkDelete')} ({selectedItems.length})
@@ -1699,16 +1659,7 @@ const Grouping: React.FC = () => {
           )}
           <button
             onClick={handleAddGroup}
-            style={{
-              backgroundColor: '#3A57E8',
-              color: 'white',
-              border: 'none',
-              borderRadius: '6px',
-              padding: '10px 20px',
-              fontSize: '14px',
-              fontWeight: 600,
-              cursor: 'pointer'
-            }}
+          className="btn btn-primary"
           >
             {t('buttons.addGroup')}
           </button>
@@ -1957,26 +1908,8 @@ const Grouping: React.FC = () => {
                       }}>
                         <button
                           onClick={() => handleViewDetails(group)}
-                          style={{
-                            background: '#17a2b8',
-                            color: 'white',
-                            border: 'none',
-                            padding: '6px 12px',
-                            borderRadius: '4px',
-                            cursor: 'pointer',
-                            fontSize: '12px',
-                            fontWeight: 500,
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '4px',
-                            transition: 'background-color 0.3s'
-                          }}
-                          onMouseEnter={(e) => {
-                            (e.target as HTMLButtonElement).style.backgroundColor = '#138496';
-                          }}
-                          onMouseLeave={(e) => {
-                            (e.target as HTMLButtonElement).style.backgroundColor = '#17a2b8';
-                          }}
+                        className="btn btn-secondary"
+                        style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '12px' }}
                         >
                           <i className="fas fa-eye"></i>
                           {t('buttons.viewGroupDetails')}
@@ -2051,13 +1984,13 @@ const Grouping: React.FC = () => {
                 <div style={{
                   width: '40px',
                   height: '40px',
-                  backgroundColor: '#EBF4FF',
+                  backgroundColor: '#D7D1E5',
                   borderRadius: '10px',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center'
                 }}>
-                  <i className="fas fa-plus" style={{ color: '#3B82F6', fontSize: '18px' }}></i>
+                  <i className="fas fa-plus" style={{ color: '#7F6EA3', fontSize: '18px' }}></i>
                 </div>
                 <div>
                   <h2 style={{
@@ -2136,7 +2069,7 @@ const Grouping: React.FC = () => {
                     style={{
                       width: '38px',
                       height: '20px',
-                      backgroundColor: formData.isActive ? '#3A57E8' : '#D9D9D9',
+                      backgroundColor: formData.isActive ? '#9f8fbe' : 'rgba(159, 143, 190, 0.25)',
                       borderRadius: '39px',
                       position: 'relative',
                       cursor: 'pointer',
@@ -2298,14 +2231,8 @@ const Grouping: React.FC = () => {
                           {org.split(':')[1]}
                           <button
                             onClick={() => removeOrganization(org)}
-                            style={{
-                              background: 'none',
-                              border: 'none',
-                              color: '#1E40AF',
-                              cursor: 'pointer',
-                              padding: '0',
-                              fontSize: '12px'
-                            }}
+                            className="btn btn-ghost"
+                            style={{ color: '#1E40AF', padding: 0, minWidth: 'auto', height: '16px' }}
                           >
                             <i className="fas fa-times"></i>
                           </button>
@@ -2436,14 +2363,8 @@ const Grouping: React.FC = () => {
                           )}
                           <button
                             onClick={() => removePerson(person)}
-                            style={{
-                              background: 'none',
-                              border: 'none',
-                              color: autoPersons.includes(person) ? '#065F46' : '#1E40AF',
-                              cursor: 'pointer',
-                              padding: '0',
-                              fontSize: '12px'
-                            }}
+                            className="btn btn-ghost"
+                            style={{ color: autoPersons.includes(person) ? '#065F46' : '#1E40AF', padding: 0, minWidth: 'auto', height: '16px' }}
                           >
                             <i className="fas fa-times"></i>
                           </button>
@@ -2574,14 +2495,8 @@ const Grouping: React.FC = () => {
                           })()}
                           <button
                             onClick={() => removePlanet(planet)}
-                            style={{
-                              background: 'none',
-                              border: 'none',
-                              color: '#92400E',
-                              cursor: 'pointer',
-                              padding: '0',
-                              fontSize: '12px'
-                            }}
+                            className="btn btn-ghost"
+                            style={{ color: '#92400E', padding: 0, minWidth: 'auto', height: '16px' }}
                           >
                             <i className="fas fa-times"></i>
                           </button>
@@ -2608,57 +2523,19 @@ const Grouping: React.FC = () => {
                   clearForm();
                 }}
                 disabled={isSubmitting}
-                style={{
-                  padding: '12px 24px',
-                  backgroundColor: 'white',
-                  color: '#374151',
-                  border: '2px solid #E5E7EB',
-                  borderRadius: '8px',
-                  cursor: isSubmitting ? 'not-allowed' : 'pointer',
-                  fontSize: '14px',
-                  fontWeight: '600',
-                  transition: 'all 0.2s ease',
-                  opacity: isSubmitting ? 0.6 : 1
-                }}
-                onMouseEnter={(e) => {
-                  if (!isSubmitting) {
-                    (e.target as HTMLButtonElement).style.borderColor = '#D1D5DB';
-                  }
-                }}
-                onMouseLeave={(e) => {
-                  if (!isSubmitting) {
-                    (e.target as HTMLButtonElement).style.borderColor = '#E5E7EB';
-                  }
-                }}
+                className="btn btn-secondary"
+                style={{ opacity: isSubmitting ? 0.6 : 1 }}
               >
                 {t('buttons.cancel')}
               </button>
               <button
                 onClick={handleSaveGroup}
                 disabled={isSubmitting}
+                className="btn btn-primary"
                 style={{
-                  padding: '12px 24px',
-                  backgroundColor: isSubmitting ? '#9CA3AF' : '#3B82F6',
-                  color: 'white',
-                  border: 'none',
-                  borderRadius: '8px',
-                  cursor: isSubmitting ? 'not-allowed' : 'pointer',
-                  fontSize: '14px',
-                  fontWeight: '600',
-                  transition: 'all 0.2s ease',
                   display: 'flex',
                   alignItems: 'center',
                   gap: '8px'
-                }}
-                onMouseEnter={(e) => {
-                  if (!isSubmitting) {
-                    (e.target as HTMLButtonElement).style.backgroundColor = '#2563EB';
-                  }
-                }}
-                onMouseLeave={(e) => {
-                  if (!isSubmitting) {
-                    (e.target as HTMLButtonElement).style.backgroundColor = '#3B82F6';
-                  }
                 }}
               >
                 {isSubmitting && (
@@ -2712,13 +2589,13 @@ const Grouping: React.FC = () => {
                 <div style={{
                   width: '40px',
                   height: '40px',
-                  backgroundColor: '#EBF4FF',
+                  backgroundColor: '#D7D1E5',
                   borderRadius: '10px',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center'
                 }}>
-                  <i className="fas fa-edit" style={{ color: '#3B82F6', fontSize: '18px' }}></i>
+                  <i className="fas fa-edit" style={{ color: '#7F6EA3', fontSize: '18px' }}></i>
                 </div>
                 <div>
                   <h2 style={{
@@ -2797,7 +2674,7 @@ const Grouping: React.FC = () => {
                     style={{
                       width: '38px',
                       height: '20px',
-                      backgroundColor: formData.isActive ? '#3A57E8' : '#D9D9D9',
+                      backgroundColor: formData.isActive ? '#9f8fbe' : 'rgba(159, 143, 190, 0.25)',
                       borderRadius: '39px',
                       position: 'relative',
                       cursor: 'pointer',
@@ -2959,14 +2836,8 @@ const Grouping: React.FC = () => {
                           {org.split(':')[1]}
                           <button
                             onClick={() => removeOrganization(org)}
-                            style={{
-                              background: 'none',
-                              border: 'none',
-                              color: '#1E40AF',
-                              cursor: 'pointer',
-                              padding: '0',
-                              fontSize: '12px'
-                            }}
+                            className="btn btn-ghost"
+                            style={{ color: '#1E40AF', padding: 0, minWidth: 'auto', height: '16px' }}
                           >
                             <i className="fas fa-times"></i>
                           </button>
@@ -3097,14 +2968,8 @@ const Grouping: React.FC = () => {
                           )}
                           <button
                             onClick={() => removePerson(person)}
-                            style={{
-                              background: 'none',
-                              border: 'none',
-                              color: autoPersons.includes(person) ? '#065F46' : '#1E40AF',
-                              cursor: 'pointer',
-                              padding: '0',
-                              fontSize: '12px'
-                            }}
+                            className="btn btn-ghost"
+                            style={{ color: autoPersons.includes(person) ? '#065F46' : '#1E40AF', padding: 0, minWidth: 'auto', height: '16px' }}
                           >
                             <i className="fas fa-times"></i>
                           </button>
@@ -3235,14 +3100,8 @@ const Grouping: React.FC = () => {
                           })()}
                           <button
                             onClick={() => removePlanet(planet)}
-                            style={{
-                              background: 'none',
-                              border: 'none',
-                              color: '#92400E',
-                              cursor: 'pointer',
-                              padding: '0',
-                              fontSize: '12px'
-                            }}
+                            className="btn btn-ghost"
+                            style={{ color: '#92400E', padding: 0, minWidth: 'auto', height: '16px' }}
                           >
                             <i className="fas fa-times"></i>
                           </button>
@@ -3269,57 +3128,19 @@ const Grouping: React.FC = () => {
                   clearForm();
                 }}
                 disabled={isSubmitting}
-                style={{
-                  padding: '12px 24px',
-                  backgroundColor: 'white',
-                  color: '#374151',
-                  border: '2px solid #E5E7EB',
-                  borderRadius: '8px',
-                  cursor: isSubmitting ? 'not-allowed' : 'pointer',
-                  fontSize: '14px',
-                  fontWeight: '600',
-                  transition: 'all 0.2s ease',
-                  opacity: isSubmitting ? 0.6 : 1
-                }}
-                onMouseEnter={(e) => {
-                  if (!isSubmitting) {
-                    (e.target as HTMLButtonElement).style.borderColor = '#D1D5DB';
-                  }
-                }}
-                onMouseLeave={(e) => {
-                  if (!isSubmitting) {
-                    (e.target as HTMLButtonElement).style.borderColor = '#E5E7EB';
-                  }
-                }}
+                className="btn btn-secondary"
+                style={{ opacity: isSubmitting ? 0.6 : 1 }}
               >
                 {t('buttons.cancel')}
               </button>
               <button
                 onClick={handleSaveGroup}
                 disabled={isSubmitting}
+                className="btn btn-primary"
                 style={{
-                  padding: '12px 24px',
-                  backgroundColor: isSubmitting ? '#9CA3AF' : '#3B82F6',
-                  color: 'white',
-                  border: 'none',
-                  borderRadius: '8px',
-                  cursor: isSubmitting ? 'not-allowed' : 'pointer',
-                  fontSize: '14px',
-                  fontWeight: '600',
-                  transition: 'all 0.2s ease',
                   display: 'flex',
                   alignItems: 'center',
                   gap: '8px'
-                }}
-                onMouseEnter={(e) => {
-                  if (!isSubmitting) {
-                    (e.target as HTMLButtonElement).style.backgroundColor = '#2563EB';
-                  }
-                }}
-                onMouseLeave={(e) => {
-                  if (!isSubmitting) {
-                    (e.target as HTMLButtonElement).style.backgroundColor = '#3B82F6';
-                  }
                 }}
               >
                 {isSubmitting && (
@@ -3578,23 +3399,7 @@ const Grouping: React.FC = () => {
             }}>
               <button
                 onClick={() => setShowDetailsPopup(false)}
-                style={{
-                  backgroundColor: '#0286F7',
-                  color: 'white',
-                  border: 'none',
-                  borderRadius: '6px',
-                  padding: '10px 20px',
-                  fontSize: '14px',
-                  fontWeight: 500,
-                  cursor: 'pointer',
-                  minWidth: '80px'
-                }}
-                onMouseEnter={(e) => {
-                  (e.target as HTMLButtonElement).style.opacity = '0.9';
-                }}
-                onMouseLeave={(e) => {
-                  (e.target as HTMLButtonElement).style.opacity = '1';
-                }}
+                className="btn btn-primary"
               >
                 {t('buttons.close')}
               </button>
@@ -3662,34 +3467,14 @@ const Grouping: React.FC = () => {
               <button
                 onClick={() => setShowBulkDeletePopup(false)}
                 disabled={isSubmitting}
-                style={{
-                  padding: '10px 20px',
-                  border: '2px solid #E5E7EB',
-                  borderRadius: '8px',
-                  backgroundColor: 'white',
-                  color: '#6B7280',
-                  fontSize: '14px',
-                  fontWeight: 600,
-                  cursor: isSubmitting ? 'not-allowed' : 'pointer',
-                  fontFamily: 'Inter'
-                }}
+                className="btn btn-secondary"
               >
                 {t('buttons.no')}
               </button>
               <button
                 onClick={confirmBulkDelete}
                 disabled={isSubmitting}
-                style={{
-                  padding: '10px 20px',
-                  border: 'none',
-                  borderRadius: '8px',
-                  backgroundColor: '#DC2626',
-                  color: 'white',
-                  fontSize: '14px',
-                  fontWeight: 600,
-                  cursor: isSubmitting ? 'not-allowed' : 'pointer',
-                  fontFamily: 'Inter'
-                }}
+                className="btn btn-danger"
               >
                 {isSubmitting ? t('statuses.deleting') : t('buttons.confirmDelete')}
               </button>
@@ -3752,45 +3537,13 @@ const Grouping: React.FC = () => {
             <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end' }}>
               <button
                 onClick={() => setShowDeletePopup(false)}
-                style={{
-                  padding: '12px 24px',
-                  backgroundColor: 'white',
-                  color: '#374151',
-                  border: '2px solid #E5E7EB',
-                  borderRadius: '8px',
-                  cursor: 'pointer',
-                  fontSize: '14px',
-                  fontWeight: '600',
-                  transition: 'all 0.2s ease'
-                }}
-                onMouseEnter={(e) => {
-                  (e.target as HTMLButtonElement).style.borderColor = '#D1D5DB';
-                }}
-                onMouseLeave={(e) => {
-                  (e.target as HTMLButtonElement).style.borderColor = '#E5E7EB';
-                }}
+                className="btn btn-secondary"
               >
                 {t('buttons.cancel')}
               </button>
               <button
                 onClick={handleConfirmDelete}
-                style={{
-                  padding: '12px 24px',
-                  backgroundColor: '#DC2626',
-                  color: 'white',
-                  border: 'none',
-                  borderRadius: '8px',
-                  cursor: 'pointer',
-                  fontSize: '14px',
-                  fontWeight: '600',
-                  transition: 'all 0.2s ease'
-                }}
-                onMouseEnter={(e) => {
-                  (e.target as HTMLButtonElement).style.backgroundColor = '#B91C1C';
-                }}
-                onMouseLeave={(e) => {
-                  (e.target as HTMLButtonElement).style.backgroundColor = '#DC2626';
-                }}
+                className="btn btn-danger"
               >
                 {t('buttons.deleteGroup')}
               </button>
@@ -3851,23 +3604,7 @@ const Grouping: React.FC = () => {
               </p>
               <button
                 onClick={() => setShowSuccessPopup(false)}
-                style={{
-                  padding: '12px 24px',
-                  backgroundColor: '#3B82F6',
-                  color: 'white',
-                  border: 'none',
-                  borderRadius: '8px',
-                  cursor: 'pointer',
-                  fontSize: '14px',
-                  fontWeight: '600',
-                  transition: 'all 0.2s ease'
-                }}
-                onMouseEnter={(e) => {
-                  (e.target as HTMLButtonElement).style.backgroundColor = '#2563EB';
-                }}
-                onMouseLeave={(e) => {
-                  (e.target as HTMLButtonElement).style.backgroundColor = '#3B82F6';
-                }}
+                className="btn btn-primary"
               >
                 {t('buttons.ok')}
               </button>
@@ -3928,23 +3665,7 @@ const Grouping: React.FC = () => {
               </p>
               <button
                 onClick={() => setShowErrorPopup(false)}
-                style={{
-                  padding: '12px 24px',
-                  backgroundColor: '#DC2626',
-                  color: 'white',
-                  border: 'none',
-                  borderRadius: '8px',
-                  cursor: 'pointer',
-                  fontSize: '14px',
-                  fontWeight: '600',
-                  transition: 'all 0.2s ease'
-                }}
-                onMouseEnter={(e) => {
-                  (e.target as HTMLButtonElement).style.backgroundColor = '#B91C1C';
-                }}
-                onMouseLeave={(e) => {
-                  (e.target as HTMLButtonElement).style.backgroundColor = '#DC2626';
-                }}
+                className="btn btn-danger"
               >
                 {t('buttons.ok')}
               </button>

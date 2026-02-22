@@ -13,34 +13,115 @@ body {
 }
 
 /* Custom component styles */
-.btn-primary {
-  background-color: #2563eb;
-  color: white;
-  font-weight: 500;
-  padding: 8px 16px;
-  border-radius: 8px;
+.btn {
+  height: 40px;
+  padding: 0 14px;
+  border-radius: 10px;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
   border: none;
   cursor: pointer;
-  transition: background-color 0.2s;
+  transition: background-color 0.2s ease;
+  font-family: 'Inter', sans-serif;
+}
+
+.btn:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(127, 211, 230, 0.35);
+}
+
+.btn-lg {
+  height: 44px;
+}
+
+.btn-primary {
+  background: #9f8fbe;
+  color: #ffffff;
 }
 
 .btn-primary:hover {
-  background-color: #1d4ed8;
+  background: #8e7db1;
+}
+
+.btn-primary:active {
+  background: #7f6ea3;
+}
+
+.btn-primary:disabled {
+  background: #d7d1e5;
+  color: #ffffff;
+  cursor: not-allowed;
+  opacity: 1;
 }
 
 .btn-secondary {
-  background-color: #e5e7eb;
-  color: #1f2937;
-  font-weight: 500;
-  padding: 8px 16px;
-  border-radius: 8px;
-  border: none;
-  cursor: pointer;
-  transition: background-color 0.2s;
+  background: transparent;
+  color: #9f8fbe;
+  border: 1px solid rgba(159, 143, 190, 0.45);
 }
 
 .btn-secondary:hover {
-  background-color: #d1d5db;
+  background: rgba(159, 143, 190, 0.12);
+}
+
+.btn-secondary:active {
+  background: rgba(159, 143, 190, 0.18);
+}
+
+.btn-secondary:disabled {
+  color: rgba(159, 143, 190, 0.45);
+  border-color: rgba(159, 143, 190, 0.25);
+  cursor: not-allowed;
+}
+
+.btn-ghost {
+  background: transparent;
+  color: #6b7280;
+}
+
+.btn-ghost:hover {
+  background: rgba(127, 211, 230, 0.14);
+  color: #1f2430;
+}
+
+.btn-danger {
+  background: #d6255f;
+  color: #ffffff;
+}
+
+.btn-danger:hover {
+  background: #e85653;
+}
+
+.btn-danger:active {
+  background: #d84e4b;
+}
+
+.btn-danger:disabled {
+  background: rgba(255, 98, 95, 0.35);
+  color: #ffffff;
+  cursor: not-allowed;
+}
+
+.btn-warning {
+  background: #d7511f;
+  color: #ffffff;
+}
+
+.btn-warning:hover {
+  background: #e86a1c;
+}
+
+.btn-warning:active {
+  background: #d96119;
+}
+
+.btn-warning:disabled {
+  background: rgba(255, 117, 31, 0.35);
+  color: #ffffff;
+  cursor: not-allowed;
 }
 
 .card {
@@ -87,9 +168,8 @@ body {
     margin: 8px;
   }
   
-  .btn-primary,
-  .btn-secondary {
-    padding: 12px 16px;
+  .btn {
+    padding: 0 16px;
     font-size: 14px;
   }
   

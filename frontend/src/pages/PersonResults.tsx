@@ -515,7 +515,7 @@ const PersonResults: React.FC = () => {
                 <p className="text-sm text-gray-500">{t('labels.competencyStatusDesc')}</p>
               </div>
               <div className="flex items-center space-x-2">
-                <button className="px-4 py-1.5 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium">
+                <button className="btn btn-primary">
                   <i className="fa-solid fa-file-lines mr-1" />
                   {t('labels.reportDetails')}
                 </button>
@@ -588,11 +588,8 @@ const PersonResults: React.FC = () => {
                   <button
                     key={tab.key}
                     onClick={() => setActiveTab(tab.key as TabKey)}
-                    className={`px-4 py-3 text-sm font-medium border-b-2 transition-colors ${
-                      activeTab === tab.key
-                        ? 'border-blue-600 text-blue-600'
-                        : 'border-transparent text-gray-500 hover:text-gray-700'
-                    }`}
+                    className={activeTab === tab.key ? 'btn btn-primary' : 'btn btn-secondary'}
+                    style={{ borderRadius: 0, fontSize: '14px' }}
                   >
                     {tab.label}
                   </button>
@@ -791,20 +788,20 @@ const PersonResults: React.FC = () => {
                   </p>
                   <div className="flex items-center justify-center space-x-4">
                     <button
-                      className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center font-medium disabled:opacity-60"
+                      className="btn btn-primary"
                       onClick={handlePreviewPdf}
                       disabled={isPdfLoading || !latestUser}
                     >
                       <i className="fa-solid fa-eye mr-2" /> {t('buttons.viewReport')}
                     </button>
                     <button
-                      className="px-6 py-3 bg-white border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors flex items-center font-medium disabled:opacity-60"
+                      className="btn btn-secondary"
                       onClick={handleDownloadPdf}
                       disabled={isPdfLoading || !latestUser}
                     >
                       <i className="fa-solid fa-download mr-2" /> {isPdfLoading ? t('labels.pdfLoading') : t('buttons.downloadPdf')}
                     </button>
-                    <button className="px-6 py-3 bg-white border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors flex items-center font-medium">
+                    <button className="btn btn-secondary">
                       <i className="fa-solid fa-share-nodes mr-2" /> {t('buttons.share')}
                     </button>
                   </div>
@@ -820,7 +817,8 @@ const PersonResults: React.FC = () => {
             <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 bg-gray-50">
               <h3 className="text-lg font-semibold text-gray-900">{t('labels.pdfPreview')}</h3>
               <button
-                className="text-gray-500 hover:text-gray-700"
+                className="btn btn-ghost"
+                style={{ minWidth: 'auto' }}
                 onClick={() => {
                   setShowPDFPreview(false);
                   if (pdfPreviewUrl) {

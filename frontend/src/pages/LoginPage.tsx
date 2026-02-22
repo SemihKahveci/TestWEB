@@ -327,20 +327,14 @@ const LoginPage: React.FC = () => {
         type="button"
         onClick={toggleLanguage}
         title={language === 'tr' ? t('buttons.switchToEnglish') : t('buttons.switchToTurkish')}
+        className="btn btn-ghost"
         style={{
           position: 'absolute',
           top: '20px',
           right: '20px',
-          border: '1px solid #E5E7EB',
-          backgroundColor: '#F9FAFB',
-          color: '#374151',
           width: '36px',
           height: '36px',
-          borderRadius: '8px',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          cursor: 'pointer'
+          minWidth: '36px'
         }}
       >
         <i className="fa-solid fa-globe" />
@@ -497,20 +491,16 @@ const LoginPage: React.FC = () => {
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
+                  className="btn btn-ghost"
                   style={{
                     position: 'absolute',
                     right: '16px',
                     top: '50%',
                     transform: 'translateY(-50%)',
-                    background: 'none',
-                    border: 'none',
-                    cursor: 'pointer',
                     color: '#6B7280',
                     fontSize: '18px',
                     padding: '4px',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center'
+                    minWidth: 'auto'
                   }}
                 >
                   <i className={`fas fa-eye${showPassword ? '-slash' : ''}`}></i>
@@ -608,21 +598,17 @@ const LoginPage: React.FC = () => {
                   <button
                     type="button"
                     onClick={() => setShowNewPassword(!showNewPassword)}
-                    style={{
-                      position: 'absolute',
-                      right: '16px',
-                      top: '50%',
-                      transform: 'translateY(-50%)',
-                      background: 'none',
-                      border: 'none',
-                      cursor: 'pointer',
-                      color: '#6B7280',
-                      fontSize: '18px',
-                      padding: '4px',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center'
-                    }}
+                  className="btn btn-ghost"
+                  style={{
+                    position: 'absolute',
+                    right: '16px',
+                    top: '50%',
+                    transform: 'translateY(-50%)',
+                    color: '#6B7280',
+                    fontSize: '18px',
+                    padding: '4px',
+                    minWidth: 'auto'
+                  }}
                   >
                     <i className={`fas fa-eye${showNewPassword ? '-slash' : ''}`}></i>
                   </button>
@@ -693,20 +679,16 @@ const LoginPage: React.FC = () => {
                   <button
                     type="button"
                     onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                    className="btn btn-ghost"
                     style={{
                       position: 'absolute',
                       right: '16px',
                       top: '50%',
                       transform: 'translateY(-50%)',
-                      background: 'none',
-                      border: 'none',
-                      cursor: 'pointer',
                       color: '#6B7280',
                       fontSize: '18px',
                       padding: '4px',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center'
+                      minWidth: 'auto'
                     }}
                   >
                     <i className={`fas fa-eye${showConfirmPassword ? '-slash' : ''}`}></i>
@@ -748,18 +730,8 @@ const LoginPage: React.FC = () => {
               </div>
               <button 
                 onClick={handleForgotPassword}
-                style={{
-                  color: '#8A92A6',
-                  fontSize: '14px',
-                  fontFamily: 'Inter, sans-serif',
-                  fontWeight: 400,
-                  lineHeight: '20px',
-                  textDecoration: 'none',
-                  background: 'none',
-                  border: 'none',
-                  cursor: 'pointer',
-                  padding: 0
-                }}
+                className="btn btn-ghost"
+                style={{ fontSize: '14px', padding: 0, minWidth: 'auto' }}
               >
                 {t('labels.forgotPassword')}
               </button>
@@ -776,21 +748,8 @@ const LoginPage: React.FC = () => {
             }}>
               <button 
                 onClick={handleBackToLogin}
-                style={{
-                  color: '#8A92A6',
-                  fontSize: '14px',
-                  fontFamily: 'Inter, sans-serif',
-                  fontWeight: 400,
-                  lineHeight: '20px',
-                  textDecoration: 'none',
-                  background: 'none',
-                  border: 'none',
-                  cursor: 'pointer',
-                  padding: 0,
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '8px'
-                }}
+                className="btn btn-ghost"
+                style={{ fontSize: '14px', padding: 0, minWidth: 'auto', display: 'flex', alignItems: 'center', gap: '8px' }}
               >
                 {t('labels.backToLogin')}
               </button>
@@ -842,31 +801,8 @@ const LoginPage: React.FC = () => {
               handleResetPassword
             }
             disabled={isLoading}
-            style={{
-              width: '100%',
-              height: '48px',
-              padding: '12px 16px',
-              backgroundColor: isLoading ? '#9CA3AF' : '#3B82F6',
-              color: 'white',
-              fontSize: '16px',
-              fontFamily: 'Inter, sans-serif',
-              fontWeight: 500,
-              lineHeight: '24px',
-              borderRadius: '8px',
-              border: 'none',
-              cursor: isLoading ? 'not-allowed' : 'pointer',
-              transition: 'all 0.2s'
-            }}
-            onMouseEnter={(e) => {
-              if (!isLoading) {
-                e.currentTarget.style.backgroundColor = '#2563EB';
-              }
-            }}
-            onMouseLeave={(e) => {
-              if (!isLoading) {
-                e.currentTarget.style.backgroundColor = '#3B82F6';
-              }
-            }}
+            className="btn btn-primary"
+            style={{ width: '100%', height: '48px' }}
           >
             {isLoading ? (
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>

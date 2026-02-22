@@ -101,6 +101,18 @@ const aggregateBucketsBy20 = (buckets: number[]) => {
   return sums;
 };
 
+const getAverageScoreValue = (buckets: number[]) => {
+  const safe = Array.isArray(buckets) ? buckets : [];
+  let total = 0;
+  let sum = 0;
+  safe.forEach((count, index) => {
+    total += count;
+    sum += count * (index * 10 + 5);
+  });
+  if (!total) return null;
+  return Math.round(sum / total);
+};
+
 const getAverageBucketIndex = (buckets: number[]) => {
   let total = 0;
   let sum = 0;
@@ -410,36 +422,24 @@ const DashboardPage: React.FC = () => {
           <button
             type="button"
             onClick={() => setActiveTab('all')}
-            className="px-5 py-1.5 font-medium rounded-lg shadow-sm transition-colors text-xs border"
-            style={{
-              background: activeTab === 'all' ? '#9f8fbe' : '#ffffff',
-              borderColor: activeTab === 'all' ? '#9f8fbe' : '#f3f4f6',
-              color: activeTab === 'all' ? '#ffffff' : '#4b5563'
-            }}
+            className={activeTab === 'all' ? 'btn btn-primary' : 'btn btn-secondary'}
+            style={{ fontSize: '12px' }}
           >
             Tümü
           </button>
           <button
             type="button"
             onClick={() => setActiveTab('candidate')}
-            className="px-5 py-1.5 font-medium rounded-lg shadow-sm transition-colors text-xs border"
-            style={{
-              background: activeTab === 'candidate' ? '#9f8fbe' : '#ffffff',
-              borderColor: activeTab === 'candidate' ? '#9f8fbe' : '#f3f4f6',
-              color: activeTab === 'candidate' ? '#ffffff' : '#4b5563'
-            }}
+            className={activeTab === 'candidate' ? 'btn btn-primary' : 'btn btn-secondary'}
+            style={{ fontSize: '12px' }}
           >
             Adaylar
           </button>
           <button
             type="button"
             onClick={() => setActiveTab('employee')}
-            className="px-5 py-1.5 font-medium rounded-lg shadow-sm transition-colors text-xs border"
-            style={{
-              background: activeTab === 'employee' ? '#9f8fbe' : '#ffffff',
-              borderColor: activeTab === 'employee' ? '#9f8fbe' : '#f3f4f6',
-              color: activeTab === 'employee' ? '#ffffff' : '#4b5563'
-            }}
+            className={activeTab === 'employee' ? 'btn btn-primary' : 'btn btn-secondary'}
+            style={{ fontSize: '12px' }}
           >
             Çalışanlar
           </button>
@@ -570,13 +570,51 @@ const DashboardPage: React.FC = () => {
             const buckets = aggregateBucketsBy20(rawBuckets);
             const maxCount = Math.max(1, ...buckets);
             const highlightIndex = getAverageBucketIndex(buckets);
+            const averageScore = getAverageScoreValue(rawBuckets);
             return (
               <div key={card.key} className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 flex flex-col h-full">
-                <div className="flex items-center justify-between mb-6">
+                <div className="flex items-center justify-between mb-2">
                   <div className="flex items-center gap-3">
-                    <div>
+                    <div className="flex items-center gap-2">
                       <h3 className="text-lg font-bold text-gray-800">{card.title}</h3>
+                      <div className="relative group">
+                        <span
+                          style={{
+                            width: '18px',
+                            height: '18px',
+                            borderRadius: '50%',
+                            background: '#E0E7FF',
+                            color: '#4F46E5',
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            fontSize: '12px',
+                            fontWeight: 700,
+                            cursor: 'help'
+                          }}
+                        >
+                          i
+                        </span>
+                        <div className="absolute left-1/2 top-7 -translate-x-1/2 w-72 rounded-xl bg-white text-gray-700 text-xs leading-relaxed shadow-lg border border-gray-200 p-3 opacity-0 group-hover:opacity-100 transition pointer-events-none z-20">
+                          <div className="absolute -top-2 left-1/2 -translate-x-1/2 w-3 h-3 bg-white border-l border-t border-gray-200 rotate-45" />
+                          <span className="font-semibold text-gray-900">{card.title}</span>{' '}
+                          {t(`competency.${card.key}.desc`)}
+                        </div>
+                      </div>
                     </div>
+                  </div>
+                </div>
+                <div className="text-sm text-gray-400 mb-3 text-left w-full">Ortalama Skor</div>
+                <div className="mb-6 flex flex-col items-start text-left">
+                  <div className="flex flex-col items-center text-center w-full relative">
+                    <div className="w-full h-px bg-gray-200" />
+                    <div className="text-5xl font-bold my-2" style={{ color: card.color, alignSelf: 'flex-start', paddingLeft: '56px' }}>
+                      {averageScore ?? '-'}
+                    </div>
+                    <div className="text-sm text-gray-400 mt-0" style={{ alignSelf: 'flex-start', paddingLeft: '48px' }}>
+                      Ortalama Skor
+                    </div>
+                    <div className="w-full h-px bg-gray-200 mt-2" />
                   </div>
                 </div>
                 <div className="flex-1 min-h-[180px] flex flex-col justify-end">

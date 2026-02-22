@@ -1159,7 +1159,7 @@ const PersonResultsDetail: React.FC = () => {
         <button
           onClick={() => navigate('/person-results', { state: { selectedUser: latestUser } })}
           aria-label={t('labels.goToPersonResults')}
-          className="inline-flex items-center gap-2 rounded-lg border border-blue-200 bg-white px-3 py-2 text-sm font-medium text-blue-600 shadow-sm hover:border-blue-300 hover:text-blue-700"
+          className="btn btn-secondary"
         >
           <i className="fa-solid fa-arrow-left" />
           {t('labels.goToPersonResults')}
@@ -1244,11 +1244,8 @@ const PersonResultsDetail: React.FC = () => {
               ].map((tab) => (
                 <button
                   key={tab.key}
-                  className={`py-4 px-6 text-sm font-medium border-b-2 ${
-                    activeTab === tab.key
-                      ? 'border-blue-600 text-blue-600'
-                      : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                  }`}
+                  className={activeTab === tab.key ? 'btn btn-primary' : 'btn btn-secondary'}
+                  style={{ borderRadius: 0, fontSize: '14px' }}
                   onClick={() => setActiveTab(tab.key as DetailTab)}
                   role="tab"
                 >
@@ -1358,11 +1355,8 @@ const PersonResultsDetail: React.FC = () => {
                     ].map((tab) => (
                       <button
                         key={tab.key}
-                        className={`flex-1 py-4 px-6 text-sm font-medium border-b-[3px] transition-all ${
-                          competencySubTab === tab.key
-                            ? 'border-blue-600 text-blue-600 bg-blue-50'
-                            : 'border-transparent text-gray-600 hover:text-gray-800 hover:border-gray-300 hover:bg-gray-50'
-                        }`}
+                        className={competencySubTab === tab.key ? 'btn btn-primary' : 'btn btn-secondary'}
+                        style={{ flex: 1, borderRadius: 0, fontSize: '14px' }}
                         onClick={() => setCompetencySubTab(tab.key as CompetencySubTab)}
                         role="tab"
                       >
@@ -1575,7 +1569,7 @@ const PersonResultsDetail: React.FC = () => {
                             return (
                               <div key={sectionKey} className="border border-gray-200 rounded-xl overflow-hidden shadow-sm">
                                 <button
-                                  className="w-full flex items-center justify-between p-5 bg-white hover:bg-gray-50 transition-colors text-left"
+                                  className="btn btn-ghost w-full flex items-center justify-between p-5 text-left hover:bg-gray-50"
                                   onClick={() => toggleDevPlan(sectionKey)}
                                 >
                                   <div className="flex items-center space-x-4">
@@ -1732,13 +1726,14 @@ const PersonResultsDetail: React.FC = () => {
 
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
                 {[
-                  { title: t('labels.viewOnline'), desc: t('labels.viewOnlineDesc'), color: 'bg-blue-600 hover:bg-blue-700', icon: 'fa-eye', iconColor: 'text-blue-600', action: handlePreviewPdf },
-                  { title: t('labels.downloadReport'), desc: t('labels.downloadPdfDesc'), color: 'bg-green-600 hover:bg-green-700', icon: 'fa-download', iconColor: 'text-green-600', action: handleDownloadPdf },
-                  { title: t('labels.shareReport'), desc: t('labels.shareReportDesc'), color: 'bg-purple-600 hover:bg-purple-700', icon: 'fa-share-nodes', iconColor: 'text-purple-600', action: handleSharePdf }
+                  { title: t('labels.viewOnline'), desc: t('labels.viewOnlineDesc'), variant: 'primary', icon: 'fa-eye', iconColor: 'text-blue-600', action: handlePreviewPdf },
+                  { title: t('labels.downloadReport'), desc: t('labels.downloadPdfDesc'), variant: 'secondary', icon: 'fa-download', iconColor: 'text-green-600', action: handleDownloadPdf },
+                  { title: t('labels.shareReport'), desc: t('labels.shareReportDesc'), variant: 'secondary', icon: 'fa-share-nodes', iconColor: 'text-purple-600', action: handleSharePdf }
                 ].map((card) => (
                   <button
                     key={card.title}
-                    className={`${card.color} text-white rounded-xl p-6 text-left transition-colors group disabled:opacity-60 disabled:cursor-not-allowed`}
+                    className={`btn btn-${card.variant} rounded-xl p-6 text-left transition-colors group disabled:opacity-60 disabled:cursor-not-allowed`}
+                    style={{ height: 'auto', alignItems: 'flex-start' }}
                     onClick={card.action}
                     disabled={isPdfLoading || !latestUser}
                   >
@@ -1831,14 +1826,14 @@ const PersonResultsDetail: React.FC = () => {
                     <button
                       onClick={handleAiUpload}
                       disabled={isAiLoading || !aiFile}
-                      className="px-4 py-2 rounded-lg bg-blue-600 text-white text-sm font-semibold disabled:opacity-60"
+                      className="btn btn-primary"
                     >
                       {isAiLoading ? 'Yükleniyor...' : 'Yükle'}
                     </button>
                     <button
                       onClick={handleAiReset}
                       disabled={isAiLoading}
-                      className="px-4 py-2 rounded-lg border border-gray-300 text-gray-700 text-sm font-semibold disabled:opacity-60"
+                      className="btn btn-secondary"
                     >
                       Sıfırla
                     </button>
@@ -1851,7 +1846,8 @@ const PersonResultsDetail: React.FC = () => {
                           key={item}
                           type="button"
                           onClick={() => setAiInput(item)}
-                          className="px-3 py-1.5 rounded-full bg-indigo-50 text-indigo-700 text-xs font-medium hover:bg-indigo-100"
+                          className="btn btn-ghost"
+                          style={{ height: '28px', padding: '0 10px', fontSize: '12px' }}
                         >
                           {item}
                         </button>
@@ -1910,7 +1906,7 @@ const PersonResultsDetail: React.FC = () => {
                       <button
                         onClick={handleAiSend}
                         disabled={isAiLoading || !aiInput.trim() || !aiSessionId}
-                        className="px-4 py-2 rounded-lg bg-indigo-600 text-white text-sm font-semibold disabled:opacity-60"
+                      className="btn btn-primary"
                       >
                         {isAiLoading ? '...' : 'Gönder'}
                       </button>

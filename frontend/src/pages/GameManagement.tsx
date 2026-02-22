@@ -732,24 +732,18 @@ const GameManagement: React.FC = () => {
               {searchTerm && (
                 <button
                   onClick={() => setSearchTerm('')}
+                  className="btn btn-ghost"
                   style={{
                     position: 'absolute',
                     right: '12px',
                     top: '50%',
                     transform: 'translateY(-50%)',
-                    background: 'none',
-                    border: 'none',
                     color: '#9CA3AF',
-                    cursor: 'pointer',
                     fontSize: '16px',
                     padding: '4px',
-                    borderRadius: '50%',
                     width: '24px',
                     height: '24px',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    transition: 'all 0.2s ease'
+                    minWidth: '24px'
                   }}
                   onMouseEnter={(e) => {
                     (e.target as HTMLButtonElement).style.backgroundColor = '#F3F4F6';
@@ -767,27 +761,8 @@ const GameManagement: React.FC = () => {
           </div>
           <button
             onClick={handleAddGame}
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '8px',
-              padding: '12px 24px',
-              background: '#3B82F6',
-              color: 'white',
-              border: 'none',
-              borderRadius: '8px',
-              fontSize: '14px',
-              fontWeight: 600,
-              fontFamily: 'Inter',
-              cursor: 'pointer',
-              transition: 'background-color 0.2s'
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.backgroundColor = '#2563EB';
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.backgroundColor = '#3B82F6';
-            }}
+            className="btn btn-primary"
+            style={{ display: 'flex', alignItems: 'center', gap: '8px' }}
           >
             <i className="fas fa-plus"></i>
             {t('buttons.add')}
@@ -935,23 +910,8 @@ const GameManagement: React.FC = () => {
                   <button
                     onClick={() => handleEditGame(game)}
                     disabled={isLoadingEdit}
-                    style={{
-                      background: 'none',
-                      border: 'none',
-                      cursor: isLoadingEdit ? 'not-allowed' : 'pointer',
-                      padding: '4px',
-                      borderRadius: '4px',
-                      transition: 'background-color 0.2s',
-                      opacity: isLoadingEdit ? 0.5 : 1
-                    }}
-                    onMouseEnter={(e) => {
-                      if (!isLoadingEdit) {
-                        e.currentTarget.style.backgroundColor = '#F3F4F6';
-                      }
-                    }}
-                    onMouseLeave={(e) => {
-                      e.currentTarget.style.backgroundColor = 'transparent';
-                    }}
+                    className="btn btn-ghost"
+                    style={{ padding: '4px', minWidth: 'auto', opacity: isLoadingEdit ? 0.5 : 1 }}
                     title={isLoadingEdit ? t('labels.loading') : t('buttons.update')}
                   >
                     <i className="fas fa-edit" style={{ color: '#3B82F6', fontSize: '16px' }}></i>
@@ -959,43 +919,16 @@ const GameManagement: React.FC = () => {
                   <button
                     onClick={() => handleViewInvoice(game)}
                     disabled={isLoadingInvoice}
-                    style={{
-                      background: 'none',
-                      border: 'none',
-                      cursor: isLoadingInvoice ? 'not-allowed' : 'pointer',
-                      padding: '4px',
-                      borderRadius: '4px',
-                      transition: 'background-color 0.2s',
-                      opacity: isLoadingInvoice ? 0.5 : 1
-                    }}
-                    onMouseEnter={(e) => {
-                      if (!isLoadingInvoice) {
-                        e.currentTarget.style.backgroundColor = '#F3F4F6';
-                      }
-                    }}
-                    onMouseLeave={(e) => {
-                      e.currentTarget.style.backgroundColor = 'transparent';
-                    }}
+                    className="btn btn-ghost"
+                    style={{ padding: '4px', minWidth: 'auto', opacity: isLoadingInvoice ? 0.5 : 1 }}
                     title={isLoadingInvoice ? t('labels.loading') : t('buttons.viewInvoice')}
                   >
                     <i className="fas fa-eye" style={{ color: '#0286F7', fontSize: '16px' }}></i>
                   </button>
                   <button
                     onClick={() => handleDeleteGame(game)}
-                    style={{
-                      background: 'none',
-                      border: 'none',
-                      cursor: 'pointer',
-                      padding: '4px',
-                      borderRadius: '4px',
-                      transition: 'background-color 0.2s'
-                    }}
-                    onMouseEnter={(e) => {
-                      e.currentTarget.style.backgroundColor = '#F3F4F6';
-                    }}
-                    onMouseLeave={(e) => {
-                      e.currentTarget.style.backgroundColor = 'transparent';
-                    }}
+                    className="btn btn-ghost"
+                    style={{ padding: '4px', minWidth: 'auto' }}
                     title={t('buttons.delete')}
                   >
                     <i className="fas fa-trash" style={{ color: '#EF4444', fontSize: '16px' }}></i>
@@ -1040,16 +973,8 @@ const GameManagement: React.FC = () => {
           }}>
             <button
               onClick={() => setShowAddPopup(false)}
-              style={{
-                position: 'absolute',
-                top: '20px',
-                right: '20px',
-                background: 'none',
-                border: 'none',
-                cursor: 'pointer',
-                fontSize: '24px',
-                color: '#6B7280'
-              }}
+              className="btn btn-ghost"
+              style={{ position: 'absolute', top: '20px', right: '20px', fontSize: '24px', color: '#6B7280', minWidth: 'auto' }}
             >
               ×
             </button>
@@ -1155,17 +1080,16 @@ const GameManagement: React.FC = () => {
                               setCompanySearchTerm('');
                               handleCompanySearch('');
                             }}
+                            className="btn btn-ghost"
                             style={{
                               position: 'absolute',
                               right: '12px',
                               top: '50%',
                               transform: 'translateY(-50%)',
-                              background: 'none',
-                              border: 'none',
                               color: '#6B7280',
-                              cursor: 'pointer',
                               fontSize: '12px',
-                              padding: '2px'
+                              padding: '2px',
+                              minWidth: 'auto'
                             }}
                           >
                             <i className="fas fa-times"></i>
@@ -1317,36 +1241,14 @@ const GameManagement: React.FC = () => {
             }}>
               <button
                 onClick={() => setShowAddPopup(false)}
-                style={{
-                  padding: '12px 24px',
-                  border: '1px solid #E5E7EB',
-                  borderRadius: '6px',
-                  background: 'white',
-                  color: '#6B7280',
-                  fontFamily: 'Inter',
-                  fontSize: '14px',
-                  fontWeight: 500,
-                  cursor: 'pointer'
-                }}
+                className="btn btn-secondary"
               >
                 {t('buttons.cancel')}
               </button>
               <button
                 onClick={handleSubmitAdd}
-                style={{
-                  padding: '12px 24px',
-                  border: 'none',
-                  borderRadius: '6px',
-                  background: '#3B82F6',
-                  color: 'white',
-                  fontFamily: 'Inter',
-                  fontSize: '14px',
-                  fontWeight: 500,
-                  cursor: 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '8px'
-                }}
+                className="btn btn-primary"
+                style={{ display: 'flex', alignItems: 'center', gap: '8px' }}
               >
                 <i className="fas fa-save"></i>
                 {t('buttons.save')}
@@ -1390,16 +1292,8 @@ const GameManagement: React.FC = () => {
           }}>
             <button
               onClick={() => setShowEditPopup(false)}
-              style={{
-                position: 'absolute',
-                top: '20px',
-                right: '20px',
-                background: 'none',
-                border: 'none',
-                cursor: 'pointer',
-                fontSize: '24px',
-                color: '#6B7280'
-              }}
+              className="btn btn-ghost"
+              style={{ position: 'absolute', top: '20px', right: '20px', fontSize: '24px', color: '#6B7280', minWidth: 'auto' }}
             >
               ×
             </button>
@@ -1547,14 +1441,8 @@ const GameManagement: React.FC = () => {
                     <button
                       type="button"
                       onClick={() => handleViewInvoice(selectedGame)}
-                      style={{
-                        background: 'none',
-                        border: 'none',
-                        cursor: 'pointer',
-                        color: '#0286F7',
-                        fontSize: '12px',
-                        textDecoration: 'underline'
-                      }}
+                      className="btn btn-ghost"
+                      style={{ color: '#0286F7', fontSize: '12px', padding: 0, minWidth: 'auto', textDecoration: 'underline' }}
                     >
                       {t('buttons.view')}
                     </button>
@@ -1570,36 +1458,14 @@ const GameManagement: React.FC = () => {
             }}>
               <button
                 onClick={() => setShowEditPopup(false)}
-                style={{
-                  padding: '12px 24px',
-                  border: '1px solid #E5E7EB',
-                  borderRadius: '6px',
-                  background: 'white',
-                  color: '#6B7280',
-                  fontFamily: 'Inter',
-                  fontSize: '14px',
-                  fontWeight: 500,
-                  cursor: 'pointer'
-                }}
+                className="btn btn-secondary"
               >
                 {t('buttons.cancel')}
               </button>
               <button
                 onClick={handleSubmitEdit}
-                style={{
-                  padding: '12px 24px',
-                  border: 'none',
-                  borderRadius: '6px',
-                  background: '#3B82F6',
-                  color: 'white',
-                  fontFamily: 'Inter',
-                  fontSize: '14px',
-                  fontWeight: 500,
-                  cursor: 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '8px'
-                }}
+                className="btn btn-primary"
+                style={{ display: 'flex', alignItems: 'center', gap: '8px' }}
               >
                 <i className="fas fa-save"></i>
                 {t('buttons.update')}
@@ -1674,33 +1540,13 @@ const GameManagement: React.FC = () => {
             }}>
               <button
                 onClick={() => setShowDeletePopup(false)}
-                style={{
-                  padding: '12px 24px',
-                  border: '1px solid #E5E7EB',
-                  borderRadius: '6px',
-                  background: 'white',
-                  color: '#6B7280',
-                  fontFamily: 'Inter',
-                  fontSize: '14px',
-                  fontWeight: 500,
-                  cursor: 'pointer'
-                }}
+                className="btn btn-secondary"
               >
                 {t('buttons.cancel')}
               </button>
               <button
                 onClick={handleConfirmDelete}
-                style={{
-                  padding: '12px 24px',
-                  border: 'none',
-                  borderRadius: '6px',
-                  background: '#EF4444',
-                  color: 'white',
-                  fontFamily: 'Inter',
-                  fontSize: '14px',
-                  fontWeight: 500,
-                  cursor: 'pointer'
-                }}
+                className="btn btn-danger"
               >
                 {t('buttons.delete')}
               </button>
@@ -1751,14 +1597,8 @@ const GameManagement: React.FC = () => {
               </div>
               <button
                 onClick={() => setShowInvoicePopup(false)}
-                style={{
-                  background: 'none',
-                  border: 'none',
-                  cursor: 'pointer',
-                  fontSize: '24px',
-                  color: '#8A92A6',
-                  padding: '5px'
-                }}
+                className="btn btn-ghost"
+                style={{ fontSize: '24px', color: '#8A92A6', padding: '5px', minWidth: 'auto' }}
               >
                 ×
               </button>
@@ -1944,17 +1784,7 @@ const GameManagement: React.FC = () => {
               }}>
                 <button
                   onClick={() => setShowSuccessPopup(false)}
-                  style={{
-                    padding: '12px 24px',
-                    border: 'none',
-                    borderRadius: '6px',
-                    background: '#3B82F6',
-                    color: 'white',
-                    fontFamily: 'Inter',
-                    fontSize: '14px',
-                    fontWeight: 500,
-                    cursor: 'pointer'
-                  }}
+                  className="btn btn-primary"
                 >
                   {t('buttons.ok')}
                 </button>
@@ -2028,20 +1858,7 @@ const GameManagement: React.FC = () => {
             {/* Close Button */}
             <button
               onClick={() => setShowErrorPopup(false)}
-              style={{
-                backgroundColor: '#DC2626',
-                color: 'white',
-                border: 'none',
-                borderRadius: '8px',
-                padding: '12px 24px',
-                fontSize: '16px',
-                fontWeight: 500,
-                cursor: 'pointer',
-                fontFamily: 'Inter, sans-serif',
-                transition: 'background-color 0.2s'
-              }}
-              onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#B91C1C'}
-              onMouseOut={(e) => e.currentTarget.style.backgroundColor = '#DC2626'}
+              className="btn btn-danger"
             >
               {t('buttons.ok')}
             </button>

@@ -1430,26 +1430,7 @@ const AdminPanel: React.FC = () => {
         }}>
           <button
             onClick={() => setShowAddPersonPopup(true)}
-            style={{
-              background: '#2563EB',
-              color: 'white',
-              border: 'none',
-              padding: '8px 16px',
-              borderRadius: '8px',
-              cursor: 'pointer',
-              fontWeight: 600,
-              display: 'flex',
-              alignItems: 'center',
-              gap: '8px',
-              transition: 'background-color 0.3s',
-              fontFamily: 'Inter'
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.backgroundColor = '#1D4ED8';
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.backgroundColor = '#2563EB';
-            }}
+            className="btn btn-primary btn-lg"
           >
             <i className="fas fa-user-plus"></i>
             Kişi Ekle
@@ -1459,52 +1440,14 @@ const AdminPanel: React.FC = () => {
             <>
               <button
                 onClick={handleBulkSendPopup}
-                style={{
-                  background: '#7C3AED',
-                  color: 'white',
-                  border: 'none',
-                  padding: '8px 16px',
-                  borderRadius: '8px',
-                  cursor: 'pointer',
-                  fontWeight: 500,
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '8px',
-                  transition: 'background-color 0.3s',
-                  fontFamily: 'Inter'
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.backgroundColor = '#6D28D9';
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.backgroundColor = '#7C3AED';
-                }}
+                className="btn btn-primary"
               >
                 <i className="fas fa-paper-plane"></i>
                 Toplu Gönder ({selectedItems.length})
               </button>
               <button
                 onClick={handleBulkDelete}
-                style={{
-                  background: '#DC3545',
-                  color: 'white',
-                  border: 'none',
-                  padding: '8px 16px',
-                  borderRadius: '8px',
-                  cursor: 'pointer',
-                  fontWeight: 500,
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '8px',
-                  transition: 'background-color 0.3s',
-                  fontFamily: 'Inter'
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.backgroundColor = '#C82333';
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.backgroundColor = '#DC3545';
-                }}
+                className="btn btn-danger"
               >
                 <i className="fas fa-trash"></i>
                 {t('buttons.bulkDelete')} ({selectedItems.length})
@@ -1555,26 +1498,7 @@ const AdminPanel: React.FC = () => {
           {/* Refresh Button */}
           <button
             onClick={() => loadData(true, true)}
-            style={{
-              background: '#0286F7',
-              color: 'white',
-              border: 'none',
-              padding: '8px 16px',
-              borderRadius: '8px',
-              cursor: 'pointer',
-              fontWeight: 500,
-              display: 'flex',
-              alignItems: 'center',
-              gap: '8px',
-              transition: 'background-color 0.3s',
-              fontFamily: 'Inter'
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.backgroundColor = '#0275D8';
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.backgroundColor = '#0286F7';
-            }}
+            className="btn btn-secondary"
           >
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
               <path d="M1 4V10H7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
@@ -2988,34 +2912,14 @@ const AdminPanel: React.FC = () => {
             }}>
               <button
                 onClick={() => setShowAddPersonPopup(false)}
-                style={{
-                  padding: '8px 14px',
-                  background: 'white',
-                  color: '#6B7280',
-                  border: '1px solid #E5E7EB',
-                  borderRadius: '6px',
-                  cursor: 'pointer',
-                  fontSize: '14px',
-                  fontFamily: 'Inter',
-                  fontWeight: 500
-                }}
+                className="btn btn-secondary"
               >
                 {t('buttons.cancel')}
               </button>
               <button
                 onClick={handleAddPerson}
                 disabled={isAddingPerson}
-                style={{
-                  padding: '8px 16px',
-                  background: '#2563EB',
-                  color: 'white',
-                  border: 'none',
-                  borderRadius: '6px',
-                  cursor: isAddingPerson ? 'not-allowed' : 'pointer',
-                  fontSize: '14px',
-                  fontFamily: 'Inter',
-                  fontWeight: 600
-                }}
+                className="btn btn-primary"
               >
                 {isAddingPerson ? t('labels.loading') : 'Kişi Ekle'}
               </button>
@@ -3135,34 +3039,14 @@ const AdminPanel: React.FC = () => {
             }}>
               <button
                 onClick={() => setShowQuickSendPopup(false)}
-                style={{
-                  padding: '8px 14px',
-                  background: 'white',
-                  color: '#6B7280',
-                  border: '1px solid #E5E7EB',
-                  borderRadius: '6px',
-                  cursor: 'pointer',
-                  fontSize: '14px',
-                  fontFamily: 'Inter',
-                  fontWeight: 500
-                }}
+                className="btn btn-secondary"
               >
                 {t('buttons.cancel')}
               </button>
               <button
                 onClick={handleQuickSend}
                 disabled={isQuickSending}
-                style={{
-                  padding: '8px 16px',
-                  background: '#7C3AED',
-                  color: 'white',
-                  border: 'none',
-                  borderRadius: '6px',
-                  cursor: isQuickSending ? 'not-allowed' : 'pointer',
-                  fontSize: '14px',
-                  fontFamily: 'Inter',
-                  fontWeight: 600
-                }}
+                className="btn btn-primary"
               >
                 {isQuickSending ? t('labels.loading') : t('buttons.send')}
               </button>
@@ -3417,34 +3301,14 @@ const AdminPanel: React.FC = () => {
             }}>
               <button
                 onClick={() => setShowBulkSendPopup(false)}
-                style={{
-                  padding: '8px 14px',
-                  background: 'white',
-                  color: '#6B7280',
-                  border: '1px solid #E5E7EB',
-                  borderRadius: '6px',
-                  cursor: 'pointer',
-                  fontSize: '14px',
-                  fontFamily: 'Inter',
-                  fontWeight: 500
-                }}
+                className="btn btn-secondary"
               >
                 {t('buttons.cancel')}
               </button>
               <button
                 onClick={handleBulkSend}
                 disabled={isBulkSending}
-                style={{
-                  padding: '8px 16px',
-                  background: '#7C3AED',
-                  color: 'white',
-                  border: 'none',
-                  borderRadius: '6px',
-                  cursor: isBulkSending ? 'not-allowed' : 'pointer',
-                  fontSize: '14px',
-                  fontFamily: 'Inter',
-                  fontWeight: 600
-                }}
+                className="btn btn-primary"
               >
                 {isBulkSending ? t('labels.loading') : t('buttons.send')}
               </button>

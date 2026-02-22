@@ -1931,85 +1931,29 @@ const GameSendPage: React.FC = () => {
         }}>
           <button
             onClick={() => switchTab('person')}
-            style={{
-              flex: 1,
-              padding: '12px 24px',
-              textAlign: 'center',
-              background: activeTab === 'person'
-                ? 'linear-gradient(90deg, #2563EB 0%, #3B82F6 100%)'
-                : 'transparent',
-              border: 'none',
-              borderRadius: '6px',
-              cursor: 'pointer',
-              fontSize: '14px',
-              fontWeight: 600,
-              color: activeTab === 'person' ? 'white' : '#8A92A6',
-              transition: 'all 0.3s ease',
-              boxShadow: activeTab === 'person' ? '0 2px 6px rgba(37, 99, 235, 0.35)' : 'none'
-            }}
+            className={activeTab === 'person' ? 'btn btn-primary' : 'btn btn-secondary'}
+            style={{ flex: 1, textAlign: 'center', fontSize: '14px' }}
           >
             {t('labels.person')}
           </button>
           <button
             onClick={() => switchTab('group')}
-            style={{
-              flex: 1,
-              padding: '12px 24px',
-              textAlign: 'center',
-              background: activeTab === 'group'
-                ? 'linear-gradient(90deg, #2563EB 0%, #3B82F6 100%)'
-                : 'transparent',
-              border: 'none',
-              borderRadius: '6px',
-              cursor: 'pointer',
-              fontSize: '14px',
-              fontWeight: 600,
-              color: activeTab === 'group' ? 'white' : '#8A92A6',
-              transition: 'all 0.3s ease',
-              boxShadow: activeTab === 'group' ? '0 2px 6px rgba(37, 99, 235, 0.35)' : 'none'
-            }}
+            className={activeTab === 'group' ? 'btn btn-primary' : 'btn btn-secondary'}
+            style={{ flex: 1, textAlign: 'center', fontSize: '14px' }}
           >
             {t('labels.group')}
           </button>
           <button
             onClick={() => switchTab('title')}
-            style={{
-              flex: 1,
-              padding: '12px 24px',
-              textAlign: 'center',
-              background: activeTab === 'title'
-                ? 'linear-gradient(90deg, #2563EB 0%, #3B82F6 100%)'
-                : 'transparent',
-              border: 'none',
-              borderRadius: '6px',
-              cursor: 'pointer',
-              fontSize: '14px',
-              fontWeight: 600,
-              color: activeTab === 'title' ? 'white' : '#8A92A6',
-              transition: 'all 0.3s ease',
-              boxShadow: activeTab === 'title' ? '0 2px 6px rgba(37, 99, 235, 0.35)' : 'none'
-            }}
+            className={activeTab === 'title' ? 'btn btn-primary' : 'btn btn-secondary'}
+            style={{ flex: 1, textAlign: 'center', fontSize: '14px' }}
           >
             {t('labels.title')}
           </button>
           <button
             onClick={() => switchTab('bulk')}
-            style={{
-              flex: 1,
-              padding: '12px 24px',
-              textAlign: 'center',
-              background: activeTab === 'bulk'
-                ? 'linear-gradient(90deg, #2563EB 0%, #3B82F6 100%)'
-                : 'transparent',
-              border: 'none',
-              borderRadius: '6px',
-              cursor: 'pointer',
-              fontSize: '14px',
-              fontWeight: 600,
-              color: activeTab === 'bulk' ? 'white' : '#8A92A6',
-              transition: 'all 0.3s ease',
-              boxShadow: activeTab === 'bulk' ? '0 2px 6px rgba(37, 99, 235, 0.35)' : 'none'
-            }}
+            className={activeTab === 'bulk' ? 'btn btn-primary' : 'btn btn-secondary'}
+            style={{ flex: 1, textAlign: 'center', fontSize: '14px' }}
           >
             {t('labels.bulkSendTab')}
           </button>
@@ -2430,17 +2374,16 @@ const GameSendPage: React.FC = () => {
                                   e.stopPropagation();
                                   setPlanetSearchTerm('');
                                 }}
+                                className="btn btn-ghost"
                                 style={{
                                   position: 'absolute',
                                   right: '12px',
                                   top: '50%',
                                   transform: 'translateY(-50%)',
-                                  background: 'none',
-                                  border: 'none',
                                   color: '#6B7280',
-                                  cursor: 'pointer',
                                   fontSize: '12px',
-                                  padding: '2px'
+                                  padding: '2px',
+                                  minWidth: 'auto'
                                 }}
                               >
                                 <i className="fas fa-times"></i>
@@ -2519,19 +2462,14 @@ const GameSendPage: React.FC = () => {
                           {capitalizeFirstLetter(planet.label)}
                           <button
                             onClick={() => removePlanet(planetValue)}
-                            style={{
-                              background: 'none',
-                              border: 'none',
-                              color: 'white',
-                              cursor: 'pointer',
-                              fontSize: '12px',
-                              padding: '0',
-                              width: '16px',
-                              height: '16px',
-                              display: 'flex',
-                              alignItems: 'center',
-                              justifyContent: 'center'
-                            }}
+                          className="btn btn-ghost"
+                          style={{
+                            color: 'white',
+                            width: '16px',
+                            height: '16px',
+                            padding: 0,
+                            minWidth: '16px'
+                          }}
                           >
                             <i className="fas fa-times"></i>
                           </button>
@@ -2547,15 +2485,8 @@ const GameSendPage: React.FC = () => {
               <button
                 onClick={sendPersonInterview}
                 disabled={isSubmitting}
+                className="btn btn-primary"
                 style={{
-                  background: 'linear-gradient(90deg, #2563EB 0%, #3B82F6 100%)',
-                  color: 'white',
-                  border: 'none',
-                  padding: '12px 24px',
-                  borderRadius: '12px',
-                  fontSize: '14px',
-                  fontWeight: 600,
-                  cursor: isSubmitting ? 'not-allowed' : 'pointer',
                   display: 'flex',
                   alignItems: 'center',
                   gap: '10px',
@@ -2661,18 +2592,17 @@ const GameSendPage: React.FC = () => {
                                 e.stopPropagation();
                                 setGroupSearchTerm('');
                               }}
-                              style={{
-                                position: 'absolute',
-                                right: '12px',
-                                top: '50%',
-                                transform: 'translateY(-50%)',
-                                background: 'none',
-                                border: 'none',
-                                color: '#6B7280',
-                                cursor: 'pointer',
-                                fontSize: '12px',
-                                padding: '2px'
-                              }}
+                            className="btn btn-ghost"
+                            style={{
+                              position: 'absolute',
+                              right: '12px',
+                              top: '50%',
+                              transform: 'translateY(-50%)',
+                              color: '#6B7280',
+                              fontSize: '12px',
+                              padding: '2px',
+                              minWidth: 'auto'
+                            }}
                             >
                               <i className="fas fa-times"></i>
                             </button>
@@ -2754,36 +2684,26 @@ const GameSendPage: React.FC = () => {
                         {highlightText(group.name, groupSearchTerm)}
                         <button
                           onClick={() => removeGroup(groupId)}
+                          className="btn btn-ghost"
                           style={{
-                            background: 'none',
-                            border: 'none',
                             color: 'white',
-                            cursor: 'pointer',
-                            fontSize: '14px',
-                            padding: '0',
                             width: '16px',
                             height: '16px',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center'
+                            padding: 0,
+                            minWidth: '16px'
                           }}
                         >
                           <i className="fas fa-times"></i>
                         </button>
                         <button
                           onClick={() => showGroupDetails(groupId)}
+                          className="btn btn-ghost"
                           style={{
-                            background: 'none',
-                            border: 'none',
                             color: 'white',
-                            cursor: 'pointer',
-                            fontSize: '14px',
-                            padding: '0',
                             width: '16px',
                             height: '16px',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
+                            padding: 0,
+                            minWidth: '16px',
                             marginLeft: '4px'
                           }}
                         >
@@ -2799,20 +2719,12 @@ const GameSendPage: React.FC = () => {
             <button
               onClick={sendGroupInterview}
               disabled={isSubmitting}
+              className="btn btn-primary"
               style={{
-                background: '#3A57E8',
-                color: 'white',
-                border: 'none',
-                padding: '16px 32px',
-                borderRadius: '8px',
-                fontSize: '14px',
-                fontWeight: 700,
-                cursor: isSubmitting ? 'not-allowed' : 'pointer',
                 display: 'flex',
                 alignItems: 'center',
                 gap: '12px',
                 marginTop: '30px',
-                transition: 'background-color 0.3s',
                 opacity: isSubmitting ? 0.7 : 1
               }}
             >
@@ -2914,18 +2826,17 @@ const GameSendPage: React.FC = () => {
                                 e.stopPropagation();
                                 setTitleSearchTerm('');
                               }}
-                              style={{
-                                position: 'absolute',
-                                right: '12px',
-                                top: '50%',
-                                transform: 'translateY(-50%)',
-                                background: 'none',
-                                border: 'none',
-                                color: '#6B7280',
-                                cursor: 'pointer',
-                                fontSize: '12px',
-                                padding: '2px'
-                              }}
+                            className="btn btn-ghost"
+                            style={{
+                              position: 'absolute',
+                              right: '12px',
+                              top: '50%',
+                              transform: 'translateY(-50%)',
+                              color: '#6B7280',
+                              fontSize: '12px',
+                              padding: '2px',
+                              minWidth: 'auto'
+                            }}
                             >
                               <i className="fas fa-times"></i>
                             </button>
@@ -3007,38 +2918,28 @@ const GameSendPage: React.FC = () => {
                         {highlightText(title.name, titleSearchTerm)}
                         <button
                           onClick={() => removeTitle(titleId)}
-                          style={{
-                            background: 'none',
-                            border: 'none',
-                            color: 'white',
-                            cursor: 'pointer',
-                            fontSize: '14px',
-                            padding: '0',
-                            width: '16px',
-                            height: '16px',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center'
-                          }}
+                        className="btn btn-ghost"
+                        style={{
+                          color: 'white',
+                          width: '16px',
+                          height: '16px',
+                          padding: 0,
+                          minWidth: '16px'
+                        }}
                         >
                           <i className="fas fa-times"></i>
                         </button>
                         <button
                           onClick={() => showTitleDetails(titleId)}
-                          style={{
-                            background: 'none',
-                            border: 'none',
-                            color: 'white',
-                            cursor: 'pointer',
-                            fontSize: '14px',
-                            padding: '0',
-                            width: '16px',
-                            height: '16px',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            marginLeft: '4px'
-                          }}
+                        className="btn btn-ghost"
+                        style={{
+                          color: 'white',
+                          width: '16px',
+                          height: '16px',
+                          padding: 0,
+                          minWidth: '16px',
+                          marginLeft: '4px'
+                        }}
                         >
                           <i className="fas fa-eye"></i>
                         </button>
@@ -3138,18 +3039,17 @@ const GameSendPage: React.FC = () => {
                                 e.stopPropagation();
                                 setTitlePlanetSearchTerm('');
                               }}
-                              style={{
-                                position: 'absolute',
-                                right: '12px',
-                                top: '50%',
-                                transform: 'translateY(-50%)',
-                                background: 'none',
-                                border: 'none',
-                                color: '#6B7280',
-                                cursor: 'pointer',
-                                fontSize: '12px',
-                                padding: '2px'
-                              }}
+                            className="btn btn-ghost"
+                            style={{
+                              position: 'absolute',
+                              right: '12px',
+                              top: '50%',
+                              transform: 'translateY(-50%)',
+                              color: '#6B7280',
+                              fontSize: '12px',
+                              padding: '2px',
+                              minWidth: 'auto'
+                            }}
                             >
                               <i className="fas fa-times"></i>
                             </button>
@@ -3259,18 +3159,13 @@ const GameSendPage: React.FC = () => {
                         {capitalizeFirstLetter(planet.label)}
                         <button
                           onClick={() => removeTitlePlanet(planetValue)}
+                          className="btn btn-ghost"
                           style={{
-                            background: 'none',
-                            border: 'none',
                             color: 'white',
-                            cursor: 'pointer',
-                            fontSize: '14px',
-                            padding: '0',
                             width: '16px',
                             height: '16px',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center'
+                            padding: 0,
+                            minWidth: '16px'
                           }}
                         >
                           <i className="fas fa-times"></i>
@@ -3285,20 +3180,12 @@ const GameSendPage: React.FC = () => {
             <button
               onClick={sendTitleInterview}
               disabled={isSubmitting}
+              className="btn btn-primary"
               style={{
-                background: '#3A57E8',
-                color: 'white',
-                border: 'none',
-                padding: '16px 32px',
-                borderRadius: '8px',
-                fontSize: '14px',
-                fontWeight: 700,
-                cursor: isSubmitting ? 'not-allowed' : 'pointer',
                 display: 'flex',
                 alignItems: 'center',
                 gap: '12px',
                 marginTop: '30px',
-                transition: 'background-color 0.3s',
                 opacity: isSubmitting ? 0.7 : 1
               }}
             >
@@ -3355,21 +3242,7 @@ const GameSendPage: React.FC = () => {
                     {t('labels.selectOrDropExcel')}
                   </div>
                 </div>
-                <button
-                  style={{
-                    marginTop: '6px',
-                    display: 'inline-flex',
-                    alignItems: 'center',
-                    gap: '8px',
-                    padding: '10px 18px',
-                    background: 'linear-gradient(90deg, #16A34A 0%, #10B981 100%)',
-                    border: 'none',
-                    borderRadius: '12px',
-                    color: 'white',
-                    fontWeight: 600,
-                    cursor: 'pointer'
-                  }}
-                >
+                <button className="btn btn-primary" style={{ marginTop: '6px' }}>
                   <i className="fas fa-upload" />
                   {t('buttons.upload')}
                 </button>
@@ -3422,15 +3295,8 @@ const GameSendPage: React.FC = () => {
                     e.stopPropagation();
                     removeBulkFile();
                   }}
-                  style={{
-                    width: '32px',
-                    height: '32px',
-                    borderRadius: '8px',
-                    border: 'none',
-                    background: '#FEE2E2',
-                    color: '#B91C1C',
-                    cursor: 'pointer'
-                  }}
+                  className="btn btn-danger"
+                  style={{ width: '32px', height: '32px', padding: 0 }}
                 >
                   <i className="fas fa-xmark" />
                 </button>
@@ -3488,15 +3354,7 @@ const GameSendPage: React.FC = () => {
               </div>
               <button
                 onClick={downloadBulkTemplate}
-                style={{
-                  padding: '8px 14px',
-                  borderRadius: '10px',
-                  border: '1px solid #2563EB',
-                  background: 'transparent',
-                  color: '#2563EB',
-                  fontWeight: 600,
-                  cursor: 'pointer'
-                }}
+              className="btn btn-secondary"
               >
                 {t('buttons.downloadTemplate')}
               </button>
@@ -3506,20 +3364,7 @@ const GameSendPage: React.FC = () => {
               <button
                 onClick={handleBulkSend}
                 disabled={isBulkSending || bulkRows.length === 0}
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '10px',
-                  padding: '12px 22px',
-                  borderRadius: '12px',
-                  border: 'none',
-                  background: isBulkSending || bulkRows.length === 0
-                    ? '#9CA3AF'
-                    : 'linear-gradient(90deg, #2563EB 0%, #3B82F6 100%)',
-                  color: 'white',
-                  fontWeight: 600,
-                  cursor: isBulkSending || bulkRows.length === 0 ? 'not-allowed' : 'pointer'
-                }}
+                className="btn btn-primary btn-lg"
               >
                 <i className="fas fa-paper-plane" />
                 {isBulkSending ? t('statuses.sending') : t('buttons.send')}
@@ -3631,16 +3476,8 @@ const GameSendPage: React.FC = () => {
               </h3>
               <button
                 onClick={closeGroupDetailsModal}
-                style={{
-                  background: 'none',
-                  border: 'none',
-                  fontSize: '24px',
-                  cursor: 'pointer',
-                  color: '#8A92A6',
-                  padding: '4px',
-                  borderRadius: '4px',
-                  transition: 'background-color 0.3s'
-                }}
+              className="btn btn-ghost"
+              style={{ fontSize: '24px', color: '#8A92A6', padding: '4px', minWidth: 'auto' }}
               >
                 <i className="fas fa-times"></i>
               </button>
@@ -3904,16 +3741,8 @@ const GameSendPage: React.FC = () => {
               </h3>
               <button
                 onClick={closeTitleDetailsModal}
-                style={{
-                  background: 'none',
-                  border: 'none',
-                  fontSize: '24px',
-                  cursor: 'pointer',
-                  color: '#8A92A6',
-                  padding: '4px',
-                  borderRadius: '4px',
-                  transition: 'background-color 0.3s'
-                }}
+              className="btn btn-ghost"
+              style={{ fontSize: '24px', color: '#8A92A6', padding: '4px', minWidth: 'auto' }}
               >
                 <i className="fas fa-times"></i>
               </button>
@@ -4170,18 +3999,7 @@ const GameSendPage: React.FC = () => {
             }}>
               <button
                 onClick={closeMessageModal}
-                style={{
-                  padding: '10px 20px',
-                  border: 'none',
-                  borderRadius: '6px',
-                  fontSize: '14px',
-                  fontWeight: 500,
-                  cursor: 'pointer',
-                  transition: 'all 0.3s ease',
-                  minWidth: '80px',
-                  background: '#3A57E8',
-                  color: 'white'
-                }}
+                className="btn btn-primary"
               >
                 {t('buttons.ok')}
               </button>
@@ -4259,35 +4077,13 @@ const GameSendPage: React.FC = () => {
             }}>
               <button
                 onClick={() => closeConfirmModal(false)}
-                style={{
-                  padding: '10px 20px',
-                  border: 'none',
-                  borderRadius: '6px',
-                  fontSize: '14px',
-                  fontWeight: 500,
-                  cursor: 'pointer',
-                  transition: 'all 0.3s ease',
-                  minWidth: '80px',
-                  background: '#6C757D',
-                  color: 'white'
-                }}
+                className="btn btn-secondary"
               >
                 {t('buttons.cancel')}
               </button>
               <button
                 onClick={() => closeConfirmModal(true)}
-                style={{
-                  padding: '10px 20px',
-                  border: 'none',
-                  borderRadius: '6px',
-                  fontSize: '14px',
-                  fontWeight: 500,
-                  cursor: 'pointer',
-                  transition: 'all 0.3s ease',
-                  minWidth: '80px',
-                  background: '#3A57E8',
-                  color: 'white'
-                }}
+                className="btn btn-primary"
               >
                 {t('buttons.yes')}
               </button>

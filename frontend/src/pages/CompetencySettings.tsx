@@ -1083,25 +1083,19 @@ const CompetencySettings: React.FC = () => {
                     setSearchTerm('');
                     setCurrentPage(1);
                   }}
-                  style={{
-                    position: 'absolute',
-                    right: '12px',
-                    top: '50%',
-                    transform: 'translateY(-50%)',
-                    background: 'none',
-                    border: 'none',
-                    color: '#9CA3AF',
-                    cursor: 'pointer',
-                    fontSize: '16px',
-                    padding: '4px',
-                    borderRadius: '50%',
-                    width: '24px',
-                    height: '24px',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    transition: 'all 0.2s ease'
-                  }}
+                className="btn btn-ghost"
+                style={{
+                  position: 'absolute',
+                  right: '12px',
+                  top: '50%',
+                  transform: 'translateY(-50%)',
+                  color: '#9CA3AF',
+                  fontSize: '16px',
+                  padding: '4px',
+                  width: '24px',
+                  height: '24px',
+                  minWidth: '24px'
+                }}
                   onMouseEnter={(e) => {
                     (e.target as HTMLButtonElement).style.backgroundColor = '#F3F4F6';
                     (e.target as HTMLButtonElement).style.color = '#6B7280';
@@ -1118,40 +1112,16 @@ const CompetencySettings: React.FC = () => {
             <div style={{ display: 'flex', gap: '12px' }}>
               <button
                 onClick={handleAddCompetency}
-                style={{
-                  padding: '12px 20px',
-                  background: '#3B82F6',
-                  color: 'white',
-                  border: 'none',
-                  borderRadius: '6px',
-                  fontFamily: 'Inter',
-                  fontSize: '14px',
-                  fontWeight: 500,
-                  cursor: 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '8px'
-                }}
+                className="btn btn-primary"
+                style={{ display: 'flex', alignItems: 'center', gap: '8px' }}
               >
                 <i className="fas fa-plus"></i>
                 {t('buttons.add')}
               </button>
               <button
                 onClick={() => setShowImportPopup(true)}
-                style={{
-                  padding: '12px 20px',
-                  background: '#17A2B8',
-                  color: 'white',
-                  border: 'none',
-                  borderRadius: '6px',
-                  fontFamily: 'Inter',
-                  fontSize: '14px',
-                  fontWeight: 500,
-                  cursor: 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '8px'
-                }}
+                className="btn btn-secondary"
+                style={{ display: 'flex', alignItems: 'center', gap: '8px' }}
               >
                 <i className="fas fa-file-excel"></i>
                 {t('buttons.uploadExcel')}
@@ -1159,20 +1129,8 @@ const CompetencySettings: React.FC = () => {
               <button
                 onClick={handleEditCompetency}
                 disabled={selectedItems.length !== 1}
-                style={{
-                  padding: '12px 20px',
-                  background: selectedItems.length === 1 ? '#6C757D' : '#E9ECEF',
-                  color: selectedItems.length === 1 ? 'white' : '#6C757D',
-                  border: 'none',
-                  borderRadius: '6px',
-                  fontFamily: 'Inter',
-                  fontSize: '14px',
-                  fontWeight: 500,
-                  cursor: selectedItems.length === 1 ? 'pointer' : 'not-allowed',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '8px'
-                }}
+                className="btn btn-secondary"
+                style={{ display: 'flex', alignItems: 'center', gap: '8px' }}
               >
                 <i className="fas fa-edit"></i>
                 {t('buttons.update')}
@@ -1180,20 +1138,8 @@ const CompetencySettings: React.FC = () => {
               <button
                 onClick={handleDeleteCompetency}
                 disabled={selectedItems.length === 0}
-                style={{
-                  padding: '12px 20px',
-                  background: selectedItems.length > 0 ? '#DC3545' : '#E9ECEF',
-                  color: selectedItems.length > 0 ? 'white' : '#6C757D',
-                  border: 'none',
-                  borderRadius: '6px',
-                  fontFamily: 'Inter',
-                  fontSize: '14px',
-                  fontWeight: 500,
-                  cursor: selectedItems.length > 0 ? 'pointer' : 'not-allowed',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '8px'
-                }}
+                className="btn btn-danger"
+                style={{ display: 'flex', alignItems: 'center', gap: '8px' }}
               >
                 <i className="fas fa-trash"></i>
                 {t('buttons.delete')}
@@ -1482,15 +1428,8 @@ const CompetencySettings: React.FC = () => {
           <button
             onClick={() => handlePageChange(currentPage - 1)}
             disabled={currentPage === 1}
-            style={{
-              padding: '8px 12px',
-              border: '1px solid #E9ECEF',
-              borderRadius: '6px',
-              backgroundColor: currentPage === 1 ? '#F8F9FA' : 'white',
-              color: currentPage === 1 ? '#ADB5BD' : '#232D42',
-              cursor: currentPage === 1 ? 'not-allowed' : 'pointer',
-              fontSize: '14px'
-            }}
+            className="btn btn-secondary"
+            style={{ fontSize: '14px' }}
           >
             {t('buttons.previous')}
           </button>
@@ -1499,15 +1438,8 @@ const CompetencySettings: React.FC = () => {
             <button
               key={page}
               onClick={() => handlePageChange(page)}
-              style={{
-                padding: '8px 12px',
-                border: '1px solid #E9ECEF',
-                borderRadius: '6px',
-                backgroundColor: currentPage === page ? '#3B82F6' : 'white',
-                color: currentPage === page ? 'white' : '#232D42',
-                cursor: 'pointer',
-                fontSize: '14px'
-              }}
+              className={currentPage === page ? 'btn btn-primary' : 'btn btn-secondary'}
+              style={{ fontSize: '14px', minWidth: '40px' }}
             >
               {page}
             </button>
@@ -1516,15 +1448,8 @@ const CompetencySettings: React.FC = () => {
           <button
             onClick={() => handlePageChange(currentPage + 1)}
             disabled={currentPage === totalPages}
-            style={{
-              padding: '8px 12px',
-              border: '1px solid #E9ECEF',
-              borderRadius: '6px',
-              backgroundColor: currentPage === totalPages ? '#F8F9FA' : 'white',
-              color: currentPage === totalPages ? '#ADB5BD' : '#232D42',
-              cursor: currentPage === totalPages ? 'not-allowed' : 'pointer',
-              fontSize: '14px'
-            }}
+            className="btn btn-secondary"
+            style={{ fontSize: '14px' }}
           >
             {t('buttons.next')}
           </button>
@@ -1693,18 +1618,17 @@ const CompetencySettings: React.FC = () => {
                                 setPositionSearchTerm('');
                                 handlePositionSearch('');
                               }}
-                              style={{
-                                position: 'absolute',
-                                right: '12px',
-                                top: '50%',
-                                transform: 'translateY(-50%)',
-                                background: 'none',
-                                border: 'none',
-                                color: '#6B7280',
-                                cursor: 'pointer',
-                                fontSize: '12px',
-                                padding: '2px'
-                              }}
+                            className="btn btn-ghost"
+                            style={{
+                              position: 'absolute',
+                              right: '12px',
+                              top: '50%',
+                              transform: 'translateY(-50%)',
+                              color: '#6B7280',
+                              fontSize: '12px',
+                              padding: '2px',
+                              minWidth: 'auto'
+                            }}
                             >
                               <i className="fas fa-times"></i>
                             </button>
@@ -1998,44 +1922,16 @@ const CompetencySettings: React.FC = () => {
                       setShowEditPopup(false);
                       setShowPositionDropdown(false);
                     }}
-                    style={{
-                      width: '143px',
-                      height: '48px',
-                      padding: '14px 20px',
-                      background: '#6C757D',
-                      borderRadius: '6px',
-                      border: 'none',
-                      cursor: 'pointer',
-                      display: 'flex',
-                      justifyContent: 'center',
-                      alignItems: 'center'
-                    }}
+                    className="btn btn-secondary"
+                    style={{ width: '143px', height: '48px' }}
                   >
-                    <div style={{
-                      color: 'white',
-                      fontSize: '14px',
-                      fontFamily: 'Inter',
-                      fontWeight: 500
-                    }}>
-                      {t('buttons.cancel')}
-                    </div>
+                    {t('buttons.cancel')}
                   </button>
                   <button
                     onClick={showAddPopup ? handleSubmitAdd : handleSubmitEdit}
                     disabled={isSubmitting}
-                    style={{
-                      width: '143px',
-                      height: '48px',
-                      padding: '14px 20px',
-                      background: isSubmitting ? '#9CA3AF' : '#3B82F6',
-                      borderRadius: '6px',
-                      border: 'none',
-                      cursor: isSubmitting ? 'not-allowed' : 'pointer',
-                      display: 'flex',
-                      justifyContent: 'center',
-                      alignItems: 'center',
-                      opacity: isSubmitting ? 0.7 : 1
-                    }}
+                    className="btn btn-primary"
+                    style={{ width: '143px', height: '48px', opacity: isSubmitting ? 0.7 : 1 }}
                   >
                     {isSubmitting ? (
                       <>
@@ -2051,46 +1947,13 @@ const CompetencySettings: React.FC = () => {
                         {showAddPopup ? t('statuses.saving') : t('statuses.updating')}
                       </>
                     ) : (
-                      <div style={{
-                        color: 'white',
-                        fontSize: '14px',
-                        fontFamily: 'Inter',
-                        fontWeight: 500
-                      }}>
+                      <>
                         {showAddPopup ? t('buttons.save') : t('buttons.update')}
-                      </div>
+                      </>
                     )}
                   </button>
                 </div>
 
-                <button
-                  onClick={() => {
-                    setShowAddPopup(false);
-                    setShowEditPopup(false);
-                    setShowPositionDropdown(false);
-                  }}
-                  style={{
-                    width: '24px',
-                    height: '24px',
-                    padding: '4px',
-                    position: 'absolute',
-                    right: '13px',
-                    top: '13px',
-                    background: '#E5E5E5',
-                    borderRadius: '29px',
-                    display: 'flex',
-                    justifyContent: 'center',
-                    alignItems: 'center',
-                    border: 'none',
-                    cursor: 'pointer'
-                  }}
-                >
-                  <i className="fas fa-times" style={{
-                    width: '10px',
-                    height: '10px',
-                    color: '#666'
-                  }}></i>
-                </button>
               </div>
             </div>
           </>
@@ -2145,13 +2008,8 @@ const CompetencySettings: React.FC = () => {
                   </div>
                   <button
                     onClick={() => setShowDeletePopup(false)}
-                    style={{
-                      cursor: 'pointer',
-                      fontSize: '24px',
-                      color: '#666',
-                      background: 'none',
-                      border: 'none'
-                    }}
+                    className="btn btn-ghost"
+                    style={{ fontSize: '24px', color: '#666', minWidth: 'auto' }}
                   >
                     ×
                   </button>
@@ -2184,35 +2042,15 @@ const CompetencySettings: React.FC = () => {
                 }}>
                   <button
                     onClick={() => setShowDeletePopup(false)}
-                    style={{
-                      background: '#6C757D',
-                      color: 'white',
-                      border: 'none',
-                      borderRadius: '6px',
-                      padding: '12px 24px',
-                      cursor: 'pointer',
-                      fontSize: '14px',
-                      fontFamily: 'Inter',
-                      fontWeight: 500
-                    }}
+                  className="btn btn-secondary"
                   >
                     {t('buttons.cancel')}
                   </button>
                   <button
                     onClick={handleConfirmDelete}
                     disabled={isSubmitting}
-                    style={{
-                      background: isSubmitting ? '#9CA3AF' : '#DC3545',
-                      color: 'white',
-                      border: 'none',
-                      borderRadius: '6px',
-                      padding: '12px 24px',
-                      cursor: isSubmitting ? 'not-allowed' : 'pointer',
-                      fontSize: '14px',
-                      fontFamily: 'Inter',
-                      fontWeight: 500,
-                      opacity: isSubmitting ? 0.7 : 1
-                    }}
+                  className="btn btn-danger"
+                  style={{ opacity: isSubmitting ? 0.7 : 1 }}
                   >
                     {isSubmitting ? (
                       <>
@@ -2287,13 +2125,8 @@ const CompetencySettings: React.FC = () => {
                   </div>
                   <button
                     onClick={() => setShowImportPopup(false)}
-                    style={{
-                      cursor: 'pointer',
-                      fontSize: '24px',
-                      color: '#666',
-                      background: 'none',
-                      border: 'none'
-                    }}
+                    className="btn btn-ghost"
+                    style={{ fontSize: '24px', color: '#666', minWidth: 'auto' }}
                   >
                     ×
                   </button>
@@ -2310,18 +2143,8 @@ const CompetencySettings: React.FC = () => {
                   }}>
                     <button
                       onClick={downloadTemplate}
-                      style={{
-                        backgroundColor: '#17A2B8',
-                        color: 'white',
-                        border: 'none',
-                        borderRadius: '6px',
-                        padding: '8px 16px',
-                        fontSize: '13px',
-                        cursor: 'pointer',
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '8px'
-                      }}
+                      className="btn btn-secondary"
+                      style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13px' }}
                     >
                       <i className="fas fa-download"></i>
                       {t('buttons.downloadTemplate')}
@@ -2387,37 +2210,15 @@ const CompetencySettings: React.FC = () => {
                 }}>
                   <button
                     onClick={() => setShowImportPopup(false)}
-                    style={{
-                      background: '#6C757D',
-                      color: 'white',
-                      border: 'none',
-                      borderRadius: '6px',
-                      padding: '12px 24px',
-                      cursor: 'pointer',
-                      fontSize: '14px',
-                      fontFamily: 'Inter',
-                      fontWeight: 500
-                    }}
+                  className="btn btn-secondary"
                   >
                     {t('buttons.cancel')}
                   </button>
                   <button
                     onClick={handleImport}
                     disabled={!selectedFile || isImporting}
-                    style={{
-                      background: selectedFile && !isImporting ? '#28A745' : '#6C757D',
-                      color: 'white',
-                      border: 'none',
-                      borderRadius: '6px',
-                      padding: '12px 24px',
-                      cursor: selectedFile && !isImporting ? 'pointer' : 'not-allowed',
-                      fontSize: '14px',
-                      fontFamily: 'Inter',
-                      fontWeight: 500,
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '8px'
-                    }}
+                  className="btn btn-primary"
+                  style={{ display: 'flex', alignItems: 'center', gap: '8px' }}
                   >
                     {isImporting ? (
                       <>
@@ -2496,17 +2297,7 @@ const CompetencySettings: React.FC = () => {
                 }}>
                   <button
                     onClick={() => setShowSuccessPopup(false)}
-                    style={{
-                      padding: '12px 24px',
-                      border: 'none',
-                      borderRadius: '6px',
-                      background: '#3B82F6',
-                      color: 'white',
-                      fontFamily: 'Inter',
-                      fontSize: '14px',
-                      fontWeight: 500,
-                      cursor: 'pointer'
-                    }}
+                    className="btn btn-primary"
                   >
                     {t('buttons.close')}
                   </button>
@@ -2560,16 +2351,7 @@ const CompetencySettings: React.FC = () => {
               </div>
               <button
                 onClick={() => setShowErrorPopup(false)}
-                style={{
-                  backgroundColor: '#DC2626',
-                  color: 'white',
-                  border: 'none',
-                  borderRadius: '8px',
-                  padding: '12px 24px',
-                  fontSize: '14px',
-                  fontWeight: 500,
-                  cursor: 'pointer'
-                }}
+                className="btn btn-danger"
               >
                 {t('buttons.close')}
               </button>

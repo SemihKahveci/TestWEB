@@ -328,27 +328,8 @@ const CompanyIdentification: React.FC = () => {
           <div></div>
           <button
             onClick={handleAddCompany}
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '8px',
-              padding: '12px 24px',
-              background: '#3B82F6',
-              color: 'white',
-              border: 'none',
-              borderRadius: '8px',
-              fontSize: '14px',
-              fontWeight: 600,
-              fontFamily: 'Inter',
-              cursor: 'pointer',
-              transition: 'background-color 0.2s'
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.backgroundColor = '#2563EB';
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.backgroundColor = '#3B82F6';
-            }}
+            className="btn btn-primary"
+            style={{ display: 'flex', alignItems: 'center', gap: '8px' }}
           >
             <i className="fas fa-plus"></i>
             {t('buttons.add')}
@@ -470,39 +451,15 @@ const CompanyIdentification: React.FC = () => {
                 }}>
                   <button
                     onClick={() => handleEditCompany(company)}
-                    style={{
-                      background: 'none',
-                      border: 'none',
-                      cursor: 'pointer',
-                      padding: '4px',
-                      borderRadius: '4px',
-                      transition: 'background-color 0.2s'
-                    }}
-                    onMouseEnter={(e) => {
-                      e.currentTarget.style.backgroundColor = '#F3F4F6';
-                    }}
-                    onMouseLeave={(e) => {
-                      e.currentTarget.style.backgroundColor = 'transparent';
-                    }}
+                    className="btn btn-ghost"
+                    style={{ padding: '4px', minWidth: 'auto' }}
                   >
                     <i className="fas fa-edit" style={{ color: '#3B82F6', fontSize: '16px' }}></i>
                   </button>
                   <button
                     onClick={() => handleDeleteCompany(company)}
-                    style={{
-                      background: 'none',
-                      border: 'none',
-                      cursor: 'pointer',
-                      padding: '4px',
-                      borderRadius: '4px',
-                      transition: 'background-color 0.2s'
-                    }}
-                    onMouseEnter={(e) => {
-                      e.currentTarget.style.backgroundColor = '#F3F4F6';
-                    }}
-                    onMouseLeave={(e) => {
-                      e.currentTarget.style.backgroundColor = 'transparent';
-                    }}
+                    className="btn btn-ghost"
+                    style={{ padding: '4px', minWidth: 'auto' }}
                   >
                     <i className="fas fa-trash" style={{ color: '#EF4444', fontSize: '16px' }}></i>
                   </button>
@@ -636,33 +593,13 @@ const CompanyIdentification: React.FC = () => {
             }}>
               <button
                 onClick={() => setShowAddPopup(false)}
-                style={{
-                  padding: '8px 16px',
-                  border: '1px solid #E5E7EB',
-                  borderRadius: '6px',
-                  background: 'white',
-                  color: '#6B7280',
-                  fontFamily: 'Inter',
-                  fontSize: '14px',
-                  fontWeight: 500,
-                  cursor: 'pointer'
-                }}
+                className="btn btn-secondary"
               >
                 {t('buttons.cancel')}
               </button>
               <button
                 onClick={handleSubmitAdd}
-                style={{
-                  padding: '8px 16px',
-                  border: 'none',
-                  borderRadius: '6px',
-                  background: '#3B82F6',
-                  color: 'white',
-                  fontFamily: 'Inter',
-                  fontSize: '14px',
-                  fontWeight: 500,
-                  cursor: 'pointer'
-                }}
+                className="btn btn-primary"
               >
                 {t('buttons.save')}
               </button>
@@ -795,33 +732,13 @@ const CompanyIdentification: React.FC = () => {
             }}>
               <button
                 onClick={() => setShowEditPopup(false)}
-                style={{
-                  padding: '8px 16px',
-                  border: '1px solid #E5E7EB',
-                  borderRadius: '6px',
-                  background: 'white',
-                  color: '#6B7280',
-                  fontFamily: 'Inter',
-                  fontSize: '14px',
-                  fontWeight: 500,
-                  cursor: 'pointer'
-                }}
+                className="btn btn-secondary"
               >
                 {t('buttons.cancel')}
               </button>
               <button
                 onClick={handleSubmitEdit}
-                style={{
-                  padding: '8px 16px',
-                  border: 'none',
-                  borderRadius: '6px',
-                  background: '#3B82F6',
-                  color: 'white',
-                  fontFamily: 'Inter',
-                  fontSize: '14px',
-                  fontWeight: 500,
-                  cursor: 'pointer'
-                }}
+                className="btn btn-primary"
               >
                 {t('buttons.update')}
               </button>
@@ -876,33 +793,13 @@ const CompanyIdentification: React.FC = () => {
             }}>
               <button
                 onClick={() => setShowDeletePopup(false)}
-                style={{
-                  padding: '8px 16px',
-                  border: '1px solid #E5E7EB',
-                  borderRadius: '6px',
-                  background: 'white',
-                  color: '#6B7280',
-                  fontFamily: 'Inter',
-                  fontSize: '14px',
-                  fontWeight: 500,
-                  cursor: 'pointer'
-                }}
+                className="btn btn-secondary"
               >
                 {t('buttons.cancel')}
               </button>
               <button
                 onClick={handleConfirmDelete}
-                style={{
-                  padding: '8px 16px',
-                  border: 'none',
-                  borderRadius: '6px',
-                  background: '#EF4444',
-                  color: 'white',
-                  fontFamily: 'Inter',
-                  fontSize: '14px',
-                  fontWeight: 500,
-                  cursor: 'pointer'
-                }}
+                className="btn btn-danger"
               >
                 {t('buttons.delete')}
               </button>
@@ -988,18 +885,7 @@ const CompanyIdentification: React.FC = () => {
             }}>
               <button
                 onClick={closeMessageModal}
-                style={{
-                  padding: '10px 20px',
-                  border: 'none',
-                  borderRadius: '6px',
-                  fontSize: '14px',
-                  fontWeight: 500,
-                  cursor: 'pointer',
-                  transition: 'all 0.3s ease',
-                  minWidth: '80px',
-                  background: '#3A57E8',
-                  color: 'white'
-                }}
+                className="btn btn-primary"
               >
                 {t('buttons.ok')}
               </button>

@@ -468,21 +468,8 @@ const ScriptFiles: React.FC = () => {
             <button
               onClick={handleUpdateReports}
               disabled={!selectedCompetency || !selectedFile || isSubmitting}
-              style={{
-                padding: '12px 24px',
-                background: (!selectedCompetency || !selectedFile || isSubmitting) ? '#E9ECEF' : '#28A745',
-                color: (!selectedCompetency || !selectedFile || isSubmitting) ? '#6C757D' : 'white',
-                border: 'none',
-                borderRadius: '6px',
-                fontFamily: 'Inter',
-                fontSize: '14px',
-                fontWeight: 500,
-                cursor: (!selectedCompetency || !selectedFile || isSubmitting) ? 'not-allowed' : 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '8px',
-                transition: 'all 0.2s'
-              }}
+              className="btn btn-primary"
+              style={{ display: 'flex', alignItems: 'center', gap: '8px' }}
             >
               {isSubmitting ? (
                 <>
@@ -506,21 +493,8 @@ const ScriptFiles: React.FC = () => {
             <button
               onClick={handleUpdateIDs}
               disabled={!selectedCompetency || !selectedFile || isSubmitting}
-              style={{
-                padding: '12px 24px',
-                background: (!selectedCompetency || !selectedFile || isSubmitting) ? '#E9ECEF' : '#17A2B8',
-                color: (!selectedCompetency || !selectedFile || isSubmitting) ? '#6C757D' : 'white',
-                border: 'none',
-                borderRadius: '6px',
-                fontFamily: 'Inter',
-                fontSize: '14px',
-                fontWeight: 500,
-                cursor: (!selectedCompetency || !selectedFile || isSubmitting) ? 'not-allowed' : 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '8px',
-                transition: 'all 0.2s'
-              }}
+              className="btn btn-secondary"
+              style={{ display: 'flex', alignItems: 'center', gap: '8px' }}
             >
               {isSubmitting ? (
                 <>
@@ -591,17 +565,7 @@ const ScriptFiles: React.FC = () => {
               }}>
                 <button
                   onClick={() => setShowSuccessPopup(false)}
-                  style={{
-                    padding: '12px 24px',
-                    border: 'none',
-                    borderRadius: '6px',
-                    background: '#3B82F6',
-                    color: 'white',
-                    fontFamily: 'Inter',
-                    fontSize: '14px',
-                    fontWeight: 500,
-                    cursor: 'pointer'
-                  }}
+                  className="btn btn-primary"
                 >
                   Tamam
                 </button>
@@ -653,16 +617,7 @@ const ScriptFiles: React.FC = () => {
               </div>
               <button
                 onClick={() => setShowErrorPopup(false)}
-                style={{
-                  backgroundColor: '#DC2626',
-                  color: 'white',
-                  border: 'none',
-                  borderRadius: '8px',
-                  padding: '12px 24px',
-                  fontSize: '14px',
-                  fontWeight: 500,
-                  cursor: 'pointer'
-                }}
+                className="btn btn-danger"
               >
                 Tamam
               </button>

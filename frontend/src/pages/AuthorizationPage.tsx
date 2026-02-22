@@ -1034,24 +1034,18 @@ const AuthorizationPage: React.FC = () => {
             {searchTerm && (
               <button
                 onClick={() => setSearchTerm('')}
+                className="btn btn-ghost"
                 style={{
                   position: 'absolute',
                   right: '12px',
                   top: '50%',
                   transform: 'translateY(-50%)',
-                  background: 'none',
-                  border: 'none',
                   color: '#9CA3AF',
-                  cursor: 'pointer',
                   fontSize: '16px',
                   padding: '4px',
-                  borderRadius: '50%',
                   width: '24px',
                   height: '24px',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  transition: 'all 0.2s ease'
+                  minWidth: '24px'
                 }}
                 onMouseEnter={(e) => {
                   (e.target as HTMLButtonElement).style.backgroundColor = '#F3F4F6';
@@ -1070,19 +1064,8 @@ const AuthorizationPage: React.FC = () => {
             {selectedItems.length > 0 && (
               <button
                 onClick={handleBulkDelete}
-                style={{
-                  backgroundColor: '#DC3545',
-                  color: 'white',
-                  border: 'none',
-                  borderRadius: '6px',
-                  padding: '10px 20px',
-                  fontSize: '14px',
-                  fontWeight: 600,
-                  cursor: 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '8px'
-                }}
+                className="btn btn-danger"
+                style={{ display: 'flex', alignItems: 'center', gap: '8px' }}
               >
                 <i className="fas fa-trash"></i>
                 {t('buttons.bulkDelete')} ({selectedItems.length})
@@ -1090,35 +1073,15 @@ const AuthorizationPage: React.FC = () => {
             )}
             <button
               onClick={() => setShowImportPopup(true)}
-              style={{
-                backgroundColor: '#17A2B8',
-                color: 'white',
-                border: 'none',
-                borderRadius: '6px',
-                padding: '10px 20px',
-                fontSize: '14px',
-                fontWeight: 600,
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '8px'
-              }}
+              className="btn btn-secondary"
+              style={{ display: 'flex', alignItems: 'center', gap: '8px' }}
             >
               <i className="fas fa-file-excel" />
               {t('buttons.uploadExcel')}
             </button>
             <button
               onClick={handleAddAuthorization}
-              style={{
-                backgroundColor: '#3A57E8',
-                color: 'white',
-                border: 'none',
-                borderRadius: '6px',
-                padding: '10px 20px',
-                fontSize: '14px',
-                fontWeight: 600,
-                cursor: 'pointer'
-              }}
+              className="btn btn-primary"
             >
               {t('buttons.add')}
             </button>
@@ -1408,15 +1371,8 @@ const AuthorizationPage: React.FC = () => {
             <button
               onClick={() => handlePageChange(currentPage - 1)}
               disabled={currentPage === 1}
-              style={{
-                padding: '8px 12px',
-                border: '1px solid #E9ECEF',
-                borderRadius: '6px',
-                backgroundColor: currentPage === 1 ? '#F8F9FA' : 'white',
-                color: currentPage === 1 ? '#ADB5BD' : '#232D42',
-                cursor: currentPage === 1 ? 'not-allowed' : 'pointer',
-                fontSize: '14px'
-              }}
+              className="btn btn-secondary"
+              style={{ fontSize: '14px' }}
             >
               {t('buttons.previous')}
             </button>
@@ -1425,15 +1381,8 @@ const AuthorizationPage: React.FC = () => {
               <button
                 key={page}
                 onClick={() => handlePageChange(page)}
-                style={{
-                  padding: '8px 12px',
-                  border: '1px solid #E9ECEF',
-                  borderRadius: '6px',
-                  backgroundColor: currentPage === page ? '#3A57E8' : 'white',
-                  color: currentPage === page ? 'white' : '#232D42',
-                  cursor: 'pointer',
-                  fontSize: '14px'
-                }}
+                className={currentPage === page ? 'btn btn-primary' : 'btn btn-secondary'}
+                style={{ fontSize: '14px', minWidth: '40px' }}
               >
                 {page}
               </button>
@@ -1442,15 +1391,8 @@ const AuthorizationPage: React.FC = () => {
             <button
               onClick={() => handlePageChange(currentPage + 1)}
               disabled={currentPage === totalPages}
-              style={{
-                padding: '8px 12px',
-                border: '1px solid #E9ECEF',
-                borderRadius: '6px',
-                backgroundColor: currentPage === totalPages ? '#F8F9FA' : 'white',
-                color: currentPage === totalPages ? '#ADB5BD' : '#232D42',
-                cursor: currentPage === totalPages ? 'not-allowed' : 'pointer',
-                fontSize: '14px'
-              }}
+              className="btn btn-secondary"
+              style={{ fontSize: '14px' }}
             >
               {t('buttons.next')}
             </button>
@@ -1667,17 +1609,16 @@ const AuthorizationPage: React.FC = () => {
                               setPositionSearchTerm('');
                               handlePositionSearch('');
                             }}
+                            className="btn btn-ghost"
                             style={{
                               position: 'absolute',
                               right: '12px',
                               top: '50%',
                               transform: 'translateY(-50%)',
-                              background: 'none',
-                              border: 'none',
                               color: '#6B7280',
-                              cursor: 'pointer',
                               fontSize: '12px',
-                              padding: '2px'
+                              padding: '2px',
+                              minWidth: 'auto'
                             }}
                           >
                             <i className="fas fa-times"></i>
@@ -1739,33 +1680,15 @@ const AuthorizationPage: React.FC = () => {
                     setShowAddPopup(false);
                     setShowPositionDropdown(false);
                   }}
-                  style={{
-                    padding: '12px 24px',
-                    border: '1px solid #E9ECEF',
-                    borderRadius: '6px',
-                    backgroundColor: 'white',
-                    color: '#6B7280',
-                    fontSize: '14px',
-                    fontWeight: 500,
-                    cursor: 'pointer'
-                  }}
+                  className="btn btn-secondary"
                 >
                   {t('buttons.cancel')}
                 </button>
                 <button
                   onClick={handleSubmitAdd}
                   disabled={isSubmitting}
-                  style={{
-                    padding: '12px 24px',
-                    border: 'none',
-                    borderRadius: '6px',
-                    backgroundColor: '#3A57E8',
-                    color: 'white',
-                    fontSize: '14px',
-                    fontWeight: 500,
-                    cursor: isSubmitting ? 'not-allowed' : 'pointer',
-                    opacity: isSubmitting ? 0.7 : 1
-                  }}
+                  className="btn btn-primary"
+                  style={{ opacity: isSubmitting ? 0.7 : 1 }}
                 >
                   {isSubmitting ? t('statuses.adding') : t('buttons.add')}
                 </button>
@@ -1982,17 +1905,16 @@ const AuthorizationPage: React.FC = () => {
                               setPositionSearchTerm('');
                               handlePositionSearch('');
                             }}
+                            className="btn btn-ghost"
                             style={{
                               position: 'absolute',
                               right: '12px',
                               top: '50%',
                               transform: 'translateY(-50%)',
-                              background: 'none',
-                              border: 'none',
                               color: '#6B7280',
-                              cursor: 'pointer',
                               fontSize: '12px',
-                              padding: '2px'
+                              padding: '2px',
+                              minWidth: 'auto'
                             }}
                           >
                             <i className="fas fa-times"></i>
@@ -2054,33 +1976,15 @@ const AuthorizationPage: React.FC = () => {
                     setShowEditPopup(false);
                     setShowPositionDropdown(false);
                   }}
-                  style={{
-                    padding: '12px 24px',
-                    border: '1px solid #E9ECEF',
-                    borderRadius: '6px',
-                    backgroundColor: 'white',
-                    color: '#6B7280',
-                    fontSize: '14px',
-                    fontWeight: 500,
-                    cursor: 'pointer'
-                  }}
+                  className="btn btn-secondary"
                 >
                   {t('buttons.cancel')}
                 </button>
                 <button
                   onClick={handleSubmitEdit}
                   disabled={isSubmitting}
-                  style={{
-                    padding: '12px 24px',
-                    border: 'none',
-                    borderRadius: '6px',
-                    backgroundColor: '#3A57E8',
-                    color: 'white',
-                    fontSize: '14px',
-                    fontWeight: 500,
-                    cursor: isSubmitting ? 'not-allowed' : 'pointer',
-                    opacity: isSubmitting ? 0.7 : 1
-                  }}
+                  className="btn btn-primary"
+                  style={{ opacity: isSubmitting ? 0.7 : 1 }}
                 >
                   {isSubmitting ? t('statuses.updating') : t('buttons.update')}
                 </button>
@@ -2134,34 +2038,14 @@ const AuthorizationPage: React.FC = () => {
                 <button
                   onClick={() => setShowBulkDeletePopup(false)}
                   disabled={isSubmitting}
-                  style={{
-                    padding: '10px 20px',
-                    border: '2px solid #E5E7EB',
-                    borderRadius: '8px',
-                    backgroundColor: 'white',
-                    color: '#6B7280',
-                    fontSize: '14px',
-                    fontWeight: 600,
-                    cursor: isSubmitting ? 'not-allowed' : 'pointer',
-                    fontFamily: 'Inter'
-                  }}
+                  className="btn btn-secondary"
                 >
                   {t('buttons.no')}
                 </button>
                 <button
                   onClick={confirmBulkDelete}
                   disabled={isSubmitting}
-                  style={{
-                    padding: '10px 20px',
-                    border: 'none',
-                    borderRadius: '8px',
-                    backgroundColor: '#DC2626',
-                    color: 'white',
-                    fontSize: '14px',
-                    fontWeight: 600,
-                    cursor: isSubmitting ? 'not-allowed' : 'pointer',
-                    fontFamily: 'Inter'
-                  }}
+                  className="btn btn-danger"
                 >
                   {isSubmitting ? t('statuses.deleting') : t('buttons.confirmDelete')}
                 </button>
@@ -2217,33 +2101,15 @@ const AuthorizationPage: React.FC = () => {
               }}>
                 <button
                   onClick={() => setShowDeletePopup(false)}
-                  style={{
-                    padding: '12px 24px',
-                    border: '1px solid #E9ECEF',
-                    borderRadius: '6px',
-                    backgroundColor: 'white',
-                    color: '#6B7280',
-                    fontSize: '14px',
-                    fontWeight: 500,
-                    cursor: 'pointer'
-                  }}
+                  className="btn btn-secondary"
                 >
                   {t('buttons.cancel')}
                 </button>
                 <button
                   onClick={handleConfirmDelete}
                   disabled={isSubmitting}
-                  style={{
-                    padding: '12px 24px',
-                    border: 'none',
-                    borderRadius: '6px',
-                    backgroundColor: '#DC2626',
-                    color: 'white',
-                    fontSize: '14px',
-                    fontWeight: 500,
-                    cursor: isSubmitting ? 'not-allowed' : 'pointer',
-                    opacity: isSubmitting ? 0.7 : 1
-                  }}
+                  className="btn btn-danger"
+                  style={{ opacity: isSubmitting ? 0.7 : 1 }}
                 >
                   {isSubmitting ? t('statuses.deleting') : t('buttons.delete')}
                 </button>
@@ -2295,16 +2161,7 @@ const AuthorizationPage: React.FC = () => {
               </div>
               <button
                 onClick={() => setShowSuccessPopup(false)}
-                style={{
-                  backgroundColor: '#059669',
-                  color: 'white',
-                  border: 'none',
-                  borderRadius: '8px',
-                  padding: '12px 24px',
-                  fontSize: '14px',
-                  fontWeight: 500,
-                  cursor: 'pointer'
-                }}
+                className="btn btn-primary"
               >
                 {t('buttons.ok')}
               </button>
@@ -2356,16 +2213,7 @@ const AuthorizationPage: React.FC = () => {
               </div>
               <button
                 onClick={() => setShowErrorPopup(false)}
-                style={{
-                  backgroundColor: '#DC2626',
-                  color: 'white',
-                  border: 'none',
-                  borderRadius: '8px',
-                  padding: '12px 24px',
-                  fontSize: '14px',
-                  fontWeight: 500,
-                  cursor: 'pointer'
-                }}
+                className="btn btn-danger"
               >
                 {t('buttons.ok')}
               </button>
@@ -2412,13 +2260,8 @@ const AuthorizationPage: React.FC = () => {
                 </div>
                 <button
                   onClick={() => setShowImportPopup(false)}
-                  style={{
-                    background: 'none',
-                    border: 'none',
-                    fontSize: '24px',
-                    cursor: 'pointer',
-                    color: '#6B7280'
-                  }}
+                  className="btn btn-ghost"
+                  style={{ fontSize: '24px', color: '#6B7280', minWidth: 'auto' }}
                 >
                   ×
                 </button>
@@ -2440,18 +2283,8 @@ const AuthorizationPage: React.FC = () => {
                 </div>
                 <button
                   onClick={downloadTemplate}
-                  style={{
-                    background: '#17A2B8',
-                    padding: '8px 16px',
-                    fontSize: '13px',
-                    color: 'white',
-                    border: 'none',
-                    borderRadius: '6px',
-                    cursor: 'pointer',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '8px'
-                  }}
+                  className="btn btn-secondary"
+                  style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13px' }}
                 >
                   <i className="fas fa-download" />
                   {t('buttons.downloadTemplate')}
@@ -2545,33 +2378,15 @@ const AuthorizationPage: React.FC = () => {
                     setSelectedFile(null);
                     setImportMessage('');
                   }}
-                  style={{
-                    padding: '12px 24px',
-                    border: '1px solid #E9ECEF',
-                    borderRadius: '6px',
-                    backgroundColor: 'white',
-                    color: '#6B7280',
-                    fontSize: '14px',
-                    fontWeight: 500,
-                    cursor: 'pointer'
-                  }}
+                  className="btn btn-secondary"
                 >
                   {t('buttons.cancel')}
                 </button>
                 <button
                   onClick={importExcelData}
                   disabled={isSubmitting || !selectedFile}
-                  style={{
-                    padding: '12px 24px',
-                    border: 'none',
-                    borderRadius: '6px',
-                    backgroundColor: '#17A2B8',
-                    color: 'white',
-                    fontSize: '14px',
-                    fontWeight: 500,
-                    cursor: isSubmitting || !selectedFile ? 'not-allowed' : 'pointer',
-                    opacity: isSubmitting || !selectedFile ? 0.7 : 1
-                  }}
+                  className="btn btn-primary"
+                  style={{ opacity: isSubmitting || !selectedFile ? 0.7 : 1 }}
                 >
                   {isSubmitting ? t('labels.uploading') : t('buttons.upload')}
                 </button>

@@ -669,26 +669,7 @@ const ResultsPage: React.FC = () => {
           {/* Refresh Button */}
           <button
             onClick={() => loadData(true)}
-            style={{
-              background: '#0286F7',
-              color: 'white',
-              border: 'none',
-              padding: '8px 16px',
-              borderRadius: '8px',
-              cursor: 'pointer',
-              fontWeight: 500,
-              display: 'flex',
-              alignItems: 'center',
-              gap: '8px',
-              transition: 'background-color 0.3s',
-              fontFamily: 'Inter'
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.backgroundColor = '#0275D8';
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.backgroundColor = '#0286F7';
-            }}
+            className="btn btn-secondary"
           >
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
               <path d="M1 4V10H7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
@@ -701,26 +682,7 @@ const ResultsPage: React.FC = () => {
           {/* Filter Button */}
           <button
             onClick={openFilterModal}
-            style={{
-              background: '#0286F7',
-              color: 'white',
-              border: 'none',
-              padding: '8px 16px',
-              borderRadius: '8px',
-              cursor: 'pointer',
-              fontWeight: 500,
-              display: 'flex',
-              alignItems: 'center',
-              gap: '8px',
-              transition: 'background-color 0.3s',
-              fontFamily: 'Inter'
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.backgroundColor = '#0275D8';
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.backgroundColor = '#0286F7';
-            }}
+            className="btn btn-secondary"
           >
             <i className="fas fa-filter"></i>
             {t('buttons.filter')}
@@ -729,26 +691,7 @@ const ResultsPage: React.FC = () => {
           {/* Download Button */}
           <button
             onClick={() => setShowDownloadPopup(true)}
-            style={{
-              background: '#1D6F42',
-              color: 'white',
-              border: 'none',
-              padding: '8px 16px',
-              borderRadius: '8px',
-              cursor: 'pointer',
-              fontWeight: 500,
-              display: 'flex',
-              alignItems: 'center',
-              gap: '8px',
-              transition: 'background-color 0.3s',
-              fontFamily: 'Inter'
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.backgroundColor = '#1A5F2E';
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.backgroundColor = '#1D6F42';
-            }}
+            className="btn btn-primary"
           >
             <i className="fas fa-download"></i>
             {t('buttons.downloadResults')}
@@ -1220,14 +1163,14 @@ const ResultsPage: React.FC = () => {
                         onChange={() => toggleTempCompetency(competency)}
                         style={{ position: 'absolute', opacity: 0, width: 0, height: 0 }}
                       />
-                      <span style={{
-                        width: '42px',
-                        height: '24px',
-                        background: tempSelectedCompetencies.includes(competency) ? '#2563EB' : '#D1D5DB',
-                        borderRadius: '999px',
-                        position: 'relative',
-                        transition: 'all 0.2s'
-                      }}>
+                            <span style={{
+                              width: '42px',
+                              height: '24px',
+                              background: tempSelectedCompetencies.includes(competency) ? '#9f8fbe' : 'rgba(159, 143, 190, 0.25)',
+                              borderRadius: '999px',
+                              position: 'relative',
+                              transition: 'all 0.2s'
+                            }}>
                         <span style={{
                           position: 'absolute',
                           top: '2px',
@@ -1264,7 +1207,7 @@ const ResultsPage: React.FC = () => {
                             <span style={{
                               width: '42px',
                               height: '24px',
-                              background: tempSelectedTitles.includes(title) ? '#2563EB' : '#D1D5DB',
+                              background: tempSelectedTitles.includes(title) ? '#9f8fbe' : 'rgba(159, 143, 190, 0.25)',
                               borderRadius: '999px',
                               position: 'relative',
                               transition: 'all 0.2s'
@@ -1305,7 +1248,7 @@ const ResultsPage: React.FC = () => {
                             <span style={{
                               width: '42px',
                               height: '24px',
-                              background: tempSelectedPositions.includes(position) ? '#2563EB' : '#D1D5DB',
+                              background: tempSelectedPositions.includes(position) ? '#9f8fbe' : 'rgba(159, 143, 190, 0.25)',
                               borderRadius: '999px',
                               position: 'relative',
                               transition: 'all 0.2s'
@@ -1332,44 +1275,20 @@ const ResultsPage: React.FC = () => {
             <div style={{ display: 'flex', justifyContent: 'space-between', gap: '12px', padding: '16px 24px', borderTop: '1px solid #E5E7EB' }}>
               <button
                 onClick={resetFilterModal}
-                style={{
-                  padding: '10px 16px',
-                  borderRadius: '8px',
-                  border: '1px solid #D1D5DB',
-                  background: '#F9FAFB',
-                  color: '#374151',
-                  fontWeight: 600,
-                  cursor: 'pointer'
-                }}
+                className="btn btn-secondary"
               >
                 {t('buttons.clearFilters')}
               </button>
               <div style={{ display: 'flex', gap: '12px' }}>
                 <button
                   onClick={closeFilterModal}
-                  style={{
-                    padding: '10px 16px',
-                    borderRadius: '8px',
-                    border: '1px solid #D1D5DB',
-                    background: 'white',
-                    color: '#374151',
-                    fontWeight: 600,
-                    cursor: 'pointer'
-                  }}
+                  className="btn btn-secondary"
                 >
                   {t('buttons.cancel')}
                 </button>
                 <button
                   onClick={saveFilterModal}
-                  style={{
-                    padding: '10px 16px',
-                    borderRadius: '8px',
-                    border: 'none',
-                    background: '#2563EB',
-                    color: 'white',
-                    fontWeight: 600,
-                    cursor: 'pointer'
-                  }}
+                  className="btn btn-primary"
                 >
                   {t('buttons.applyFilters')}
                 </button>

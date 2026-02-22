@@ -1045,24 +1045,18 @@ const Organization: React.FC = () => {
             {searchTerm && (
               <button
                 onClick={() => setSearchTerm('')}
+                className="btn btn-ghost"
                 style={{
                   position: 'absolute',
                   right: '12px',
                   top: '50%',
                   transform: 'translateY(-50%)',
-                  background: 'none',
-                  border: 'none',
                   color: '#9CA3AF',
-                  cursor: 'pointer',
                   fontSize: '16px',
                   padding: '4px',
-                  borderRadius: '50%',
                   width: '24px',
                   height: '24px',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  transition: 'all 0.2s ease'
+                  minWidth: '24px'
                 }}
                 onMouseEnter={(e) => {
                   (e.target as HTMLButtonElement).style.backgroundColor = '#F3F4F6';
@@ -1081,19 +1075,8 @@ const Organization: React.FC = () => {
             {selectedItems.length > 0 && (
               <button
                 onClick={handleBulkDelete}
-                style={{
-                  backgroundColor: '#DC3545',
-                  color: 'white',
-                  border: 'none',
-                  borderRadius: '6px',
-                  padding: '10px 20px',
-                  fontSize: '14px',
-                  fontWeight: 600,
-                  cursor: 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '8px'
-                }}
+                className="btn btn-danger"
+                style={{ display: 'flex', alignItems: 'center', gap: '8px' }}
               >
                 <i className="fas fa-trash"></i>
                 {formatTemplate(t('labels.bulkDeleteWithCount'), { count: selectedItems.length })}
@@ -1101,54 +1084,23 @@ const Organization: React.FC = () => {
             )}
             <button
               onClick={openTitlePopup}
-              style={{
-                backgroundColor: '#6F42C1',
-                color: 'white',
-                border: 'none',
-                borderRadius: '6px',
-                padding: '10px 20px',
-                fontSize: '14px',
-                fontWeight: 600,
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '8px'
-              }}
+              className="btn btn-secondary"
+              style={{ display: 'flex', alignItems: 'center', gap: '8px' }}
             >
               <i className="fas fa-list"></i>
               {t('buttons.editTitles')}
             </button>
             <button
               onClick={handleOpenImportPopup}
-              style={{
-                backgroundColor: '#17A2B8',
-                color: 'white',
-                border: 'none',
-                borderRadius: '6px',
-                padding: '10px 20px',
-                fontSize: '14px',
-                fontWeight: 600,
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '8px'
-              }}
+              className="btn btn-secondary"
+              style={{ display: 'flex', alignItems: 'center', gap: '8px' }}
             >
               <i className="fas fa-file-excel"></i>
               {t('buttons.uploadExcel')}
             </button>
             <button
               onClick={handleAddOrganization}
-              style={{
-                backgroundColor: '#3A57E8',
-                color: 'white',
-                border: 'none',
-                borderRadius: '6px',
-                padding: '10px 20px',
-                fontSize: '14px',
-                fontWeight: 600,
-                cursor: 'pointer'
-              }}
+              className="btn btn-primary"
             >
               {t('buttons.add')}
             </button>
@@ -1478,15 +1430,8 @@ const Organization: React.FC = () => {
             <button
               onClick={() => handlePageChange(currentPage - 1)}
               disabled={currentPage === 1}
-              style={{
-                padding: '8px 12px',
-                border: '1px solid #E9ECEF',
-                borderRadius: '6px',
-                backgroundColor: currentPage === 1 ? '#F8F9FA' : 'white',
-                color: currentPage === 1 ? '#ADB5BD' : '#232D42',
-                cursor: currentPage === 1 ? 'not-allowed' : 'pointer',
-                fontSize: '14px'
-              }}
+              className="btn btn-secondary"
+              style={{ fontSize: '14px' }}
             >
               {t('buttons.previous')}
             </button>
@@ -1495,15 +1440,8 @@ const Organization: React.FC = () => {
               <button
                 key={page}
                 onClick={() => handlePageChange(page)}
-                style={{
-                  padding: '8px 12px',
-                  border: '1px solid #E9ECEF',
-                  borderRadius: '6px',
-                  backgroundColor: currentPage === page ? '#3A57E8' : 'white',
-                  color: currentPage === page ? 'white' : '#232D42',
-                  cursor: 'pointer',
-                  fontSize: '14px'
-                }}
+                className={currentPage === page ? 'btn btn-primary' : 'btn btn-secondary'}
+                style={{ fontSize: '14px', minWidth: '40px' }}
               >
                 {page}
               </button>
@@ -1512,15 +1450,8 @@ const Organization: React.FC = () => {
             <button
               onClick={() => handlePageChange(currentPage + 1)}
               disabled={currentPage === totalPages}
-              style={{
-                padding: '8px 12px',
-                border: '1px solid #E9ECEF',
-                borderRadius: '6px',
-                backgroundColor: currentPage === totalPages ? '#F8F9FA' : 'white',
-                color: currentPage === totalPages ? '#ADB5BD' : '#232D42',
-                cursor: currentPage === totalPages ? 'not-allowed' : 'pointer',
-                fontSize: '14px'
-              }}
+              className="btn btn-secondary"
+              style={{ fontSize: '14px' }}
             >
               {t('buttons.next')}
             </button>
@@ -1562,7 +1493,7 @@ const Organization: React.FC = () => {
                 <div style={{
                   width: '40px',
                   height: '40px',
-                  backgroundColor: '#3B82F6',
+                  backgroundColor: '#9f8fbe',
                   borderRadius: '10px',
                   display: 'flex',
                   alignItems: 'center',
@@ -1786,43 +1717,15 @@ const Organization: React.FC = () => {
               }}>
                 <button
                   onClick={() => setShowAddPopup(false)}
-                  style={{
-                    padding: '14px 28px',
-                    border: '2px solid #E5E7EB',
-                    borderRadius: '8px',
-                    backgroundColor: 'white',
-                    color: '#6B7280',
-                    fontSize: '14px',
-                    fontWeight: 600,
-                    cursor: 'pointer',
-                    transition: 'all 0.2s ease',
-                    fontFamily: 'Inter'
-                  }}
-                  onMouseEnter={(e) => {
-                    (e.target as HTMLButtonElement).style.borderColor = '#D1D5DB';
-                    (e.target as HTMLButtonElement).style.backgroundColor = '#F9FAFB';
-                  }}
-                  onMouseLeave={(e) => {
-                    (e.target as HTMLButtonElement).style.borderColor = '#E5E7EB';
-                    (e.target as HTMLButtonElement).style.backgroundColor = 'white';
-                  }}
+                  className="btn btn-secondary"
                 >
                   {t('buttons.cancel')}
                 </button>
                 <button
                   onClick={handleSubmitAdd}
                   disabled={isSubmitting}
-                  style={{
-                    padding: '14px 28px',
-                    border: 'none',
-                    borderRadius: '8px',
-                    backgroundColor: '#3B82F6',
-                    color: 'white',
-                    fontSize: '14px',
-                    fontWeight: 500,
-                    cursor: isSubmitting ? 'not-allowed' : 'pointer',
-                    opacity: isSubmitting ? 0.7 : 1
-                  }}
+                  className="btn btn-primary"
+                  style={{ opacity: isSubmitting ? 0.7 : 1 }}
                 >
                   {isSubmitting ? t('statuses.adding') : t('buttons.add')}
                 </button>
@@ -2073,55 +1976,15 @@ const Organization: React.FC = () => {
               }}>
                 <button
                   onClick={() => setShowEditPopup(false)}
-                  style={{
-                    padding: '14px 28px',
-                    border: '2px solid #E5E7EB',
-                    borderRadius: '8px',
-                    backgroundColor: 'white',
-                    color: '#6B7280',
-                    fontSize: '14px',
-                    fontWeight: 600,
-                    cursor: 'pointer',
-                    transition: 'all 0.2s ease',
-                    fontFamily: 'Inter'
-                  }}
-                  onMouseEnter={(e) => {
-                    (e.target as HTMLButtonElement).style.borderColor = '#D1D5DB';
-                    (e.target as HTMLButtonElement).style.backgroundColor = '#F9FAFB';
-                  }}
-                  onMouseLeave={(e) => {
-                    (e.target as HTMLButtonElement).style.borderColor = '#E5E7EB';
-                    (e.target as HTMLButtonElement).style.backgroundColor = 'white';
-                  }}
+                  className="btn btn-secondary"
                 >
                   {t('buttons.cancel')}
                 </button>
                 <button
                   onClick={handleSubmitEdit}
                   disabled={isSubmitting}
-                  style={{
-                    padding: '14px 28px',
-                    border: 'none',
-                    borderRadius: '8px',
-                    backgroundColor: '#10B981',
-                    color: 'white',
-                    fontSize: '14px',
-                    fontWeight: 600,
-                    cursor: isSubmitting ? 'not-allowed' : 'pointer',
-                    opacity: isSubmitting ? 0.7 : 1,
-                    transition: 'all 0.2s ease',
-                    fontFamily: 'Inter'
-                  }}
-                  onMouseEnter={(e) => {
-                    if (!isSubmitting) {
-                      (e.target as HTMLButtonElement).style.backgroundColor = '#059669';
-                    }
-                  }}
-                  onMouseLeave={(e) => {
-                    if (!isSubmitting) {
-                      (e.target as HTMLButtonElement).style.backgroundColor = '#10B981';
-                    }
-                  }}
+                  className="btn btn-primary"
+                  style={{ opacity: isSubmitting ? 0.7 : 1 }}
                 >
                   {isSubmitting ? t('statuses.updating') : t('buttons.update')}
                 </button>
@@ -2175,34 +2038,14 @@ const Organization: React.FC = () => {
                 <button
                   onClick={() => setShowBulkDeletePopup(false)}
                   disabled={isSubmitting}
-                  style={{
-                    padding: '10px 20px',
-                    border: '2px solid #E5E7EB',
-                    borderRadius: '8px',
-                    backgroundColor: 'white',
-                    color: '#6B7280',
-                    fontSize: '14px',
-                    fontWeight: 600,
-                    cursor: isSubmitting ? 'not-allowed' : 'pointer',
-                    fontFamily: 'Inter'
-                  }}
+                  className="btn btn-secondary"
                 >
                   {t('buttons.no')}
                 </button>
                 <button
                   onClick={confirmBulkDelete}
                   disabled={isSubmitting}
-                  style={{
-                    padding: '10px 20px',
-                    border: 'none',
-                    borderRadius: '8px',
-                    backgroundColor: '#DC2626',
-                    color: 'white',
-                    fontSize: '14px',
-                    fontWeight: 600,
-                    cursor: isSubmitting ? 'not-allowed' : 'pointer',
-                    fontFamily: 'Inter'
-                  }}
+                  className="btn btn-danger"
                 >
                   {isSubmitting ? t('labels.deleting') : t('buttons.confirmDelete')}
                 </button>
@@ -2258,33 +2101,15 @@ const Organization: React.FC = () => {
               }}>
                 <button
                   onClick={() => setShowDeletePopup(false)}
-                  style={{
-                    padding: '12px 24px',
-                    border: '1px solid #E9ECEF',
-                    borderRadius: '6px',
-                    backgroundColor: 'white',
-                    color: '#6B7280',
-                    fontSize: '14px',
-                    fontWeight: 500,
-                    cursor: 'pointer'
-                  }}
+                  className="btn btn-secondary"
                 >
                   {t('buttons.cancel')}
                 </button>
                 <button
                   onClick={handleConfirmDelete}
                   disabled={isSubmitting}
-                  style={{
-                    padding: '12px 24px',
-                    border: 'none',
-                    borderRadius: '6px',
-                    backgroundColor: '#DC2626',
-                    color: 'white',
-                    fontSize: '14px',
-                    fontWeight: 500,
-                    cursor: isSubmitting ? 'not-allowed' : 'pointer',
-                    opacity: isSubmitting ? 0.7 : 1
-                  }}
+                  className="btn btn-danger"
+                  style={{ opacity: isSubmitting ? 0.7 : 1 }}
                 >
                   {isSubmitting ? t('labels.deleting') : t('buttons.delete')}
                 </button>
@@ -2336,16 +2161,7 @@ const Organization: React.FC = () => {
               </div>
               <button
                 onClick={() => setShowSuccessPopup(false)}
-                style={{
-                  backgroundColor: '#059669',
-                  color: 'white',
-                  border: 'none',
-                  borderRadius: '8px',
-                  padding: '12px 24px',
-                  fontSize: '14px',
-                  fontWeight: 500,
-                  cursor: 'pointer'
-                }}
+                className="btn btn-primary"
               >
                 {t('buttons.ok')}
               </button>
@@ -2397,16 +2213,7 @@ const Organization: React.FC = () => {
               </div>
               <button
                 onClick={() => setShowErrorPopup(false)}
-                style={{
-                  backgroundColor: '#DC2626',
-                  color: 'white',
-                  border: 'none',
-                  borderRadius: '8px',
-                  padding: '12px 24px',
-                  fontSize: '14px',
-                  fontWeight: 500,
-                  cursor: 'pointer'
-                }}
+                className="btn btn-danger"
               >
                 {t('buttons.ok')}
               </button>
@@ -2454,13 +2261,8 @@ const Organization: React.FC = () => {
                 </div>
                 <button
                   onClick={closeTitlePopup}
-                  style={{
-                    background: 'none',
-                    border: 'none',
-                    fontSize: '24px',
-                    cursor: 'pointer',
-                    color: '#6B7280'
-                  }}
+                className="btn btn-ghost"
+                style={{ fontSize: '24px', color: '#6B7280', minWidth: 'auto' }}
                 >
                   ×
                 </button>
@@ -2491,41 +2293,23 @@ const Organization: React.FC = () => {
                       <button
                         onClick={() => moveTitleOption(index, index - 1)}
                         disabled={index === 0}
-                        style={{
-                          backgroundColor: '#F3F4F6',
-                          border: '1px solid #E5E7EB',
-                          borderRadius: '6px',
-                          padding: '6px 8px',
-                          cursor: index === 0 ? 'not-allowed' : 'pointer',
-                          color: '#374151'
-                        }}
+                        className="btn btn-secondary"
+                        style={{ height: '28px', padding: '0 8px', minWidth: '28px' }}
                       >
                         ↑
                       </button>
                       <button
                         onClick={() => moveTitleOption(index, index + 1)}
                         disabled={index === editTitleOptions.length - 1}
-                        style={{
-                          backgroundColor: '#F3F4F6',
-                          border: '1px solid #E5E7EB',
-                          borderRadius: '6px',
-                          padding: '6px 8px',
-                          cursor: index === editTitleOptions.length - 1 ? 'not-allowed' : 'pointer',
-                          color: '#374151'
-                        }}
+                        className="btn btn-secondary"
+                        style={{ height: '28px', padding: '0 8px', minWidth: '28px' }}
                       >
                         ↓
                       </button>
                       <button
                         onClick={() => removeTitleOption(index)}
-                        style={{
-                          backgroundColor: '#FEE2E2',
-                          border: '1px solid #FECACA',
-                          borderRadius: '6px',
-                          padding: '6px 8px',
-                          cursor: 'pointer',
-                          color: '#B91C1C'
-                        }}
+                        className="btn btn-danger"
+                        style={{ height: '28px', padding: '0 8px', minWidth: '28px' }}
                       >
                         ✕
                       </button>
@@ -2537,17 +2321,8 @@ const Organization: React.FC = () => {
               <button
                 onClick={addTitleOption}
                 disabled={editTitleOptions.length >= 6}
-                style={{
-                  marginTop: '16px',
-                  backgroundColor: editTitleOptions.length >= 6 ? '#E5E7EB' : '#EEF2FF',
-                  color: editTitleOptions.length >= 6 ? '#9CA3AF' : '#4338CA',
-                  border: '1px solid #C7D2FE',
-                  borderRadius: '6px',
-                  padding: '8px 12px',
-                  fontSize: '13px',
-                  fontWeight: 600,
-                  cursor: editTitleOptions.length >= 6 ? 'not-allowed' : 'pointer'
-                }}
+                className="btn btn-secondary"
+                style={{ marginTop: '16px', fontSize: '13px' }}
               >
                 + {t('labels.addTitleOption')}
               </button>
@@ -2563,32 +2338,14 @@ const Organization: React.FC = () => {
                 <button
                   onClick={closeTitlePopup}
                   disabled={isTitleSaving}
-                  style={{
-                    backgroundColor: '#F3F4F6',
-                    color: '#374151',
-                    border: '1px solid #D1D5DB',
-                    padding: '10px 20px',
-                    borderRadius: '6px',
-                    fontSize: '14px',
-                    fontWeight: 500,
-                    cursor: isTitleSaving ? 'not-allowed' : 'pointer'
-                  }}
+                  className="btn btn-secondary"
                 >
                   {t('buttons.cancel')}
                 </button>
                 <button
                   onClick={handleSaveTitleOptions}
                   disabled={isTitleSaving}
-                  style={{
-                    backgroundColor: isTitleSaving ? '#9CA3AF' : '#3B82F6',
-                    color: 'white',
-                    border: 'none',
-                    padding: '10px 20px',
-                    borderRadius: '6px',
-                    fontSize: '14px',
-                    fontWeight: 500,
-                    cursor: isTitleSaving ? 'not-allowed' : 'pointer'
-                  }}
+                  className="btn btn-primary"
                 >
                   {isTitleSaving ? t('statuses.saving') : t('buttons.save')}
                 </button>
@@ -2636,13 +2393,8 @@ const Organization: React.FC = () => {
                 </div>
                 <button
                   onClick={handleCloseImportPopup}
-                  style={{
-                    background: 'none',
-                    border: 'none',
-                    fontSize: '24px',
-                    cursor: 'pointer',
-                    color: '#6B7280'
-                  }}
+                  className="btn btn-ghost"
+                  style={{ fontSize: '24px', color: '#6B7280', minWidth: 'auto' }}
                 >
                   ×
                 </button>
@@ -2671,19 +2423,9 @@ const Organization: React.FC = () => {
                   </strong>
                 </div>
                 <button
-                  onClick={downloadTemplate}
-                  style={{
-                    backgroundColor: '#17A2B8',
-                    color: 'white',
-                    border: 'none',
-                    borderRadius: '6px',
-                    padding: '8px 16px',
-                    fontSize: '13px',
-                    cursor: 'pointer',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '8px'
-                  }}
+                onClick={downloadTemplate}
+                className="btn btn-secondary"
+                style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13px' }}
                 >
                   <i className="fas fa-download"></i>
                   {t('buttons.downloadTemplate')}
@@ -2760,32 +2502,14 @@ const Organization: React.FC = () => {
               }}>
                 <button
                   onClick={handleCloseImportPopup}
-                  style={{
-                    backgroundColor: '#F3F4F6',
-                    color: '#374151',
-                    border: '1px solid #D1D5DB',
-                    padding: '10px 20px',
-                    borderRadius: '6px',
-                    fontSize: '14px',
-                    fontWeight: 500,
-                    cursor: 'pointer'
-                  }}
+                className="btn btn-secondary"
                 >
                   {t('buttons.cancel')}
                 </button>
                 <button
                   onClick={handleImportExcel}
                   disabled={!selectedFile || isSubmitting}
-                  style={{
-                    backgroundColor: selectedFile && !isSubmitting ? '#3B82F6' : '#9CA3AF',
-                    color: 'white',
-                    border: 'none',
-                    padding: '10px 20px',
-                    borderRadius: '6px',
-                    fontSize: '14px',
-                    fontWeight: 500,
-                    cursor: selectedFile && !isSubmitting ? 'pointer' : 'not-allowed'
-                  }}
+                className="btn btn-primary"
                 >
                   {isSubmitting ? t('labels.uploading') : t('buttons.upload')}
                 </button>
