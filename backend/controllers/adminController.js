@@ -744,6 +744,182 @@ const adminController = {
         }
     },
 
+    bulkCreatePendingPersons: async (req, res) => {
+        try {
+            if (!req.file) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'Excel dosyası seçilmedi. Lütfen .xlsx veya .xls formatında bir dosya seçin.'
+                });
+            }
+
+            const workbook = XLSX.read(req.file.buffer, { type: 'buffer' });
+            const sheetName = workbook.SheetNames[0];
+            const worksheet = workbook.Sheets[sheetName];
+
+            const range = XLSX.utils.decode_range(worksheet['!ref']);
+            const data = [];
+
+            for (let rowNum = 1; rowNum <= range.e.r; rowNum++) {
+                const row = [];
+                for (let colNum = range.s.c; colNum <= range.e.c; colNum++) {
+                    const cellAddress = XLSX.utils.encode_cell({ r: rowNum, c: colNum });
+                    const cell = worksheet[cellAddress];
+                    row.push(cell ? cell.v : '');
+                }
+                data.push(row);
+            }
+
+            if (data.length === 0) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'Excel dosyası boş veya okunamıyor. Lütfen geçerli bir Excel dosyası (.xlsx, .xls) seçin.'
+                });
+            }
+
+            const { getCompanyFilter, addCompanyIdToData } = require('../middleware/auth');
+            const companyFilter = getCompanyFilter(req);
+            const escapeRegex = (value) => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+            const normalizePersonType = (value) => {
+                const normalized = (value || '').toString().toLowerCase().trim();
+                if (normalized.includes('aday') || normalized.includes('candidate')) return 'Aday';
+                if (normalized.includes('calisan') || normalized.includes('çalışan') || normalized.includes('employee')) return 'Çalışan';
+                return '';
+            };
+
+            const results = {
+                success: [],
+                errors: []
+            };
+
+            const seenEmails = new Set();
+
+            for (let i = 0; i < data.length; i++) {
+                const row = data[i];
+                const rowNumber = i + 2;
+
+                try {
+                    const isRowEmpty = row.every(cell => !cell || cell.toString().trim() === '');
+                    if (isRowEmpty) {
+                        continue;
+                    }
+
+                    if (row.length < 6) {
+                        results.errors.push({
+                            row: rowNumber,
+                            message: 'Satırda yeterli sütun bulunmuyor. 6 sütun gerekli: Ad Soyad, Email, Ünvan, Pozisyon, Departman, Çalışan Tipi'
+                        });
+                        continue;
+                    }
+
+                    const [name, email, unvan, pozisyon, departman, rawPersonType] = row;
+
+                    const isEmpty = (value) => !value || value.toString().trim() === '' || value.toString().trim() === '-';
+                    if (isEmpty(name) || isEmpty(email) || isEmpty(unvan) || isEmpty(pozisyon) || isEmpty(departman) || isEmpty(rawPersonType)) {
+                        const missingFields = [];
+                        if (isEmpty(name)) missingFields.push('Ad Soyad');
+                        if (isEmpty(email)) missingFields.push('Email');
+                        if (isEmpty(unvan)) missingFields.push('Ünvan');
+                        if (isEmpty(pozisyon)) missingFields.push('Pozisyon');
+                        if (isEmpty(departman)) missingFields.push('Departman');
+                        if (isEmpty(rawPersonType)) missingFields.push('Çalışan Tipi');
+                        results.errors.push({
+                            row: rowNumber,
+                            message: `Eksik/geçersiz alanlar: ${missingFields.join(', ')}. Tüm alanlar dolu olmalıdır (boş veya '-' karakteri kabul edilmez).`
+                        });
+                        continue;
+                    }
+
+                    const normalizedEmail = email.toString().trim().toLowerCase();
+                    if (seenEmails.has(normalizedEmail)) {
+                        results.errors.push({
+                            row: rowNumber,
+                            message: 'Excel dosyasında aynı email birden fazla kez girilmiş.'
+                        });
+                        continue;
+                    }
+                    seenEmails.add(normalizedEmail);
+
+                    const personType = normalizePersonType(rawPersonType);
+                    if (!personType) {
+                        results.errors.push({
+                            row: rowNumber,
+                            message: `Çalışan Tipi geçersiz: ${rawPersonType}`
+                        });
+                        continue;
+                    }
+
+                    const emailRegex = new RegExp(`^${escapeRegex(email.toString().trim())}$`, 'i');
+                    const existing = await UserCode.findOne({ email: emailRegex, ...companyFilter });
+                    if (existing) {
+                        results.errors.push({
+                            row: rowNumber,
+                            message: 'Bu e-posta ile kayıt zaten mevcut'
+                        });
+                        continue;
+                    }
+
+                    const expiryDate = new Date();
+                    expiryDate.setFullYear(expiryDate.getFullYear() + 10);
+                    const code = await UserCode.generateUniqueCode();
+                    const codeData = addCompanyIdToData(req, {
+                        code,
+                        name: name.toString().trim(),
+                        email: email.toString().trim(),
+                        planet: '',
+                        allPlanets: [],
+                        personType,
+                        unvan: unvan.toString().trim(),
+                        pozisyon: pozisyon.toString().trim(),
+                        departman: departman.toString().trim(),
+                        status: 'Beklemede',
+                        sentDate: new Date(),
+                        expiryDate,
+                        isPlaceholder: true
+                    });
+
+                    if (!codeData.companyId && req.admin && req.admin.role !== 'superadmin') {
+                        results.errors.push({
+                            row: rowNumber,
+                            message: 'Admin companyId bulunamadı. Lütfen admin hesabınızı kontrol edin.'
+                        });
+                        continue;
+                    }
+
+                    const newCode = new UserCode(codeData);
+                    await newCode.save();
+                    results.success.push({ row: rowNumber, result: newCode });
+                } catch (error) {
+                    results.errors.push({
+                        row: rowNumber,
+                        message: error.message || 'Bilinmeyen hata'
+                    });
+                }
+            }
+
+            if (results.success.length === 0) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'Hiçbir kişi eklenemedi',
+                    errors: results.errors
+                });
+            }
+
+            res.json({
+                success: true,
+                message: `${results.success.length} kişi başarıyla eklendi`,
+                count: results.success.length,
+                errors: results.errors.length > 0 ? results.errors : undefined
+            });
+        } catch (error) {
+            safeLog('error', 'Toplu kişi ekleme hatası', error);
+            res.status(500).json({
+                success: false,
+                message: getSafeErrorMessage(error, 'Toplu kişi eklenirken bir hata oluştu')
+            });
+        }
+    },
+
     // Son tamamlayan kullanıcı ve son 3 sonucu getir
     getLatestUserSummary: async (req, res) => {
         try {

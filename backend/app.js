@@ -3,6 +3,7 @@ const express = require('express');
 const cors = require('cors');
 const mongoose = require('mongoose');
 const path = require('path');
+const multer = require('multer');
 const WebSocketService = require('./services/websocketService');
 const { safeLog } = require('./utils/helpers');
 const { connectDB, disconnectDB } = require('./config/database');
@@ -187,6 +188,7 @@ apiRouter.get('/health', async (req, res) => {
 
 // Authentication middleware'i import et
 const { authenticateAdmin } = require('./middleware/auth');
+const upload = multer({ storage: multer.memoryStorage() });
 
 // Kod işlemleri
 apiRouter.post('/generate-code', authenticateAdmin, wsService.getCodeController().generateCode.bind(wsService.getCodeController()));
@@ -200,6 +202,27 @@ apiRouter.post('/send-code', authenticateAdmin, adminController.sendCode.bind(ad
 apiRouter.post('/update-code-status', authenticateAdmin, adminController.updateCodeStatus.bind(adminController));
 apiRouter.get('/user-results', authenticateAdmin, adminController.getUserResults.bind(adminController));
 apiRouter.post('/user-results/pending', authenticateAdmin, adminController.createPendingPerson.bind(adminController));
+apiRouter.post(
+    '/user-results/pending/import',
+    authenticateAdmin,
+    upload.single('excelFile'),
+    (err, req, res, next) => {
+        if (err instanceof multer.MulterError) {
+            return res.status(400).json({
+                success: false,
+                message: 'Excel dosyası yüklenirken hata oluştu. Lütfen dosya formatını kontrol edin.'
+            });
+        }
+        if (err) {
+            return res.status(500).json({
+                success: false,
+                message: 'Excel dosyası yüklenirken beklenmeyen bir hata oluştu.'
+            });
+        }
+        return next();
+    },
+    adminController.bulkCreatePendingPersons.bind(adminController)
+);
 apiRouter.get('/user-results/latest-summary', authenticateAdmin, adminController.getLatestUserSummary.bind(adminController));
 apiRouter.get('/user-results/summary', authenticateAdmin, adminController.getUserSummaryByCode.bind(adminController));
 apiRouter.get('/user-results/report-details', authenticateAdmin, adminController.getUserReportDetails.bind(adminController));

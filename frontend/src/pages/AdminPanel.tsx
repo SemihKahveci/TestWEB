@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { evaluationAPI, creditAPI } from '../services/api';
 import { useAuth } from '../contexts/AuthContext';
 import { useLanguage } from '../contexts/LanguageContext';
+import * as XLSX from 'xlsx';
 
 // Dinamik API base URL - hem local hem live'da çalışır
 const API_BASE_URL = (import.meta as any).env?.DEV 
@@ -106,6 +107,9 @@ const AdminPanel: React.FC = () => {
   const [quickSendPlanets, setQuickSendPlanets] = useState<string[]>([]);
   const [isQuickSending, setIsQuickSending] = useState(false);
   const [isAddingPerson, setIsAddingPerson] = useState(false);
+  const [addPersonTab, setAddPersonTab] = useState<'single' | 'bulk'>('single');
+  const [addPersonExcelFile, setAddPersonExcelFile] = useState<File | null>(null);
+  const [isBulkAddingPerson, setIsBulkAddingPerson] = useState(false);
   const [newPersonName, setNewPersonName] = useState('');
   const [newPersonEmail, setNewPersonEmail] = useState('');
   const [newPersonTitle, setNewPersonTitle] = useState('');
@@ -1106,6 +1110,80 @@ const AdminPanel: React.FC = () => {
       showMessage(t('labels.error'), (error as Error).message, 'error');
     } finally {
       setIsAddingPerson(false);
+    }
+  };
+
+  const handleBulkAddPerson = async () => {
+    if (!addPersonExcelFile) {
+      showMessage(t('labels.error'), 'Lütfen bir Excel dosyası seçin.', 'error');
+      return;
+    }
+
+    try {
+      setIsBulkAddingPerson(true);
+      const formData = new FormData();
+      formData.append('excelFile', addPersonExcelFile);
+      const response = await fetch(`${API_BASE_URL}/api/user-results/pending/import`, {
+        method: 'POST',
+        credentials: 'include',
+        body: formData
+      });
+
+      const data = await response.json();
+      if (!response.ok || !data.success) {
+        throw new Error(data.message || t('errors.sendFailedGeneric'));
+      }
+
+      showMessage(t('labels.success'), data.message || 'Toplu kişi ekleme başarılı.', 'success');
+      setShowAddPersonPopup(false);
+      setAddPersonExcelFile(null);
+      setAddPersonTab('single');
+      await refreshAfterMutation();
+    } catch (error) {
+      showMessage(t('labels.error'), (error as Error).message, 'error');
+    } finally {
+      setIsBulkAddingPerson(false);
+    }
+  };
+
+  const downloadAddPersonTemplate = () => {
+    try {
+      const headers = [
+        'Ad Soyad',
+        'Email',
+        'Ünvan',
+        'Pozisyon',
+        'Departman',
+        'Çalışan Tipi'
+      ];
+      const exampleRow = [
+        'Serdar Kahveci',
+        'serdar.kahveci@firma.com',
+        'Uzman',
+        'Satış',
+        'İnsan Kaynakları',
+        'Çalışan'
+      ];
+      const emptyRows: string[][] = [];
+      for (let i = 0; i < 10; i += 1) {
+        emptyRows.push(['', '', '', '', '', '']);
+      }
+      const allData = [headers, exampleRow, ...emptyRows];
+      const wb = XLSX.utils.book_new();
+      const ws = XLSX.utils.aoa_to_sheet(allData);
+      ws['!cols'] = [
+        { wch: 24 },
+        { wch: 28 },
+        { wch: 18 },
+        { wch: 18 },
+        { wch: 18 },
+        { wch: 16 }
+      ];
+      XLSX.utils.book_append_sheet(wb, ws, t('labels.peopleTemplate'));
+      XLSX.writeFile(wb, t('labels.peopleTemplateFile'));
+      showMessage(t('labels.success'), t('messages.templateDownloadSuccess'), 'success');
+    } catch (error) {
+      showMessage(t('labels.error'), t('errors.templateDownloadError'), 'error');
     }
   };
 
@@ -2775,11 +2853,35 @@ const AdminPanel: React.FC = () => {
                 Kişi Ekle
               </div>
               <div
-                onClick={() => setShowAddPersonPopup(false)}
+                onClick={() => {
+                  setShowAddPersonPopup(false);
+                  setAddPersonTab('single');
+                  setAddPersonExcelFile(null);
+                }}
                 style={{ cursor: 'pointer', fontSize: '24px', color: '#666' }}
               >
                 ×
               </div>
+            </div>
+            <div style={{
+              display: 'flex',
+              borderBottom: '1px solid #E9ECEF',
+              background: '#F8F9FA'
+            }}>
+              <button
+                className={addPersonTab === 'single' ? 'btn btn-primary' : 'btn btn-secondary'}
+                style={{ borderRadius: 0, flex: 1 }}
+                onClick={() => setAddPersonTab('single')}
+              >
+                Tekil Ekle
+              </button>
+              <button
+                className={addPersonTab === 'bulk' ? 'btn btn-primary' : 'btn btn-secondary'}
+                style={{ borderRadius: 0, flex: 1 }}
+                onClick={() => setAddPersonTab('bulk')}
+              >
+                Toplu Ekle
+              </button>
             </div>
             <div style={{
               padding: '20px',
@@ -2787,104 +2889,51 @@ const AdminPanel: React.FC = () => {
               flexDirection: 'column',
               gap: '12px'
             }}>
-              <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: '12px' }}>
-                <div>
-                  <div style={{ fontSize: '13px', fontWeight: 600, color: '#374151', marginBottom: '6px' }}>
-                    İsim Soyisim *
+              {addPersonTab === 'single' && (
+                <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: '12px' }}>
+                  <div>
+                    <div style={{ fontSize: '13px', fontWeight: 600, color: '#374151', marginBottom: '6px' }}>
+                      İsim Soyisim *
+                    </div>
+                    <input
+                      value={newPersonName}
+                      onChange={(e) => setNewPersonName(e.target.value)}
+                      placeholder="Örn: Ayşe Yılmaz"
+                      style={{
+                        width: '100%',
+                        padding: '10px 12px',
+                        border: '1px solid #E5E7EB',
+                        borderRadius: '8px',
+                        fontSize: '14px',
+                        fontFamily: 'Inter'
+                      }}
+                    />
                   </div>
-                  <input
-                    value={newPersonName}
-                    onChange={(e) => setNewPersonName(e.target.value)}
-                    placeholder="Örn: Ayşe Yılmaz"
-                    style={{
-                      width: '100%',
-                      padding: '10px 12px',
-                      border: '1px solid #E5E7EB',
-                      borderRadius: '8px',
-                      fontSize: '14px',
-                      fontFamily: 'Inter'
-                    }}
-                  />
-                </div>
-                <div>
-                  <div style={{ fontSize: '13px', fontWeight: 600, color: '#374151', marginBottom: '6px' }}>
-                    E-posta *
+                  <div>
+                    <div style={{ fontSize: '13px', fontWeight: 600, color: '#374151', marginBottom: '6px' }}>
+                      E-posta *
+                    </div>
+                    <input
+                      value={newPersonEmail}
+                      onChange={(e) => setNewPersonEmail(e.target.value)}
+                      placeholder="ornek@firma.com"
+                      style={{
+                        width: '100%',
+                        padding: '10px 12px',
+                        border: '1px solid #E5E7EB',
+                        borderRadius: '8px',
+                        fontSize: '14px',
+                        fontFamily: 'Inter'
+                      }}
+                    />
                   </div>
-                  <input
-                    value={newPersonEmail}
-                    onChange={(e) => setNewPersonEmail(e.target.value)}
-                    placeholder="ornek@firma.com"
-                    style={{
-                      width: '100%',
-                      padding: '10px 12px',
-                      border: '1px solid #E5E7EB',
-                      borderRadius: '8px',
-                      fontSize: '14px',
-                      fontFamily: 'Inter'
-                    }}
-                  />
-                </div>
-                <div>
-                  <div style={{ fontSize: '13px', fontWeight: 600, color: '#374151', marginBottom: '6px' }}>
-                    Ünvan *
-                  </div>
-                  <input
+                  <div>
+                    <div style={{ fontSize: '13px', fontWeight: 600, color: '#374151', marginBottom: '6px' }}>
+                      Ünvan *
+                    </div>
+                  <select
                     value={newPersonTitle}
                     onChange={(e) => setNewPersonTitle(e.target.value)}
-                    placeholder="Örn: Uzman"
-                    style={{
-                      width: '100%',
-                      padding: '10px 12px',
-                      border: '1px solid #E5E7EB',
-                      borderRadius: '8px',
-                      fontSize: '14px',
-                      fontFamily: 'Inter'
-                    }}
-                  />
-                </div>
-                <div>
-                  <div style={{ fontSize: '13px', fontWeight: 600, color: '#374151', marginBottom: '6px' }}>
-                    Pozisyon *
-                  </div>
-                  <input
-                    value={newPersonPosition}
-                    onChange={(e) => setNewPersonPosition(e.target.value)}
-                    placeholder="Örn: Satış"
-                    style={{
-                      width: '100%',
-                      padding: '10px 12px',
-                      border: '1px solid #E5E7EB',
-                      borderRadius: '8px',
-                      fontSize: '14px',
-                      fontFamily: 'Inter'
-                    }}
-                  />
-                </div>
-                <div>
-                  <div style={{ fontSize: '13px', fontWeight: 600, color: '#374151', marginBottom: '6px' }}>
-                    Departman *
-                  </div>
-                  <input
-                    value={newPersonDepartment}
-                    onChange={(e) => setNewPersonDepartment(e.target.value)}
-                    placeholder="Örn: İnsan Kaynakları"
-                    style={{
-                      width: '100%',
-                      padding: '10px 12px',
-                      border: '1px solid #E5E7EB',
-                      borderRadius: '8px',
-                      fontSize: '14px',
-                      fontFamily: 'Inter'
-                    }}
-                  />
-                </div>
-                <div>
-                  <div style={{ fontSize: '13px', fontWeight: 600, color: '#374151', marginBottom: '6px' }}>
-                    Çalışan Tipi *
-                  </div>
-                  <select
-                    value={newPersonType}
-                    onChange={(e) => setNewPersonType(e.target.value)}
                     style={{
                       width: '100%',
                       padding: '10px 12px',
@@ -2896,11 +2945,108 @@ const AdminPanel: React.FC = () => {
                     }}
                   >
                     <option value="">Seçiniz</option>
-                    <option value="Aday">Aday</option>
-                    <option value="Çalışan">Çalışan</option>
+                    <option value="Üst Seviye Yönetici">Üst Seviye Yönetici</option>
+                    <option value="Ara Kademe Yönetici">Ara Kademe Yönetici</option>
+                    <option value="Takım Lideri / Supervisor">Takım Lideri / Supervisor</option>
+                    <option value="Kıdemli Uzman">Kıdemli Uzman</option>
+                    <option value="Uzman">Uzman</option>
+                    <option value="Uzman Yardımcısı">Uzman Yardımcısı</option>
+                    <option value="MT / Stajyer">MT / Stajyer</option>
                   </select>
+                  </div>
+                  <div>
+                    <div style={{ fontSize: '13px', fontWeight: 600, color: '#374151', marginBottom: '6px' }}>
+                      Pozisyon *
+                    </div>
+                    <input
+                      value={newPersonPosition}
+                      onChange={(e) => setNewPersonPosition(e.target.value)}
+                      placeholder="Örn: Satış"
+                      style={{
+                        width: '100%',
+                        padding: '10px 12px',
+                        border: '1px solid #E5E7EB',
+                        borderRadius: '8px',
+                        fontSize: '14px',
+                        fontFamily: 'Inter'
+                      }}
+                    />
+                  </div>
+                  <div>
+                    <div style={{ fontSize: '13px', fontWeight: 600, color: '#374151', marginBottom: '6px' }}>
+                      Departman *
+                    </div>
+                    <input
+                      value={newPersonDepartment}
+                      onChange={(e) => setNewPersonDepartment(e.target.value)}
+                      placeholder="Örn: İnsan Kaynakları"
+                      style={{
+                        width: '100%',
+                        padding: '10px 12px',
+                        border: '1px solid #E5E7EB',
+                        borderRadius: '8px',
+                        fontSize: '14px',
+                        fontFamily: 'Inter'
+                      }}
+                    />
+                  </div>
+                  <div>
+                    <div style={{ fontSize: '13px', fontWeight: 600, color: '#374151', marginBottom: '6px' }}>
+                      Çalışan Tipi *
+                    </div>
+                    <select
+                      value={newPersonType}
+                      onChange={(e) => setNewPersonType(e.target.value)}
+                      style={{
+                        width: '100%',
+                        padding: '10px 12px',
+                        border: '1px solid #E5E7EB',
+                        borderRadius: '8px',
+                        fontSize: '14px',
+                        fontFamily: 'Inter',
+                        background: 'white'
+                      }}
+                    >
+                      <option value="">Seçiniz</option>
+                      <option value="Aday">Aday</option>
+                      <option value="Çalışan">Çalışan</option>
+                    </select>
+                  </div>
                 </div>
-              </div>
+              )}
+              {addPersonTab === 'bulk' && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                    <button
+                      className="btn btn-secondary"
+                      onClick={downloadAddPersonTemplate}
+                    >
+                      {t('buttons.downloadTemplate')}
+                    </button>
+                  </div>
+                  <input
+                    type="file"
+                    accept=".xlsx,.xls"
+                    id="add-person-excel-input"
+                    style={{ display: 'none' }}
+                    onChange={(event) => {
+                      const file = event.target.files?.[0] || null;
+                      setAddPersonExcelFile(file);
+                    }}
+                  />
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                    <button
+                      className="btn btn-secondary"
+                      onClick={() => document.getElementById('add-person-excel-input')?.click()}
+                    >
+                      {t('buttons.uploadExcel')}
+                    </button>
+                    <span style={{ fontSize: '13px', color: '#6B7280' }}>
+                      {addPersonExcelFile ? addPersonExcelFile.name : 'Dosya seçilmedi'}
+                    </span>
+                  </div>
+                </div>
+              )}
             </div>
             <div style={{
               padding: '16px 20px',
@@ -2911,18 +3057,32 @@ const AdminPanel: React.FC = () => {
               background: '#F8F9FA'
             }}>
               <button
-                onClick={() => setShowAddPersonPopup(false)}
+                onClick={() => {
+                  setShowAddPersonPopup(false);
+                  setAddPersonTab('single');
+                  setAddPersonExcelFile(null);
+                }}
                 className="btn btn-secondary"
               >
                 {t('buttons.cancel')}
               </button>
-              <button
-                onClick={handleAddPerson}
-                disabled={isAddingPerson}
-                className="btn btn-primary"
-              >
-                {isAddingPerson ? t('labels.loading') : 'Kişi Ekle'}
-              </button>
+              {addPersonTab === 'single' ? (
+                <button
+                  onClick={handleAddPerson}
+                  disabled={isAddingPerson}
+                  className="btn btn-primary"
+                >
+                  {isAddingPerson ? t('labels.loading') : 'Kişi Ekle'}
+                </button>
+              ) : (
+                <button
+                  onClick={handleBulkAddPerson}
+                  disabled={isBulkAddingPerson}
+                  className="btn btn-primary"
+                >
+                  {isBulkAddingPerson ? t('labels.uploading') : t('buttons.upload')}
+                </button>
+              )}
             </div>
           </div>
         </div>
