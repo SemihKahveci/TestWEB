@@ -1014,7 +1014,7 @@ const evaluationController = {
                     const devamLines = section.rows.map((row) => row.followUpQuestions.join('\n'));
                     return {
                         competency_name: item.name,
-                        interviewQuestions_baslik: buildColumnTextFromLines(baslikLines),
+                        interview_Questions_baslik: buildColumnTextFromLines(baslikLines),
                         interviewQuestions_mulakat_sorusu: buildColumnTextFromLines(mulakatLines),
                         interviewQuestions_devam_sorusu: buildColumnTextFromLines(devamLines),
                         followupQuestions: item.whyTheseQuestions || '',
@@ -1045,8 +1045,8 @@ const evaluationController = {
             const questionFlat = {};
             questionPages.forEach((page, index) => {
                 const idx = index + 1;
-                questionFlat[`yetkinlik${idx}_interviewQuestions_baslik`] =
-                    page.interviewQuestions_baslik || '';
+                questionFlat[`yetkinlik${idx}_interview_Questions_baslik`] =
+                    page.interview_Questions_baslik || '';
                 questionFlat[`yetkinlik${idx}_interviewQuestions_mulakat_sorusu`] =
                     page.interviewQuestions_mulakat_sorusu || '';
                 questionFlat[`yetkinlik${idx}_interviewQuestions_devam_sorusu`] =
@@ -1056,7 +1056,7 @@ const evaluationController = {
             });
             safeLog('info', 'question_pages debug', questionPages.map((page) => ({
                 competency_name: page.competency_name,
-                baslik: (page.interviewQuestions_baslik || '').slice(0, 40),
+                baslik: (page.interview_Questions_baslik || '').slice(0, 40),
                 mulakat: (page.interviewQuestions_mulakat_sorusu || '').slice(0, 40),
                 devam: (page.interviewQuestions_devam_sorusu || '').slice(0, 40),
                 followup: (page.followupQuestions || '').slice(0, 40),
