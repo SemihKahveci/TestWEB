@@ -362,10 +362,11 @@ const DashboardPage: React.FC = () => {
         }
       `}</style>
       {/* Page Title - Mavi Box */}
-      <div style={{
+      <div
+        className="header-gradient"
+        style={{
         width: '100%',
         height: '75px',
-        background: 'radial-gradient(ellipse 150.93% 36.28% at 50.00% 50.00%, #3B8AFF 0%, #0048B2 100%)',
         borderBottomRightRadius: '16px',
         borderBottomLeftRadius: '16px',
         display: 'flex',
@@ -374,7 +375,8 @@ const DashboardPage: React.FC = () => {
         padding: '0 32px',
         marginLeft: '0px',
         marginBottom: '20px'
-      }}>
+      }}
+      >
         <div style={{
           display: 'flex',
           justifyContent: 'flex-start',

@@ -861,10 +861,11 @@ const Organization: React.FC = () => {
       padding: '24px 32px 0 10px'
     }}>
       {/* Page Title - Mavi Box */}
-      <div style={{
+      <div
+        className="header-gradient"
+        style={{
         width: '100%',
         height: '75px',
-        background: 'radial-gradient(ellipse 150.93% 36.28% at 50.00% 50.00%, #3B8AFF 0%, #0048B2 100%)',
         borderBottomRightRadius: '16px',
         borderBottomLeftRadius: '16px',
         display: 'flex',
@@ -873,7 +874,8 @@ const Organization: React.FC = () => {
         padding: '0 32px',
         marginLeft: '0px',
         marginBottom: '20px'
-      }}>
+      }}
+      >
           <div style={{
             display: 'flex',
             justifyContent: 'flex-start',
@@ -893,32 +895,35 @@ const Organization: React.FC = () => {
         {/* Tab Container */}
         <div style={{
           display: 'flex',
-          gap: '30px',
-          marginBottom: '20px'
+          gap: '12px',
+          marginBottom: '20px',
+          paddingLeft: '12px',
+          justifyContent: 'flex-start',
+          alignItems: 'center'
         }}>
           <div style={{
-            flex: 1,
-            padding: '16px',
-            borderRadius: '6px',
+            padding: '12px 18px',
+            borderRadius: '8px',
             textAlign: 'center',
             cursor: 'pointer',
-            backgroundColor: '#3A57E8',
-            color: 'white',
+            background: 'linear-gradient(135deg, rgba(127, 211, 230, 0.45) 0%, rgba(159, 143, 190, 0.4) 50%, rgba(255, 117, 31, 0.25) 100%)',
+            color: '#0F172A',
             fontSize: '14px',
             fontWeight: 700,
-            lineHeight: '20px'
+            lineHeight: '20px',
+            border: '1px solid rgba(15, 23, 42, 0.12)'
           }}>
             {t('titles.organization')}
           </div>
           <div 
             style={{
-              flex: 1,
-              padding: '16px',
-              borderRadius: '6px',
+              padding: '12px 18px',
+              borderRadius: '8px',
               textAlign: 'center',
               cursor: 'pointer',
-              border: '1px solid rgba(0, 0, 0, 0.30)',
-              color: 'rgba(0, 0, 0, 0.30)',
+              border: '1px solid rgba(15, 23, 42, 0.08)',
+              color: '#475569',
+              backgroundColor: '#F1F5F9',
               fontSize: '14px',
               fontWeight: 500,
               lineHeight: '20px'
@@ -929,13 +934,13 @@ const Organization: React.FC = () => {
           </div>
           <div 
             style={{
-              flex: 1,
-              padding: '16px',
-              borderRadius: '6px',
+              padding: '12px 18px',
+              borderRadius: '8px',
               textAlign: 'center',
               cursor: 'pointer',
-              border: '1px solid rgba(0, 0, 0, 0.30)',
-              color: 'rgba(0, 0, 0, 0.30)',
+              border: '1px solid rgba(15, 23, 42, 0.08)',
+              color: '#475569',
+              backgroundColor: '#F1F5F9',
               fontSize: '14px',
               fontWeight: 500,
               lineHeight: '20px'

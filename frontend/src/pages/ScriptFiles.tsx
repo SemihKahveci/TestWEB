@@ -229,93 +229,26 @@ const ScriptFiles: React.FC = () => {
         position: 'relative',
         background: 'white',
         display: 'flex',
-        flexDirection: 'column'
+        flexDirection: 'column',
+        padding: '24px 32px 0 10px'
       }}>
         {/* Header */}
-        <div style={{
-          width: '100%',
-          height: '76px',
-          padding: '16px 32px',
-          background: 'white',
-          backdropFilter: 'blur(32px)',
-          display: 'flex',
-          justifyContent: 'center',
-          alignItems: 'center',
-          boxShadow: '0 2px 10px rgba(0, 0, 0, 0.05)'
-        }}>
-          <div style={{
-            width: '100%',
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center'
-          }}>
-            <div style={{ flex: 1 }}></div>
-            <div style={{
-              display: 'flex',
-              justifyContent: 'flex-end',
-              alignItems: 'center',
-              gap: '16px'
-            }}>
-              <div style={{
-                width: '24px',
-                height: '24px',
-                display: 'flex',
-                justifyContent: 'center',
-                alignItems: 'center',
-                cursor: 'pointer'
-              }}>
-                <i className="fas fa-bell" style={{ color: '#8A92A6' }}></i>
-              </div>
-              <div style={{
-                display: 'flex',
-                justifyContent: 'center',
-                alignItems: 'center',
-                gap: '16px',
-                cursor: 'pointer'
-              }}>
-                <div style={{
-                  display: 'flex',
-                  flexDirection: 'column',
-                  justifyContent: 'flex-start',
-                  alignItems: 'flex-start'
-                }}>
-                  <div style={{
-                    color: '#232D42',
-                    fontSize: '16px',
-                    fontFamily: 'Inter',
-                    fontWeight: 400,
-                    lineHeight: '28px'
-                  }}>
-                    {t('labels.adminUser')}
-                  </div>
-                  <div style={{
-                    color: '#8A92A6',
-                    fontSize: '13px',
-                    fontFamily: 'Inter',
-                    fontWeight: 400,
-                    lineHeight: '16.90px'
-                  }}>
-                    {t('labels.hrManager')}
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
         {/* Page Title */}
-        <div style={{
-          width: '100%',
-          height: '75px',
-          background: 'radial-gradient(ellipse 150.93% 36.28% at 50.00% 50.00%, #3B8AFF 0%, #0048B2 100%)',
-          borderBottomRightRadius: '16px',
-          borderBottomLeftRadius: '16px',
-          display: 'flex',
-          justifyContent: 'flex-start',
-          alignItems: 'center',
-          padding: '0 32px',
-          marginLeft: '10px'
-        }}>
+        <div
+          className="header-gradient"
+          style={{
+            width: '100%',
+            height: '75px',
+            borderBottomRightRadius: '16px',
+            borderBottomLeftRadius: '16px',
+            display: 'flex',
+            justifyContent: 'flex-start',
+            alignItems: 'center',
+            padding: '0 32px',
+            marginLeft: '0px',
+            marginBottom: '20px'
+          }}
+        >
           <div style={{
             width: '100%',
             display: 'flex',
