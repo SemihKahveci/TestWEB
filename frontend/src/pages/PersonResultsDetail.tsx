@@ -1264,30 +1264,6 @@ const PersonResultsDetail: React.FC = () => {
 
           {activeTab === 'executive-summary' && (
             <div className="p-8">
-              <div className="mb-8">
-                <h2 className="text-2xl font-bold text-gray-900 mb-2">{t('tabs.executiveSummary')}</h2>
-                <p className="text-gray-600">{t('labels.executiveSummarySubtitle')}</p>
-              </div>
-
-              <div className="mb-8">
-                <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center">
-                  <i className="fa-solid fa-file-lines text-blue-600 mr-3" />
-                  {t('labels.generalSummary')}
-                </h3>
-                <div className="bg-blue-50 border border-blue-200 rounded-lg p-6">
-                  <p className="text-gray-800 leading-relaxed mb-4">
-                    Sarah Johnson, Q4 2024 değerlendirmesinde 8.4/10 genel skorla üstün performans sergilemiştir.
-                    Şirket genelinde 92. yüzdelik dilimde yer almakta ve önceki değerlendirmelere göre anlamlı bir artış göstermektedir.
-                  </p>
-                  <p className="text-gray-800 leading-relaxed mb-4">
-                    En güçlü alanları Strategic Thinking ve Problem Solving olarak öne çıkmaktadır. Pozisyon ve şirket benchmarklarının belirgin şekilde üzerindedir.
-                  </p>
-                  <p className="text-gray-800 leading-relaxed">
-                    Bu sonuçlar, yüksek liderlik potansiyeli ve güçlü stratejik bakış açısıyla desteklenmektedir.
-                  </p>
-                </div>
-              </div>
-
               <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
                 <div>
                   <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center">

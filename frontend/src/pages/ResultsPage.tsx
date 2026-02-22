@@ -246,13 +246,28 @@ const ResultsPage: React.FC = () => {
     return typeof score === 'number' ? score.toFixed(1) : score;
   };
 
-  const getScoreColorClass = (score: number | string) => {
-    if (score === '-' || score === 0 || score === '0' || isNaN(Number(score))) return '';
+  const getScoreColors = (score: number | string) => {
+    if (score === '-' || score === 0 || score === '0' || isNaN(Number(score))) {
+      return { background: 'transparent', text: '#8A92A6' };
+    }
     const numScore = parseFloat(score.toString());
-    if (numScore <= 37) return 'red';
-    if (numScore <= 65) return 'yellow';
-    if (numScore <= 89.99999999999) return 'green';
-    return 'red';
+    if (numScore <= 20) return { background: '#ff625f', text: '#FFFFFF' };
+    if (numScore <= 50) return { background: '#ff751f', text: '#FFFFFF' };
+    if (numScore <= 70) return { background: '#efd775', text: '#111827' };
+    if (numScore <= 80) return { background: '#7ed957', text: '#111827' };
+    return { background: '#00bf63', text: '#FFFFFF' };
+  };
+
+  const getScoreBadgeStyle = (score: number | string) => {
+    const colors = getScoreColors(score);
+    return {
+      padding: '4px 8px',
+      borderRadius: '4px',
+      fontSize: '12px',
+      fontWeight: 500,
+      backgroundColor: colors.background,
+      color: colors.text
+    } as const;
   };
 
   const openFilterModal = () => {
@@ -826,18 +841,7 @@ const ResultsPage: React.FC = () => {
                     textAlign: 'center',
                     borderRight: '1px solid #E9ECEF'
                   }}>
-                    <span style={{
-                      padding: '4px 8px',
-                      borderRadius: '4px',
-                      fontSize: '12px',
-                      fontWeight: 500,
-                      backgroundColor: getScoreColorClass(result.customerFocusScore) === 'red' ? '#FF0000' : 
-                                     getScoreColorClass(result.customerFocusScore) === 'yellow' ? '#FFD700' : 
-                                     getScoreColorClass(result.customerFocusScore) === 'green' ? '#00FF00' : 'transparent',
-                      color: getScoreColorClass(result.customerFocusScore) === 'red' ? '#FFF' : 
-                             getScoreColorClass(result.customerFocusScore) === 'yellow' ? '#000' : 
-                             getScoreColorClass(result.customerFocusScore) === 'green' ? '#000' : '#8A92A6'
-                    }}>
+                    <span style={getScoreBadgeStyle(result.customerFocusScore)}>
                       {formatScore(result.customerFocusScore)}
                     </span>
                   </td>
@@ -848,18 +852,7 @@ const ResultsPage: React.FC = () => {
                     textAlign: 'center',
                     borderRight: '1px solid #E9ECEF'
                   }}>
-                    <span style={{
-                      padding: '4px 8px',
-                      borderRadius: '4px',
-                      fontSize: '12px',
-                      fontWeight: 500,
-                      backgroundColor: getScoreColorClass(result.uncertaintyScore) === 'red' ? '#FF0000' : 
-                                     getScoreColorClass(result.uncertaintyScore) === 'yellow' ? '#FFD700' : 
-                                     getScoreColorClass(result.uncertaintyScore) === 'green' ? '#00FF00' : 'transparent',
-                      color: getScoreColorClass(result.uncertaintyScore) === 'red' ? '#FFF' : 
-                             getScoreColorClass(result.uncertaintyScore) === 'yellow' ? '#000' : 
-                             getScoreColorClass(result.uncertaintyScore) === 'green' ? '#000' : '#8A92A6'
-                    }}>
+                    <span style={getScoreBadgeStyle(result.uncertaintyScore)}>
                       {formatScore(result.uncertaintyScore)}
                     </span>
                   </td>
@@ -870,18 +863,7 @@ const ResultsPage: React.FC = () => {
                     textAlign: 'center',
                     borderRight: '1px solid #E9ECEF'
                   }}>
-                    <span style={{
-                      padding: '4px 8px',
-                      borderRadius: '4px',
-                      fontSize: '12px',
-                      fontWeight: 500,
-                      backgroundColor: getScoreColorClass(result.ieScore) === 'red' ? '#FF0000' : 
-                                     getScoreColorClass(result.ieScore) === 'yellow' ? '#FFD700' : 
-                                     getScoreColorClass(result.ieScore) === 'green' ? '#00FF00' : 'transparent',
-                      color: getScoreColorClass(result.ieScore) === 'red' ? '#FFF' : 
-                             getScoreColorClass(result.ieScore) === 'yellow' ? '#000' : 
-                             getScoreColorClass(result.ieScore) === 'green' ? '#000' : '#8A92A6'
-                    }}>
+                    <span style={getScoreBadgeStyle(result.ieScore)}>
                       {formatScore(result.ieScore)}
                     </span>
                   </td>
@@ -891,18 +873,7 @@ const ResultsPage: React.FC = () => {
                     fontFamily: 'Inter',
                     textAlign: 'center'
                   }}>
-                    <span style={{
-                      padding: '4px 8px',
-                      borderRadius: '4px',
-                      fontSize: '12px',
-                      fontWeight: 500,
-                      backgroundColor: getScoreColorClass(result.idikScore) === 'red' ? '#FF0000' : 
-                                     getScoreColorClass(result.idikScore) === 'yellow' ? '#FFD700' : 
-                                     getScoreColorClass(result.idikScore) === 'green' ? '#00FF00' : 'transparent',
-                      color: getScoreColorClass(result.idikScore) === 'red' ? '#FFF' : 
-                             getScoreColorClass(result.idikScore) === 'yellow' ? '#000' : 
-                             getScoreColorClass(result.idikScore) === 'green' ? '#000' : '#8A92A6'
-                    }}>
+                    <span style={getScoreBadgeStyle(result.idikScore)}>
                       {formatScore(result.idikScore)}
                     </span>
                   </td>

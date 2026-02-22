@@ -92,6 +92,15 @@ const PersonResults: React.FC = () => {
     return Math.round(parsed);
   };
 
+  const getScoreColor = (value: number | null) => {
+    if (value === null || Number.isNaN(value)) return '#9CA3AF';
+    if (value <= 20) return '#ff625f';
+    if (value <= 50) return '#ff751f';
+    if (value <= 70) return '#efd775';
+    if (value <= 80) return '#7ed957';
+    return '#00bf63';
+  };
+
   const formatDateShort = (value?: string) => {
     if (!value) return '-';
     const date = new Date(value);
@@ -652,6 +661,8 @@ const PersonResults: React.FC = () => {
               {competencyConfig.map((item, index) => {
                 const scoreRaw = formatScoreRaw((displayUser as any)?.[item.scoreField]);
                 const scoreValue = typeof scoreRaw === 'number' ? scoreRaw : 0;
+                const scoreDisplayValue = typeof scoreRaw === 'number' ? scoreRaw : null;
+                const scoreDisplayColor = getScoreColor(scoreDisplayValue);
                 const positionNormDisplay = (positionNorms as any)?.[item.scoreField] || '-';
                 const positionNormValue = parsePositionNormValue(positionNormDisplay);
                 const companyAvgValue = parseScore((companyAverageScores as any)?.[item.scoreField]);
@@ -673,24 +684,38 @@ const PersonResults: React.FC = () => {
                       <p className="text-xs text-gray-600">{item.description}</p>
                     </div>
                     <div className="text-right ml-4">
-                      <div className={`text-2xl font-bold ${isActive ? 'text-blue-600' : 'text-green-600'}`}>
+                      <div
+                        className="text-2xl font-bold"
+                        style={{ color: scoreDisplayValue === null ? '#6B7280' : scoreDisplayColor }}
+                      >
                         {scoreRaw ?? '-'}
                       </div>
                     </div>
                   </div>
                   <div className="space-y-2">
                     {[
-                      { label: t('labels.yourScore'), value: scoreValue, display: scoreRaw ?? '-', color: 'bg-green-600' },
-                      { label: t('labels.positionNorm'), value: positionNormValue ?? 0, display: positionNormDisplay, color: 'bg-orange-400' },
-                        { label: t('labels.companyAverage'), value: companyAvgValue ?? 0, display: companyAvgDisplay, color: 'bg-gray-400' }
+                      { label: t('labels.yourScore'), value: scoreDisplayValue, display: scoreRaw ?? '-' },
+                      { label: t('labels.positionNorm'), value: positionNormValue, display: positionNormDisplay },
+                      { label: t('labels.companyAverage'), value: companyAvgValue, display: companyAvgDisplay }
                     ].map((row) => (
                         <div key={row.label} className="flex items-center justify-between text-sm">
                           <span className="text-gray-600">{row.label}</span>
                           <div className="flex items-center">
                             <div className="w-32 h-2 bg-gray-200 rounded-full mr-2">
-                              <div className={`h-2 ${row.color} rounded-full`} style={{ width: `${(row.value / maxScore) * 100}%` }} />
+                              <div
+                                className="h-2 rounded-full"
+                                style={{
+                                  width: `${((row.value ?? 0) / maxScore) * 100}%`,
+                                  backgroundColor: getScoreColor(row.value ?? null)
+                                }}
+                              />
                             </div>
-                            <span className="font-medium text-gray-700 w-8 whitespace-nowrap">{row.display}</span>
+                            <span
+                              className="font-medium w-8 whitespace-nowrap"
+                              style={{ color: getScoreColor(row.value ?? null) }}
+                            >
+                              {row.display}
+                            </span>
                           </div>
                         </div>
                     ))}
