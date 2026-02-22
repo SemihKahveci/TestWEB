@@ -74,8 +74,7 @@ const PersonResultsDetail: React.FC = () => {
       scoreField: 'uncertaintyScore',
       activeColor: '#7fd3e6',
       inactiveColor: '#a5e0ee',
-      icon: 'fa-chart-line',
-      badge: '+12%'
+      icon: 'fa-shield'
     },
     {
       key: 'musteri',
@@ -83,8 +82,7 @@ const PersonResultsDetail: React.FC = () => {
       scoreField: 'customerFocusScore',
       activeColor: '#9f8fbe',
       inactiveColor: '#bcb1d2',
-      icon: 'fa-trophy',
-      badge: 'Top 15%'
+      icon: 'fa-users'
     },
     {
       key: 'etkileme',
@@ -92,8 +90,7 @@ const PersonResultsDetail: React.FC = () => {
       scoreField: 'ieScore',
       activeColor: '#ff751f',
       inactiveColor: '#ff9e62',
-      icon: 'fa-star',
-      badge: '8/12'
+      icon: 'fa-comments'
     },
     {
       key: 'sinerji',
@@ -101,8 +98,7 @@ const PersonResultsDetail: React.FC = () => {
       scoreField: 'idikScore',
       activeColor: '#ff625f',
       inactiveColor: '#ff918f',
-      icon: 'fa-arrow-trend-up',
-      badge: '+0.7'
+      icon: 'fa-handshake'
     }
   ]), [t]);
 
@@ -1227,9 +1223,6 @@ const PersonResultsDetail: React.FC = () => {
                 >
                   <div className="flex items-center justify-between mb-4">
                     <i className={`fa-solid ${item.icon} text-3xl opacity-80`} />
-                    <div className="rounded-lg px-3 py-1 text-xs font-semibold text-white bg-white/30 shadow-sm">
-                      {item.badge}
-                    </div>
                   </div>
                   <div className="text-3xl font-bold mb-1">{scoreValue}</div>
                   <div className="text-sm opacity-90">{item.title}</div>

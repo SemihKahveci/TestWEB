@@ -92,6 +92,8 @@ const PersonResults: React.FC = () => {
     return Math.round(parsed);
   };
 
+  const maxScore = 100;
+
   const getScoreColor = (value: number | null) => {
     if (value === null || Number.isNaN(value)) return '#9CA3AF';
     if (value <= 20) return '#ff625f';
@@ -236,6 +238,12 @@ const PersonResults: React.FC = () => {
   );
   const companyAverageDisplay = companyAverageRaw === null ? '-' : Math.round(companyAverageRaw);
   const positionNormRange = (positionNorms as any)?.[selectedMeta?.scoreField] || '-';
+  const companyAverageLineY = companyAverageRaw === null
+    ? null
+    : 180 - (companyAverageRaw / maxScore) * 160;
+  const companyAverageLineColor = companyAverageRaw === null
+    ? '#9CA3AF'
+    : getScoreColor(companyAverageRaw);
   const axisLabels = useMemo(() => {
     if (selectedTrend.length === 0) return [];
     const span = selectedTrend.length > 1 ? 460 / (selectedTrend.length - 1) : 0;
@@ -343,13 +351,11 @@ const PersonResults: React.FC = () => {
   }, [isPdfLoading]);
 
   const scoreCards = [
-    { title: t('competency.uncertainty'), icon: 'fa-chart-line', badge: '+12%', color: '#7fd3e6', competency: 'uyumluluk' },
-    { title: t('competency.customerFocus'), icon: 'fa-trophy', badge: t('labels.performanceTopPercent'), color: '#9f8fbe', competency: 'musteri' },
-    { title: t('competency.ie'), icon: 'fa-star', badge: '8/12', color: '#ff751f', competency: 'etkileme' },
-    { title: t('competency.idik'), icon: 'fa-arrow-trend-up', badge: '+3', color: '#ff625f', competency: 'sinerji' }
+    { title: t('competency.uncertainty'), icon: 'fa-shield', color: '#7fd3e6', competency: 'uyumluluk' },
+    { title: t('competency.customerFocus'), icon: 'fa-users', color: '#9f8fbe', competency: 'musteri' },
+    { title: t('competency.ie'), icon: 'fa-comments', color: '#ff751f', competency: 'etkileme' },
+    { title: t('competency.idik'), icon: 'fa-handshake', color: '#ff625f', competency: 'sinerji' }
   ];
-
-  const maxScore = 100;
 
   useEffect(() => {
     const state = location.state as { selectedUser?: UserResult } | null;
@@ -622,9 +628,6 @@ const PersonResults: React.FC = () => {
             >
               <div className="flex items-center justify-between mb-4">
                 <i className={`fa-solid ${card.icon} text-3xl opacity-80`} />
-                <div className="rounded-lg px-3 py-1 text-xs font-semibold text-white bg-white/30 shadow-sm">
-                  {card.badge}
-                </div>
               </div>
               <div className="text-3xl font-bold mb-1">{rawScore}</div>
               <div className="text-sm opacity-90">{card.title}</div>
@@ -763,6 +766,18 @@ const PersonResults: React.FC = () => {
                             return <line key={i} x1="40" y1={y} x2="500" y2={y} />;
                           })}
                         </g>
+                        {companyAverageLineY !== null && (
+                          <line
+                            x1="40"
+                            y1={companyAverageLineY}
+                            x2="500"
+                            y2={companyAverageLineY}
+                            stroke={companyAverageLineColor}
+                            strokeWidth="1"
+                            strokeDasharray="4 4"
+                            opacity="0.9"
+                          />
+                        )}
                         <g stroke="#9CA3AF" strokeWidth="1">
                           <line x1="40" y1="180" x2="500" y2="180" />
                           <line x1="40" y1="20" x2="40" y2="180" />
