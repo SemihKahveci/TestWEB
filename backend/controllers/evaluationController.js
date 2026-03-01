@@ -17,7 +17,7 @@ const { getCompanyFilter } = require('../middleware/auth');
 const expressionParser = require("docxtemplater/expressions.js");
 const parser = expressionParser.configure({});
 
-const DEFAULT_WORD_TEMPLATE_PATH = path.join(__dirname, '..', 'templates', 'Degerlendirme_Merkez_Raporu_v22.docx');
+const DEFAULT_WORD_TEMPLATE_PATH = path.join(__dirname, '..', 'templates', 'Degerlendirme_Merkez_Raporu_v23.docx');
 const SHARED_PDF_DIR = path.join(__dirname, '..', 'tmp', 'shared-pdfs');
 const SHARED_PDF_TTL_MS = Number(process.env.SHARE_PDF_TTL_MS || 60 * 60 * 1000);
 
