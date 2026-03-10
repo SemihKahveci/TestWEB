@@ -413,11 +413,23 @@ const AdminPanel: React.FC = () => {
   // Frontend'de anlık filtreleme (akıllı arama)
   useEffect(() => {
     if (searchTerm) {
-      // Frontend'de anlık filtreleme yap (isim ve email üzerinde)
-      const searchLower = searchTerm.toLowerCase();
+      // Frontend'de anlık filtreleme yap (isim, email, unvan, pozisyon, departman)
+      const normalizeSearch = (value: string | undefined | null) =>
+        (value || '')
+          .toString()
+          .trim()
+          .toLocaleLowerCase('tr-TR')
+          .replace(/ı/g, 'i')
+          .normalize('NFD')
+          .replace(/[\u0300-\u036f]/g, '');
+
+      const searchLower = normalizeSearch(searchTerm);
       const filtered = results.filter(result =>
-        (result.name && result.name.toLowerCase().includes(searchLower)) ||
-        (result.email && result.email.toLowerCase().includes(searchLower))
+        normalizeSearch(result.name).includes(searchLower) ||
+        normalizeSearch(result.email).includes(searchLower) ||
+        normalizeSearch(result.unvan).includes(searchLower) ||
+        normalizeSearch(result.pozisyon).includes(searchLower) ||
+        normalizeSearch(result.departman).includes(searchLower)
       );
       setFilteredResults(filtered);
     } else {

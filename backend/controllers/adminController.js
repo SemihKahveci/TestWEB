@@ -467,6 +467,13 @@ const adminController = {
             let results;
             let totalCount;
             let query = { ...companyFilter };
+            const buildTurkishInsensitiveRegex = (value = '') => {
+                const escaped = value
+                    .toString()
+                    .trim()
+                    .replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+                return escaped.replace(/[iIİı]/g, '[iIİı]');
+            };
             const normalizePersonType = (value) => {
                 const normalized = (value || '').toString().toLowerCase().trim();
                 if (normalized.includes('aday') || normalized.includes('candidate')) return 'candidate';
@@ -493,11 +500,15 @@ const adminController = {
                     }
                 }
                 
-                // Search term varsa isim ile filtrele
+                // Search term varsa akıllı arama alanlarıyla filtrele
                 if (searchTerm) {
+                    const searchRegex = buildTurkishInsensitiveRegex(searchTerm);
                     query.$or = [
-                        { name: { $regex: searchTerm, $options: 'i' } },
-                        { email: { $regex: searchTerm, $options: 'i' } }
+                        { name: { $regex: searchRegex, $options: 'i' } },
+                        { email: { $regex: searchRegex, $options: 'i' } },
+                        { unvan: { $regex: searchRegex, $options: 'i' } },
+                        { pozisyon: { $regex: searchRegex, $options: 'i' } },
+                        { departman: { $regex: searchRegex, $options: 'i' } }
                     ];
                 }
                 
