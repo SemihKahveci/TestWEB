@@ -404,14 +404,14 @@ const DashboardPage: React.FC = () => {
         </div>
         <div className="rounded-2xl p-6 text-white shadow-lg relative overflow-hidden" style={{ background: '#9f8fbe' }}>
           <div className="absolute -right-4 -top-4 opacity-20 rotate-12">
-            <i className="fa-solid fa-users text-4xl" />
+            <i className="fa-solid fa-clock text-4xl" />
           </div>
           <div className="relative z-10">
             <h3 className="text-base font-bold text-white text-opacity-90 mb-1">{t('labels.dashboardCompletedCandidate')}</h3>
             <div className="text-4xl font-bold">{currentStats.completedCandidateCount}</div>
           </div>
         </div>
-        <div className="rounded-2xl p-6 text-white shadow-lg relative overflow-hidden" style={{ background: '#ff751f' }}>
+        <div className="rounded-2xl p-6 text-white shadow-lg relative overflow-hidden" style={{ background: '#ff8a4c' }}>
           <div className="absolute -right-4 -top-4 opacity-20 rotate-12">
             <i className="fa-solid fa-clock text-4xl" />
           </div>

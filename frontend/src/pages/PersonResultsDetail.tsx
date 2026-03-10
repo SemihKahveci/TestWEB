@@ -1236,7 +1236,7 @@ const PersonResultsDetail: React.FC = () => {
 
         <div className="bg-white rounded-xl shadow-sm border border-gray-200">
           <div className="border-b border-gray-200">
-            <nav className="flex px-6" role="tablist">
+            <nav className="flex flex-wrap gap-2 px-6 py-3" role="tablist">
               {[
                 { key: 'executive-summary', label: t('tabs.executiveSummary'), icon: 'fa-file-lines' },
                 { key: 'competency-details', label: t('tabs.competencyDetails'), icon: 'fa-list-check' },
@@ -1246,7 +1246,7 @@ const PersonResultsDetail: React.FC = () => {
                 <button
                   key={tab.key}
                   className={activeTab === tab.key ? 'btn btn-primary' : 'btn btn-secondary'}
-                  style={{ borderRadius: 0, fontSize: '14px' }}
+                  style={{ borderRadius: '12px', fontSize: '14px' }}
                   onClick={() => setActiveTab(tab.key as DetailTab)}
                   role="tab"
                 >
@@ -1323,7 +1323,7 @@ const PersonResultsDetail: React.FC = () => {
 
               <div className="bg-white border border-gray-200 rounded-xl shadow-sm">
                 <div className="border-b border-gray-200">
-                  <nav className="flex" role="tablist">
+                  <nav className="flex flex-wrap gap-2 p-3" role="tablist">
                     {[
                       { key: 'general-evaluation', label: t('labels.generalEvaluation') },
                       { key: 'strengths-development', label: t('labels.strengthsDev') },
@@ -1333,7 +1333,7 @@ const PersonResultsDetail: React.FC = () => {
                       <button
                         key={tab.key}
                         className={competencySubTab === tab.key ? 'btn btn-primary' : 'btn btn-secondary'}
-                        style={{ flex: 1, borderRadius: 0, fontSize: '14px' }}
+                        style={{ flex: 1, borderRadius: '12px', fontSize: '14px' }}
                         onClick={() => setCompetencySubTab(tab.key as CompetencySubTab)}
                         role="tab"
                       >
@@ -1709,18 +1709,18 @@ const PersonResultsDetail: React.FC = () => {
                 ].map((card) => (
                   <button
                     key={card.title}
-                    className={`btn btn-${card.variant} rounded-xl p-6 text-center transition-colors group disabled:opacity-60 disabled:cursor-not-allowed flex flex-col items-center`}
-                    style={{ height: 'auto', alignItems: 'center' }}
+                    className={`btn btn-${card.variant} rounded-2xl px-5 py-4 transition-all group disabled:opacity-60 disabled:cursor-not-allowed flex items-center gap-4 text-left justify-start shadow-md hover:shadow-lg`}
+                    style={{ minHeight: '96px' }}
                     onClick={card.action}
                     disabled={isPdfLoading || !latestUser}
                   >
-                    <div className="flex items-center justify-center mb-2 mt-4">
-                      <div className="w-12 h-12 bg-white rounded-lg flex items-center justify-center shadow-sm">
-                        <i className={`fa-solid ${card.icon} text-2xl ${card.iconColor || 'text-white'}`} />
-                      </div>
+                    <div className="w-11 h-11 rounded-xl bg-white/20 border border-white/30 flex items-center justify-center flex-shrink-0">
+                      <i className={`fa-solid ${card.icon} text-xl text-white`} />
                     </div>
-                    <h3 className="text-lg font-semibold mb-2">{card.title}</h3>
-                    <p className="text-sm text-blue-100">{card.desc}</p>
+                    <div className="flex-1 min-w-0">
+                      <h3 className="text-lg font-semibold leading-6 mb-1 text-white">{card.title}</h3>
+                      <p className="text-sm text-white/85 leading-5">{card.desc}</p>
+                    </div>
                   </button>
                 ))}
               </div>

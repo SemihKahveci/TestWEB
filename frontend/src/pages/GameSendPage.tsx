@@ -1902,6 +1902,7 @@ const GameSendPage: React.FC = () => {
           background: '#F8F9FA',
           borderRadius: '8px',
           padding: '4px',
+          gap: '6px',
           marginBottom: '30px',
           boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
         }}>

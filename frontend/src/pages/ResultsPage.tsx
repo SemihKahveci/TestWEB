@@ -792,11 +792,11 @@ const ResultsPage: React.FC = () => {
               </tr>
             </thead>
             <tbody>
-              {paginatedResults.map((result, index) => (
+              {paginatedResults.map((result) => (
                 <React.Fragment key={result.code}>
                   <tr style={{
                     borderBottom: '1px solid #F1F3F4',
-                    background: index % 2 === 0 ? '#E3F2FD' : 'white'
+                    background: 'white'
                   }}>
                     <td style={{
                       padding: '16px',

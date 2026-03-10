@@ -500,6 +500,10 @@ const AdminPanel: React.FC = () => {
 
     return (
       <span style={{
+        display: 'inline-flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        width: '132px',
         padding: '4px 10px',
         borderRadius: '999px',
         fontSize: '12px',
