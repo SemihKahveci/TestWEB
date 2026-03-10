@@ -98,6 +98,36 @@ exports.getCompanyFilter = (req) => {
 };
 
 /**
+ * Role'den bağımsız olarak sadece admin'in kendi company verisini döndürür.
+ * Super admin dahil herkes sadece kendi companyId'sini görür.
+ * @param {Object} req - Express request object
+ * @returns {Object} MongoDB query filter
+ */
+exports.getOwnCompanyFilter = (req) => {
+    if (!req.admin) {
+        return {};
+    }
+
+    if (req.admin.companyId) {
+        const mongoose = require('mongoose');
+        const companyId = req.admin.companyId instanceof mongoose.Types.ObjectId
+            ? req.admin.companyId
+            : new mongoose.Types.ObjectId(req.admin.companyId);
+
+        return { companyId };
+    }
+
+    // companyId olmayan kullanıcılar (örn: bazı superadmin kayıtları) için
+    // sadece companyId'siz kayıtları döndür (kendi havuzu içinde izolasyon).
+    return {
+        $or: [
+            { companyId: { $exists: false } },
+            { companyId: null }
+        ]
+    };
+};
+
+/**
  * Yeni kayıt oluştururken companyId'yi otomatik ekler
  * @param {Object} req - Express request object
  * @param {Object} data - Kayıt verisi
@@ -126,5 +156,27 @@ exports.addCompanyIdToData = (req, data) => {
     }
     
     // CompanyId yoksa data'yı olduğu gibi döndür (validation hatası verecek)
+    return data;
+};
+
+/**
+ * Role'den bağımsız olarak kayıt verisine admin'in own companyId'sini ekler.
+ * @param {Object} req - Express request object
+ * @param {Object} data - Kayıt verisi
+ * @returns {Object} companyId eklenmiş veri
+ */
+exports.addOwnCompanyIdToData = (req, data) => {
+    if (!req.admin) {
+        return data;
+    }
+
+    if (data.companyId) {
+        return data;
+    }
+
+    if (req.admin.companyId) {
+        return { ...data, companyId: req.admin.companyId };
+    }
+
     return data;
 };

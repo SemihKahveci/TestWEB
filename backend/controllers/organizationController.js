@@ -2,7 +2,7 @@ const Organization = require('../models/Organization');
 const CompanyManagement = require('../models/companyManagement');
 const Admin = require('../models/Admin');
 const { safeLog, getSafeErrorMessage } = require('../utils/helpers');
-const { getCompanyFilter, addCompanyIdToData } = require('../middleware/auth');
+const { getOwnCompanyFilter, addOwnCompanyIdToData } = require('../middleware/auth');
 
 const DEFAULT_TITLE_OPTIONS = [
     'Direktör',
@@ -82,7 +82,7 @@ const getCompanyTitleOptions = async (req, companyIdOverride) => {
 const getAllOrganizations = async (req, res) => {
     try {
         // Multi-tenant: Super admin için tüm veriler, normal admin için sadece kendi company'si
-        const filter = getCompanyFilter(req);
+        const filter = getOwnCompanyFilter(req);
         const organizations = await Organization.find(filter).sort({ createdAt: -1 });
         
         res.json({
@@ -278,7 +278,7 @@ const createOrganization = async (req, res) => {
 
         // Birebir aynı organizasyon var mı kontrol et (tüm alanlar aynıysa)
         // Multi-tenant: companyId filtresi ekle
-        const companyFilter = getCompanyFilter(req);
+        const companyFilter = getOwnCompanyFilter(req);
         const existingOrganization = await Organization.findOne({
             ...companyFilter,
             genelMudurYardimciligi: cleanedData.genelMudurYardimciligi,
@@ -297,7 +297,7 @@ const createOrganization = async (req, res) => {
         }
 
         // Yeni organizasyon oluştur - companyId otomatik eklenir
-        const dataWithCompanyId = addCompanyIdToData(req, cleanedData);
+        const dataWithCompanyId = addOwnCompanyIdToData(req, cleanedData);
         const newOrganization = new Organization(dataWithCompanyId);
 
         const savedOrganization = await newOrganization.save();
@@ -373,7 +373,7 @@ const updateOrganization = async (req, res) => {
 
         // Birebir aynı organizasyon var mı kontrol et (tüm alanlar aynıysa, kendisi hariç)
         // Multi-tenant: companyId filtresi ekle
-        const companyFilter = getCompanyFilter(req);
+        const companyFilter = getOwnCompanyFilter(req);
         const existingOrganization = await Organization.findOne({
             ...companyFilter,
             genelMudurYardimciligi: cleanedData.genelMudurYardimciligi,
@@ -436,7 +436,7 @@ const deleteOrganization = async (req, res) => {
         const { id } = req.params;
         
         // Multi-tenant: companyId kontrolü yap
-        const companyFilter = getCompanyFilter(req);
+        const companyFilter = getOwnCompanyFilter(req);
         const deletedOrganization = await Organization.findOneAndDelete({ _id: id, ...companyFilter });
 
         if (!deletedOrganization) {
@@ -466,7 +466,7 @@ const getOrganizationById = async (req, res) => {
         const { id } = req.params;
         
         // Multi-tenant: companyId kontrolü yap
-        const companyFilter = getCompanyFilter(req);
+        const companyFilter = getOwnCompanyFilter(req);
         const organization = await Organization.findOne({ _id: id, ...companyFilter });
 
         if (!organization) {
@@ -625,7 +625,7 @@ const bulkCreateOrganizations = async (req, res) => {
             
             try {
                 // Birebir aynı organizasyon var mı kontrol et - companyId filtresi ekle
-                const companyFilter = getCompanyFilter(req);
+                const companyFilter = getOwnCompanyFilter(req);
                 const existingOrganization = await Organization.findOne({
                     ...companyFilter,
                     genelMudurYardimciligi: org.genelMudurYardimciligi,
@@ -645,7 +645,7 @@ const bulkCreateOrganizations = async (req, res) => {
                 }
 
                 // Yeni organizasyon oluştur - companyId otomatik eklenir
-                const dataWithCompanyId = addCompanyIdToData(req, org);
+                const dataWithCompanyId = addOwnCompanyIdToData(req, org);
                 
                 // Normal admin için companyId kontrolü
                 if (req.admin && req.admin.role !== 'superadmin' && !dataWithCompanyId.companyId) {

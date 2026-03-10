@@ -1,6 +1,6 @@
 const Authorization = require('../models/Authorization');
 const { safeLog, getSafeErrorMessage } = require('../utils/helpers');
-const { getCompanyFilter, addCompanyIdToData } = require('../middleware/auth');
+const { getOwnCompanyFilter, addOwnCompanyIdToData } = require('../middleware/auth');
 
 // Tüm kişileri getir
 const getAllAuthorizations = async (req, res) => {
@@ -9,7 +9,7 @@ const getAllAuthorizations = async (req, res) => {
         
         // Arama ve filtreleme kriterleri
         // Multi-tenant: Super admin için tüm veriler, normal admin için sadece kendi company'si
-        const companyFilter = getCompanyFilter(req);
+        const companyFilter = getOwnCompanyFilter(req);
         let filter = { ...companyFilter };
         
         if (search) {
@@ -70,7 +70,7 @@ const getAuthorizationById = async (req, res) => {
         const { id } = req.params;
         
         // Multi-tenant: companyId kontrolü yap
-        const companyFilter = getCompanyFilter(req);
+        const companyFilter = getOwnCompanyFilter(req);
         const authorization = await Authorization.findOne({ _id: id, ...companyFilter })
             .populate('createdBy', 'username email')
             .populate('organizationId');
@@ -130,7 +130,7 @@ const createAuthorization = async (req, res) => {
         // Eğer organizationId yoksa ama title varsa, title'dan organizationId bul
         if (!finalOrganizationId && title && title.trim()) {
             const Organization = require('../models/Organization');
-            const companyFilter = getCompanyFilter(req);
+            const companyFilter = getOwnCompanyFilter(req);
             const matchingOrg = await Organization.findOne({
                 ...companyFilter,
                 pozisyon: title.trim()
@@ -175,7 +175,7 @@ const createAuthorization = async (req, res) => {
         }
 
         // Yeni kişi oluştur - companyId otomatik eklenir
-        const dataWithCompanyId = addCompanyIdToData(req, {
+        const dataWithCompanyId = addOwnCompanyIdToData(req, {
             sicilNo: sicilNo.trim(),
             personName: personName.trim(),
             email: email.trim().toLowerCase(),
@@ -213,7 +213,7 @@ const updateAuthorization = async (req, res) => {
         const { sicilNo, personName, email, title, organizationId } = req.body;
 
         // Multi-tenant: companyId kontrolü yap
-        const companyFilter = getCompanyFilter(req);
+        const companyFilter = getOwnCompanyFilter(req);
         // Kişi var mı kontrol et
         const authorization = await Authorization.findOne({ _id: id, ...companyFilter });
         if (!authorization) {
@@ -329,7 +329,7 @@ const deleteAuthorization = async (req, res) => {
         const { id } = req.params;
 
         // Kişi var mı kontrol et - companyId kontrolü yap
-        const companyFilter = getCompanyFilter(req);
+        const companyFilter = getOwnCompanyFilter(req);
         const authorization = await Authorization.findOne({ _id: id, ...companyFilter });
         if (!authorization) {
             return res.status(404).json({
@@ -400,7 +400,7 @@ const bulkCreateAuthorizations = async (req, res) => {
         const invalidPositionErrors = [];
 
         const Organization = require('../models/Organization');
-        const companyFilter = getCompanyFilter(req);
+        const companyFilter = getOwnCompanyFilter(req);
         const organizations = await Organization.find(companyFilter).select('pozisyon').lean();
         const normalizePosition = (value) =>
             value
@@ -542,7 +542,7 @@ const bulkCreateAuthorizations = async (req, res) => {
                 }
 
                 // Yeni yetkilendirme oluştur - companyId otomatik eklenir
-                const dataWithCompanyId = addCompanyIdToData(req, auth);
+                const dataWithCompanyId = addOwnCompanyIdToData(req, auth);
                 const newAuthorization = new Authorization(dataWithCompanyId);
                 await newAuthorization.save();
                 results.success.push({

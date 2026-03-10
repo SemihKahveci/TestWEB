@@ -1,6 +1,6 @@
 const Group = require('../models/Group');
 const { safeLog, getSafeErrorMessage } = require('../utils/helpers');
-const { getCompanyFilter, addCompanyIdToData } = require('../middleware/auth');
+const { getOwnCompanyFilter, addOwnCompanyIdToData } = require('../middleware/auth');
 
 // Tüm grupları getir
 const getAllGroups = async (req, res) => {
@@ -9,7 +9,7 @@ const getAllGroups = async (req, res) => {
         
         // Arama ve filtreleme kriterleri
         // Multi-tenant: Super admin için tüm veriler, normal admin için sadece kendi company'si
-        const companyFilter = getCompanyFilter(req);
+        const companyFilter = getOwnCompanyFilter(req);
         let filter = { ...companyFilter };
         
         if (search) {
@@ -60,7 +60,7 @@ const getGroupById = async (req, res) => {
         const { id } = req.params;
         
         // Multi-tenant: companyId kontrolü yap
-        const companyFilter = getCompanyFilter(req);
+        const companyFilter = getOwnCompanyFilter(req);
         const group = await Group.findOne({ _id: id, ...companyFilter })
             .populate('createdBy', 'username email')
             .populate('organizations');
@@ -117,7 +117,7 @@ const createGroup = async (req, res) => {
 
         // Aynı isimde grup var mı kontrol et
         // Multi-tenant: companyId filtresi ekle
-        const companyFilter = getCompanyFilter(req);
+        const companyFilter = getOwnCompanyFilter(req);
         const existingGroup = await Group.findOne({ 
             ...companyFilter,
             name: name.trim()
@@ -131,7 +131,7 @@ const createGroup = async (req, res) => {
         }
 
         // Yeni grup oluştur - companyId otomatik eklenir
-        const dataWithCompanyId = addCompanyIdToData(req, {
+        const dataWithCompanyId = addOwnCompanyIdToData(req, {
             name: name.trim(),
             status: status || 'Aktif',
             organizations: organizations,
@@ -173,7 +173,7 @@ const updateGroup = async (req, res) => {
         const updatedBy = req.admin?.id;
 
         // Multi-tenant: companyId kontrolü yap
-        const companyFilter = getCompanyFilter(req);
+        const companyFilter = getOwnCompanyFilter(req);
         // Grup var mı kontrol et
         const group = await Group.findOne({ _id: id, ...companyFilter });
         if (!group) {
@@ -279,7 +279,7 @@ const deleteGroup = async (req, res) => {
         const { id } = req.params;
 
         // Multi-tenant: companyId kontrolü yap
-        const companyFilter = getCompanyFilter(req);
+        const companyFilter = getOwnCompanyFilter(req);
         // Grup var mı kontrol et
         const group = await Group.findOne({ _id: id, ...companyFilter });
         if (!group) {
@@ -312,7 +312,7 @@ const toggleGroupStatus = async (req, res) => {
         const { id } = req.params;
 
         // Multi-tenant: companyId kontrolü yap
-        const companyFilter = getCompanyFilter(req);
+        const companyFilter = getOwnCompanyFilter(req);
         const group = await Group.findOne({ _id: id, ...companyFilter });
         if (!group) {
             return res.status(404).json({
@@ -342,7 +342,11 @@ const toggleGroupStatus = async (req, res) => {
 // Aktif grupları getir
 const getActiveGroups = async (req, res) => {
     try {
-        const groups = await Group.getActiveGroups();
+        const companyFilter = getOwnCompanyFilter(req);
+        const groups = await Group.find({ ...companyFilter, isActive: true })
+            .populate('createdBy', 'username email')
+            .populate('organizations')
+            .sort({ createdAt: -1 });
         
         res.json({
             success: true,
@@ -394,6 +398,7 @@ const getMatchingPersonsByOrganizations = async (req, res) => {
             const Organization = require('../models/Organization');
             
             // Her organizasyon türü için eşleşen kayıtları bul
+            const companyFilter = getOwnCompanyFilter(req);
             for (const orgItem of organizationData) {
                 let query = {};
                 
@@ -414,7 +419,7 @@ const getMatchingPersonsByOrganizations = async (req, res) => {
                 }
                 
                 // Bu kriterlere uyan organizasyonları bul
-                const matchingOrgs = await Organization.find(query);
+                const matchingOrgs = await Organization.find({ ...companyFilter, ...query });
                 
                 // Bu organizasyonlardaki pozisyonları topla
                 matchingOrgs.forEach(org => {
@@ -434,7 +439,9 @@ const getMatchingPersonsByOrganizations = async (req, res) => {
         }
 
         // Bu pozisyonlardaki kişileri bul (tüm kişileri göster, tekrarları kaldırma)
+        const companyFilter = getOwnCompanyFilter(req);
         const matchingPersons = await Authorization.find({
+            ...companyFilter,
             title: { $in: positions }
         }).select('personName email title sicilNo');
 
