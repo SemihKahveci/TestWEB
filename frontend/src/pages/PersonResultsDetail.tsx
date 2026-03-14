@@ -1703,14 +1703,18 @@ const PersonResultsDetail: React.FC = () => {
 
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
                 {[
-                  { title: t('labels.viewOnline'), desc: t('labels.viewOnlineDesc'), variant: 'primary', icon: 'fa-eye', iconColor: 'text-blue-600', action: handlePreviewPdf },
-                  { title: t('labels.downloadReport'), desc: t('labels.downloadPdfDesc'), variant: 'primary', icon: 'fa-download', iconColor: 'text-green-600', action: handleDownloadPdf },
-                  { title: t('labels.shareReport'), desc: t('labels.shareReportDesc'), variant: 'primary', icon: 'fa-share-nodes', iconColor: 'text-purple-600', action: handleSharePdf }
+                  { title: t('labels.viewOnline'), desc: t('labels.viewOnlineDesc'), icon: 'fa-eye', toneStart: '#4C1D95', toneEnd: '#6B21A8', action: handlePreviewPdf },
+                  { title: t('labels.downloadReport'), desc: t('labels.downloadPdfDesc'), icon: 'fa-download', toneStart: '#6B21A8', toneEnd: '#9333EA', action: handleDownloadPdf },
+                  { title: t('labels.shareReport'), desc: t('labels.shareReportDesc'), icon: 'fa-share-nodes', toneStart: '#9333EA', toneEnd: '#C084FC', action: handleSharePdf }
                 ].map((card) => (
                   <button
                     key={card.title}
-                    className={`btn btn-${card.variant} rounded-2xl px-5 py-4 transition-all group disabled:opacity-60 disabled:cursor-not-allowed flex items-center gap-4 text-left justify-start shadow-md hover:shadow-lg`}
-                    style={{ minHeight: '96px' }}
+                    className="btn rounded-2xl px-5 py-4 transition-all group disabled:opacity-60 disabled:cursor-not-allowed flex items-center gap-4 text-left justify-start shadow-md hover:shadow-lg"
+                    style={{
+                      minHeight: '96px',
+                      background: `linear-gradient(135deg, ${card.toneStart} 0%, ${card.toneEnd} 100%)`,
+                      borderColor: card.toneEnd
+                    }}
                     onClick={card.action}
                     disabled={isPdfLoading || !latestUser}
                   >
