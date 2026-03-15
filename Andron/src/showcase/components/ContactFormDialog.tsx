@@ -92,7 +92,14 @@ const ContactFormDialog = ({ open, onOpenChange }: ContactFormDialogProps) => {
     setIsSubmitting(true);
 
     try {
-      const response = await fetch("/api/offer-request", {
+      const getBasePath = () => {
+        if (typeof window !== "undefined") {
+          return window.location.pathname.startsWith("/home") ? "/home" : "";
+        }
+        return "";
+      };
+      const basePath = getBasePath();
+      const response = await fetch(`${basePath}/api/offer-request`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
