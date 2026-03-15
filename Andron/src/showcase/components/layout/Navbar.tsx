@@ -9,13 +9,13 @@ import { usePathname, useRouter } from "next/navigation";
 import Image from "next/image";
 
 const navLinks = [
-  { label: "Hakkımızda", hash: "#hakkimizda", route: "/hakkimizda" },
+  { label: "Hakkımızda", hash: "#hakkimizda", route: "/hakkimizda", forceRoute: true },
   { label: "ANDRON", hash: "#andron-nedir", route: "/andron" },
   { label: "Nasıl Çalışır?", hash: "#nasil-calisir", route: "/nasil-calisir" },
   { label: "Yetkinlikler", hash: "#yetkinlikler", route: "/yetkinlikler" },
-  { label: "Raporlama", hash: "#raporlama", route: "/raporlama" },
+  { label: "Raporlama", hash: "#raporlama", route: "/raporlama", forceRoute: true },
   { label: "Fiyatlandırma", hash: "#fiyatlandirma", route: "/fiyatlandirma" },
-  { label: "Güvenlik", hash: "#guvenlik", route: "/guvenlik" },
+  { label: "Güvenlik", hash: "#guvenlik", route: "/guvenlik", forceRoute: true },
 ];
 
 const Navbar = () => {
@@ -43,6 +43,10 @@ const Navbar = () => {
 
   const handleNavClick = (link: typeof navLinks[0]) => {
     setMobileOpen(false);
+    if (link.forceRoute) {
+      router.push(link.route);
+      return;
+    }
     if (isHome) {
       const el = document.querySelector(link.hash);
       el?.scrollIntoView({ behavior: "smooth" });
