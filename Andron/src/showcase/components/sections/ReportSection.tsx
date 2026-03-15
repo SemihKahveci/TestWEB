@@ -67,7 +67,7 @@ const ReportSection = () => {
             </div>
 
             <Button asChild variant="outline" className="gap-2">
-              <a href="/ANDRON_Ornek_Rapor.pdf" download>
+              <a href="/api/download/sample-report">
                 <Download className="h-4 w-4" />
                 Örnek Raporu İndir (PDF)
               </a>

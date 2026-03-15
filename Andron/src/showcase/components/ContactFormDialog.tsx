@@ -58,6 +58,7 @@ interface ContactFormDialogProps {
 
 const ContactFormDialog = ({ open, onOpenChange }: ContactFormDialogProps) => {
   const [submitted, setSubmitted] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [emailError, setEmailError] = useState("");
   const [form, setForm] = useState({
     name: "",
@@ -85,11 +86,37 @@ const ContactFormDialog = ({ open, onOpenChange }: ContactFormDialogProps) => {
     return true;
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!validateEmail(form.email)) return;
-    setSubmitted(true);
-    toast.success("Talebiniz başarıyla iletildi!");
+    setIsSubmitting(true);
+
+    try {
+      const response = await fetch("/api/offer-request", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(form),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok || !data.success) {
+        throw new Error(data.message || "Gönderim başarısız oldu.");
+      }
+
+      setSubmitted(true);
+      toast.success("Talebiniz başarıyla iletildi!");
+    } catch (error) {
+      const message =
+        error instanceof Error
+          ? error.message
+          : "Bir hata oluştu. Lütfen tekrar deneyin.";
+      toast.error(message);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const handleClose = (val: boolean) => {
@@ -272,10 +299,11 @@ const ContactFormDialog = ({ open, onOpenChange }: ContactFormDialogProps) => {
 
               <Button
                 type="submit"
+                disabled={isSubmitting}
                 className="w-full h-12 text-base font-semibold rounded-full mt-2"
                 style={{ backgroundColor: "#222222", color: "#ffffff" }}
               >
-                Gönder
+                {isSubmitting ? "Gönderiliyor..." : "Gönder"}
                 <ArrowRight className="ml-2 h-4 w-4" />
               </Button>
             </form>

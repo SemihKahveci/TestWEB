@@ -93,7 +93,7 @@ const Reporting = () => {
               <h3 className="font-display font-semibold text-lg text-foreground mb-2">Örnek Raporu İndir</h3>
               <p className="text-sm text-muted-foreground mb-4 font-light">ANDRON değerlendirme raporunun örnek çıktısını inceleyin.</p>
               <Button asChild className="bg-coral text-white hover:bg-coral/90">
-                <a href="/ANDRON_Ornek_Rapor.pdf" download>
+                <a href="/api/download/sample-report">
                   PDF İndir <ArrowRight className="ml-2 h-4 w-4" />
                 </a>
               </Button>
