@@ -19,7 +19,7 @@ const SolutionSection = () => {
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true, margin: "-100px" }}
           transition={{ duration: 0.6 }}
-          className="font-display text-3xl md:text-4xl font-700 text-center mb-4 text-foreground tracking-tight"
+          className="font-display text-3xl md:text-4xl font-bold text-center mb-4 text-foreground tracking-tight"
         >
           Değerlendirmeyi{" "}
           <span className="text-gradient-cool">deneyime</span>{" "}
@@ -51,9 +51,9 @@ const SolutionSection = () => {
                     <div className="w-10 h-10 rounded-xl bg-card flex items-center justify-center shadow-sm">
                       <Icon className={`h-5 w-5 ${iconColors[i]}`} />
                     </div>
-                    <span className="text-xs font-display font-600 text-muted-foreground tracking-widest uppercase">Adım {i + 1}</span>
+                    <span className="text-xs font-display font-semibold text-muted-foreground tracking-widest uppercase">Adım {i + 1}</span>
                   </div>
-                  <h3 className="font-display font-600 text-xl mb-3 text-foreground">{step.title}</h3>
+                  <h3 className="font-display font-semibold text-xl mb-3 text-foreground">{step.title}</h3>
                   <p className="text-sm text-muted-foreground leading-relaxed font-light">{step.text}</p>
                 </motion.div>
                 {i < 2 && (
@@ -73,3 +73,4 @@ const SolutionSection = () => {
 };
 
 export default SolutionSection;
+

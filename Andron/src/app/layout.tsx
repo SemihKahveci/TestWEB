@@ -1,15 +1,8 @@
 import type { Metadata } from "next";
-import { Poppins } from "next/font/google";
 import "./globals.css";
 import "@/showcase/index.css";
 import { getImagePath } from "@/utils/imagePath";
 import { TooltipProvider } from "@/showcase/components/ui/tooltip";
-
-const poppins = Poppins({
-  subsets: ["latin"],
-  weight: ["300", "400", "500", "600", "700"],
-  variable: "--font-poppins",
-});
 
 export async function generateMetadata(): Promise<Metadata> {
   const faviconPath = getImagePath("/assets/icons/game-logo.png");
@@ -36,10 +29,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
-      <body
-        className={`${poppins.variable} antialiased font-sans`}
-      >
+    <html lang="tr">
+      <body className="antialiased">
         <TooltipProvider>
           {children}
         </TooltipProvider>

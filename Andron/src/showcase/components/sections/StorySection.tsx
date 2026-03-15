@@ -1,4 +1,4 @@
-import { Triangle, Compass, Sparkles } from "lucide-react";
+﻿import { Triangle, Compass, Sparkles } from "lucide-react";
 import { content } from "@/showcase/lib/content";
 import { motion } from "framer-motion";
 
@@ -15,7 +15,7 @@ const StorySection = () => {
           >
             <div className="flex items-center gap-2 mb-4">
               <Compass className="h-5 w-5 text-coral" />
-              <h3 className="font-display font-700 text-xl text-foreground">{content.story.mission.title}</h3>
+              <h3 className="font-display font-bold text-xl text-foreground">{content.story.mission.title}</h3>
             </div>
             <p className="text-muted-foreground leading-relaxed font-light text-lg">{content.story.mission.text}</p>
           </motion.div>
@@ -27,7 +27,7 @@ const StorySection = () => {
           >
             <div className="flex items-center gap-2 mb-4">
               <Sparkles className="h-5 w-5 text-sky" />
-              <h3 className="font-display font-700 text-xl text-foreground">{content.story.what.title}</h3>
+              <h3 className="font-display font-bold text-xl text-foreground">{content.story.what.title}</h3>
             </div>
             <p className="text-muted-foreground leading-relaxed font-light text-lg">{content.story.what.text}</p>
           </motion.div>
@@ -42,7 +42,7 @@ const StorySection = () => {
         >
           <div className="text-center mb-10">
             <Triangle className="h-10 w-10 text-coral fill-coral mx-auto mb-4" />
-            <h2 className="font-display text-3xl md:text-4xl font-700 text-foreground tracking-tight">
+            <h2 className="font-display text-3xl md:text-4xl font-bold text-foreground tracking-tight">
               {content.story.hikaye.title}
             </h2>
           </div>
@@ -70,3 +70,4 @@ const StorySection = () => {
 };
 
 export default StorySection;
+

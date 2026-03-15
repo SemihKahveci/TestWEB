@@ -83,7 +83,7 @@ const Navbar = () => {
               key={link.route}
               onClick={() => handleNavClick(link)}
               className={cn(
-                "text-sm font-400 transition-colors",
+                "text-sm font-normal transition-colors",
                 scrolled ? "text-muted-foreground hover:text-foreground" : "text-white/60 hover:text-white",
                 !isHome && pathname === link.route && "text-coral"
               )}
@@ -169,3 +169,4 @@ const Navbar = () => {
 };
 
 export default Navbar;
+

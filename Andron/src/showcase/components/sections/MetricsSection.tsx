@@ -53,7 +53,7 @@ const MetricsSection = () => {
           transition={{ duration: 0.6 }}
           className="text-center mb-10 md:mb-16"
         >
-          <h2 className="font-display text-2xl md:text-4xl font-700 mb-3 tracking-tight">
+          <h2 className="font-display text-2xl md:text-4xl font-bold mb-3 tracking-tight">
             Ölçülebilir{" "}
             <span className="text-gradient">Sonuçlar</span>
           </h2>
@@ -88,7 +88,7 @@ const MetricsSection = () => {
               transition={{ duration: 0.5, delay: 0.3 + i * 0.08 }}
               className="p-3 md:p-5 rounded-xl md:rounded-2xl bg-white/5 border border-white/10 text-center backdrop-blur-sm hover:bg-white/10 transition-colors"
             >
-              <div className="font-display text-lg md:text-2xl font-700 text-coral mb-0.5 md:mb-1">{b.value}</div>
+              <div className="font-display text-lg md:text-2xl font-bold text-coral mb-0.5 md:mb-1">{b.value}</div>
               <p className="text-[10px] md:text-xs text-white/40 font-light leading-tight">{b.label}</p>
             </motion.div>
           ))}
@@ -99,3 +99,4 @@ const MetricsSection = () => {
 };
 
 export default MetricsSection;
+

@@ -52,7 +52,7 @@ const InsightsSection = () => {
           transition={{ duration: 0.6 }}
           className="text-center max-w-2xl mx-auto mb-12"
         >
-          <h2 className="font-display text-3xl md:text-4xl font-700 text-foreground mb-3 tracking-tight">
+          <h2 className="font-display text-3xl md:text-4xl font-bold text-foreground mb-3 tracking-tight">
             Neyi ölçüyoruz,{" "}
             <span className={activeTab === "yetkinlikler" ? "text-gradient" : "text-gradient-cool"} style={{ transition: "all 0.5s" }}>
               nasıl raporluyoruz?
@@ -66,10 +66,10 @@ const InsightsSection = () => {
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
           <div className="flex justify-center mb-10">
             <TabsList className="bg-muted/60 rounded-full p-1">
-              <TabsTrigger value="yetkinlikler" className="rounded-full px-6 py-2 font-display font-500 text-sm data-[state=active]:bg-card data-[state=active]:shadow-sm">
+              <TabsTrigger value="yetkinlikler" className="rounded-full px-6 py-2 font-display font-medium text-sm data-[state=active]:bg-card data-[state=active]:shadow-sm">
                 Yetkinlikler
               </TabsTrigger>
-              <TabsTrigger value="raporlama" className="rounded-full px-6 py-2 font-display font-500 text-sm data-[state=active]:bg-card data-[state=active]:shadow-sm">
+              <TabsTrigger value="raporlama" className="rounded-full px-6 py-2 font-display font-medium text-sm data-[state=active]:bg-card data-[state=active]:shadow-sm">
                 Raporlama
               </TabsTrigger>
             </TabsList>
@@ -93,7 +93,7 @@ const InsightsSection = () => {
                     <div className={`w-12 h-12 rounded-2xl flex items-center justify-center mb-4 ${color.bg} group-hover:scale-110 transition-transform`}>
                       <Icon className={`h-6 w-6 ${color.text}`} />
                     </div>
-                    <h3 className="font-display font-600 text-base mb-2 text-foreground">{card.title}</h3>
+                    <h3 className="font-display font-semibold text-base mb-2 text-foreground">{card.title}</h3>
                     <p className="text-sm text-muted-foreground leading-relaxed font-light">{card.text}</p>
                   </motion.div>
                 );
@@ -106,7 +106,7 @@ const InsightsSection = () => {
               transition={{ delay: 0.4 }}
               className="text-center mt-10"
             >
-              <a href="/yetkinlikler" className="inline-flex items-center gap-2 text-coral font-display font-500 text-sm hover:gap-3 transition-all">
+              <a href="/yetkinlikler" className="inline-flex items-center gap-2 text-coral font-display font-medium text-sm hover:gap-3 transition-all">
                 {content.competency.cta}
                 <ArrowRight className="h-4 w-4" />
               </a>
@@ -122,7 +122,7 @@ const InsightsSection = () => {
                 viewport={{ once: true }}
                 transition={{ duration: 0.6 }}
               >
-                <h3 className="font-display text-2xl md:text-3xl font-700 text-foreground mb-4 tracking-tight">
+                <h3 className="font-display text-2xl md:text-3xl font-bold text-foreground mb-4 tracking-tight">
                   İşe alım ve gelişim kararları için{" "}
                   <span className="text-gradient-cool">tek veri kaynağı</span>
                 </h3>
@@ -140,7 +140,7 @@ const InsightsSection = () => {
                       >
                         <Icon className={`h-5 w-5 ${reportIconColors[i]} mt-0.5 shrink-0`} />
                         <div>
-                          <h4 className="font-display font-600 text-sm text-foreground">{comp.title}</h4>
+                          <h4 className="font-display font-semibold text-sm text-foreground">{comp.title}</h4>
                           <p className="text-xs text-muted-foreground mt-1 font-light">{comp.text}</p>
                         </div>
                       </div>
@@ -199,3 +199,4 @@ const InsightsSection = () => {
 };
 
 export default InsightsSection;
+

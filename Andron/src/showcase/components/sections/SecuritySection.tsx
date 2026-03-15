@@ -17,7 +17,7 @@ const SecuritySection = () => {
           transition={{ duration: 0.6 }}
           className="text-center max-w-2xl mx-auto mb-16"
         >
-          <h2 className="font-display text-3xl md:text-4xl font-700 text-foreground mb-3 tracking-tight">
+          <h2 className="font-display text-3xl md:text-4xl font-bold text-foreground mb-3 tracking-tight">
             Kurumsal{" "}
             <span className="text-gradient-cool">Güvenlik</span>{" "}
             Standartları
@@ -40,7 +40,7 @@ const SecuritySection = () => {
                 <div className={`w-14 h-14 rounded-2xl ${bgColors[i]} flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform`}>
                   <Icon className={`h-7 w-7 ${colors[i]}`} />
                 </div>
-                <h3 className="font-display font-600 text-sm mb-1 text-foreground">{item.title}</h3>
+                <h3 className="font-display font-semibold text-sm mb-1 text-foreground">{item.title}</h3>
                 <p className="text-xs text-muted-foreground font-light">{item.text}</p>
               </motion.div>
             );
@@ -52,3 +52,4 @@ const SecuritySection = () => {
 };
 
 export default SecuritySection;
+

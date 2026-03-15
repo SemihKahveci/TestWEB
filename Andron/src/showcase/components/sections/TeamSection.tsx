@@ -1,4 +1,4 @@
-import { User } from "lucide-react";
+﻿import { User } from "lucide-react";
 import { content } from "@/showcase/lib/content";
 import { motion } from "framer-motion";
 
@@ -21,7 +21,7 @@ const TeamSection = () => {
           transition={{ duration: 0.6 }}
           className="text-center mb-16"
         >
-          <h2 className="font-display text-3xl md:text-4xl font-700 text-foreground mb-3 tracking-tight">
+          <h2 className="font-display text-3xl md:text-4xl font-bold text-foreground mb-3 tracking-tight">
             {content.team.title}
           </h2>
           <p className="text-muted-foreground max-w-xl mx-auto font-light">{content.team.subtitle}</p>
@@ -40,8 +40,8 @@ const TeamSection = () => {
               <div className="w-20 h-20 rounded-full bg-muted flex items-center justify-center mx-auto mb-4">
                 <User className="h-8 w-8 text-muted-foreground" />
               </div>
-              <h3 className="font-display font-600 text-foreground mb-1">{member.name}</h3>
-              <p className={`text-sm font-display font-500 mb-3 ${roleColors[i]}`}>{member.role}</p>
+              <h3 className="font-display font-semibold text-foreground mb-1">{member.name}</h3>
+              <p className={`text-sm font-display font-medium mb-3 ${roleColors[i]}`}>{member.role}</p>
               <p className="text-xs text-muted-foreground leading-relaxed font-light">{member.text}</p>
             </motion.div>
           ))}
@@ -52,3 +52,4 @@ const TeamSection = () => {
 };
 
 export default TeamSection;
+

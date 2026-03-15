@@ -16,7 +16,7 @@ const Footer = () => {
           </div>
 
           <div className="flex flex-col gap-2">
-            <h4 className="font-display font-600 text-sm mb-1 md:mb-2 text-foreground">Hızlı Bağlantılar</h4>
+            <h4 className="font-display font-semibold text-sm mb-1 md:mb-2 text-foreground">Hızlı Bağlantılar</h4>
             {content.nav.links.map((link) => (
               <a
                 key={link.href}
@@ -29,7 +29,7 @@ const Footer = () => {
           </div>
 
           <div className="flex flex-col gap-2">
-            <h4 className="font-display font-600 text-sm mb-1 md:mb-2 text-foreground">Yasal</h4>
+            <h4 className="font-display font-semibold text-sm mb-1 md:mb-2 text-foreground">Yasal</h4>
             {content.footer.links.map((link) => (
               <a
                 key={link.label}
@@ -51,3 +51,4 @@ const Footer = () => {
 };
 
 export default Footer;
+

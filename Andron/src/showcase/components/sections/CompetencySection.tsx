@@ -19,7 +19,7 @@ const CompetencySection = () => {
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true, margin: "-100px" }}
           transition={{ duration: 0.6 }}
-          className="font-display text-3xl md:text-4xl font-700 text-center mb-4 text-foreground tracking-tight"
+          className="font-display text-3xl md:text-4xl font-bold text-center mb-4 text-foreground tracking-tight"
         >
           Geleceğin iş dünyası için tasarlanmış{" "}
           <span className="text-gradient">12 temel yetkinlik</span>
@@ -50,7 +50,7 @@ const CompetencySection = () => {
                 <div className={`w-12 h-12 rounded-2xl flex items-center justify-center mb-4 ${color.bg} group-hover:scale-110 transition-transform`}>
                   <Icon className={`h-6 w-6 ${color.text}`} />
                 </div>
-                <h3 className="font-display font-600 text-base mb-2 text-foreground">{card.title}</h3>
+                <h3 className="font-display font-semibold text-base mb-2 text-foreground">{card.title}</h3>
                 <p className="text-sm text-muted-foreground leading-relaxed font-light">{card.text}</p>
               </motion.div>
             );
@@ -64,7 +64,7 @@ const CompetencySection = () => {
           transition={{ delay: 0.5 }}
           className="text-center mt-10"
         >
-          <a href="/yetkinlikler" className="inline-flex items-center gap-2 text-coral font-display font-500 text-sm hover:gap-3 transition-all">
+          <a href="/yetkinlikler" className="inline-flex items-center gap-2 text-coral font-display font-medium text-sm hover:gap-3 transition-all">
             {content.competency.cta}
             <ArrowRight className="h-4 w-4" />
           </a>
@@ -75,3 +75,4 @@ const CompetencySection = () => {
 };
 
 export default CompetencySection;
+

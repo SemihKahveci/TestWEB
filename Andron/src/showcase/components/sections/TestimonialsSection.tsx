@@ -36,7 +36,7 @@ const TestimonialsSection = () => {
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.5 }}
-            className="text-center font-display font-700 text-foreground text-[28px] mb-3"
+            className="text-center font-display font-bold text-foreground text-[28px] mb-3"
           >
             Onlar deneyimledi, onlar anlatsın.
           </motion.h2>
@@ -89,3 +89,4 @@ const TestimonialsSection = () => {
 };
 
 export default TestimonialsSection;
+

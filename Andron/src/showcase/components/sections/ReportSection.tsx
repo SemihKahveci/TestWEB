@@ -36,7 +36,7 @@ const ReportSection = () => {
             viewport={{ once: true, margin: "-80px" }}
             transition={{ duration: 0.7, type: "spring", stiffness: 60 }}
           >
-            <h2 className="font-display text-3xl md:text-4xl font-700 text-foreground mb-4 tracking-tight">
+            <h2 className="font-display text-3xl md:text-4xl font-bold text-foreground mb-4 tracking-tight">
               İşe alım ve gelişim kararları için{" "}
               <span className="text-gradient">tek veri kaynağı</span>
             </h2>
@@ -58,7 +58,7 @@ const ReportSection = () => {
                   >
                     <Icon className={`h-5 w-5 ${iconColors[i]} mt-0.5 shrink-0`} />
                     <div>
-                      <h4 className="font-display font-600 text-sm text-foreground">{comp.title}</h4>
+                      <h4 className="font-display font-semibold text-sm text-foreground">{comp.title}</h4>
                       <p className="text-xs text-muted-foreground mt-1 font-light">{comp.text}</p>
                     </div>
                   </motion.div>
@@ -116,3 +116,4 @@ const ReportSection = () => {
 };
 
 export default ReportSection;
+

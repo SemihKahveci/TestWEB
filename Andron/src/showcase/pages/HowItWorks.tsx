@@ -113,7 +113,7 @@ const HowItWorks = () => {
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6 }}
-            className="font-display text-4xl md:text-5xl font-700 tracking-tight text-foreground mb-4"
+            className="font-display text-4xl md:text-5xl font-bold tracking-tight text-foreground mb-4"
           >
             Karmaşık süreçleri <span className="text-coral">sadeleştiren</span> bir akış.
           </motion.h1>
@@ -173,7 +173,7 @@ const HowItWorks = () => {
                       </div>
                       <span
                         className={cn(
-                          "font-display text-xs font-600 transition-colors hidden sm:block",
+                          "font-display text-xs font-semibold transition-colors hidden sm:block",
                           isActive ? "text-coral" : isPast ? "text-foreground" : "text-muted-foreground"
                         )}
                       >
@@ -207,10 +207,10 @@ const HowItWorks = () => {
               transition={{ duration: 0.3 }}
               className="text-center mb-10"
             >
-              <span className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-coral/10 text-coral font-display font-600 text-sm mb-3">
+              <span className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-coral/10 text-coral font-display font-semibold text-sm mb-3">
                 Adım {tab.num} / {tabs.length}
               </span>
-              <h2 className="font-display text-2xl md:text-3xl font-700 text-foreground tracking-tight">
+              <h2 className="font-display text-2xl md:text-3xl font-bold text-foreground tracking-tight">
                 {tab.label}
               </h2>
             </motion.div>
@@ -228,7 +228,7 @@ const HowItWorks = () => {
             >
               {/* IK Column */}
               <div className="rounded-3xl border border-border bg-card p-6 md:p-8 flex flex-col">
-                <span className="font-display font-700 text-lg tracking-wide text-foreground mb-5 block">
+                <span className="font-display font-bold text-lg tracking-wide text-foreground mb-5 block">
                   İK Profesyoneli
                 </span>
                 <div className="rounded-2xl overflow-hidden border border-border shadow-sm mb-5 aspect-video">
@@ -252,7 +252,7 @@ const HowItWorks = () => {
 
               {/* Candidate Column */}
               <div className="rounded-3xl border border-border bg-card p-6 md:p-8 flex flex-col">
-                <span className="font-display font-700 text-lg tracking-wide text-foreground mb-5 block">
+                <span className="font-display font-bold text-lg tracking-wide text-foreground mb-5 block">
                   Aday / Çalışan
                 </span>
                 <div className="rounded-2xl overflow-hidden border border-border shadow-sm mb-5 aspect-video">
@@ -285,3 +285,4 @@ const HowItWorks = () => {
 };
 
 export default HowItWorks;
+

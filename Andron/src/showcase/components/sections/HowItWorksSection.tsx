@@ -64,7 +64,7 @@ const HowItWorksSection = () => {
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true, margin: "-100px" }}
           transition={{ duration: 0.6 }}
-          className="font-display text-2xl md:text-4xl font-700 text-center mb-3 md:mb-4 text-foreground tracking-tight"
+          className="font-display text-2xl md:text-4xl font-bold text-center mb-3 md:mb-4 text-foreground tracking-tight"
         >
           İki taraf, <span className="text-coral">tek deneyim.</span>
         </motion.h2>
@@ -81,11 +81,11 @@ const HowItWorksSection = () => {
         {/* Column Headers — hidden on mobile */}
         <div className="hidden md:grid grid-cols-[1fr_auto_1fr] gap-4 mb-8 max-w-4xl mx-auto">
           <div className="text-right">
-            <span className="font-display font-600 text-sm tracking-wide text-foreground">🧑‍💼 İK Profesyoneli</span>
+            <span className="font-display font-semibold text-sm tracking-wide text-foreground">İK Profesyoneli</span>
           </div>
           <div className="w-px" />
           <div className="text-left">
-            <span className="font-display font-600 text-sm tracking-wide text-foreground">👤 Aday / Çalışan</span>
+            <span className="font-display font-semibold text-sm tracking-wide text-foreground">Aday / Çalışan</span>
           </div>
         </div>
 
@@ -112,7 +112,7 @@ const HowItWorksSection = () => {
                       <TooltipTrigger asChild>
                         <div className="flex items-center gap-3 justify-end p-4 rounded-2xl bg-card border border-border hover:shadow-md transition-shadow cursor-default">
                           <div className="text-right">
-                            <p className="text-sm font-500 text-foreground">{step.ikText}</p>
+                            <p className="text-sm font-medium text-foreground">{step.ikText}</p>
                           </div>
                           <div className="w-9 h-9 rounded-xl bg-coral/10 flex items-center justify-center flex-shrink-0">
                             <IkIcon className="h-4 w-4 text-coral" />
@@ -125,7 +125,7 @@ const HowItWorksSection = () => {
                     </Tooltip>
 
                     <div className="flex items-center justify-center">
-                      <div className="w-10 h-10 rounded-full bg-coral text-white flex items-center justify-center font-display font-700 text-sm z-10 shadow-md">
+                      <div className="w-10 h-10 rounded-full bg-coral text-white flex items-center justify-center font-display font-bold text-sm z-10 shadow-md">
                         {step.num}
                       </div>
                     </div>
@@ -137,7 +137,7 @@ const HowItWorksSection = () => {
                             <CandidateIcon className="h-4 w-4 text-sky" />
                           </div>
                           <div>
-                            <p className="text-sm font-500 text-foreground">{step.candidateText}</p>
+                            <p className="text-sm font-medium text-foreground">{step.candidateText}</p>
                           </div>
                         </div>
                       </TooltipTrigger>
@@ -150,23 +150,23 @@ const HowItWorksSection = () => {
                   {/* Mobile layout — stacked cards with step number */}
                   <div className="md:hidden">
                     <div className="flex items-center gap-3 mb-2">
-                      <div className="w-8 h-8 rounded-full bg-coral text-white flex items-center justify-center font-display font-700 text-xs flex-shrink-0">
+                      <div className="w-8 h-8 rounded-full bg-coral text-white flex items-center justify-center font-display font-bold text-xs flex-shrink-0">
                         {step.num}
                       </div>
-                      <span className="font-display font-600 text-xs text-muted-foreground">Adım {step.num}</span>
+                      <span className="font-display font-semibold text-xs text-muted-foreground">Adım {step.num}</span>
                     </div>
                     <div className="grid grid-cols-2 gap-2 pl-11">
                       <div className="flex items-start gap-2 p-3 rounded-xl bg-card border border-border">
                         <div className="w-7 h-7 rounded-lg bg-coral/10 flex items-center justify-center flex-shrink-0 mt-0.5">
                           <IkIcon className="h-3.5 w-3.5 text-coral" />
                         </div>
-                        <p className="text-xs font-500 text-foreground leading-tight">{step.ikText}</p>
+                        <p className="text-xs font-medium text-foreground leading-tight">{step.ikText}</p>
                       </div>
                       <div className="flex items-start gap-2 p-3 rounded-xl bg-card border border-border">
                         <div className="w-7 h-7 rounded-lg bg-sky/10 flex items-center justify-center flex-shrink-0 mt-0.5">
                           <CandidateIcon className="h-3.5 w-3.5 text-sky" />
                         </div>
-                        <p className="text-xs font-500 text-foreground leading-tight">{step.candidateText}</p>
+                        <p className="text-xs font-medium text-foreground leading-tight">{step.candidateText}</p>
                       </div>
                     </div>
                   </div>
@@ -186,9 +186,9 @@ const HowItWorksSection = () => {
         >
           <button
             onClick={() => router.push("/nasil-calisir")}
-            className="inline-flex items-center gap-2 text-coral hover:text-coral/80 font-display font-600 text-sm transition-colors"
+            className="inline-flex items-center gap-2 text-coral hover:text-coral/80 font-display font-semibold text-sm transition-colors"
           >
-            Tüm süreci detaylı gör →
+            Tüm süreci detaylı gör ->
           </button>
         </motion.div>
       </div>
@@ -197,3 +197,4 @@ const HowItWorksSection = () => {
 };
 
 export default HowItWorksSection;
+

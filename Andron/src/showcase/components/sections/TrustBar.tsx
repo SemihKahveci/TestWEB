@@ -24,7 +24,7 @@ const TrustBar = () => {
             return (
               <div key={i} className="flex items-center justify-center gap-2 text-muted-foreground">
                 <Icon className="h-4 md:h-5 w-4 md:w-5 text-sky" />
-                <span className="text-xs md:text-sm font-display font-500">{b.label}</span>
+                <span className="text-xs md:text-sm font-display font-medium">{b.label}</span>
               </div>
             );
           })}
@@ -35,3 +35,4 @@ const TrustBar = () => {
 };
 
 export default TrustBar;
+

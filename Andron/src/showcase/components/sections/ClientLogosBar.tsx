@@ -5,7 +5,7 @@ const ClientLogosBar = () => {
   return (
     <section className="py-12 md:py-16 bg-muted/50 overflow-hidden">
       <div className="container mb-6">
-        <p className="text-center text-xs font-display font-500 text-muted-foreground tracking-widest uppercase">
+        <p className="text-center text-xs font-display font-medium text-muted-foreground tracking-widest uppercase">
           Bize güvenen firmalar
         </p>
       </div>
@@ -35,3 +35,4 @@ const ClientLogosBar = () => {
 };
 
 export default ClientLogosBar;
+
