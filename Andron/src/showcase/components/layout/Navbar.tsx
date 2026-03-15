@@ -6,6 +6,7 @@ import { Button } from "@/showcase/components/ui/button";
 import { cn } from "@/showcase/lib/utils";
 import logoBlack from "@/showcase/assets/logo-black-horizontal.png";
 import { usePathname, useRouter } from "next/navigation";
+import Image from "next/image";
 
 const navLinks = [
   { label: "Hakkımızda", hash: "#hakkimizda", route: "/hakkimizda" },
@@ -70,10 +71,10 @@ const Navbar = () => {
     >
       <div className="container flex items-center justify-between h-14 md:h-20">
         <button onClick={handleLogoClick} className="flex items-center">
-          <img
-            src={logoBlack.src}
+          <Image
+            src={logoBlack}
             alt="ANDRON"
-            className={cn("h-8 md:h-12 w-auto transition-all", !scrolled && "invert brightness-200")}
+            className={cn("h-16 md:h-20 w-auto transition-all", !scrolled && "invert brightness-200")}
           />
         </button>
 

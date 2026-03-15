@@ -60,7 +60,7 @@ const AboutHero = () => {
           transition={{ duration: 0.7, delay: 0.3 }}
           className="text-lg leading-relaxed mx-auto max-w-[600px] text-white/60"
         >
-          "Andron" — antik Yunanca'da misafirlerin bir araya gelip fikir paylaştığı özel salonu tanımlar.
+          &quot;Andron&quot; — antik Yunanca&apos;da misafirlerin bir araya gelip fikir paylaştığı özel salonu tanımlar.
           Biz bu ruhu, bireylerin gerçek yetkinliklerini keşfettiği modern bir platforma dönüştürdük.
         </motion.p>
 

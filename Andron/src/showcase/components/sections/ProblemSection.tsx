@@ -52,7 +52,7 @@ const ProblemSection = () => {
           transition={{ duration: 0.5, delay: 0.4 }}
           className="text-center mt-8 md:mt-12 text-base md:text-lg font-display font-semibold text-coral"
         >
-          "{content.problem.subtitle}"
+          &quot;{content.problem.subtitle}&quot;
         </motion.p>
       </div>
       <div className="container mt-10 md:mt-16">

@@ -1,5 +1,6 @@
 import { motion } from "framer-motion";
 import clientLogos from "@/showcase/assets/client-logos.png";
+import Image from "next/image";
 
 const ClientLogosBar = () => {
   return (
@@ -21,8 +22,8 @@ const ClientLogosBar = () => {
         >
           {[0, 1].map((copy) => (
             <div key={copy} className="flex-shrink-0 px-8">
-              <img
-                src={clientLogos.src}
+              <Image
+                src={clientLogos}
                 alt="Müşteri logoları"
                 className="h-10 md:h-12 w-auto object-contain grayscale opacity-60 hover:grayscale-0 hover:opacity-100 transition-all duration-500"
               />

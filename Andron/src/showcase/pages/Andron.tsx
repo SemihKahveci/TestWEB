@@ -4,6 +4,7 @@ import { Gamepad2, Brain, FileText, ArrowRight, Smartphone, BarChart3, Users, Bu
 import { Button } from "@/showcase/components/ui/button";
 import { motion } from "framer-motion";
 import { cn } from "@/showcase/lib/utils";
+import Image from "next/image";
 
 import game1 from "@/showcase/assets/andron-game-1.png";
 import game2 from "@/showcase/assets/andron-game-2.png";
@@ -123,12 +124,12 @@ const Andron = () => {
                     <p className="text-muted-foreground mb-3">{step.text}</p>
                     <p className="text-muted-foreground text-sm leading-relaxed font-light">{step.detail}</p>
                   </div>
-                  <div className={cn("rounded-2xl overflow-hidden border border-border shadow-sm", i % 2 === 1 ? "lg:order-1" : "")}>
-                    <img
-                      src={step.image.src}
+                  <div className={cn("relative aspect-video rounded-2xl overflow-hidden border border-border shadow-sm", i % 2 === 1 ? "lg:order-1" : "")}>
+                    <Image
+                      src={step.image}
                       alt={`ANDRON - ${step.title}`}
-                      className="w-full h-auto object-cover aspect-video"
-                      loading="lazy"
+                      fill
+                      className="w-full h-full object-cover"
                     />
                   </div>
                 </motion.div>
@@ -229,7 +230,7 @@ const Andron = () => {
       {/* CTA */}
       <section className="py-16 bg-hero-gradient">
         <div className="container text-center">
-          <h2 className="font-display text-2xl md:text-3xl font-bold text-white mb-4">ANDRON'u Deneyimleyin</h2>
+          <h2 className="font-display text-2xl md:text-3xl font-bold text-white mb-4">ANDRON&apos;u Deneyimleyin</h2>
           <p className="text-white/60 mb-8 font-light">Takvimimizden size uygun bir slot seçin — 30 dakika yeter.</p>
           <a
             href="https://calendar.google.com/calendar/u/0/r"

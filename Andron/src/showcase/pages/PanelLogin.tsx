@@ -7,6 +7,7 @@ import { Input } from "@/showcase/components/ui/input";
 import { Label } from "@/showcase/components/ui/label";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import Image from "next/image";
 import logoWhite from "@/showcase/assets/logo-white-horizontal.png";
 
 const PanelLogin = () => {
@@ -24,7 +25,7 @@ const PanelLogin = () => {
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
           <button onClick={() => router.push("/")} className="inline-block mb-6">
-            <img src={logoWhite.src} alt="ANDRON" className="h-12 w-auto mx-auto" />
+            <Image src={logoWhite} alt="ANDRON" className="h-12 w-auto mx-auto" />
           </button>
           <p className="text-xs text-white/40 tracking-widest uppercase">Panel Girişi</p>
         </div>

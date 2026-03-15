@@ -65,7 +65,7 @@ const TestimonialsSection = () => {
                 transition={{ duration: 0.4, delay: i * 0.1 }}
                 className="rounded-2xl p-8 flex flex-col bg-white/5 border border-white/10 hover:border-coral/50 transition-colors duration-300"
               >
-                <span className="block font-display leading-none mb-4 text-coral text-[48px]">"</span>
+                <span className="block font-display leading-none mb-4 text-coral text-[48px]">&quot;</span>
                 <p className="italic leading-relaxed mb-6 flex-1 text-white text-[15px]">{t.quote}</p>
                 <div className="mt-auto">
                   <div className="h-px mb-5 bg-white/15" />

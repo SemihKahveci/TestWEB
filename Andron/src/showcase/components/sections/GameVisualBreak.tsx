@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import type { StaticImageData } from "next/image";
+import Image, { type StaticImageData } from "next/image";
 
 interface GameVisualBreakProps {
   images: Array<string | StaticImageData>;
@@ -23,12 +23,12 @@ const GameVisualBreak = ({ images, reverse = false }: GameVisualBreakProps) => {
               }`}
               style={{ boxShadow: "0 6px 24px hsl(0 0% 0% / 0.08)" }}
             >
-              <div className="aspect-video overflow-hidden">
-                <img
-                  src={typeof src === "string" ? src : src.src}
+              <div className="relative aspect-video overflow-hidden">
+                <Image
+                  src={src}
                   alt="ANDRON oyun görseli"
+                  fill
                   className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
-                  loading="lazy"
                 />
               </div>
             </motion.div>

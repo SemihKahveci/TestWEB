@@ -188,7 +188,7 @@ const HowItWorksSection = () => {
             onClick={() => router.push("/nasil-calisir")}
             className="inline-flex items-center gap-2 text-coral hover:text-coral/80 font-display font-semibold text-sm transition-colors"
           >
-            Tüm süreci detaylı gör ->
+            Tüm süreci detaylı gör {">"}
           </button>
         </motion.div>
       </div>

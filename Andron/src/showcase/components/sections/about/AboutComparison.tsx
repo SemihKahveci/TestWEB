@@ -22,7 +22,7 @@ const AboutComparison = () => {
           transition={{ duration: 0.6 }}
           className="font-display text-3xl md:text-[32px] font-bold text-center text-white mb-12"
         >
-          Geleneksel assessment'tan farkımız ne?
+          Geleneksel assessment&apos;tan farkımız ne?
         </motion.h2>
 
         <motion.div

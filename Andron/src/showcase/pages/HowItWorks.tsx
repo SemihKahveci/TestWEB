@@ -1,7 +1,7 @@
 import Navbar from "@/showcase/components/layout/Navbar";
 import Footer from "@/showcase/components/layout/Footer";
 import { motion, AnimatePresence } from "framer-motion";
-import { Settings, Send, Timer, BarChart2, FileText, Gift, LogIn, Gamepad2, Brain, Sparkles, Calendar, Pause, Play } from "lucide-react";
+import { Settings, Send, Timer, BarChart2, FileText, Gift, LogIn, Gamepad2, Brain, Sparkles, Pause, Play } from "lucide-react";
 import { useState, useEffect, useCallback } from "react";
 import { cn } from "@/showcase/lib/utils";
 

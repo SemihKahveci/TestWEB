@@ -229,7 +229,7 @@ const ContactFormDialog = ({ open, onOpenChange }: ContactFormDialogProps) => {
 
               {/* Assessment Adedi */}
               <div className="space-y-2">
-                <Label className="text-sm font-medium">Kaç Assessment'a İhtiyacınız Var? *</Label>
+                <Label className="text-sm font-medium">Kaç Assessment&apos;a İhtiyacınız Var? *</Label>
                 <Select
                   required
                   value={form.assessmentCount}

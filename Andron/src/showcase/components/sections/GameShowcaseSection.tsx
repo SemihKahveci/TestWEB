@@ -1,4 +1,5 @@
 import { motion } from "framer-motion";
+import Image from "next/image";
 
 import game1 from "@/showcase/assets/andron-game-1.png";
 import game2 from "@/showcase/assets/andron-game-2.png";
@@ -29,12 +30,12 @@ const GameShowcaseSection = () => {
                 boxShadow: "0 8px 32px hsl(0 0% 0% / 0.1)",
               }}
             >
-              <div className="aspect-[4/3] overflow-hidden">
-                <img
-                  src={img.src.src}
+              <div className="relative aspect-[4/3] overflow-hidden">
+                <Image
+                  src={img.src}
                   alt={img.alt}
+                  fill
                   className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
-                  loading="lazy"
                 />
               </div>
               {/* Subtle gradient overlay */}

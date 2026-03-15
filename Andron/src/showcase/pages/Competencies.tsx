@@ -73,7 +73,7 @@ const Competencies = () => {
               transition={{ delay: 0.2 }}
               className="text-lg text-white/70 leading-relaxed"
             >
-              ANDRON'un yetkinlik çerçevesi, bilişsel, sosyal ve stratejik boyutları birlikte ele alacak şekilde tasarlanmıştır. 4 kategori altında 12 temel yetkinlik ölçülür.
+              ANDRON&apos;un yetkinlik çerçevesi, bilişsel, sosyal ve stratejik boyutları birlikte ele alacak şekilde tasarlanmıştır. 4 kategori altında 12 temel yetkinlik ölçülür.
             </motion.p>
           </div>
         </div>
