@@ -2459,7 +2459,7 @@ const adminController = {
 
             safeLog('debug', 'Sending email via emailService...');
             // Contact form için özel from email: sekahveci@androngame.com
-            const contactFromEmail = process.env.CONTACT_FROM_EMAIL || 'sekahveci@androngame.com';
+            const contactFromEmail = process.env.CONTACT_FROM_EMAIL || 'info@androngame.com';
             const emailResult = await sendEmail(to, subject, html, replyTo, contactFromEmail);
 
             safeLog('debug', 'Email result:', emailResult);
