@@ -2,9 +2,11 @@ import { Play, Sparkles, Calendar, ArrowRight } from "lucide-react";
 import { content } from "@/showcase/lib/content";
 import { motion } from "framer-motion";
 import { useState } from "react";
+import { useOpenContactFormDialog } from "@/showcase/components/ContactFormDialogProvider";
 
 const HeroSection = () => {
   const [isPlaying, setIsPlaying] = useState(false);
+  const openContactForm = useOpenContactFormDialog();
   const VIDEO_URL: string = "https://www.youtube.com/embed/JLz9SgT8ZZ8";
 
   return (
@@ -70,16 +72,15 @@ const HeroSection = () => {
             transition={{ duration: 0.6, delay: 0.45, ease: "easeOut" }}
             className="flex flex-col sm:flex-row items-center justify-center gap-3 md:gap-4 mt-6 md:mt-8 px-4"
           >
-            <a
-              href="https://calendar.google.com/calendar/u/0/r"
-              target="_blank"
-              rel="noopener noreferrer"
+            <button
+              type="button"
+              onClick={() => openContactForm()}
               className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 md:px-7 py-3 md:py-3.5 rounded-full text-sm md:text-base font-semibold bg-coral text-white hover:bg-coral/90 shadow-lg hover:shadow-xl hover:shadow-coral/25 transition-all duration-300"
             >
               <Calendar className="w-4 md:w-5 h-4 md:h-5" />
               Ücretsiz Keşif Görüşmesi Ayarla
               <ArrowRight className="w-4 h-4" />
-            </a>
+            </button>
           </motion.div>
         </div>
 

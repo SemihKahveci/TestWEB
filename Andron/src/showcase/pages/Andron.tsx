@@ -1,3 +1,5 @@
+"use client";
+
 import Navbar from "@/showcase/components/layout/Navbar";
 import Footer from "@/showcase/components/layout/Footer";
 import { Gamepad2, Brain, FileText, ArrowRight, Smartphone, BarChart3, Users, Building2, UserCheck, Calendar } from "lucide-react";
@@ -5,6 +7,7 @@ import { Button } from "@/showcase/components/ui/button";
 import { motion } from "framer-motion";
 import { cn } from "@/showcase/lib/utils";
 import Image from "next/image";
+import { useOpenContactFormDialog } from "@/showcase/components/ContactFormDialogProvider";
 
 import game1 from "@/showcase/assets/andron-game-1.png";
 import game2 from "@/showcase/assets/andron-game-2.png";
@@ -66,6 +69,8 @@ const techColorMap: Record<string, { bg: string; text: string; border: string }>
 };
 
 const Andron = () => {
+  const openContactForm = useOpenContactFormDialog();
+
   return (
     <div className="min-h-screen">
       <Navbar />
@@ -231,17 +236,18 @@ const Andron = () => {
       <section className="py-16 bg-hero-gradient">
         <div className="container text-center">
           <h2 className="font-display text-2xl md:text-3xl font-bold text-white mb-4">ANDRON&apos;u Deneyimleyin</h2>
-          <p className="text-white/60 mb-8 font-light">Takvimimizden size uygun bir slot seçin — 30 dakika yeter.</p>
-          <a
-            href="https://calendar.google.com/calendar/u/0/r"
-            target="_blank"
-            rel="noopener noreferrer"
+          <p className="text-white/60 mb-8 font-light">
+            Kurumsal teklif için bilgilerinizi bırakın; kısa sürede size dönelim.
+          </p>
+          <Button
+            type="button"
+            size="lg"
+            className="bg-coral text-white hover:bg-coral/90 rounded-full"
+            onClick={() => openContactForm()}
           >
-            <Button size="lg" className="bg-coral text-white hover:bg-coral/90 rounded-full">
-              <Calendar className="mr-2 h-4 w-4" />
-              Görüşme Planla <ArrowRight className="ml-2 h-4 w-4" />
-            </Button>
-          </a>
+            <Calendar className="mr-2 h-4 w-4" />
+            Görüşme Planla <ArrowRight className="ml-2 h-4 w-4" />
+          </Button>
         </div>
       </section>
 

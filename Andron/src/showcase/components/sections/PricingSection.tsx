@@ -3,11 +3,11 @@ import { Button } from "@/showcase/components/ui/button";
 import { Slider } from "@/showcase/components/ui/slider";
 import { motion } from "framer-motion";
 import { ArrowRight, CheckCircle } from "lucide-react";
-import ContactFormDialog from "@/showcase/components/ContactFormDialog";
+import { useOpenContactFormDialog } from "@/showcase/components/ContactFormDialogProvider";
 
 const PricingSection = () => {
   const [assessments, setAssessments] = useState([100]);
-  const [contactOpen, setContactOpen] = useState(false);
+  const openContactForm = useOpenContactFormDialog();
   const count = assessments[0];
 
   const pricePerUnit = count <= 500 ? 5.0 : count <= 1000 ? 4.75 : count <= 2000 ? 4.5 : 4.5;
@@ -119,7 +119,7 @@ const PricingSection = () => {
             {isEnterprise && (
               <div className="block max-w-md mx-auto">
                 <Button
-                  onClick={() => setContactOpen(true)}
+                  onClick={() => openContactForm()}
                   className="w-full h-14 text-base font-semibold rounded-full bg-foreground text-background hover:bg-foreground/90"
                 >
                   Kurumsal Teklif Al
@@ -162,7 +162,6 @@ const PricingSection = () => {
         </div>
       </div>
 
-      <ContactFormDialog open={contactOpen} onOpenChange={setContactOpen} />
     </section>
   );
 };

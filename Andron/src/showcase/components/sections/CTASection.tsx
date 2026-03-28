@@ -1,7 +1,12 @@
+"use client";
+
 import { ArrowRight, Calendar } from "lucide-react";
 import { motion } from "framer-motion";
+import { useOpenContactFormDialog } from "@/showcase/components/ContactFormDialogProvider";
 
 const CTASection = () => {
+  const openContactForm = useOpenContactFormDialog();
+
   return (
     <section className="py-24 md:py-32 bg-gradient-to-br from-coral/10 via-lavender/10 to-sky/10 overflow-hidden">
       <div className="container">
@@ -16,18 +21,17 @@ const CTASection = () => {
             Hazır mısın?
           </h2>
           <p className="text-muted-foreground text-lg md:text-xl font-light mb-10 leading-relaxed">
-            Takvimimizden sana uygun bir slot seç — satış baskısı yok, 30 dakika yeter.
+            Kurumsal teklif formunu doldurun; ekibimiz ücretsiz keşif için sizinle iletişime geçsin.
           </p>
-          <a
-            href="https://calendar.google.com/calendar/u/0/r"
-            target="_blank"
-            rel="noopener noreferrer"
+          <button
+            type="button"
+            onClick={() => openContactForm()}
             className="inline-flex items-center gap-2 px-8 py-4 rounded-full text-lg font-semibold bg-coral text-white hover:bg-coral/90 shadow-lg hover:shadow-xl hover:shadow-coral/25 transition-all duration-300"
           >
             <Calendar className="w-5 h-5" />
             Hemen Planla
             <ArrowRight className="w-5 h-5" />
-          </a>
+          </button>
         </motion.div>
       </div>
     </section>

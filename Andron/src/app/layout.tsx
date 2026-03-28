@@ -3,6 +3,7 @@ import "./globals.css";
 import "@/showcase/index.css";
 import { getImagePath } from "@/utils/imagePath";
 import { TooltipProvider } from "@/showcase/components/ui/tooltip";
+import { ContactFormDialogProvider } from "@/showcase/components/ContactFormDialogProvider";
 
 export async function generateMetadata(): Promise<Metadata> {
   const faviconPath = getImagePath("/assets/icons/game-logo.png");
@@ -32,7 +33,7 @@ export default function RootLayout({
     <html lang="tr">
       <body className="antialiased">
         <TooltipProvider>
-          {children}
+          <ContactFormDialogProvider>{children}</ContactFormDialogProvider>
         </TooltipProvider>
       </body>
     </html>

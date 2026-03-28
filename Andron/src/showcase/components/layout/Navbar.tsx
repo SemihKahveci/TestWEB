@@ -7,6 +7,7 @@ import { cn } from "@/showcase/lib/utils";
 import logoBlack from "@/showcase/assets/logo-black-horizontal.png";
 import { usePathname, useRouter } from "next/navigation";
 import Image from "next/image";
+import { useOpenContactFormDialog } from "@/showcase/components/ContactFormDialogProvider";
 
 const navLinks = [
   { label: "Hakkımızda", hash: "#hakkimizda", route: "/hakkimizda", forceRoute: true },
@@ -24,6 +25,7 @@ const Navbar = () => {
   const router = useRouter();
   const pathname = usePathname();
   const isHome = pathname === "/";
+  const openContactForm = useOpenContactFormDialog();
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 20);
@@ -111,16 +113,15 @@ const Navbar = () => {
             <LogIn className="w-4 h-4" />
             Panel Girişi
           </a>
-          <a
-            href="https://calendar.google.com/calendar/u/0/r"
-            target="_blank"
-            rel="noopener noreferrer"
+          <Button
+            type="button"
+            size="sm"
+            className="bg-coral text-white hover:bg-coral/90 rounded-full"
+            onClick={() => openContactForm()}
           >
-            <Button size="sm" className="bg-coral text-white hover:bg-coral/90 rounded-full">
-              <Calendar className="w-4 h-4 mr-1" />
-              Görüşme Planla
-            </Button>
-          </a>
+            <Calendar className="w-4 h-4 mr-1" />
+            Görüşme Planla
+          </Button>
         </div>
 
         <button className="lg:hidden p-2" onClick={() => setMobileOpen(!mobileOpen)}>
@@ -155,16 +156,17 @@ const Navbar = () => {
                 <LogIn className="w-4 h-4" />
                 Panel Girişi
               </a>
-              <a
-                href="https://calendar.google.com/calendar/u/0/r"
-                target="_blank"
-                rel="noopener noreferrer"
-                onClick={() => setMobileOpen(false)}
+              <button
+                type="button"
+                onClick={() => {
+                  setMobileOpen(false);
+                  openContactForm();
+                }}
                 className="inline-flex items-center justify-center gap-2 px-5 py-3 rounded-full text-sm font-semibold bg-coral text-white hover:bg-coral/90 shadow-md transition-all"
               >
                 <Calendar className="w-4 h-4" />
                 Görüşme Planla
-              </a>
+              </button>
             </div>
           </nav>
         </div>
