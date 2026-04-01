@@ -1,6 +1,15 @@
 const fs = require('fs');
+const path = require('path');
 const csv = require('csv-parser');
 const { MongoClient } = require('mongodb');
+
+require('dotenv').config({ path: path.join(__dirname, '../../.env') });
+
+const MONGODB_URI = process.env.MONGODB_URI;
+if (!MONGODB_URI) {
+    console.error('Hata: MONGODB_URI tanımlı değil. Proje kökündeki .env dosyasına ekleyin.');
+    process.exit(1);
+}
 
 // Yetkinlik adına göre koleksiyon mapping'i
 const COMPETENCY_COLLECTION_MAP = {
@@ -10,8 +19,7 @@ const COMPETENCY_COLLECTION_MAP = {
     'Güven Veren İşbirliği ve Sinerji': 'evaluationanswersTW'
 };
 
-const uri = 'mongodb+srv://hasansemihkahveci:HHwoTrWoMuvHQeG2@admin-paneli-cluster.qypdg.mongodb.net/?retryWrites=true&w=majority&appName=admin-paneli-cluster';
-const client = new MongoClient(uri);
+const client = new MongoClient(MONGODB_URI);
 
 async function importData(competencyName, fileName) {
     try {
