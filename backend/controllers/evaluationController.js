@@ -473,8 +473,9 @@ function parseDevelopmentPlanText(text = '') {
         let expectItemTitle = false;
 
     const isAltHeadingMarker = (value) => /^(alt başlık|alt baslik)\b/i.test(value);
+    // "Podcast - …" içerik satırıdır; |podcast ile eşleşmesi yanlışlıkla yeni alt başlık açılmasına yol açıyordu.
     const isSubHeading = (value) =>
-        /^(hedef|günlük kullanım|gunluk kullanim|günlük işlerde kullanım|gunluk islerde kullanim|eğitim önerileri|egitim onerileri|eğitimler|egitimler|podcast\s*&\s*tedx|podcast|uygulama)\b/i.test(value);
+        /^(hedef|günlük kullanım|gunluk kullanim|günlük işlerde kullanım|gunluk islerde kullanim|eğitim önerileri|egitim onerileri|eğitimler|egitimler|podcast\s*&\s*tedx|uygulama)\b/i.test(value);
     const isInlineContentMarker = (value) =>
         /^(günlük soru|gunluk soru|aylık|aylik|çeyrek bazlı|ceyrek bazli)\b/i.test(value);
 
