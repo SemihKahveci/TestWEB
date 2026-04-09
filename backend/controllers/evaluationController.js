@@ -1074,6 +1074,67 @@ const evaluationController = {
                 const isGoal = (value) => /hedef/i.test(value);
                 const isPractice = (value) => /uygulama/i.test(value);
 
+                const splitPlanBlocks = (text = '') => {
+                    const rawLines = String(text || '').split(/\r?\n/);
+                    const blocks = [];
+                    let current = [];
+                    const isPlanHeader = (line = '') =>
+                        /gelişim planı|gelisim plani/i.test(String(line).replace(/\u00A0/g, ' '));
+
+                    rawLines.forEach((rawLine) => {
+                        const line = String(rawLine || '').trimEnd();
+                        if (isPlanHeader(line) && current.length > 0) {
+                            blocks.push(current.join('\n').trim());
+                            current = [line];
+                            return;
+                        }
+                        current.push(line);
+                    });
+
+                    if (current.length > 0) {
+                        blocks.push(current.join('\n').trim());
+                    }
+
+                    return blocks.filter(Boolean);
+                };
+
+                const planBlocks = splitPlanBlocks(item.planText || '');
+
+                const inferDevelopmentPlanTitle = (section, rawText) => {
+                    const clean = (value) => (value ? String(value).replace(/\u00A0/g, ' ').trim() : '');
+                    const isGenericPlanTitle = (value) => {
+                        const v = clean(value).toLowerCase();
+                        return (
+                            !v ||
+                            v === 'öneriler' ||
+                            v === 'oneriler' ||
+                            v === 'gelişim planı' ||
+                            v === 'gelisim plani' ||
+                            v === 'gelişim planı önerileri' ||
+                            v === 'gelisim plani onerileri'
+                        );
+                    };
+
+                    const sectionTitle = clean(section?.title);
+                    if (sectionTitle && !isGenericPlanTitle(sectionTitle)) {
+                        return sectionTitle;
+                    }
+
+                    const items = Array.isArray(section?.items) ? section.items : [];
+                    const customTitle = items
+                        .map((row) => clean(row?.title))
+                        .find((t) => {
+                            if (!t) return false;
+                            if (isGenericPlanTitle(t)) return false;
+                            if (isTraining(t) || isDaily(t) || isPodcast(t) || isGoal(t) || isPractice(t)) return false;
+                            return true;
+                        });
+                    if (customTitle) return customTitle;
+
+                    const computed = buildDevelopmentPlanTitle(section ? [section] : [], rawText || '');
+                    return clean(computed);
+                };
+
                 const buildPageFromItems = (items, titleOverride = '', planTitleSource = '') => {
                     const trainingItems = items.filter((row) => isTraining(row.title || ''));
                     const dailyItems = items.filter((row) => isDaily(row.title || ''));
@@ -1121,7 +1182,12 @@ const evaluationController = {
 
                 return sections.map((section, sectionIndex) => {
                     const sectionItems = section.items || [];
-                    const planTitle = section.title || buildDevelopmentPlanTitle([section], item.planText || '');
+                    const blockText = (planBlocks && planBlocks[sectionIndex]) ? planBlocks[sectionIndex] : (item.planText || '');
+                    let planTitle = inferDevelopmentPlanTitle(section, blockText);
+                    if (!planTitle) {
+                        planTitle = extractPlanTitleFromText(blockText) || buildDevelopmentPlanTitle([section], blockText);
+                    }
+
                     const page = buildPageFromItems(
                         sectionItems,
                         planTitle || '',
