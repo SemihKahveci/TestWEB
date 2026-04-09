@@ -6,7 +6,14 @@ const Section = require('../models/section');
 const EvaluationController = require('./evaluationController');
 const mongoose = require('mongoose');
 const { sendEmail } = require('../services/emailService');
-const { safeLog, getSafeErrorMessage, capitalizeName, escapeHtml } = require('../utils/helpers');
+const {
+    safeLog,
+    getSafeErrorMessage,
+    capitalizeName,
+    escapeHtml,
+    mergeUserCodeScoresBySection,
+    mergeEvaluationResultsByType
+} = require('../utils/helpers');
 
 class GameController {
     constructor(wss) {
@@ -146,26 +153,33 @@ class GameController {
             const customerFocusScore = this.calculateCategoryScore(customerFocusAnswers);
             const uncertaintyScore = this.calculateCategoryScore(uncertaintyAnswers);
             const ieScore = this.calculateCategoryScore(ieAnswers);
-            const idikScore = this.calculateCategoryScore(idikAnswers); 
-            // Değerlendirme sonuçlarını getir
+            const idikScore = this.calculateCategoryScore(idikAnswers);
+            // Değerlendirme sonuçlarını getir (bu tur / bu section cevapları)
             const evaluationResult = await this.getReportsByAnswerType(data.answers);
 
-            // UserCode durumunu güncelle
+            const rounded = {
+                customerFocusScore: Math.round(customerFocusScore),
+                uncertaintyScore: Math.round(uncertaintyScore),
+                ieScore: Math.round(ieScore),
+                idikScore: Math.round(idikScore)
+            };
+
+            // UserCode tek kayıt: Venus ve Titan ayrı tamamlandığında skorlar ve raporlar birikir
+            const mergedEvaluationResult = mergeEvaluationResultsByType(userCode.evaluationResult, evaluationResult);
+            const mergedScores = mergeUserCodeScoresBySection(data.section, userCode, rounded);
+
             await UserCode.findOneAndUpdate(
                 { code: data.playerCode },
-                { 
+                {
                     status: 'Tamamlandı',
-                    isUsed: true, // Kodu kullanılmış olarak işaretle
+                    isUsed: true,
                     completionDate: new Date(),
-                    evaluationResult: evaluationResult,
-                    customerFocusScore: Math.round(customerFocusScore),
-                    uncertaintyScore: Math.round(uncertaintyScore),
-                    ieScore: Math.round(ieScore),
-                    idikScore: Math.round(idikScore)
+                    evaluationResult: mergedEvaluationResult,
+                    ...mergedScores
                 }
             );
 
-            // Dummy data oluştur
+            // Dummy data (bu section sonucu; WebSocket — UserCode birleşik skorları mergedScores ile DB'de)
             const dummyData = {
                 id: data.playerCode,
                 name: userCode.name,
@@ -174,10 +188,10 @@ class GameController {
                 completionDate: new Date(),
                 validityDate: userCode.expiryDate,
                 evaluationResult: evaluationResult,
-                customerFocusScore: Math.round(customerFocusScore),
-                uncertaintyScore: Math.round(uncertaintyScore),
-                ieScore: Math.round(ieScore),
-                idikScore: Math.round(idikScore)
+                customerFocusScore: rounded.customerFocusScore,
+                uncertaintyScore: rounded.uncertaintyScore,
+                ieScore: rounded.ieScore,
+                idikScore: rounded.idikScore
             };
 
             // Dummy datayı Game modeline ekle - companyId userCode'dan alınır

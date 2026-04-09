@@ -2607,7 +2607,15 @@ const AdminPanel: React.FC = () => {
                   <div><strong>{t('labels.status')}:</strong> {formatStatusLabel(selectedUser.status)}</div>
                   {selectedUser.reportId && (
                     <div style={{ gridColumn: '1 / -1' }}>
-                      <strong>{t('labels.reportId')}:</strong> {selectedUser.reportId}
+                      <strong>{t('labels.reportId')}:</strong>{' '}
+                      {Array.from(
+                        new Set(
+                          selectedUser.reportId
+                            .split(',')
+                            .map((part) => part.trim())
+                            .filter(Boolean)
+                        )
+                      ).join(', ')}
                     </div>
                   )}
                 </div>

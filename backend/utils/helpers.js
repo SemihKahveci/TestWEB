@@ -89,11 +89,70 @@ const getSafeErrorMessage = (error, defaultMessage = 'Bir hata oluştu') => {
     return error.message || defaultMessage;
 };
 
+/**
+ * Venus (0) ve Titan (1) ayrı Game kaydı olarak biter; UserCode tek satır.
+ * Bu turdaki skorları mevcut UserCode ile birleştirir — diğer gezegen skorları silinmez.
+ * @param {string|number} section
+ * @param {{ customerFocusScore?: any, uncertaintyScore?: any, ieScore?: any, idikScore?: any }} userCode
+ * @param {{ customerFocusScore: number, uncertaintyScore: number, ieScore: number, idikScore: number }} rounded
+ */
+const mergeUserCodeScoresBySection = (section, userCode, rounded) => {
+    const s = String(section);
+    if (s === '0') {
+        return {
+            customerFocusScore: rounded.customerFocusScore,
+            uncertaintyScore: rounded.uncertaintyScore,
+            ieScore: userCode.ieScore,
+            idikScore: userCode.idikScore
+        };
+    }
+    if (s === '1') {
+        return {
+            customerFocusScore: userCode.customerFocusScore,
+            uncertaintyScore: userCode.uncertaintyScore,
+            ieScore: rounded.ieScore,
+            idikScore: rounded.idikScore
+        };
+    }
+    return {
+        customerFocusScore: rounded.customerFocusScore,
+        uncertaintyScore: rounded.uncertaintyScore,
+        ieScore: rounded.ieScore,
+        idikScore: rounded.idikScore
+    };
+};
+
+/**
+ * BY/MO raporları Venus, IE/IDIK Titan tamamlandığında gelir; UserCode'da dörtlü birleşik tutulur.
+ */
+const mergeEvaluationResultsByType = (existing, incoming) => {
+    if (incoming == null && (existing == null || existing === undefined)) return null;
+    if (incoming == null) return existing ?? null;
+    const inc = Array.isArray(incoming) ? incoming : [incoming];
+    const incFiltered = inc.filter((item) => item && item.type);
+    if (existing == null || existing === undefined) {
+        return incFiltered.length ? incFiltered : null;
+    }
+    const ex = Array.isArray(existing) ? existing : [existing];
+    const map = new Map();
+    for (const item of ex) {
+        if (item && item.type) map.set(item.type, item);
+    }
+    for (const item of incFiltered) {
+        map.set(item.type, item);
+    }
+    const order = ['BY', 'MO', 'IE', 'IDIK'];
+    const merged = order.filter((t) => map.has(t)).map((t) => map.get(t));
+    return merged.length ? merged : null;
+};
+
 module.exports = {
     capitalizeName,
     escapeHtml,
     safeLog,
     isValidEmail,
-    getSafeErrorMessage
+    getSafeErrorMessage,
+    mergeUserCodeScoresBySection,
+    mergeEvaluationResultsByType
 };
 

@@ -208,7 +208,7 @@ const adminController = {
                 return res.status(400).json({ success: false, message: 'Kod bulunamadı' });
             }
 
-            // 72 saat sonrasını hesapla
+            // 240 saat sonrasını hesapla
             const expiryDate = new Date();
             expiryDate.setHours(expiryDate.getHours() + 240);
             const formattedExpiryDate = expiryDate.toLocaleDateString('tr-TR');
@@ -538,7 +538,7 @@ const adminController = {
             const allGames = await Game.find({ 
                 playerCode: { $in: playerCodes },
                 ...companyFilter
-            }).select('playerCode section customerFocusScore uncertaintyScore ieScore idikScore evaluationResult answers');
+            }).select('playerCode section customerFocusScore uncertaintyScore ieScore idikScore answers');
             
             // Game'leri playerCode'a göre grupla (memory'de hızlı erişim için)
             const gamesByPlayerCode = {};
@@ -573,25 +573,33 @@ const adminController = {
                     authByEmailAndName[`${emailKey}|${nameKey}`] = auth;
                 }
             });
+
+            /** Tek kaynak UserCode.evaluationResult; çift Venus/Titan kopyası yok */
+            const reportIdFromUserCodeEvaluation = (evaluationResult) => {
+                const list = Array.isArray(evaluationResult)
+                    ? evaluationResult
+                    : evaluationResult
+                      ? [evaluationResult]
+                      : [];
+                const ids = [];
+                const seen = new Set();
+                for (const evalResult of list) {
+                    const id = evalResult?.data?.ID;
+                    if (id === undefined || id === null) continue;
+                    const key = String(id);
+                    if (seen.has(key)) continue;
+                    seen.add(key);
+                    ids.push(id);
+                }
+                return ids.length > 0 ? ids.join(', ') : null;
+            };
             
             // Her sonuç için Game modelinden de veri al
             const mappedResults = results.map((result) => {
                 // Memory'den ilgili oyunları al (sorgu yok, çok hızlı)
                 const games = gamesByPlayerCode[result.code] || [];
                 
-                // Tüm oyunlardaki evaluationResult array'lerinden rapor ID'lerini bul
-                let reportIds = [];
-                for (const game of games) {
-                    if (game.evaluationResult && game.evaluationResult.length > 0) {
-                        // evaluationResult array'inde tüm data.ID'leri topla
-                        for (const evalResult of game.evaluationResult) {
-                            if (evalResult.data && evalResult.data.ID) {
-                                reportIds.push(evalResult.data.ID);
-                            }
-                        }
-                    }
-                }
-                const reportId = reportIds.length > 0 ? reportIds.join(', ') : null;
+                const reportId = reportIdFromUserCodeEvaluation(result.evaluationResult);
                 
 
                 
