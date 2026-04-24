@@ -1265,7 +1265,7 @@ const AdminPanel: React.FC = () => {
         throw new Error(data.message || t('errors.sendFailedGeneric'));
       }
 
-      showMessage(t('labels.success'), 'Kişi başarıyla eklendi.', 'success');
+      showMessage(t('labels.success'), t('messages.personAdded'), 'success');
       setShowAddPersonPopup(false);
       setNewPersonName('');
       setNewPersonEmail('');
@@ -1591,7 +1591,7 @@ const AdminPanel: React.FC = () => {
           fontSize: '14px',
           fontFamily: 'Inter'
         }}>
-          Veriler yükleniyor...
+          {t('labels.loadingData')}
         </div>
       </div>
     );
@@ -1793,7 +1793,7 @@ const AdminPanel: React.FC = () => {
             className="btn btn-primary btn-lg"
           >
             <i className="fas fa-user-plus"></i>
-            Kişi Ekle
+            {t('titles.addPerson')}
           </button>
           {/* Toplu Silme Button */}
           {selectedItems.length > 0 && (
@@ -1826,9 +1826,9 @@ const AdminPanel: React.FC = () => {
             border: '1px solid #E5E7EB'
           }}>
             {[
-              { id: 'all', label: 'Tümü' },
-              { id: 'candidate', label: 'Adaylar' },
-              { id: 'employee', label: 'Çalışanlar' }
+              { id: 'all', label: t('labels.tabAll') },
+              { id: 'candidate', label: t('labels.tabCandidates') },
+              { id: 'employee', label: t('labels.tabEmployees') }
             ].map((tab) => {
               const isActive = activePersonTab === tab.id;
               return (
@@ -3156,7 +3156,7 @@ const AdminPanel: React.FC = () => {
               background: '#F8F9FA'
             }}>
               <div style={{ fontSize: '18px', fontWeight: 600, color: '#232D42' }}>
-                Kişi Ekle
+                {t('titles.addPerson')}
               </div>
               <div
                 onClick={() => {
@@ -3378,7 +3378,7 @@ const AdminPanel: React.FC = () => {
                   disabled={isAddingPerson}
                   className="btn btn-primary"
                 >
-                  {isAddingPerson ? t('labels.loading') : 'Kişi Ekle'}
+                  {isAddingPerson ? t('labels.loading') : t('titles.addPerson')}
                 </button>
               ) : (
                 <button
@@ -3582,7 +3582,7 @@ const AdminPanel: React.FC = () => {
                     fontWeight: 600
                   }}
                 >
-                  Herkeste Tümü
+                  {t('buttons.selectAllForEveryone')}
                 </button>
                 <button
                   type="button"
@@ -3606,7 +3606,7 @@ const AdminPanel: React.FC = () => {
                     fontWeight: 600
                   }}
                 >
-                  Herkeste Temizle
+                  {t('buttons.clearForEveryone')}
                 </button>
                 <div
                   onClick={() => setShowBulkSendPopup(false)}
@@ -3677,7 +3677,7 @@ const AdminPanel: React.FC = () => {
                           fontWeight: 600
                         }}
                       >
-                        Tümü
+                        {t('buttons.selectAll')}
                       </button>
                       <button
                         type="button"
@@ -3696,7 +3696,7 @@ const AdminPanel: React.FC = () => {
                           fontWeight: 600
                         }}
                       >
-                        Temizle
+                        {t('buttons.clear')}
                       </button>
                     </div>
                   </div>

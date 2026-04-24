@@ -95,6 +95,20 @@ const titleCountsEqual = (a: TitleCounts, b: TitleCounts) => {
 const normalizeKey = (value: string) =>
   value.toString().trim().toLowerCase().replace(/\s+/g, ' ');
 
+const DASHBOARD_TITLE_I18N_KEY: Record<string, string> = {
+  [normalizeKey('Direktör')]: 'labels.dashboardTitleDirector',
+  [normalizeKey('Müdür/Yönetici')]: 'labels.dashboardTitleManager',
+  [normalizeKey('Kıdemli Uzman')]: 'labels.dashboardTitleSeniorExpert',
+  [normalizeKey('Uzman')]: 'labels.dashboardTitleExpert',
+  [normalizeKey('Uzman Yardımcısı')]: 'labels.dashboardTitleAssistantExpert',
+  [normalizeKey('MT/Stajyer')]: 'labels.dashboardTitleMtIntern'
+};
+
+const formatDashboardTitle = (title: string, translate: (key: string) => string) => {
+  const i18nKey = DASHBOARD_TITLE_I18N_KEY[normalizeKey(title)];
+  return i18nKey ? translate(i18nKey) : title;
+};
+
 const scoreRanges = [
   { label: '0-20', midpoint: 10 },
   { label: '20-40', midpoint: 30 },
@@ -290,6 +304,7 @@ const DashboardPage: React.FC = () => {
       const count = normalizedCounts[normalizeKey(title)] || 0;
       return {
         title,
+        displayTitle: formatDashboardTitle(title, t),
         count,
         color: colors[index % colors.length],
         icon: icons[index % icons.length]
@@ -301,7 +316,7 @@ const DashboardPage: React.FC = () => {
       ...item,
       widthPercent: Math.max(10, Math.round((item.count / maxCount) * 100))
     }));
-  }, [currentStats, titleOptions]);
+  }, [currentStats, titleOptions, t]);
 
   const titleColumns = useMemo(() => {
     const midIndex = Math.ceil(titleItems.length / 2);
@@ -439,7 +454,7 @@ const DashboardPage: React.FC = () => {
             className={activeTab === 'all' ? 'btn btn-primary' : 'btn btn-secondary'}
             style={{ fontSize: '12px' }}
           >
-            Tümü
+            {t('labels.tabAll')}
           </button>
           <button
             type="button"
@@ -447,7 +462,7 @@ const DashboardPage: React.FC = () => {
             className={activeTab === 'candidate' ? 'btn btn-primary' : 'btn btn-secondary'}
             style={{ fontSize: '12px' }}
           >
-            Adaylar
+            {t('labels.tabCandidates')}
           </button>
           <button
             type="button"
@@ -455,13 +470,13 @@ const DashboardPage: React.FC = () => {
             className={activeTab === 'employee' ? 'btn btn-primary' : 'btn btn-secondary'}
             style={{ fontSize: '12px' }}
           >
-            Çalışanlar
+            {t('labels.tabEmployees')}
           </button>
         </div>
 
         <div className="flex gap-5 flex-col lg:flex-row">
           <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 flex flex-col h-[280px] w-full lg:w-1/2">
-            <h2 className="text-lg font-bold text-gray-800 mb-2">Değerlendirme Merkezi Durumları</h2>
+            <h2 className="text-lg font-bold text-gray-800 mb-2">{t('labels.dashboardEvaluationCenterStatus')}</h2>
             <div className="flex items-center h-full">
               <div className="relative w-1/2 h-full flex items-center justify-center">
                 {isVisualLoading ? (
@@ -530,7 +545,7 @@ const DashboardPage: React.FC = () => {
           </div>
 
           <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100 h-[280px] overflow-hidden w-full lg:w-1/2">
-            <h2 className="text-lg font-bold text-gray-800 mb-3">Seviye Dağılımı</h2>
+            <h2 className="text-lg font-bold text-gray-800 mb-3">{t('labels.dashboardLevelDistribution')}</h2>
             <div className="grid grid-cols-2 gap-x-4 gap-y-1 h-full content-center">
               <div className="space-y-3">
                 {titleColumns.left.map((item, index) => (
@@ -542,7 +557,7 @@ const DashboardPage: React.FC = () => {
                       >
                         <i className={`fa-solid ${item.icon} text-xs`} style={{ color: item.color }} />
                       </div>
-                      <span className="text-gray-700 font-medium text-base">{item.title}</span>
+                      <span className="text-gray-700 font-medium text-base">{item.displayTitle}</span>
                     </div>
                     <div className="flex flex-col items-end gap-0.5">
                       <span className="text-gray-800 font-bold text-base">{item.count}</span>
@@ -563,7 +578,7 @@ const DashboardPage: React.FC = () => {
                       >
                         <i className={`fa-solid ${item.icon} text-xs`} style={{ color: item.color }} />
                       </div>
-                      <span className="text-gray-700 font-medium text-base">{item.title}</span>
+                      <span className="text-gray-700 font-medium text-base">{item.displayTitle}</span>
                     </div>
                     <div className="flex flex-col items-end gap-0.5">
                       <span className="text-gray-800 font-bold text-base">{item.count}</span>
@@ -628,7 +643,7 @@ const DashboardPage: React.FC = () => {
                     </div>
                   </div>
                 </div>
-                <div className="text-sm text-gray-400 mb-3 text-left w-full">Ortalama Skor</div>
+                <div className="text-sm text-gray-400 mb-3 text-left w-full">{t('labels.averageScore')}</div>
                 <div className="mb-6 flex flex-col items-start text-left">
                   <div className="flex flex-col items-center text-center w-full relative">
                     <div className="w-full h-px bg-gray-200" />
@@ -636,7 +651,7 @@ const DashboardPage: React.FC = () => {
                       {averageScore ?? '-'}
                     </div>
                     <div className="text-sm text-gray-400 mt-0" style={{ alignSelf: 'flex-start', paddingLeft: '48px' }}>
-                      Ortalama Skor
+                      {t('labels.averageScore')}
                     </div>
                     <div className="w-full h-px bg-gray-200 mt-2" />
                   </div>
@@ -666,7 +681,7 @@ const DashboardPage: React.FC = () => {
                             />
                             {!isVisualLoading && (
                               <div className="opacity-0 group-hover:opacity-100 absolute -top-8 left-1/2 -translate-x-1/2 bg-gray-800 text-white text-xs font-bold py-1 px-2 rounded shadow-lg transition-all z-10 whitespace-nowrap">
-                                {count} Kişi
+                                {`${count} ${t('labels.dashboardPeopleCountSuffix')}`}
                                 <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-2 h-2 bg-gray-800 rotate-45" />
                               </div>
                             )}
