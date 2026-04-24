@@ -125,6 +125,59 @@ const mergeUserCodeScoresBySection = (section, userCode, rounded) => {
 /**
  * BY/MO raporları Venus, IE/IDIK Titan tamamlandığında gelir; UserCode'da dörtlü birleşik tutulur.
  */
+const escapeRegex = (value) => String(value || '').replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
+/**
+ * Skor alanını sayıya çevirir; yoksa veya '-' ise null.
+ * @param {unknown} val
+ * @returns {number|null}
+ */
+const parseNumericScore = (val) => {
+    if (val === null || val === undefined || val === '' || val === '-') return null;
+    const n = typeof val === 'number' ? val : parseFloat(String(val));
+    return Number.isFinite(n) ? n : null;
+};
+
+const COMPETENCY_SCORE_WEIGHT_KEYS = [
+    { scoreKey: 'customerFocusScore', compKey: 'customerFocus' },
+    { scoreKey: 'uncertaintyScore', compKey: 'uncertaintyManagement' },
+    { scoreKey: 'ieScore', compKey: 'influence' },
+    { scoreKey: 'idikScore', compKey: 'collaboration' }
+];
+
+/**
+ * Pozisyon yetkinlik şemasındaki ağırlık (yüzde). Tanımsız kayıtlar için 25 (toplam 100 varsayımı).
+ */
+const getCompetencyWeight = (competencyDoc, compKey) => {
+    const w = competencyDoc?.[compKey]?.weight;
+    if (w === null || w === undefined || w === '') return 25;
+    const n = Number(w);
+    if (Number.isNaN(n)) return 25;
+    return Math.max(0, Math.min(100, n));
+};
+
+/**
+ * Sadece geçerli skoru olan yetkinliklerin ağırlıklarıyla ağırlıklı ortalama (0–100).
+ * Eksik oyunlar (skor '-') paydada yer almaz; örn. yalnızca MO+BY tamamlandıysa payda (w_MO+w_BY).
+ * @param {Record<string, unknown>} mergedScores
+ * @param {Record<string, any>|null|undefined} competencyDoc
+ * @returns {number|null}
+ */
+const computeWeightedCompetencyOverall = (mergedScores, competencyDoc) => {
+    if (!mergedScores || typeof mergedScores !== 'object') return null;
+    let sumW = 0;
+    let sumWS = 0;
+    for (const { scoreKey, compKey } of COMPETENCY_SCORE_WEIGHT_KEYS) {
+        const s = parseNumericScore(mergedScores[scoreKey]);
+        const w = getCompetencyWeight(competencyDoc, compKey);
+        if (s === null || w <= 0) continue;
+        sumW += w;
+        sumWS += w * s;
+    }
+    if (sumW <= 0) return null;
+    return Math.round(sumWS / sumW);
+};
+
 const mergeEvaluationResultsByType = (existing, incoming) => {
     if (incoming == null && (existing == null || existing === undefined)) return null;
     if (incoming == null) return existing ?? null;
@@ -153,6 +206,11 @@ module.exports = {
     isValidEmail,
     getSafeErrorMessage,
     mergeUserCodeScoresBySection,
-    mergeEvaluationResultsByType
+    mergeEvaluationResultsByType,
+    escapeRegex,
+    parseNumericScore,
+    computeWeightedCompetencyOverall,
+    getCompetencyWeight,
+    COMPETENCY_SCORE_WEIGHT_KEYS
 };
 

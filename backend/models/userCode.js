@@ -65,6 +65,11 @@ const userCodeSchema = new mongoose.Schema({
         type: String,
         default: '-'
     },
+    /** Pozisyon yetkinlik ağırlıklarına göre (tamamlanan yetkinlikler üzerinden) ağırlıklı genel skor 0–100 */
+    weightedOverallScore: {
+        type: String,
+        default: '-'
+    },
     personType: {
         type: String,
         default: ''

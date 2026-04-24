@@ -4,6 +4,37 @@ const XLSX = require('xlsx');
 const { safeLog, getSafeErrorMessage } = require('../utils/helpers');
 const { getCompanyFilter, addCompanyIdToData } = require('../middleware/auth');
 
+const parseWeightInt = (value, fallback = 25) => {
+    if (value === '' || value === undefined || value === null) return fallback;
+    const n = parseInt(value, 10);
+    if (Number.isNaN(n)) return fallback;
+    return Math.max(0, Math.min(100, n));
+};
+
+/** body: customerFocusWeight, uncertaintyWeight, influenceWeight, collaborationWeight */
+const validateCompetencyWeightsSum = (body) => {
+    const customerFocusWeight = parseWeightInt(body.customerFocusWeight, 25);
+    const uncertaintyWeight = parseWeightInt(body.uncertaintyWeight, 25);
+    const influenceWeight = parseWeightInt(body.influenceWeight, 25);
+    const collaborationWeight = parseWeightInt(body.collaborationWeight, 25);
+    const sum = customerFocusWeight + uncertaintyWeight + influenceWeight + collaborationWeight;
+    if (sum > 100) {
+        return {
+            error: 'Yetkinlik ağırlıklarının toplamı 100\'ü geçemez',
+            weights: null
+        };
+    }
+    return {
+        error: null,
+        weights: {
+            customerFocus: customerFocusWeight,
+            uncertaintyManagement: uncertaintyWeight,
+            influence: influenceWeight,
+            collaboration: collaborationWeight
+        }
+    };
+};
+
 const competencyController = {
     // Tüm yetkinlikleri getir
     getCompetencies: async (req, res) => {
@@ -70,7 +101,11 @@ const competencyController = {
                 influenceMin,
                 influenceMax,
                 collaborationMin,
-                collaborationMax
+                collaborationMax,
+                customerFocusWeight,
+                uncertaintyWeight,
+                influenceWeight,
+                collaborationWeight
             } = req.body;
 
             // Validasyon
@@ -81,6 +116,19 @@ const competencyController = {
                 return res.status(400).json({
                     success: false,
                     message: 'Tüm alanlar gereklidir'
+                });
+            }
+
+            const weightCheck = validateCompetencyWeightsSum({
+                customerFocusWeight,
+                uncertaintyWeight,
+                influenceWeight,
+                collaborationWeight
+            });
+            if (weightCheck.error) {
+                return res.status(400).json({
+                    success: false,
+                    message: weightCheck.error
                 });
             }
 
@@ -146,23 +194,28 @@ const competencyController = {
                 });
             }
 
+            const w = weightCheck.weights;
             const competencyData = {
                 title,
                 customerFocus: {
                     min: parseInt(customerFocusMin),
-                    max: parseInt(customerFocusMax)
+                    max: parseInt(customerFocusMax),
+                    weight: w.customerFocus
                 },
                 uncertaintyManagement: {
                     min: parseInt(uncertaintyMin),
-                    max: parseInt(uncertaintyMax)
+                    max: parseInt(uncertaintyMax),
+                    weight: w.uncertaintyManagement
                 },
                 influence: {
                     min: parseInt(influenceMin),
-                    max: parseInt(influenceMax)
+                    max: parseInt(influenceMax),
+                    weight: w.influence
                 },
                 collaboration: {
                     min: parseInt(collaborationMin),
-                    max: parseInt(collaborationMax)
+                    max: parseInt(collaborationMax),
+                    weight: w.collaboration
                 },
                 createdBy: adminId
             };
@@ -211,7 +264,11 @@ const competencyController = {
                 influenceMin,
                 influenceMax,
                 collaborationMin,
-                collaborationMax
+                collaborationMax,
+                customerFocusWeight,
+                uncertaintyWeight,
+                influenceWeight,
+                collaborationWeight
             } = req.body;
 
             // Multi-tenant: companyId kontrolü yap
@@ -233,6 +290,32 @@ const competencyController = {
                 return res.status(400).json({
                     success: false,
                     message: 'Tüm alanlar gereklidir'
+                });
+            }
+
+            const weightBody = {
+                customerFocusWeight:
+                    customerFocusWeight !== undefined && customerFocusWeight !== ''
+                        ? customerFocusWeight
+                        : (competency.customerFocus?.weight ?? 25),
+                uncertaintyWeight:
+                    uncertaintyWeight !== undefined && uncertaintyWeight !== ''
+                        ? uncertaintyWeight
+                        : (competency.uncertaintyManagement?.weight ?? 25),
+                influenceWeight:
+                    influenceWeight !== undefined && influenceWeight !== ''
+                        ? influenceWeight
+                        : (competency.influence?.weight ?? 25),
+                collaborationWeight:
+                    collaborationWeight !== undefined && collaborationWeight !== ''
+                        ? collaborationWeight
+                        : (competency.collaboration?.weight ?? 25)
+            };
+            const weightCheck = validateCompetencyWeightsSum(weightBody);
+            if (weightCheck.error) {
+                return res.status(400).json({
+                    success: false,
+                    message: weightCheck.error
                 });
             }
 
@@ -289,23 +372,28 @@ const competencyController = {
                 });
             }
 
+            const w = weightCheck.weights;
             // Yetkinliği güncelle
             competency.title = title;
             competency.customerFocus = {
                 min: parseInt(customerFocusMin),
-                max: parseInt(customerFocusMax)
+                max: parseInt(customerFocusMax),
+                weight: w.customerFocus
             };
             competency.uncertaintyManagement = {
                 min: parseInt(uncertaintyMin),
-                max: parseInt(uncertaintyMax)
+                max: parseInt(uncertaintyMax),
+                weight: w.uncertaintyManagement
             };
             competency.influence = {
                 min: parseInt(influenceMin),
-                max: parseInt(influenceMax)
+                max: parseInt(influenceMax),
+                weight: w.influence
             };
             competency.collaboration = {
                 min: parseInt(collaborationMin),
-                max: parseInt(collaborationMax)
+                max: parseInt(collaborationMax),
+                weight: w.collaboration
             };
             competency.updatedAt = new Date();
 
@@ -520,10 +608,26 @@ const competencyController = {
                             { _id: existingCompetency._id, ...companyFilter },
                             {
                                 title: trimmedTitle,
-                                customerFocus: { min: numericValues.customerFocusMin, max: numericValues.customerFocusMax },
-                                uncertaintyManagement: { min: numericValues.uncertaintyMin, max: numericValues.uncertaintyMax },
-                                influence: { min: numericValues.influenceMin, max: numericValues.influenceMax },
-                                collaboration: { min: numericValues.collaborationMin, max: numericValues.collaborationMax },
+                                customerFocus: {
+                                    min: numericValues.customerFocusMin,
+                                    max: numericValues.customerFocusMax,
+                                    weight: existingCompetency.customerFocus?.weight ?? 25
+                                },
+                                uncertaintyManagement: {
+                                    min: numericValues.uncertaintyMin,
+                                    max: numericValues.uncertaintyMax,
+                                    weight: existingCompetency.uncertaintyManagement?.weight ?? 25
+                                },
+                                influence: {
+                                    min: numericValues.influenceMin,
+                                    max: numericValues.influenceMax,
+                                    weight: existingCompetency.influence?.weight ?? 25
+                                },
+                                collaboration: {
+                                    min: numericValues.collaborationMin,
+                                    max: numericValues.collaborationMax,
+                                    weight: existingCompetency.collaboration?.weight ?? 25
+                                },
                                 createdBy: adminId
                             },
                             { new: true, runValidators: true }
@@ -532,10 +636,10 @@ const competencyController = {
                         // Yeni kayıt oluştur - companyId otomatik eklenir
                         const competencyData = addCompanyIdToData(req, {
                             title: trimmedTitle,
-                            customerFocus: { min: numericValues.customerFocusMin, max: numericValues.customerFocusMax },
-                            uncertaintyManagement: { min: numericValues.uncertaintyMin, max: numericValues.uncertaintyMax },
-                            influence: { min: numericValues.influenceMin, max: numericValues.influenceMax },
-                            collaboration: { min: numericValues.collaborationMin, max: numericValues.collaborationMax },
+                            customerFocus: { min: numericValues.customerFocusMin, max: numericValues.customerFocusMax, weight: 25 },
+                            uncertaintyManagement: { min: numericValues.uncertaintyMin, max: numericValues.uncertaintyMax, weight: 25 },
+                            influence: { min: numericValues.influenceMin, max: numericValues.influenceMax, weight: 25 },
+                            collaboration: { min: numericValues.collaborationMin, max: numericValues.collaborationMax, weight: 25 },
                             createdBy: adminId
                         });
                         competency = new Competency(competencyData);

@@ -663,6 +663,7 @@ const adminController = {
                     uncertaintyScore: (venusGame ? venusGame.uncertaintyScore : null) || result.uncertaintyScore || '-',
                     ieScore: (titanGame ? titanGame.ieScore : null) || result.ieScore || '-',
                     idikScore: (titanGame ? titanGame.idikScore : null) || result.idikScore || '-',
+                    weightedOverallScore: result.weightedOverallScore || '-',
                     // Oyun cevaplarını sadece code parametresi varsa ekle (performans için)
                     answers: code && games.length > 0 ? games.flatMap(g => g.answers || []) : null,
                     // Rapor ID'sini ekle

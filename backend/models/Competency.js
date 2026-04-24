@@ -18,6 +18,12 @@ const competencySchema = new mongoose.Schema({
             required: true,
             min: 0,
             max: 100
+        },
+        weight: {
+            type: Number,
+            default: 25,
+            min: 0,
+            max: 100
         }
     },
     uncertaintyManagement: {
@@ -30,6 +36,12 @@ const competencySchema = new mongoose.Schema({
         max: {
             type: Number,
             required: true,
+            min: 0,
+            max: 100
+        },
+        weight: {
+            type: Number,
+            default: 25,
             min: 0,
             max: 100
         }
@@ -46,6 +58,12 @@ const competencySchema = new mongoose.Schema({
             required: true,
             min: 0,
             max: 100
+        },
+        weight: {
+            type: Number,
+            default: 25,
+            min: 0,
+            max: 100
         }
     },
     collaboration: {
@@ -58,6 +76,12 @@ const competencySchema = new mongoose.Schema({
         max: {
             type: Number,
             required: true,
+            min: 0,
+            max: 100
+        },
+        weight: {
+            type: Number,
+            default: 25,
             min: 0,
             max: 100
         }
@@ -93,7 +117,19 @@ competencySchema.pre('save', function(next) {
             return next(error);
         }
     }
-    
+
+    let weightSum = 0;
+    for (const comp of competencies) {
+        const w = this[comp].weight;
+        if (w !== undefined && w !== null && !Number.isNaN(Number(w))) {
+            weightSum += Number(w);
+        }
+    }
+    if (weightSum > 100) {
+        const error = new Error('Yetkinlik ağırlıklarının toplamı 100\'ü geçemez');
+        return next(error);
+    }
+
     this.updatedAt = new Date();
     next();
 });

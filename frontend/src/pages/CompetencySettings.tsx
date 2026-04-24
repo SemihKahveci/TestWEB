@@ -9,18 +9,22 @@ interface Competency {
   customerFocus?: {
     min?: number;
     max?: number;
+    weight?: number;
   };
   uncertaintyManagement?: {
     min?: number;
     max?: number;
+    weight?: number;
   };
   influence?: {
     min?: number;
     max?: number;
+    weight?: number;
   };
   collaboration?: {
     min?: number;
     max?: number;
+    weight?: number;
   };
 }
 
@@ -90,13 +94,28 @@ const CompetencySettings: React.FC = () => {
     title: '',
     customerFocusMin: '',
     customerFocusMax: '',
+    customerFocusWeight: '25',
     uncertaintyManagementMin: '',
     uncertaintyManagementMax: '',
+    uncertaintyWeight: '25',
     influenceMin: '',
     influenceMax: '',
+    influenceWeight: '25',
     collaborationMin: '',
-    collaborationMax: ''
+    collaborationMax: '',
+    collaborationWeight: '25'
   });
+
+  const parseWeightField = (v: string) => {
+    const n = parseInt(v, 10);
+    return Number.isNaN(n) ? 0 : Math.max(0, Math.min(100, n));
+  };
+
+  const formWeightsSum = () =>
+    parseWeightField(formData.customerFocusWeight) +
+    parseWeightField(formData.uncertaintyWeight) +
+    parseWeightField(formData.influenceWeight) +
+    parseWeightField(formData.collaborationWeight);
 
   // Responsive kontrolü
   useEffect(() => {
@@ -286,12 +305,16 @@ const CompetencySettings: React.FC = () => {
       title: '',
       customerFocusMin: '',
       customerFocusMax: '',
+      customerFocusWeight: '25',
       uncertaintyManagementMin: '',
       uncertaintyManagementMax: '',
+      uncertaintyWeight: '25',
       influenceMin: '',
       influenceMax: '',
+      influenceWeight: '25',
       collaborationMin: '',
-      collaborationMax: ''
+      collaborationMax: '',
+      collaborationWeight: '25'
     });
     setPositionSearchTerm('');
     setShowPositionDropdown(false);
@@ -309,12 +332,16 @@ const CompetencySettings: React.FC = () => {
       title: competency.title || '',
       customerFocusMin: (competency.customerFocus?.min || 0).toString(),
       customerFocusMax: (competency.customerFocus?.max || 0).toString(),
+      customerFocusWeight: (competency.customerFocus?.weight ?? 25).toString(),
       uncertaintyManagementMin: (competency.uncertaintyManagement?.min || 0).toString(),
       uncertaintyManagementMax: (competency.uncertaintyManagement?.max || 0).toString(),
+      uncertaintyWeight: (competency.uncertaintyManagement?.weight ?? 25).toString(),
       influenceMin: (competency.influence?.min || 0).toString(),
       influenceMax: (competency.influence?.max || 0).toString(),
+      influenceWeight: (competency.influence?.weight ?? 25).toString(),
       collaborationMin: (competency.collaboration?.min || 0).toString(),
-      collaborationMax: (competency.collaboration?.max || 0).toString()
+      collaborationMax: (competency.collaboration?.max || 0).toString(),
+      collaborationWeight: (competency.collaboration?.weight ?? 25).toString()
     });
     setPositionSearchTerm(competency.title || '');
     setShowPositionDropdown(false);
@@ -328,6 +355,11 @@ const CompetencySettings: React.FC = () => {
 
   const handleSubmitAdd = async () => {
     try {
+      if (formWeightsSum() > 100) {
+        setErrorMessage(t('errors.weightsSumExceeds100'));
+        setShowErrorPopup(true);
+        return;
+      }
       setIsSubmitting(true);
       
       const response = await fetch('/api/competency', {
@@ -340,12 +372,16 @@ const CompetencySettings: React.FC = () => {
           title: formData.title,
           customerFocusMin: Number(formData.customerFocusMin),
           customerFocusMax: Number(formData.customerFocusMax),
+          customerFocusWeight: parseWeightField(formData.customerFocusWeight),
           uncertaintyMin: Number(formData.uncertaintyManagementMin),
           uncertaintyMax: Number(formData.uncertaintyManagementMax),
+          uncertaintyWeight: parseWeightField(formData.uncertaintyWeight),
           influenceMin: Number(formData.influenceMin),
           influenceMax: Number(formData.influenceMax),
+          influenceWeight: parseWeightField(formData.influenceWeight),
           collaborationMin: Number(formData.collaborationMin),
-          collaborationMax: Number(formData.collaborationMax)
+          collaborationMax: Number(formData.collaborationMax),
+          collaborationWeight: parseWeightField(formData.collaborationWeight)
         })
       });
 
@@ -374,19 +410,23 @@ const CompetencySettings: React.FC = () => {
         title: formData.title,
         customerFocus: {
           min: Number(formData.customerFocusMin),
-          max: Number(formData.customerFocusMax)
+          max: Number(formData.customerFocusMax),
+          weight: parseWeightField(formData.customerFocusWeight)
         },
         uncertaintyManagement: {
           min: Number(formData.uncertaintyManagementMin),
-          max: Number(formData.uncertaintyManagementMax)
+          max: Number(formData.uncertaintyManagementMax),
+          weight: parseWeightField(formData.uncertaintyWeight)
         },
         influence: {
           min: Number(formData.influenceMin),
-          max: Number(formData.influenceMax)
+          max: Number(formData.influenceMax),
+          weight: parseWeightField(formData.influenceWeight)
         },
         collaboration: {
           min: Number(formData.collaborationMin),
-          max: Number(formData.collaborationMax)
+          max: Number(formData.collaborationMax),
+          weight: parseWeightField(formData.collaborationWeight)
         }
       };
       
@@ -407,6 +447,11 @@ const CompetencySettings: React.FC = () => {
   const handleSubmitEdit = async () => {
     try {
       if (!selectedCompetency) return;
+      if (formWeightsSum() > 100) {
+        setErrorMessage(t('errors.weightsSumExceeds100'));
+        setShowErrorPopup(true);
+        return;
+      }
       setIsSubmitting(true);
       
       const response = await fetch(`/api/competency/${selectedCompetency._id}`, {
@@ -419,12 +464,16 @@ const CompetencySettings: React.FC = () => {
           title: formData.title,
           customerFocusMin: Number(formData.customerFocusMin),
           customerFocusMax: Number(formData.customerFocusMax),
+          customerFocusWeight: parseWeightField(formData.customerFocusWeight),
           uncertaintyMin: Number(formData.uncertaintyManagementMin),
           uncertaintyMax: Number(formData.uncertaintyManagementMax),
+          uncertaintyWeight: parseWeightField(formData.uncertaintyWeight),
           influenceMin: Number(formData.influenceMin),
           influenceMax: Number(formData.influenceMax),
+          influenceWeight: parseWeightField(formData.influenceWeight),
           collaborationMin: Number(formData.collaborationMin),
-          collaborationMax: Number(formData.collaborationMax)
+          collaborationMax: Number(formData.collaborationMax),
+          collaborationWeight: parseWeightField(formData.collaborationWeight)
         })
       });
 
@@ -442,19 +491,23 @@ const CompetencySettings: React.FC = () => {
           title: formData.title,
           customerFocus: {
             min: Number(formData.customerFocusMin),
-            max: Number(formData.customerFocusMax)
+            max: Number(formData.customerFocusMax),
+            weight: parseWeightField(formData.customerFocusWeight)
           },
           uncertaintyManagement: {
             min: Number(formData.uncertaintyManagementMin),
-            max: Number(formData.uncertaintyManagementMax)
+            max: Number(formData.uncertaintyManagementMax),
+            weight: parseWeightField(formData.uncertaintyWeight)
           },
           influence: {
             min: Number(formData.influenceMin),
-            max: Number(formData.influenceMax)
+            max: Number(formData.influenceMax),
+            weight: parseWeightField(formData.influenceWeight)
           },
           collaboration: {
             min: Number(formData.collaborationMin),
-            max: Number(formData.collaborationMax)
+            max: Number(formData.collaborationMax),
+            weight: parseWeightField(formData.collaborationWeight)
           }
         } : comp
       ));
@@ -1312,6 +1365,9 @@ const CompetencySettings: React.FC = () => {
                       fontFamily: 'Inter'
                     }}>
                       {competency.customerFocus?.min || 0} - {competency.customerFocus?.max || 0}
+                      <span style={{ color: '#64748B', fontSize: '12px', marginLeft: '6px' }}>
+                        (%{competency.customerFocus?.weight ?? 25})
+                      </span>
                     </td>
                     <td style={{
                       padding: '16px',
@@ -1321,6 +1377,9 @@ const CompetencySettings: React.FC = () => {
                       fontFamily: 'Inter'
                     }}>
                       {competency.uncertaintyManagement?.min || 0} - {competency.uncertaintyManagement?.max || 0}
+                      <span style={{ color: '#64748B', fontSize: '12px', marginLeft: '6px' }}>
+                        (%{competency.uncertaintyManagement?.weight ?? 25})
+                      </span>
                     </td>
                     <td style={{
                       padding: '16px',
@@ -1330,6 +1389,9 @@ const CompetencySettings: React.FC = () => {
                       fontFamily: 'Inter'
                     }}>
                       {competency.influence?.min || 0} - {competency.influence?.max || 0}
+                      <span style={{ color: '#64748B', fontSize: '12px', marginLeft: '6px' }}>
+                        (%{competency.influence?.weight ?? 25})
+                      </span>
                     </td>
                     <td style={{
                       padding: '16px',
@@ -1339,6 +1401,9 @@ const CompetencySettings: React.FC = () => {
                       fontFamily: 'Inter'
                     }}>
                       {competency.collaboration?.min || 0} - {competency.collaboration?.max || 0}
+                      <span style={{ color: '#64748B', fontSize: '12px', marginLeft: '6px' }}>
+                        (%{competency.collaboration?.weight ?? 25})
+                      </span>
                     </td>
                   </tr>
                   ))
@@ -1665,6 +1730,24 @@ const CompetencySettings: React.FC = () => {
                         }}
                       />
                     </div>
+                    <input
+                      type="number"
+                      value={formData.customerFocusWeight}
+                      onChange={(e) => setFormData({ ...formData, customerFocusWeight: e.target.value })}
+                      placeholder={t('labels.competencyWeightPercent')}
+                      min="0"
+                      max="100"
+                      style={{
+                        width: '100%',
+                        marginTop: '4px',
+                        padding: '10px 16px',
+                        border: '1px solid #E9ECEF',
+                        borderRadius: '6px',
+                        fontSize: '14px',
+                        fontFamily: 'Inter',
+                        outline: 'none'
+                      }}
+                    />
                   </div>
                   
                   <div style={{
@@ -1723,6 +1806,24 @@ const CompetencySettings: React.FC = () => {
                         }}
                       />
                     </div>
+                    <input
+                      type="number"
+                      value={formData.uncertaintyWeight}
+                      onChange={(e) => setFormData({ ...formData, uncertaintyWeight: e.target.value })}
+                      placeholder={t('labels.competencyWeightPercent')}
+                      min="0"
+                      max="100"
+                      style={{
+                        width: '100%',
+                        marginTop: '4px',
+                        padding: '10px 16px',
+                        border: '1px solid #E9ECEF',
+                        borderRadius: '6px',
+                        fontSize: '14px',
+                        fontFamily: 'Inter',
+                        outline: 'none'
+                      }}
+                    />
                   </div>
                   
                   <div style={{
@@ -1781,6 +1882,24 @@ const CompetencySettings: React.FC = () => {
                         }}
                       />
                     </div>
+                    <input
+                      type="number"
+                      value={formData.influenceWeight}
+                      onChange={(e) => setFormData({ ...formData, influenceWeight: e.target.value })}
+                      placeholder={t('labels.competencyWeightPercent')}
+                      min="0"
+                      max="100"
+                      style={{
+                        width: '100%',
+                        marginTop: '4px',
+                        padding: '10px 16px',
+                        border: '1px solid #E9ECEF',
+                        borderRadius: '6px',
+                        fontSize: '14px',
+                        fontFamily: 'Inter',
+                        outline: 'none'
+                      }}
+                    />
                   </div>
                   
                   <div style={{
@@ -1839,7 +1958,34 @@ const CompetencySettings: React.FC = () => {
                         }}
                       />
                     </div>
+                    <input
+                      type="number"
+                      value={formData.collaborationWeight}
+                      onChange={(e) => setFormData({ ...formData, collaborationWeight: e.target.value })}
+                      placeholder={t('labels.competencyWeightPercent')}
+                      min="0"
+                      max="100"
+                      style={{
+                        width: '100%',
+                        marginTop: '4px',
+                        padding: '10px 16px',
+                        border: '1px solid #E9ECEF',
+                        borderRadius: '6px',
+                        fontSize: '14px',
+                        fontFamily: 'Inter',
+                        outline: 'none'
+                      }}
+                    />
                   </div>
+                </div>
+
+                <div style={{
+                  fontSize: '13px',
+                  fontFamily: 'Inter',
+                  color: formWeightsSum() > 100 ? '#DC2626' : '#64748B',
+                  marginBottom: '8px'
+                }}>
+                  {t('labels.weightsTotalMax100')}: <strong>{formWeightsSum()}</strong> / 100
                 </div>
                 
                 <div style={{

@@ -12,7 +12,8 @@ const sharp = require('sharp');
 const libreofficeConvert = require('libreoffice-convert');
 const { PDFDocument } = require('pdf-lib');
 const crypto = require('crypto');
-const { safeLog, getSafeErrorMessage } = require('../utils/helpers');
+const { safeLog, getSafeErrorMessage, computeWeightedCompetencyOverall, escapeRegex } = require('../utils/helpers');
+const Competency = require('../models/Competency');
 const { getCompanyFilter } = require('../middleware/auth');
 const expressionParser = require("docxtemplater/expressions.js");
 const parser = expressionParser.configure({});
@@ -753,15 +754,36 @@ const evaluationController = {
             const ieScore = (titanGame ? titanGame.ieScore : null) || userCodeData.ieScore || '-';
             const idikScore = (titanGame ? titanGame.idikScore : null) || userCodeData.idikScore || '-';
 
+            const mergedForWeight = {
+                customerFocusScore,
+                uncertaintyScore,
+                ieScore,
+                idikScore
+            };
+            let competencyLean = null;
+            const pozisyonTrim = (userCodeData.pozisyon || '').trim();
+            if (pozisyonTrim) {
+                const compFilter = {
+                    title: new RegExp(`^${escapeRegex(pozisyonTrim)}$`, 'i')
+                };
+                if (companyFilter.companyId) {
+                    compFilter.companyId = companyFilter.companyId;
+                }
+                competencyLean = await Competency.findOne(compFilter).sort({ updatedAt: -1, createdAt: -1 }).lean();
+            }
+            const weightedAverage = computeWeightedCompetencyOverall(mergedForWeight, competencyLean);
+
             const scoreValues = [customerFocusScore, uncertaintyScore, ieScore, idikScore]
                 .map((score) => {
                     const parsed = typeof score === 'number' ? score : parseFloat(score);
                     return Number.isFinite(parsed) ? parsed : null;
                 })
                 .filter((value) => value !== null);
-            const averageScoreValue = scoreValues.length
+            const averageScoreFallback = scoreValues.length
                 ? Math.round(scoreValues.reduce((sum, value) => sum + value, 0) / scoreValues.length)
                 : null;
+            const averageScoreValue =
+                weightedAverage !== null ? weightedAverage : averageScoreFallback;
             const averageScoreText = averageScoreValue !== null ? averageScoreValue.toString() : '-';
 
             const graphWidthPx = cmToPx(6.0);

@@ -1,6 +1,7 @@
 const { answerScores } = require('../config/constants');
 const Game = require('../models/game');
 const UserCode = require('../models/userCode');
+const Competency = require('../models/Competency');
 const AnswerType = require('../models/answerType');
 const Section = require('../models/section');
 const EvaluationController = require('./evaluationController');
@@ -11,9 +12,23 @@ const {
     getSafeErrorMessage,
     capitalizeName,
     escapeHtml,
+    escapeRegex,
     mergeUserCodeScoresBySection,
-    mergeEvaluationResultsByType
+    mergeEvaluationResultsByType,
+    computeWeightedCompetencyOverall
 } = require('../utils/helpers');
+
+async function loadCompetencyLeanForUserCode(userCodeDoc) {
+    const poz = (userCodeDoc.pozisyon || '').trim();
+    if (!poz) return null;
+    const filter = {
+        title: new RegExp(`^${escapeRegex(poz)}$`, 'i')
+    };
+    if (userCodeDoc.companyId) {
+        filter.companyId = userCodeDoc.companyId;
+    }
+    return Competency.findOne(filter).sort({ updatedAt: -1, createdAt: -1 }).lean();
+}
 
 class GameController {
     constructor(wss) {
@@ -168,6 +183,17 @@ class GameController {
             const mergedEvaluationResult = mergeEvaluationResultsByType(userCode.evaluationResult, evaluationResult);
             const mergedScores = mergeUserCodeScoresBySection(data.section, userCode, rounded);
 
+            let weightedOverallScore = '-';
+            try {
+                const competencyLean = await loadCompetencyLeanForUserCode(userCode);
+                const weighted = computeWeightedCompetencyOverall(mergedScores, competencyLean);
+                if (weighted !== null) {
+                    weightedOverallScore = String(weighted);
+                }
+            } catch (weightErr) {
+                safeLog('warn', 'Ağırlıklı genel skor hesaplanamadı', weightErr);
+            }
+
             await UserCode.findOneAndUpdate(
                 { code: data.playerCode },
                 {
@@ -175,6 +201,7 @@ class GameController {
                     isUsed: true,
                     completionDate: new Date(),
                     evaluationResult: mergedEvaluationResult,
+                    weightedOverallScore,
                     ...mergedScores
                 }
             );
