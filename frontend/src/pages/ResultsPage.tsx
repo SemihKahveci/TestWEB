@@ -742,8 +742,7 @@ const ResultsPage: React.FC = () => {
                   fontSize: '14px',
                   fontWeight: 600,
                   color: '#232D42',
-                  fontFamily: 'Inter',
-                  borderRight: '1px solid #E9ECEF'
+                  fontFamily: 'Inter'
                 }}>{t('labels.nameSurname')}</th>
                 <th style={{
                   padding: '16px',
@@ -751,8 +750,7 @@ const ResultsPage: React.FC = () => {
                   fontSize: '14px',
                   fontWeight: 600,
                   color: '#232D42',
-                  fontFamily: 'Inter',
-                  borderRight: '1px solid #E9ECEF'
+                  fontFamily: 'Inter'
                 }}>{t('labels.completionDate')}</th>
                 <th style={{
                   padding: '16px',
@@ -760,8 +758,7 @@ const ResultsPage: React.FC = () => {
                   fontSize: '14px',
                   fontWeight: 600,
                   color: '#232D42',
-                  fontFamily: 'Inter',
-                  borderRight: '1px solid #E9ECEF'
+                  fontFamily: 'Inter'
                 }}>{t('labels.customerFocusScore')}</th>
                 <th style={{
                   padding: '16px',
@@ -769,8 +766,7 @@ const ResultsPage: React.FC = () => {
                   fontSize: '14px',
                   fontWeight: 600,
                   color: '#232D42',
-                  fontFamily: 'Inter',
-                  borderRight: '1px solid #E9ECEF'
+                  fontFamily: 'Inter'
                 }}>{t('labels.adaptabilityScore')}</th>
                 <th style={{
                   padding: '16px',
@@ -778,8 +774,7 @@ const ResultsPage: React.FC = () => {
                   fontSize: '14px',
                   fontWeight: 600,
                   color: '#232D42',
-                  fontFamily: 'Inter',
-                  borderRight: '1px solid #E9ECEF'
+                  fontFamily: 'Inter'
                 }}>{t('labels.influenceScore')}</th>
                 <th style={{
                   padding: '16px',
@@ -804,8 +799,7 @@ const ResultsPage: React.FC = () => {
                       color: '#232D42',
                       fontFamily: 'Inter',
                       fontWeight: 500,
-                      textAlign: 'left',
-                      borderRight: '1px solid #E9ECEF'
+                      textAlign: 'left'
                     }}>
                       <span
                         onClick={() => navigate('/person-results', { state: { selectedUser: result } })}
@@ -831,8 +825,7 @@ const ResultsPage: React.FC = () => {
                     fontSize: '14px',
                     color: '#8A92A6',
                     fontFamily: 'Inter',
-                    textAlign: 'center',
-                    borderRight: '1px solid #E9ECEF'
+                    textAlign: 'center'
                   }}>
                     {formatDate(result.completionDate)}
                   </td>
@@ -840,8 +833,7 @@ const ResultsPage: React.FC = () => {
                     padding: '16px',
                     fontSize: '14px',
                     fontFamily: 'Inter',
-                    textAlign: 'center',
-                    borderRight: '1px solid #E9ECEF'
+                    textAlign: 'center'
                   }}>
                     <span style={getScoreBadgeStyle(result.customerFocusScore)}>
                       {formatScore(result.customerFocusScore)}
@@ -851,8 +843,7 @@ const ResultsPage: React.FC = () => {
                     padding: '16px',
                     fontSize: '14px',
                     fontFamily: 'Inter',
-                    textAlign: 'center',
-                    borderRight: '1px solid #E9ECEF'
+                    textAlign: 'center'
                   }}>
                     <span style={getScoreBadgeStyle(result.uncertaintyScore)}>
                       {formatScore(result.uncertaintyScore)}
@@ -862,8 +853,7 @@ const ResultsPage: React.FC = () => {
                     padding: '16px',
                     fontSize: '14px',
                     fontFamily: 'Inter',
-                    textAlign: 'center',
-                    borderRight: '1px solid #E9ECEF'
+                    textAlign: 'center'
                   }}>
                     <span style={getScoreBadgeStyle(result.ieScore)}>
                       {formatScore(result.ieScore)}
