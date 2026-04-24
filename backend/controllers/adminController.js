@@ -444,7 +444,99 @@ const adminController = {
     // Kullanıcı sonuçlarını getir
     getUserResults: async (req, res) => {
         try {
-            const { code, page, limit, searchTerm, statusFilter, showExpiredWarning, personType } = req.query;
+            const {
+                code,
+                page,
+                limit,
+                searchTerm,
+                statusFilter,
+                showExpiredWarning,
+                personType,
+                advancedFilter,
+                filterStatuses: filterStatusesRaw,
+                filterUnvans: filterUnvansRaw,
+                filterPozisyons: filterPozisyonsRaw,
+                filterDepartmans: filterDepartmansRaw,
+                avgScoreMin: avgScoreMinRaw,
+                avgScoreMax: avgScoreMaxRaw,
+                sentDateFrom: sentDateFromRaw,
+                sentDateTo: sentDateToRaw
+            } = req.query;
+
+            const isValidIsoDateParam = (raw) => {
+                if (raw === undefined || raw === null || raw === '') return false;
+                const s = typeof raw === 'string' ? raw.trim() : String(raw).trim();
+                return /^\d{4}-\d{2}-\d{2}$/.test(s);
+            };
+            let sentDateFromStr = isValidIsoDateParam(sentDateFromRaw)
+                ? (typeof sentDateFromRaw === 'string' ? sentDateFromRaw : String(sentDateFromRaw)).trim()
+                : '';
+            let sentDateToStr = isValidIsoDateParam(sentDateToRaw)
+                ? (typeof sentDateToRaw === 'string' ? sentDateToRaw : String(sentDateToRaw)).trim()
+                : '';
+            if (sentDateFromStr && sentDateToStr && sentDateFromStr > sentDateToStr) {
+                const swap = sentDateFromStr;
+                sentDateFromStr = sentDateToStr;
+                sentDateToStr = swap;
+            }
+            const hasSentDateFilter = Boolean(sentDateFromStr || sentDateToStr);
+
+            const safeJsonParseStringArray = (raw) => {
+                if (raw === undefined || raw === null || raw === '') return [];
+                const str = typeof raw === 'string' ? raw : String(raw);
+                try {
+                    const v = JSON.parse(str);
+                    if (!Array.isArray(v)) return [];
+                    return v
+                        .filter((x) => x !== null && x !== undefined && String(x).trim() !== '')
+                        .map((x) => String(x).trim())
+                        .slice(0, 200);
+                } catch {
+                    return [];
+                }
+            };
+
+            const filterStatusesArr = safeJsonParseStringArray(filterStatusesRaw);
+            const filterUnvansArr = safeJsonParseStringArray(filterUnvansRaw);
+            const filterPozisyonsArr = safeJsonParseStringArray(filterPozisyonsRaw);
+            const filterDepartmansArr = safeJsonParseStringArray(filterDepartmansRaw);
+
+            const advEnabled = advancedFilter === '1' || advancedFilter === 'true' || advancedFilter === true;
+            const avgMinNum =
+                avgScoreMinRaw !== undefined && avgScoreMinRaw !== '' && !Number.isNaN(parseFloat(avgScoreMinRaw))
+                    ? parseFloat(avgScoreMinRaw)
+                    : null;
+            const avgMaxNum =
+                avgScoreMaxRaw !== undefined && avgScoreMaxRaw !== '' && !Number.isNaN(parseFloat(avgScoreMaxRaw))
+                    ? parseFloat(avgScoreMaxRaw)
+                    : null;
+
+            const hasAdvancedFilters =
+                advEnabled &&
+                (filterStatusesArr.length > 0 ||
+                    filterUnvansArr.length > 0 ||
+                    filterPozisyonsArr.length > 0 ||
+                    filterDepartmansArr.length > 0 ||
+                    avgMinNum !== null ||
+                    avgMaxNum !== null ||
+                    hasSentDateFilter);
+
+            const normalizeMatch = (a, b) => {
+                const x = (a || '').toString().trim().toLocaleLowerCase('tr-TR');
+                const y = (b || '').toString().trim().toLocaleLowerCase('tr-TR');
+                return x === y;
+            };
+
+            const rowAverageScore = (row) => {
+                const vals = [row.customerFocusScore, row.uncertaintyScore, row.ieScore, row.idikScore]
+                    .map((s) => {
+                        const p = parseFloat(String(s));
+                        return Number.isFinite(p) ? p : null;
+                    })
+                    .filter((v) => v !== null);
+                if (!vals.length) return null;
+                return vals.reduce((acc, v) => acc + v, 0) / vals.length;
+            };
             
             // Pagination parametreleri (page ve limit undefined ise tüm verileri getir)
             const pageNum = page ? parseInt(page) : undefined;
@@ -487,7 +579,9 @@ const adminController = {
                 totalCount = results.length;
             } else {
                 // Filtreleme query'si oluştur
-                if (statusFilter) {
+                if (hasAdvancedFilters && filterStatusesArr.length > 0) {
+                    query.status = { $in: filterStatusesArr };
+                } else if (statusFilter) {
                     query.status = statusFilter;
                 } else {
                     // showExpiredWarning false ise "Süresi Doldu" statüsündeki kayıtları filtrele
@@ -520,16 +614,34 @@ const adminController = {
                     query.personType = { $in: [/calisan/i, /çalışan/i, /employee/i] };
                 }
 
-                // Toplam sayıyı hesapla (filtrelemeden sonra)
-                totalCount = await UserCode.countDocuments(query);
-                
-                // Sorguyu çalıştır (pagination varsa uygula, yoksa tüm verileri getir)
-                let queryBuilder = UserCode.find(query).sort({ sentDate: -1 });
-                
-                if (skip !== undefined && limitNum !== undefined) {
-                    queryBuilder = queryBuilder.skip(skip).limit(limitNum);
+                if (hasAdvancedFilters && hasSentDateFilter) {
+                    query.sentDate = {};
+                    if (sentDateFromStr) {
+                        const fromD = new Date(`${sentDateFromStr}T00:00:00.000`);
+                        if (!Number.isNaN(fromD.getTime())) {
+                            query.sentDate.$gte = fromD;
+                        }
+                    }
+                    if (sentDateToStr) {
+                        const toD = new Date(`${sentDateToStr}T23:59:59.999`);
+                        if (!Number.isNaN(toD.getTime())) {
+                            query.sentDate.$lte = toD;
+                        }
+                    }
                 }
-                
+
+                let queryBuilder = UserCode.find(query).sort({ sentDate: -1 });
+
+                if (hasAdvancedFilters) {
+                    queryBuilder = queryBuilder.limit(8000);
+                    totalCount = 0;
+                } else {
+                    totalCount = await UserCode.countDocuments(query);
+                    if (skip !== undefined && limitNum !== undefined) {
+                        queryBuilder = queryBuilder.skip(skip).limit(limitNum);
+                    }
+                }
+
                 results = await queryBuilder;
             }
             
@@ -677,15 +789,49 @@ const adminController = {
                     safeLog('error', 'UserCode güncelleme hatası (non-blocking)', err);
                 });
             }
-            
+
+            let responseResults = mappedResults;
+            let responseTotal = totalCount;
+            const effectiveLimit = limitNum && limitNum > 0 ? limitNum : 10;
+            let responseTotalPages =
+                limitNum && limitNum > 0 ? Math.ceil((totalCount || 0) / limitNum) : 1;
+
+            if (!code && hasAdvancedFilters) {
+                const filtered = mappedResults.filter((row) => {
+                    if (filterUnvansArr.length > 0) {
+                        if (!filterUnvansArr.some((u) => normalizeMatch(row.unvan, u))) return false;
+                    }
+                    if (filterPozisyonsArr.length > 0) {
+                        if (!filterPozisyonsArr.some((p) => normalizeMatch(row.pozisyon, p))) return false;
+                    }
+                    if (filterDepartmansArr.length > 0) {
+                        if (!filterDepartmansArr.some((d) => normalizeMatch(row.departman, d))) return false;
+                    }
+                    const avg = rowAverageScore(row);
+                    if (avgMinNum !== null) {
+                        if (avg === null || avg < avgMinNum) return false;
+                    }
+                    if (avgMaxNum !== null) {
+                        if (avg === null || avg > avgMaxNum) return false;
+                    }
+                    return true;
+                });
+                responseTotal = filtered.length;
+                const pg = pageNum && pageNum > 0 ? pageNum : 1;
+                const sk = (pg - 1) * effectiveLimit;
+                responseResults = filtered.slice(sk, sk + effectiveLimit);
+                responseTotalPages =
+                    effectiveLimit > 0 ? Math.ceil(responseTotal / effectiveLimit) || 1 : 1;
+            }
+
             res.json({
                 success: true,
-                results: mappedResults,
+                results: responseResults,
                 pagination: {
-                    page: pageNum,
-                    limit: limitNum,
-                    total: totalCount,
-                    totalPages: Math.ceil(totalCount / limitNum)
+                    page: pageNum || 1,
+                    limit: limitNum || effectiveLimit,
+                    total: responseTotal,
+                    totalPages: responseTotalPages
                 }
             });
         } catch (error) {

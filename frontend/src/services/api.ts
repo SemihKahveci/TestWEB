@@ -150,6 +150,20 @@ export const gameManagementAPI = {
 };
 
 
+export type EvaluationAdvancedFilters = {
+  enabled: boolean;
+  filterStatuses?: string[];
+  filterUnvans?: string[];
+  filterPozisyons?: string[];
+  filterDepartmans?: string[];
+  avgScoreMin?: string;
+  avgScoreMax?: string;
+  /** YYYY-MM-DD */
+  sentDateFrom?: string;
+  /** YYYY-MM-DD */
+  sentDateTo?: string;
+};
+
 // Evaluation API
 export const evaluationAPI = {
   getAll: (
@@ -158,7 +172,8 @@ export const evaluationAPI = {
     searchTerm?: string,
     statusFilter?: string,
     showExpiredWarning?: boolean,
-    personType?: string
+    personType?: string,
+    advanced?: EvaluationAdvancedFilters
   ) => {
     const params = new URLSearchParams();
     if (page) params.append('page', page.toString());
@@ -167,6 +182,33 @@ export const evaluationAPI = {
     if (statusFilter) params.append('statusFilter', statusFilter);
     if (showExpiredWarning !== undefined) params.append('showExpiredWarning', showExpiredWarning.toString());
     if (personType) params.append('personType', personType);
+    if (advanced?.enabled) {
+      params.append('advancedFilter', '1');
+      if (advanced.filterStatuses?.length) {
+        params.append('filterStatuses', JSON.stringify(advanced.filterStatuses));
+      }
+      if (advanced.filterUnvans?.length) {
+        params.append('filterUnvans', JSON.stringify(advanced.filterUnvans));
+      }
+      if (advanced.filterPozisyons?.length) {
+        params.append('filterPozisyons', JSON.stringify(advanced.filterPozisyons));
+      }
+      if (advanced.filterDepartmans?.length) {
+        params.append('filterDepartmans', JSON.stringify(advanced.filterDepartmans));
+      }
+      if (advanced.avgScoreMin !== undefined && advanced.avgScoreMin !== '') {
+        params.append('avgScoreMin', advanced.avgScoreMin);
+      }
+      if (advanced.avgScoreMax !== undefined && advanced.avgScoreMax !== '') {
+        params.append('avgScoreMax', advanced.avgScoreMax);
+      }
+      if (advanced.sentDateFrom !== undefined && advanced.sentDateFrom !== '') {
+        params.append('sentDateFrom', advanced.sentDateFrom);
+      }
+      if (advanced.sentDateTo !== undefined && advanced.sentDateTo !== '') {
+        params.append('sentDateTo', advanced.sentDateTo);
+      }
+    }
     const queryString = params.toString();
     return api.get(`/user-results${queryString ? '?' + queryString : ''}`);
   },

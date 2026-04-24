@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { evaluationAPI, creditAPI } from '../services/api';
+import { evaluationAPI, creditAPI, type EvaluationAdvancedFilters } from '../services/api';
 import { useAuth } from '../contexts/AuthContext';
 import { useLanguage } from '../contexts/LanguageContext';
 import * as XLSX from 'xlsx';
@@ -34,6 +34,7 @@ interface UserResult {
   groupCount?: number;
   allGroupItems?: UserResult[];
   hasExpiredCode?: boolean;
+  weightedOverallScore?: string | number;
   answers?: Array<{
     questionId?: string;
     answerType1?: string;
@@ -56,6 +57,101 @@ interface PDFOptions {
   whyTheseQuestions: boolean;
   developmentSuggestions: boolean;
 }
+
+type AdvancedFiltersState = {
+  filterStatuses: string[];
+  filterUnvans: string[];
+  filterPozisyons: string[];
+  filterDepartmans: string[];
+  avgScoreMin: string;
+  avgScoreMax: string;
+  sentDateFrom: string;
+  sentDateTo: string;
+};
+
+const createEmptyAdvancedFilters = (): AdvancedFiltersState => ({
+  filterStatuses: [],
+  filterUnvans: [],
+  filterPozisyons: [],
+  filterDepartmans: [],
+  avgScoreMin: '',
+  avgScoreMax: '',
+  sentDateFrom: '',
+  sentDateTo: ''
+});
+
+const ADMIN_STATUS_FILTER_OPTIONS = [
+  'Beklemede',
+  'Oyun Devam ediyor',
+  'Tamamlandı',
+  'Süresi Doldu'
+] as const;
+
+/** Tablo ve gelişmiş filtre modalı seçim kutuları */
+const ADMIN_PANEL_CHECK_PURPLE = '#9f8fbe';
+
+const AdminModalCheckbox: React.FC<{
+  checked: boolean;
+  onToggle: () => void;
+  children: React.ReactNode;
+}> = ({ checked, onToggle, children }) => (
+  <label
+    style={{
+      display: 'flex',
+      alignItems: 'center',
+      gap: '10px',
+      cursor: 'pointer',
+      fontSize: '14px',
+      color: '#232D42',
+      fontFamily: 'Inter'
+    }}
+  >
+    <span style={{ position: 'relative', display: 'inline-flex', alignItems: 'center' }}>
+      <input
+        type="checkbox"
+        checked={checked}
+        onChange={() => onToggle()}
+        style={{
+          opacity: 0,
+          position: 'absolute',
+          cursor: 'pointer',
+          height: 0,
+          width: 0
+        }}
+      />
+      <span
+        style={{
+          position: 'relative',
+          display: 'inline-block',
+          width: '18px',
+          height: '18px',
+          backgroundColor: checked ? ADMIN_PANEL_CHECK_PURPLE : 'white',
+          border: `2px solid ${checked ? ADMIN_PANEL_CHECK_PURPLE : '#E9ECEF'}`,
+          borderRadius: '4px',
+          transition: 'all 0.3s ease',
+          transform: checked ? 'scale(1.1)' : 'scale(1)'
+        }}
+      >
+        {checked && (
+          <span
+            style={{
+              position: 'absolute',
+              display: 'block',
+              left: '4px',
+              top: '1px',
+              width: '6px',
+              height: '10px',
+              border: 'solid white',
+              borderWidth: '0 2px 2px 0',
+              transform: 'rotate(40deg)'
+            }}
+          />
+        )}
+      </span>
+    </span>
+    <span>{children}</span>
+  </label>
+);
 
 const AdminPanel: React.FC = () => {
   const navigate = useNavigate();
@@ -120,6 +216,58 @@ const AdminPanel: React.FC = () => {
   const [bulkSendTargets, setBulkSendTargets] = useState<UserResult[]>([]);
   const [bulkSendPlanets, setBulkSendPlanets] = useState<Record<string, string[]>>({});
   const [isBulkSending, setIsBulkSending] = useState(false);
+
+  const [showAdvancedFilterModal, setShowAdvancedFilterModal] = useState(false);
+  const [appliedAdvancedFilters, setAppliedAdvancedFilters] = useState<AdvancedFiltersState>(createEmptyAdvancedFilters);
+  const [draftAdvancedFilters, setDraftAdvancedFilters] = useState<AdvancedFiltersState>(createEmptyAdvancedFilters);
+  const [advancedFilterOptions, setAdvancedFilterOptions] = useState<{
+    unvans: string[];
+    pozisyons: string[];
+    departmans: string[];
+    loading: boolean;
+  }>({ unvans: [], pozisyons: [], departmans: [], loading: false });
+
+  const advancedFiltersCacheKey = useMemo(
+    () => JSON.stringify(appliedAdvancedFilters),
+    [appliedAdvancedFilters]
+  );
+
+  const activeAdvancedFilterGroupCount = useMemo(() => {
+    const a = appliedAdvancedFilters;
+    let n = 0;
+    if (a.filterStatuses.length > 0) n += 1;
+    if (a.filterUnvans.length > 0) n += 1;
+    if (a.filterPozisyons.length > 0) n += 1;
+    if (a.filterDepartmans.length > 0) n += 1;
+    if (a.avgScoreMin.trim() !== '' || a.avgScoreMax.trim() !== '') n += 1;
+    if (a.sentDateFrom.trim() !== '' || a.sentDateTo.trim() !== '') n += 1;
+    return n;
+  }, [appliedAdvancedFilters]);
+
+  const buildAdvancedApiPayload = useCallback((): EvaluationAdvancedFilters | undefined => {
+    const a = appliedAdvancedFilters;
+    const hasAny =
+      a.filterStatuses.length > 0 ||
+      a.filterUnvans.length > 0 ||
+      a.filterPozisyons.length > 0 ||
+      a.filterDepartmans.length > 0 ||
+      a.avgScoreMin.trim() !== '' ||
+      a.avgScoreMax.trim() !== '' ||
+      a.sentDateFrom.trim() !== '' ||
+      a.sentDateTo.trim() !== '';
+    if (!hasAny) return undefined;
+    return {
+      enabled: true,
+      filterStatuses: a.filterStatuses.length ? [...a.filterStatuses] : undefined,
+      filterUnvans: a.filterUnvans.length ? [...a.filterUnvans] : undefined,
+      filterPozisyons: a.filterPozisyons.length ? [...a.filterPozisyons] : undefined,
+      filterDepartmans: a.filterDepartmans.length ? [...a.filterDepartmans] : undefined,
+      avgScoreMin: a.avgScoreMin.trim() !== '' ? a.avgScoreMin.trim() : undefined,
+      avgScoreMax: a.avgScoreMax.trim() !== '' ? a.avgScoreMax.trim() : undefined,
+      sentDateFrom: a.sentDateFrom.trim() !== '' ? a.sentDateFrom.trim() : undefined,
+      sentDateTo: a.sentDateTo.trim() !== '' ? a.sentDateTo.trim() : undefined
+    };
+  }, [appliedAdvancedFilters]);
 
   const availablePlanets = useMemo(() => ([
     { value: 'venus', label: `${t('labels.planetVenus')} (${t('competency.uncertainty')} - ${t('competency.customerFocus')})` },
@@ -323,7 +471,8 @@ const AdminPanel: React.FC = () => {
         searchTerm: debouncedSearchTerm,
         statusFilter,
         showExpiredWarning,
-        personType: activePersonTab
+        personType: activePersonTab,
+        advanced: advancedFiltersCacheKey
       });
 
       if (!forceFetch) {
@@ -342,6 +491,8 @@ const AdminPanel: React.FC = () => {
         }
       }
 
+      const advancedPayload = buildAdvancedApiPayload();
+
       // Pagination ile veri çek (filtreleme parametrelerini de gönder)
       const response = await evaluationAPI.getAll(
         currentPage, 
@@ -349,7 +500,8 @@ const AdminPanel: React.FC = () => {
         debouncedSearchTerm, // Debounced search term kullan
         statusFilter, 
         showExpiredWarning,
-        activePersonTab === 'all' ? undefined : activePersonTab
+        activePersonTab === 'all' ? undefined : activePersonTab,
+        advancedPayload
       );
       
       
@@ -395,7 +547,7 @@ const AdminPanel: React.FC = () => {
         setIsSearching(false);
       }
     }
-  }, [currentPage, itemsPerPage, debouncedSearchTerm, statusFilter, activePersonTab]);
+  }, [currentPage, itemsPerPage, debouncedSearchTerm, statusFilter, activePersonTab, advancedFiltersCacheKey, buildAdvancedApiPayload]);
 
   const refreshAfterMutation = async () => {
     await loadData(true, true);
@@ -446,7 +598,7 @@ const AdminPanel: React.FC = () => {
     } else {
       loadData(false); // Sonraki yüklemelerde loading gösterme
     }
-  }, [currentPage, statusFilter, activePersonTab]);
+  }, [currentPage, statusFilter, activePersonTab, advancedFiltersCacheKey]);
 
   useEffect(() => {
     setCurrentPage(1);
@@ -463,7 +615,7 @@ const AdminPanel: React.FC = () => {
   useEffect(() => {
     // Search/filter değiştiğinde sayfayı 1'e resetle
     setCurrentPage(1);
-  }, [debouncedSearchTerm, statusFilter]);
+  }, [debouncedSearchTerm, statusFilter, advancedFiltersCacheKey]);
 
   useEffect(() => {
     if (!isPdfDownloading) {
@@ -1340,6 +1492,79 @@ const AdminPanel: React.FC = () => {
     setShowMessageModal(false);
   };
 
+  const toggleDraftMulti = (
+    key: 'filterStatuses' | 'filterUnvans' | 'filterPozisyons' | 'filterDepartmans',
+    value: string
+  ) => {
+    setDraftAdvancedFilters((prev) => {
+      const cur = [...prev[key]];
+      const i = cur.indexOf(value);
+      if (i >= 0) cur.splice(i, 1);
+      else cur.push(value);
+      return { ...prev, [key]: cur };
+    });
+  };
+
+  const handleOpenAdvancedFilterModal = async () => {
+    setDraftAdvancedFilters({
+      filterStatuses: [...appliedAdvancedFilters.filterStatuses],
+      filterUnvans: [...appliedAdvancedFilters.filterUnvans],
+      filterPozisyons: [...appliedAdvancedFilters.filterPozisyons],
+      filterDepartmans: [...appliedAdvancedFilters.filterDepartmans],
+      avgScoreMin: appliedAdvancedFilters.avgScoreMin,
+      avgScoreMax: appliedAdvancedFilters.avgScoreMax,
+      sentDateFrom: appliedAdvancedFilters.sentDateFrom,
+      sentDateTo: appliedAdvancedFilters.sentDateTo
+    });
+    setShowAdvancedFilterModal(true);
+    setAdvancedFilterOptions((o) => ({ ...o, loading: true }));
+    try {
+      const res = await evaluationAPI.getAll(
+        1,
+        5000,
+        debouncedSearchTerm,
+        '',
+        showExpiredWarning,
+        activePersonTab === 'all' ? undefined : activePersonTab,
+        undefined
+      );
+      const rows: UserResult[] = res.data?.results || [];
+      const uniq = (vals: (string | undefined)[]) =>
+        [...new Set(vals.map((v) => (v || '').trim()).filter(Boolean))].sort((a, b) =>
+          a.localeCompare(b, 'tr')
+        );
+      setAdvancedFilterOptions({
+        unvans: uniq(rows.map((r) => r.unvan)),
+        pozisyons: uniq(rows.map((r) => r.pozisyon)),
+        departmans: uniq(rows.map((r) => r.departman)),
+        loading: false
+      });
+    } catch {
+      setAdvancedFilterOptions({ unvans: [], pozisyons: [], departmans: [], loading: false });
+    }
+  };
+
+  const handleApplyAdvancedFilters = () => {
+    setAppliedAdvancedFilters({ ...draftAdvancedFilters });
+    setShowAdvancedFilterModal(false);
+    setCurrentPage(1);
+    setSelectedItems([]);
+    void loadData(true, true);
+  };
+
+  const handleClearDraftAdvancedFilters = () => {
+    setDraftAdvancedFilters(createEmptyAdvancedFilters());
+  };
+
+  const handleClearAllAdvancedFilters = () => {
+    setDraftAdvancedFilters(createEmptyAdvancedFilters());
+    setAppliedAdvancedFilters(createEmptyAdvancedFilters());
+    setShowAdvancedFilterModal(false);
+    setCurrentPage(1);
+    setSelectedItems([]);
+    void loadData(true, true);
+  };
+
   // Pagination artık backend'de yapılıyor, filteredResults zaten sayfalanmış veri
   const paginatedResults = filteredResults;
 
@@ -1418,6 +1643,7 @@ const AdminPanel: React.FC = () => {
         alignItems: 'center',
         marginBottom: '16px'
       }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
         {/* Search Box */}
         <div style={{ position: 'relative' }}>
           <i className="fas fa-search" style={{
@@ -1516,6 +1742,44 @@ const AdminPanel: React.FC = () => {
               ×
             </button>
           )}
+        </div>
+
+        <button
+          type="button"
+          onClick={() => void handleOpenAdvancedFilterModal()}
+          className="btn btn-secondary"
+          style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: '8px',
+            borderRadius: '10px',
+            padding: '10px 18px',
+            fontWeight: 600,
+            border: '1px solid #E5E7EB',
+            boxShadow: '0 1px 2px rgba(0,0,0,0.04)'
+          }}
+        >
+          <i className="fas fa-sliders-h" style={{ color: '#6B7280' }} />
+          {t('buttons.filter')}
+          {activeAdvancedFilterGroupCount > 0 && (
+            <span style={{
+              marginLeft: '2px',
+              minWidth: '22px',
+              height: '22px',
+              padding: '0 7px',
+              borderRadius: '999px',
+              background: '#9f8fbe',
+              color: 'white',
+              fontSize: '12px',
+              fontWeight: 700,
+              display: 'inline-flex',
+              alignItems: 'center',
+              justifyContent: 'center'
+            }}>
+              {activeAdvancedFilterGroupCount}
+            </span>
+          )}
+        </button>
         </div>
 
         {/* Right Controls */}
@@ -1660,8 +1924,8 @@ const AdminPanel: React.FC = () => {
                       display: 'inline-block',
                       width: '18px',
                       height: '18px',
-                      backgroundColor: selectedItems.length > 0 && selectedItems.length === paginatedResults.length ? '#0286F7' : 'white',
-                      border: `2px solid ${selectedItems.length > 0 && selectedItems.length === paginatedResults.length ? '#0286F7' : '#E9ECEF'}`,
+                      backgroundColor: selectedItems.length > 0 && selectedItems.length === paginatedResults.length ? ADMIN_PANEL_CHECK_PURPLE : 'white',
+                      border: `2px solid ${selectedItems.length > 0 && selectedItems.length === paginatedResults.length ? ADMIN_PANEL_CHECK_PURPLE : '#E9ECEF'}`,
                       borderRadius: '4px',
                       transition: 'all 0.3s ease',
                       transform: selectedItems.length > 0 && selectedItems.length === paginatedResults.length ? 'scale(1.1)' : 'scale(1)'
@@ -1802,8 +2066,8 @@ const AdminPanel: React.FC = () => {
                         display: 'inline-block',
                         width: '18px',
                         height: '18px',
-                        backgroundColor: selectedItems.includes(result.code) ? '#0286F7' : 'white',
-                        border: `2px solid ${selectedItems.includes(result.code) ? '#0286F7' : '#E9ECEF'}`,
+                        backgroundColor: selectedItems.includes(result.code) ? ADMIN_PANEL_CHECK_PURPLE : 'white',
+                        border: `2px solid ${selectedItems.includes(result.code) ? ADMIN_PANEL_CHECK_PURPLE : '#E9ECEF'}`,
                         borderRadius: '4px',
                         transition: 'all 0.3s ease',
                         transform: selectedItems.includes(result.code) ? 'scale(1.1)' : 'scale(1)'
@@ -3886,6 +4150,343 @@ const AdminPanel: React.FC = () => {
               >
                 {t('buttons.ok')}
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showAdvancedFilterModal && (
+        <div
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            width: '100%',
+            height: '100%',
+            backgroundColor: 'rgba(0,0,0,0.45)',
+            display: 'flex',
+            justifyContent: 'center',
+            alignItems: 'center',
+            zIndex: 2100,
+            padding: '16px'
+          }}
+          onClick={(e) => {
+            if (e.target === e.currentTarget) setShowAdvancedFilterModal(false);
+          }}
+        >
+          <div
+            role="dialog"
+            aria-modal="true"
+            style={{
+              background: 'white',
+              borderRadius: '14px',
+              maxWidth: '640px',
+              width: '100%',
+              maxHeight: '90vh',
+              overflow: 'hidden',
+              display: 'flex',
+              flexDirection: 'column',
+              boxShadow: '0 12px 40px rgba(0,0,0,0.15)',
+              border: '1px solid #E5E7EB'
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div
+              style={{
+                padding: '18px 22px',
+                borderBottom: '1px solid rgba(255,255,255,0.25)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                background: 'linear-gradient(135deg, #9f8fbe 0%, #8b7cae 100%)'
+              }}
+            >
+              <div>
+                <div style={{ color: 'white', fontSize: '18px', fontWeight: 700, fontFamily: 'Inter' }}>
+                  {t('labels.adminFilterModalTitle')}
+                </div>
+                {activeAdvancedFilterGroupCount > 0 && (
+                  <div style={{ fontSize: '12px', color: 'rgba(255,255,255,0.92)', marginTop: '4px' }}>
+                    {formatTemplate(t('labels.adminFilterActiveCount'), {
+                      count: activeAdvancedFilterGroupCount
+                    })}
+                  </div>
+                )}
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowAdvancedFilterModal(false)}
+                style={{
+                  background: 'rgba(255,255,255,0.2)',
+                  border: 'none',
+                  borderRadius: '8px',
+                  color: 'white',
+                  width: '36px',
+                  height: '36px',
+                  cursor: 'pointer',
+                  fontSize: '20px',
+                  lineHeight: 1,
+                  flexShrink: 0
+                }}
+                aria-label="Close"
+              >
+                ×
+              </button>
+            </div>
+
+            <div
+              style={{
+                padding: '20px 22px',
+                overflowY: 'auto',
+                flex: 1,
+                fontFamily: 'Inter'
+              }}
+            >
+              <div style={{ marginBottom: '20px' }}>
+                <div
+                  style={{
+                    fontWeight: 700,
+                    fontSize: '13px',
+                    color: '#374151',
+                    marginBottom: '10px',
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.04em'
+                  }}
+                >
+                  {t('labels.adminFilterStatuses')}
+                </div>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+                  {ADMIN_STATUS_FILTER_OPTIONS.map((st) => {
+                    const selected = draftAdvancedFilters.filterStatuses.includes(st);
+                    return (
+                      <button
+                        key={st}
+                        type="button"
+                        onClick={() => toggleDraftMulti('filterStatuses', st)}
+                        style={{
+                          padding: '8px 14px',
+                          borderRadius: '999px',
+                          border: selected ? '2px solid #9f8fbe' : '1px solid #E5E7EB',
+                          background: selected ? '#F5F3FF' : '#fff',
+                          color: '#374151',
+                          fontSize: '13px',
+                          fontWeight: 600,
+                          cursor: 'pointer'
+                        }}
+                      >
+                        {formatStatusLabel(st)}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              <div style={{ marginBottom: '20px' }}>
+                <div
+                  style={{
+                    fontWeight: 700,
+                    fontSize: '13px',
+                    color: '#374151',
+                    marginBottom: '10px',
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.04em'
+                  }}
+                >
+                  {t('labels.adminFilterAvgRange')}
+                </div>
+                <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
+                  <input
+                    type="number"
+                    min={0}
+                    max={100}
+                    placeholder={t('labels.adminFilterAvgMin')}
+                    value={draftAdvancedFilters.avgScoreMin}
+                    onChange={(e) =>
+                      setDraftAdvancedFilters((p) => ({ ...p, avgScoreMin: e.target.value }))
+                    }
+                    style={{
+                      flex: '1 1 140px',
+                      padding: '10px 12px',
+                      borderRadius: '8px',
+                      border: '1px solid #E5E7EB',
+                      fontSize: '14px'
+                    }}
+                  />
+                  <input
+                    type="number"
+                    min={0}
+                    max={100}
+                    placeholder={t('labels.adminFilterAvgMax')}
+                    value={draftAdvancedFilters.avgScoreMax}
+                    onChange={(e) =>
+                      setDraftAdvancedFilters((p) => ({ ...p, avgScoreMax: e.target.value }))
+                    }
+                    style={{
+                      flex: '1 1 140px',
+                      padding: '10px 12px',
+                      borderRadius: '8px',
+                      border: '1px solid #E5E7EB',
+                      fontSize: '14px'
+                    }}
+                  />
+                </div>
+              </div>
+
+              <div style={{ marginBottom: '20px' }}>
+                <div
+                  style={{
+                    fontWeight: 700,
+                    fontSize: '13px',
+                    color: '#374151',
+                    marginBottom: '10px',
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.04em'
+                  }}
+                >
+                  {t('labels.adminFilterGameSendDate')}
+                </div>
+                <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
+                  <input
+                    type="date"
+                    value={draftAdvancedFilters.sentDateFrom}
+                    onChange={(e) =>
+                      setDraftAdvancedFilters((p) => ({ ...p, sentDateFrom: e.target.value }))
+                    }
+                    title={t('labels.adminFilterSentDateFrom')}
+                    style={{
+                      flex: '1 1 160px',
+                      padding: '10px 12px',
+                      borderRadius: '8px',
+                      border: '1px solid #E5E7EB',
+                      fontSize: '14px',
+                      fontFamily: 'Inter'
+                    }}
+                  />
+                  <input
+                    type="date"
+                    value={draftAdvancedFilters.sentDateTo}
+                    onChange={(e) =>
+                      setDraftAdvancedFilters((p) => ({ ...p, sentDateTo: e.target.value }))
+                    }
+                    title={t('labels.adminFilterSentDateTo')}
+                    style={{
+                      flex: '1 1 160px',
+                      padding: '10px 12px',
+                      borderRadius: '8px',
+                      border: '1px solid #E5E7EB',
+                      fontSize: '14px',
+                      fontFamily: 'Inter'
+                    }}
+                  />
+                </div>
+              </div>
+
+              {(
+                [
+                  {
+                    label: 'labels.adminFilterUnvans',
+                    field: 'filterUnvans' as const,
+                    options: advancedFilterOptions.unvans
+                  },
+                  {
+                    label: 'labels.adminFilterPozisyons',
+                    field: 'filterPozisyons' as const,
+                    options: advancedFilterOptions.pozisyons
+                  },
+                  {
+                    label: 'labels.adminFilterDepartmans',
+                    field: 'filterDepartmans' as const,
+                    options: advancedFilterOptions.departmans
+                  }
+                ] as const
+              ).map(({ label, field, options }) => (
+                <div key={field} style={{ marginBottom: '20px' }}>
+                  <div
+                    style={{
+                      fontWeight: 700,
+                      fontSize: '13px',
+                      color: '#374151',
+                      marginBottom: '10px',
+                      textTransform: 'uppercase',
+                      letterSpacing: '0.04em'
+                    }}
+                  >
+                    {t(label)}
+                  </div>
+                  {advancedFilterOptions.loading ? (
+                    <div style={{ color: '#6B7280', fontSize: '13px' }}>
+                      {t('labels.adminFilterOptionsLoading')}
+                    </div>
+                  ) : options.length === 0 ? (
+                    <div style={{ color: '#9CA3AF', fontSize: '13px' }}>
+                      {t('labels.adminFilterNoOptions')}
+                    </div>
+                  ) : (
+                    <div
+                      style={{
+                        maxHeight: '160px',
+                        overflowY: 'auto',
+                        border: '1px solid #F1F5F9',
+                        borderRadius: '10px',
+                        padding: '10px',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        gap: '6px',
+                        background: '#FAFAFA'
+                      }}
+                    >
+                      {options.map((opt) => {
+                        const selected = draftAdvancedFilters[field].includes(opt);
+                        return (
+                          <AdminModalCheckbox
+                            key={opt}
+                            checked={selected}
+                            onToggle={() => toggleDraftMulti(field, opt)}
+                          >
+                            {opt}
+                          </AdminModalCheckbox>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+
+            <div
+              style={{
+                padding: '14px 22px 18px',
+                borderTop: '1px solid #F1F5F9',
+                display: 'flex',
+                flexWrap: 'wrap',
+                gap: '10px',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                background: '#F9FAFB'
+              }}
+            >
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+                <button type="button" className="btn btn-ghost" onClick={handleClearDraftAdvancedFilters}>
+                  {t('labels.adminFilterClearForm')}
+                </button>
+                {activeAdvancedFilterGroupCount > 0 && (
+                  <button type="button" className="btn btn-secondary" onClick={handleClearAllAdvancedFilters}>
+                    {t('labels.adminFilterRemoveAll')}
+                  </button>
+                )}
+              </div>
+              <div style={{ display: 'flex', gap: '10px' }}>
+                <button
+                  type="button"
+                  className="btn btn-secondary"
+                  onClick={() => setShowAdvancedFilterModal(false)}
+                >
+                  {t('buttons.cancel')}
+                </button>
+                <button type="button" className="btn btn-primary" onClick={handleApplyAdvancedFilters}>
+                  {t('buttons.applyFilters')}
+                </button>
+              </div>
             </div>
           </div>
         </div>
