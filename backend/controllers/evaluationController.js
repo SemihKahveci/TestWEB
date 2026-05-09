@@ -18,12 +18,11 @@ const { getCompanyFilter } = require('../middleware/auth');
 const expressionParser = require("docxtemplater/expressions.js");
 const parser = expressionParser.configure({});
 
-const DEFAULT_WORD_TEMPLATE_PATH = path.join(__dirname, '..', 'templates', 'Degerlendirme_Merkez_Raporu_v29.docx');
+const DEFAULT_WORD_TEMPLATE_PATH = path.join(__dirname, '..', 'templates', 'Degerlendirme_Merkez_Raporu_v31.docx');
 const SHARED_PDF_DIR = path.join(__dirname, '..', 'tmp', 'shared-pdfs');
 const SHARED_PDF_TTL_MS = Number(process.env.SHARE_PDF_TTL_MS || 60 * 60 * 1000);
 const WORD_BOLD_START_MARKER = '__ANDRON_BOLD_START__';
 const WORD_BOLD_END_MARKER = '__ANDRON_BOLD_END__';
-const WORD_REMOVE_PARAGRAPH_MARKER = '__ANDRON_REMOVE_PARAGRAPH__';
 
 const sharedPdfStore = new Map();
 
@@ -357,35 +356,6 @@ function applyBoldMarkersToDocx(zip) {
     }
 
     zip.file('word/document.xml', applyBoldMarkersToWordXml(xml));
-}
-
-function removeBlankMarkedParagraphsFromWordXml(xml = '') {
-    if (!xml.includes(WORD_REMOVE_PARAGRAPH_MARKER)) {
-        return xml;
-    }
-
-    return xml
-        .replace(/<w:p\b[^>]*>[\s\S]*?<\/w:p>/g, (paragraphXml) =>
-            paragraphXml.includes(WORD_REMOVE_PARAGRAPH_MARKER) ? '' : paragraphXml
-        )
-        .replaceAll(WORD_REMOVE_PARAGRAPH_MARKER, '');
-}
-
-function removeBlankMarkedParagraphsFromDocx(zip) {
-    const documentFile = zip.file('word/document.xml');
-    if (!documentFile) return;
-
-    const xml = documentFile.asText();
-    zip.file('word/document.xml', removeBlankMarkedParagraphsFromWordXml(xml));
-}
-
-function removeWordParagraphWhenBlank(value = '') {
-    if (value === null || value === undefined) {
-        return WORD_REMOVE_PARAGRAPH_MARKER;
-    }
-
-    const text = String(value).trim();
-    return text ? value : WORD_REMOVE_PARAGRAPH_MARKER;
 }
 
 function parseInterviewQuestionsText(text = '') {
@@ -940,11 +910,25 @@ const evaluationController = {
                       ''
                     : '';
 
+            const executiveSummaryRows = competencyConfigs.map((config) => {
+                const result = getResultByType(config.type);
+                return {
+                    strengths: getExecutiveSummaryStrengths(result),
+                    development: getExecutiveSummaryDevelopment(result)
+                };
+            });
+            const compactExecutiveSummaryStrengths = executiveSummaryRows
+                .map((row) => (row.strengths || '').trim())
+                .filter(Boolean);
+            const compactExecutiveSummaryDevelopment = executiveSummaryRows
+                .map((row) => (row.development || '').trim())
+                .filter(Boolean);
+
             const competencyPayload = {};
             competencyConfigs.forEach((config) => {
-                const result = getResultByType(config.type);
-                const executiveSummaryStrengths = removeWordParagraphWhenBlank(getExecutiveSummaryStrengths(result));
-                const executiveSummaryDevelopment = removeWordParagraphWhenBlank(getExecutiveSummaryDevelopment(result));
+                const index = Number(config.key.replace('Yetkinlik_', '')) - 1;
+                const executiveSummaryStrengths = compactExecutiveSummaryStrengths[index] || '';
+                const executiveSummaryDevelopment = compactExecutiveSummaryDevelopment[index] || '';
                 competencyPayload[config.key] = config.name;
                 competencyPayload[config.key.toLowerCase()] = config.name;
                 competencyPayload[`${config.key}_executive_summary_strenghts`] = executiveSummaryStrengths;
@@ -1508,7 +1492,6 @@ const evaluationController = {
 
             doc.setData(templatePayload);
             doc.render();
-            removeBlankMarkedParagraphsFromDocx(doc.getZip());
             applyBoldMarkersToDocx(doc.getZip());
             safeLog('info', 'Word render success');
 
