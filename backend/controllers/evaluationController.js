@@ -18,9 +18,12 @@ const { getCompanyFilter } = require('../middleware/auth');
 const expressionParser = require("docxtemplater/expressions.js");
 const parser = expressionParser.configure({});
 
-const DEFAULT_WORD_TEMPLATE_PATH = path.join(__dirname, '..', 'templates', 'Degerlendirme_Merkez_Raporu_v26.docx');
+const DEFAULT_WORD_TEMPLATE_PATH = path.join(__dirname, '..', 'templates', 'Degerlendirme_Merkez_Raporu_v29.docx');
 const SHARED_PDF_DIR = path.join(__dirname, '..', 'tmp', 'shared-pdfs');
 const SHARED_PDF_TTL_MS = Number(process.env.SHARE_PDF_TTL_MS || 60 * 60 * 1000);
+const WORD_BOLD_START_MARKER = '__ANDRON_BOLD_START__';
+const WORD_BOLD_END_MARKER = '__ANDRON_BOLD_END__';
+const WORD_REMOVE_PARAGRAPH_MARKER = '__ANDRON_REMOVE_PARAGRAPH__';
 
 const sharedPdfStore = new Map();
 
@@ -267,12 +270,14 @@ function makeGaugeSvg(score, W = 260, H = 140) {
     </svg>`;
 }
 
-async function gaugePngBuffer(score, W = 260, H = 140) {
+async function gaugePngBuffer(score, W = 260, H = 140, rotateDegrees = 0) {
     const svg = makeGaugeSvg(score, W, H);
     const density = 300;
-    const pngBuffer = await sharp(Buffer.from(svg), { density })
-        .png()
-        .toBuffer();
+    let image = sharp(Buffer.from(svg), { density }).png();
+    if (rotateDegrees) {
+        image = image.rotate(rotateDegrees);
+    }
+    const pngBuffer = await image.toBuffer();
     return pngBuffer;
 }
 
@@ -302,6 +307,85 @@ function addSafeKeys(source = {}, target = {}) {
         }
     });
     return target;
+}
+
+function ensureBoldRunProperties(runProperties = '') {
+    if (!runProperties) {
+        return '<w:rPr><w:b/><w:bCs/></w:rPr>';
+    }
+
+    const hasBold = /<w:b(?:\s|\/|>)/.test(runProperties);
+    const hasBoldCs = /<w:bCs(?:\s|\/|>)/.test(runProperties);
+    const boldTags = `${hasBold ? '' : '<w:b/>'}${hasBoldCs ? '' : '<w:bCs/>'}`;
+
+    if (!boldTags) return runProperties;
+    return runProperties.replace('</w:rPr>', `${boldTags}</w:rPr>`);
+}
+
+function applyBoldMarkersToWordXml(xml = '') {
+    return xml
+        .replace(/<w:r\b[^>]*>[\s\S]*?<\/w:r>/g, (runXml) => {
+            if (!runXml.includes(WORD_BOLD_START_MARKER) && !runXml.includes(WORD_BOLD_END_MARKER)) {
+                return runXml;
+            }
+
+            const runProperties = runXml.match(/<w:rPr\b[^>]*>[\s\S]*?<\/w:rPr>/)?.[0] || '';
+            const baseRunProperties = runProperties || '';
+            const boldRunProperties = ensureBoldRunProperties(runProperties);
+
+            return runXml
+                .replaceAll(
+                    WORD_BOLD_START_MARKER,
+                    `</w:t></w:r><w:r>${boldRunProperties}<w:t xml:space="preserve">`
+                )
+                .replaceAll(
+                    WORD_BOLD_END_MARKER,
+                    `</w:t></w:r><w:r>${baseRunProperties}<w:t xml:space="preserve">`
+                );
+        })
+        .replaceAll(WORD_BOLD_START_MARKER, '')
+        .replaceAll(WORD_BOLD_END_MARKER, '');
+}
+
+function applyBoldMarkersToDocx(zip) {
+    const documentFile = zip.file('word/document.xml');
+    if (!documentFile) return;
+
+    const xml = documentFile.asText();
+    if (!xml.includes(WORD_BOLD_START_MARKER) && !xml.includes(WORD_BOLD_END_MARKER)) {
+        return;
+    }
+
+    zip.file('word/document.xml', applyBoldMarkersToWordXml(xml));
+}
+
+function removeBlankMarkedParagraphsFromWordXml(xml = '') {
+    if (!xml.includes(WORD_REMOVE_PARAGRAPH_MARKER)) {
+        return xml;
+    }
+
+    return xml
+        .replace(/<w:p\b[^>]*>[\s\S]*?<\/w:p>/g, (paragraphXml) =>
+            paragraphXml.includes(WORD_REMOVE_PARAGRAPH_MARKER) ? '' : paragraphXml
+        )
+        .replaceAll(WORD_REMOVE_PARAGRAPH_MARKER, '');
+}
+
+function removeBlankMarkedParagraphsFromDocx(zip) {
+    const documentFile = zip.file('word/document.xml');
+    if (!documentFile) return;
+
+    const xml = documentFile.asText();
+    zip.file('word/document.xml', removeBlankMarkedParagraphsFromWordXml(xml));
+}
+
+function removeWordParagraphWhenBlank(value = '') {
+    if (value === null || value === undefined) {
+        return WORD_REMOVE_PARAGRAPH_MARKER;
+    }
+
+    const text = String(value).trim();
+    return text ? value : WORD_REMOVE_PARAGRAPH_MARKER;
 }
 
 function parseInterviewQuestionsText(text = '') {
@@ -424,8 +508,18 @@ function stripTitleDetailLabels(text = '') {
     lines.forEach((line) => {
         const match = line.match(/^(başlık|baslik|detay)\b\s*[:\-–—]?\s*(.*)$/i);
         if (match) {
+            const label = (match[1] || '').toLowerCase();
             const rest = (match[2] || '').trim();
-            if (rest) cleaned.push(rest);
+            if ((label === 'başlık' || label === 'baslik') && cleaned.length > 0) {
+                cleaned.push('');
+            }
+            if (rest) {
+                cleaned.push(
+                    label === 'başlık' || label === 'baslik'
+                        ? `${WORD_BOLD_START_MARKER}${rest}${WORD_BOLD_END_MARKER}`
+                        : rest
+                );
+            }
             return;
         }
         cleaned.push(line);
@@ -788,15 +882,15 @@ const evaluationController = {
 
             const graphWidthPx = cmToPx(6.0);
             const graphHeightPx = cmToPx(0.45);
-            const gaugeWidthPx = cmToPx(6.0);
-            const gaugeHeightPx = cmToPx(3.0);
+            const gaugeWidthPx = cmToPx(7.2);
+            const gaugeHeightPx = cmToPx(3.6);
 
             const [g1Buffer, g2Buffer, g3Buffer, g4Buffer, avrGaugeBuffer] = await Promise.all([
                 graphPngBuffer(normalizeScore(uncertaintyScore), graphWidthPx, graphHeightPx),
                 graphPngBuffer(normalizeScore(customerFocusScore), graphWidthPx, graphHeightPx),
                 graphPngBuffer(normalizeScore(ieScore), graphWidthPx, graphHeightPx),
                 graphPngBuffer(normalizeScore(idikScore), graphWidthPx, graphHeightPx),
-                gaugePngBuffer(averageScoreValue !== null ? averageScoreValue : 0, gaugeWidthPx, gaugeHeightPx)
+                gaugePngBuffer(averageScoreValue !== null ? averageScoreValue : 0, gaugeWidthPx, gaugeHeightPx, 90)
             ]);
 
             const competencyConfigs = [
@@ -849,14 +943,16 @@ const evaluationController = {
             const competencyPayload = {};
             competencyConfigs.forEach((config) => {
                 const result = getResultByType(config.type);
+                const executiveSummaryStrengths = removeWordParagraphWhenBlank(getExecutiveSummaryStrengths(result));
+                const executiveSummaryDevelopment = removeWordParagraphWhenBlank(getExecutiveSummaryDevelopment(result));
                 competencyPayload[config.key] = config.name;
                 competencyPayload[config.key.toLowerCase()] = config.name;
-                competencyPayload[`${config.key}_executive_summary_strenghts`] = getExecutiveSummaryStrengths(result);
-                competencyPayload[`${config.key}_executive_summary_development`] = getExecutiveSummaryDevelopment(result);
+                competencyPayload[`${config.key}_executive_summary_strenghts`] = executiveSummaryStrengths;
+                competencyPayload[`${config.key}_executive_summary_development`] = executiveSummaryDevelopment;
                 competencyPayload[`${config.key.toLowerCase()}_executive_summary_strenghts`] =
-                    getExecutiveSummaryStrengths(result);
+                    executiveSummaryStrengths;
                 competencyPayload[`${config.key.toLowerCase()}_executive_summary_development`] =
-                    getExecutiveSummaryDevelopment(result);
+                    executiveSummaryDevelopment;
             });
 
             const getScoreByType = (type) => {
@@ -1385,7 +1481,7 @@ const evaluationController = {
                         (typeof tagValue === 'string' ? tagValue.trim() : '') ||
                         (typeof tagName === 'string' ? tagName.trim() : '');
                     const size =
-                        key === 'avrScoreTable' ? [gaugeWidthPx, gaugeHeightPx] : [graphWidthPx, graphHeightPx];
+                        key === 'avrScoreTable' ? [gaugeHeightPx, gaugeWidthPx] : [graphWidthPx, graphHeightPx];
                     console.error('Word image debug (getSize)', {
                         tagName,
                         tagValue: String(tagValue),
@@ -1412,6 +1508,8 @@ const evaluationController = {
 
             doc.setData(templatePayload);
             doc.render();
+            removeBlankMarkedParagraphsFromDocx(doc.getZip());
+            applyBoldMarkersToDocx(doc.getZip());
             safeLog('info', 'Word render success');
 
             const buffer = doc.getZip().generate({ type: 'nodebuffer' });
