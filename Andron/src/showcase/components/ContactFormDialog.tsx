@@ -27,21 +27,6 @@ const FREE_EMAIL_DOMAINS = [
   "zoho.com", "gmx.com", "gmx.de", "mail.ru", "inbox.com",
 ];
 
-const GOAL_OPTIONS = [
-  "İşe alım süreçlerinde kullanmak istiyorum",
-  "Mevcut çalışanlarımın yetkinliklerini ölçmek istiyorum",
-  "Çalışanlarımın yıllık gelişimini takip etmek istiyorum",
-  "İK süreçlerimi dijitalleştirmek istiyorum",
-];
-
-const ASSESSMENT_OPTIONS = [
-  "2.001 – 3.000",
-  "3.001 – 5.000",
-  "5.001 – 10.000",
-  "10.001 – 25.000",
-  "25.000+",
-];
-
 const SOURCE_OPTIONS = [
   "Google Arama",
   "LinkedIn",
@@ -65,8 +50,7 @@ const ContactFormDialog = ({ open, onOpenChange }: ContactFormDialogProps) => {
     email: "",
     company: "",
     position: "",
-    assessmentCount: "",
-    goal: "",
+    phone: "",
     source: "",
     message: "",
   });
@@ -130,7 +114,7 @@ const ContactFormDialog = ({ open, onOpenChange }: ContactFormDialogProps) => {
     if (!val) {
       setSubmitted(false);
       setEmailError("");
-      setForm({ name: "", email: "", company: "", position: "", assessmentCount: "", goal: "", source: "", message: "" });
+      setForm({ name: "", email: "", company: "", position: "", phone: "", source: "", message: "" });
     }
     onOpenChange(val);
   };
@@ -165,10 +149,10 @@ const ContactFormDialog = ({ open, onOpenChange }: ContactFormDialogProps) => {
             <div className="px-8 pt-8 pb-2">
               <DialogHeader>
                 <DialogTitle className="font-display text-2xl font-bold" style={{ color: "#222222" }}>
-                  Kurumsal Teklif Al
+                Görüşme Planla
                 </DialogTitle>
                 <DialogDescription className="text-muted-foreground font-light mt-1">
-                  Bilgilerinizi bırakın, ekibimiz size özel bir teklif hazırlasın.
+                Bilgilerinizi bırakın, size en kısa sürede ulaşalım.
                 </DialogDescription>
               </DialogHeader>
             </div>
@@ -234,42 +218,18 @@ const ContactFormDialog = ({ open, onOpenChange }: ContactFormDialogProps) => {
                 </div>
               </div>
 
-              {/* Assessment Adedi */}
+              {/* Telefon Numarası */}
               <div className="space-y-2">
-                <Label className="text-sm font-medium">Kaç Assessment&apos;a İhtiyacınız Var? *</Label>
-                <Select
-                  required
-                  value={form.assessmentCount}
-                  onValueChange={(val) => handleChange("assessmentCount", val)}
-                >
-                  <SelectTrigger className="rounded-lg">
-                    <SelectValue placeholder="— Lütfen bir seçenek belirleyin —" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {ASSESSMENT_OPTIONS.map((opt) => (
-                      <SelectItem key={opt} value={opt}>{opt}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              {/* Amacınız */}
-              <div className="space-y-2">
-                <Label className="text-sm font-medium">Amacınız Nedir? *</Label>
-                <Select
-                  required
-                  value={form.goal}
-                  onValueChange={(val) => handleChange("goal", val)}
-                >
-                  <SelectTrigger className="rounded-lg">
-                    <SelectValue placeholder="— Lütfen bir seçenek belirleyin —" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {GOAL_OPTIONS.map((opt) => (
-                      <SelectItem key={opt} value={opt}>{opt}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <Label htmlFor="phone" className="text-sm font-medium">Telefon Numarası</Label>
+                <Input
+                  id="phone"
+                  type="tel"
+                  maxLength={20}
+                  value={form.phone}
+                  onChange={(e) => handleChange("phone", e.target.value)}
+                  placeholder="(5XX) XXX XX XX"
+                  className="rounded-lg placeholder:text-muted-foreground/70"
+                />
               </div>
 
               {/* Bizi nereden buldunuz */}

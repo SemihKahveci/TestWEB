@@ -5,8 +5,7 @@ interface OfferRequestBody {
   email?: string;
   company?: string;
   position?: string;
-  assessmentCount?: string;
-  goal?: string;
+  phone?: string;
   source?: string;
   message?: string;
 }
@@ -19,13 +18,12 @@ export async function POST(request: NextRequest) {
       email,
       company,
       position,
-      assessmentCount,
-      goal,
+      phone,
       source,
       message,
     } = body;
 
-    if (!name || !email || !company || !position || !assessmentCount || !goal) {
+    if (!name || !email || !company || !position) {
       return NextResponse.json(
         { success: false, message: "Zorunlu alanlar eksik." },
         { status: 400 }
@@ -57,8 +55,7 @@ export async function POST(request: NextRequest) {
             <tr><td style="padding: 8px; border: 1px solid #ddd; background: #f8f8f8; font-weight: bold;">Kurumsal E-posta</td><td style="padding: 8px; border: 1px solid #ddd;">${email}</td></tr>
             <tr><td style="padding: 8px; border: 1px solid #ddd; background: #f8f8f8; font-weight: bold;">Şirket Adı</td><td style="padding: 8px; border: 1px solid #ddd;">${company}</td></tr>
             <tr><td style="padding: 8px; border: 1px solid #ddd; background: #f8f8f8; font-weight: bold;">Pozisyon</td><td style="padding: 8px; border: 1px solid #ddd;">${position}</td></tr>
-            <tr><td style="padding: 8px; border: 1px solid #ddd; background: #f8f8f8; font-weight: bold;">Assessment Adedi</td><td style="padding: 8px; border: 1px solid #ddd;">${assessmentCount}</td></tr>
-            <tr><td style="padding: 8px; border: 1px solid #ddd; background: #f8f8f8; font-weight: bold;">Amaç</td><td style="padding: 8px; border: 1px solid #ddd;">${goal}</td></tr>
+            <tr><td style="padding: 8px; border: 1px solid #ddd; background: #f8f8f8; font-weight: bold;">Telefon Numarası</td><td style="padding: 8px; border: 1px solid #ddd;">${phone || "-"}</td></tr>
             <tr><td style="padding: 8px; border: 1px solid #ddd; background: #f8f8f8; font-weight: bold;">Bizi Nereden Buldunuz?</td><td style="padding: 8px; border: 1px solid #ddd;">${source || "-"}</td></tr>
             <tr><td style="padding: 8px; border: 1px solid #ddd; background: #f8f8f8; font-weight: bold;">Mesaj</td><td style="padding: 8px; border: 1px solid #ddd; white-space: pre-wrap;">${message || "-"}</td></tr>
           </table>

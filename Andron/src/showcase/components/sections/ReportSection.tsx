@@ -3,6 +3,7 @@ import { content } from "@/showcase/lib/content";
 import { motion, AnimatePresence } from "framer-motion";
 import { useState, useEffect } from "react";
 import { Button } from "@/showcase/components/ui/button";
+import { getImagePath } from "@/utils/imagePath";
 
 import slide1 from "@/showcase/assets/report-slide-1.png";
 import slide2 from "@/showcase/assets/report-slide-2.png";
@@ -67,7 +68,7 @@ const ReportSection = () => {
             </div>
 
             <Button asChild variant="outline" className="gap-2">
-              <a href="/api/download/sample-report">
+              <a href={getImagePath("/api/download/sample-report")}>
                 <Download className="h-4 w-4" />
                 Örnek Raporu İndir (PDF)
               </a>
