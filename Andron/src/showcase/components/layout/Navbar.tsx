@@ -70,7 +70,7 @@ const Navbar = () => {
           <Image
             src={logoBlack}
             alt="ANDRON"
-            className={cn("h-16 md:h-20 w-auto transition-all", !scrolled && "invert brightness-200")}
+            className={cn("h-32 md:h-40 w-auto transition-all", !scrolled && "invert brightness-200")}
           />
         </button>
 

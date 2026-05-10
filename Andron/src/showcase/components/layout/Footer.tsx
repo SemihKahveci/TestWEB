@@ -9,7 +9,7 @@ const Footer = () => {
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-8">
           <div className="flex flex-col gap-3">
             <div className="flex items-center gap-2">
-              <Image src={logoBlack} alt="ANDRON" className="h-8 md:h-10 w-auto" />
+              <Image src={logoBlack} alt="ANDRON" className="h-40 md:h-50 w-auto" />
             </div>
             <p className="text-xs md:text-sm text-muted-foreground max-w-xs font-light">
               Yetkinliği karar anında yaşatarak ölçen yeni nesil oyunlaştırılmış değerlendirme platformu.
