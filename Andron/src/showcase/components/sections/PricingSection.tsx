@@ -30,7 +30,7 @@ const PricingSection = () => {
   return (
     <section id="fiyatlandirma" className="overflow-hidden">
       {/* Header */}
-      <div className="py-20 md:py-28 bg-hero-gradient">
+      <div className="pt-32 pb-20 md:pt-40 md:pb-28 bg-hero-gradient">
         <div className="container">
           <motion.div
             initial={{ opacity: 0, y: 30 }}

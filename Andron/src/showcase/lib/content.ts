@@ -59,20 +59,20 @@ export const content = {
     cta: "Tüm Yetkinlikleri İncele",
     cards: [
       {
-        title: "Öğrenme ve Dayanıklılık",
-        text: "Uyumluluk, dayanıklılık ve öğrenme çevikliği.",
+        title: "Öğrenme, Uyum ve Dayanıklılık",
+        text: "Değişen koşullara uyum, dayanıklılık ve öğrenme çevikliği.",
       },
       {
-        title: "İnsan ve İş Birliği",
-        text: "İnsanları etkileme, güven veren iş birliği, duygusal zeka ve müşteri odaklılık.",
+        title: "İnsan, Etki ve İş Birliği",
+        text: "İnsanları etkileme, güven veren iş birliği ve sinerji, duygusal zeka ve müşteri odaklılık.",
       },
       {
-        title: "Gelecek Yetkinlikleri",
+        title: "Gelecek ve Yeni Dünya Yetkinlikleri",
         text: "Paradoks çözme ve karar alma, eleştirel ve sistemsel düşünce, yeni dünya okuryazarlığı.",
       },
       {
-        title: "Yaratıcılık ve Derinlik",
-        text: "Yaratıcılık, tasarım kabiliyeti ve düşünsel derinlik.",
+        title: "Yaratıcılık, Tasarım ve Düşünsel Derinlik",
+        text: "Yaratıcılık, tasarım kabiliyeti, düşünsel derinlik, estetik ve sanatsal bakış.",
       },
     ],
   },

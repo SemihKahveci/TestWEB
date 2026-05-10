@@ -8,28 +8,28 @@ import { cn } from "@/showcase/lib/utils";
 const categories = [
   {
     icon: BookOpen,
-    title: "Öğrenme ve Dayanıklılık",
+    title: "Öğrenme, Uyum ve Dayanıklılık",
     color: { bg: "bg-sky/10", text: "text-sky" },
     competencies: [
-      { name: "Uyumluluk", desc: "Değişen koşullara hızlı ve esnek biçimde uyum sağlama becerisi." },
+      { name: "Uyumluluk", desc: "Değişen koşullara uyum sağlama ve zorluklar karşısında toparlanma kapasitesi." },
       { name: "Dayanıklılık", desc: "Zorluklar karşısında dirençli kalma ve toparlanma kapasitesi." },
       { name: "Öğrenme Çevikliği", desc: "Yeni bilgi ve becerileri hızla edinme ve uygulama yetkinliği." },
     ],
   },
   {
     icon: Users,
-    title: "İnsan ve İş Birliği",
+    title: "İnsan, Etki ve İş Birliği",
     color: { bg: "bg-coral/10", text: "text-coral" },
     competencies: [
       { name: "İnsanları Etkileme", desc: "Diğerlerini ikna etme ve yönlendirme becerisi." },
-      { name: "Güven Veren İş Birliği", desc: "Güvene dayalı, sağlıklı profesyonel ilişkiler kurma yetkinliği." },
+      { name: "Güven Veren İş Birliği ve Sinerji", desc: "Güvene dayalı, sağlıklı profesyonel ilişkiler kurma yetkinliği." },
       { name: "Duygusal Zeka", desc: "Duyguları tanıma, anlama ve yönetme kapasitesi." },
       { name: "Müşteri Odaklılık", desc: "İç ve dış müşteri ihtiyaçlarını önceliklendirme becerisi." },
     ],
   },
   {
     icon: Rocket,
-    title: "Gelecek Yetkinlikleri",
+    title: "Gelecek ve Yeni Dünya Yetkinlikleri",
     color: { bg: "bg-lavender/10", text: "text-lavender" },
     competencies: [
       { name: "Paradoks Çözme ve Karar Alma", desc: "Karmaşık ve çelişkili durumlar arasında etkili karar verme." },
@@ -39,12 +39,12 @@ const categories = [
   },
   {
     icon: Lightbulb,
-    title: "Yaratıcılık ve Derinlik",
+    title: "Yaratıcılık, Tasarım ve Düşünsel Derinlik",
     color: { bg: "bg-tangerine/10", text: "text-tangerine" },
     competencies: [
-      { name: "Yaratıcılık", desc: "Özgün fikirler üretme ve alternatif çözümler geliştirme." },
+      { name: "Yaratıcılık: Yaratıcılık ve Düşünsel Derinlik", desc: "Özgün fikirler üretme, alternatifleri çok katmanlı biçimde değerlendirme ve derinlemesine düşünme kapasitesi." },
       { name: "Tasarım Kabiliyeti", desc: "Problem çözmeye yapısal ve yaratıcı yaklaşım." },
-      { name: "Düşünsel Derinlik", desc: "Konuları derinlemesine analiz etme ve çok katmanlı düşünme." },
+      { name: "Estetik ve Sanatsal Bakış", desc: "Görsel ve kavramsal unsurları algılama, yorumlama ve anlamlı bir bütüne dönüştürme duyarlılığı." },
     ],
   },
 ];

@@ -6,7 +6,6 @@ const Pricing = () => {
   return (
     <div className="min-h-screen">
       <Navbar />
-      <div className="pt-24 md:pt-32" />
       <PricingSection />
       <Footer />
     </div>
