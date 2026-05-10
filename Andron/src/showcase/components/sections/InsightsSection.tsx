@@ -107,7 +107,7 @@ const InsightsSection = () => {
               transition={{ delay: 0.4 }}
               className="text-center mt-10"
             >
-              <a href="/yetkinlikler" className="inline-flex items-center gap-2 text-coral font-display font-medium text-sm hover:gap-3 transition-all">
+              <a href={getImagePath("/yetkinlikler")} className="inline-flex items-center gap-2 text-coral font-display font-medium text-sm hover:gap-3 transition-all">
                 {content.competency.cta}
                 <ArrowRight className="h-4 w-4" />
               </a>

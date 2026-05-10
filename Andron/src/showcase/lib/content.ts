@@ -165,11 +165,6 @@ export const content = {
         text: "12+ yıl süreç ve operasyon yönetimi deneyimi. Ürün geliştirme ve ölçeklenebilir sistem tasarımı üzerine uzmanlık.",
       },
       {
-        name: "Ece Tınmaz",
-        role: "CGO",
-        text: "5+ yıl insan kaynakları yönetimi ve değerlendirme deneyimi. Yetkinlik bazlı değerlendirme sistemleri alanında uzmanlık.",
-      },
-      {
         name: "FUGI Games",
         role: "Teknoloji Partneri",
         text: "Full stack yazılım geliştirme ekibi. Oyunlaştırılmış deneyim tasarımı ve ölçeklenebilir platform altyapısı.",

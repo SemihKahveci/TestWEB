@@ -4,7 +4,6 @@ import { motion } from "framer-motion";
 const team = [
   { name: "Cengiz Tınmaz", role: "Co-Founder & CEO", text: "17+ yıl İnsan Kaynakları · 800+ saat koçluk" },
   { name: "Serdar Kahveci", role: "Co-Founder & CPO", text: "12+ yıl süreç yönetimi · Borusan, BMC, THY" },
-  { name: "Ece Tınmaz", role: "CGO", text: "5+ yıl İK yönetimi · 5+ yıl değerlendirme deneyimi" },
   { name: "Fugi Games", role: "Co-Founder & CTO", text: "Full Stack yazılım ekibi" },
 ];
 
@@ -29,7 +28,7 @@ const AboutTeam = () => {
         </motion.h2>
 
         {/* Core team */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-6 max-w-4xl mx-auto mb-16">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 max-w-3xl mx-auto mb-16">
           {team.map((member, i) => (
             <motion.div
               key={i}

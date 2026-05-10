@@ -2,12 +2,12 @@ import { Heart, Users, Unlock, Zap, Award, User } from "lucide-react";
 import { motion } from "framer-motion";
 
 const values = [
-  { icon: Heart, color: "text-coral", label: "Bütünlük" },
-  { icon: Users, color: "text-sky", label: "Empati" },
-  { icon: Unlock, color: "text-lavender", label: "Açıklık" },
-  { icon: Zap, color: "text-tangerine", label: "Şevk" },
-  { icon: Award, color: "text-coral", label: "Miras" },
-  { icon: User, color: "text-sky", label: "Bireysellik" },
+  { icon: Heart, color: "text-coral", label: "Dürüstlük" },
+  { icon: Users, color: "text-sky", label: "Adalet" },
+  { icon: Unlock, color: "text-lavender", label: "Fark Yaratma" },
+  { icon: Zap, color: "text-tangerine", label: "Merak" },
+  { icon: Award, color: "text-coral", label: "Keşif Heyecanı" },
+  { icon: User, color: "text-sky", label: "Birlikte Büyümek" },
 ];
 
 const mottos = ["Fark yaratın", "Birlikte büyüyelim", "Keşfetmeye her zaman devam et"];

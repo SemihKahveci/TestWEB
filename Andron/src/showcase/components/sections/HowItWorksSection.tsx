@@ -2,7 +2,6 @@
 
 import { Settings, Mail, Clock, BarChart3, FileText, Gift, Gamepad2, CheckCircle, Eye } from "lucide-react";
 import { motion } from "framer-motion";
-import { useRouter } from "next/navigation";
 import { Tooltip, TooltipTrigger, TooltipContent } from "@/showcase/components/ui/tooltip";
 
 const steps = [
@@ -54,8 +53,6 @@ const steps = [
 ];
 
 const HowItWorksSection = () => {
-  const router = useRouter();
-
   return (
     <section id="nasil-calisir" className="py-16 md:py-32 bg-muted/50 overflow-hidden">
       <div className="container">
@@ -176,21 +173,6 @@ const HowItWorksSection = () => {
           </div>
         </div>
 
-        {/* CTA */}
-        <motion.div
-          initial={{ opacity: 0 }}
-          whileInView={{ opacity: 1 }}
-          viewport={{ once: true }}
-          transition={{ delay: 0.4 }}
-          className="text-center mt-10 md:mt-14"
-        >
-          <button
-            onClick={() => router.push("/nasil-calisir")}
-            className="inline-flex items-center gap-2 text-coral hover:text-coral/80 font-display font-semibold text-sm transition-colors"
-          >
-            Tüm süreci detaylı gör {">"}
-          </button>
-        </motion.div>
       </div>
     </section>
   );

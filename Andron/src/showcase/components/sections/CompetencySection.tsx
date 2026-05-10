@@ -1,6 +1,7 @@
 import { BookOpen, Users, Rocket, Lightbulb, ArrowRight } from "lucide-react";
 import { content } from "@/showcase/lib/content";
 import { motion } from "framer-motion";
+import { getImagePath } from "@/utils/imagePath";
 
 const icons = [BookOpen, Users, Rocket, Lightbulb];
 const cardColors = [
@@ -64,7 +65,7 @@ const CompetencySection = () => {
           transition={{ delay: 0.5 }}
           className="text-center mt-10"
         >
-          <a href="/yetkinlikler" className="inline-flex items-center gap-2 text-coral font-display font-medium text-sm hover:gap-3 transition-all">
+          <a href={getImagePath("/yetkinlikler")} className="inline-flex items-center gap-2 text-coral font-display font-medium text-sm hover:gap-3 transition-all">
             {content.competency.cta}
             <ArrowRight className="h-4 w-4" />
           </a>

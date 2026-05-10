@@ -10,13 +10,12 @@ import Image from "next/image";
 import { useOpenContactFormDialog } from "@/showcase/components/ContactFormDialogProvider";
 
 const navLinks = [
-  { label: "Hakkımızda", hash: "#hakkimizda", route: "/hakkimizda", forceRoute: true },
-  { label: "ANDRON", hash: "#andron-nedir", route: "/andron" },
-  { label: "Nasıl Çalışır?", hash: "#nasil-calisir", route: "/nasil-calisir" },
-  { label: "Yetkinlikler", hash: "#yetkinlikler", route: "/yetkinlikler" },
-  { label: "Raporlama", hash: "#raporlama", route: "/raporlama", forceRoute: true },
-  { label: "Fiyatlandırma", hash: "#fiyatlandirma", route: "/fiyatlandirma" },
-  { label: "Güvenlik", hash: "#guvenlik", route: "/guvenlik", forceRoute: true },
+  { label: "Hakkımızda", route: "/hakkimizda" },
+  { label: "Nasıl Çalışır?", route: "/andron" },
+  { label: "Yetkinlikler", route: "/yetkinlikler" },
+  { label: "Raporlama", route: "/raporlama" },
+  { label: "Fiyatlandırma", route: "/fiyatlandirma" },
+  { label: "Güvenlik", route: "/guvenlik" },
 ];
 
 const Navbar = () => {
@@ -45,16 +44,7 @@ const Navbar = () => {
 
   const handleNavClick = (link: typeof navLinks[0]) => {
     setMobileOpen(false);
-    if (link.forceRoute) {
-      router.push(link.route);
-      return;
-    }
-    if (isHome) {
-      const el = document.querySelector(link.hash);
-      el?.scrollIntoView({ behavior: "smooth" });
-    } else {
-      router.push(link.route);
-    }
+    router.push(link.route);
   };
 
   const handleLogoClick = () => {

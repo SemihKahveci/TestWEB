@@ -70,7 +70,7 @@ const AboutLogoMetaphor = () => {
                 className="w-48 h-48 md:w-64 md:h-64 rounded-full flex items-center justify-center bg-white/[0.03] border border-white/[0.08]"
                 style={{ boxShadow: "0 0 60px hsl(var(--coral) / 0.3)" }}
               >
-                <Image src={logoWhite} alt="ANDRON Logo" className="w-28 md:w-36 h-auto" />
+                <Image src={logoWhite} alt="ANDRON Logo" className="w-48 md:w-56 h-auto" />
               </div>
             </motion.div>
           </motion.div>
